@@ -16,6 +16,5 @@
   },
   "dependencies": {
     "@medux/core": "^1.0.0"
-  },
-  "gitHead": "5e37f375e0b7f23697d627105f6e74c38f6661a0"
+  }
 }
