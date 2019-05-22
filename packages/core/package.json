@@ -10,7 +10,7 @@
     "access": "public"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "redux": "^4.0.1"
   }
