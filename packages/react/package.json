@@ -1,0 +1,17 @@
+{
+  "name": "@medux/react",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "react": "^16.3.0"
+  },
+  "dependencies": {
+    "@medux/core": "^1.0.0"
+  }
+}
