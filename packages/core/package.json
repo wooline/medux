@@ -1,17 +1,25 @@
 {
-  "name": "@medux/core",
-  "version": "0.0.3",
-  "description": "",
-  "main": "dist/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "redux": "^4.0.1"
-  }
+   "name": "@medux/core",
+   "version": "0.0.3",
+   "description": "",
+   "main": "dist/index.js",
+   "scripts": {
+      "prebuild": "yarn lint && rimraf ./dist && yarn types",
+      "lint": "eslint \"./src/**/*.{ts,js}\"",
+      "types": "tsc",
+      "build": "babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps"
+   },
+   "browserslist": [
+      "ie >= 11"
+   ],
+   "publishConfig": {
+      "access": "public"
+   },
+   "author": "",
+   "license": "MIT",
+   "dependencies": {
+      "redux": "^4.0.1",
+      "core-js": "3",
+      "@babel/runtime-corejs3": "^7.4.5"
+   }
 }

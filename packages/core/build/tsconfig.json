@@ -1,0 +1,10 @@
+{
+   "extends": "../../../.tsconfig.json",
+   "compilerOptions": {
+      "baseUrl": "./src",
+      "outDir": "./dist",
+      "lib": ["es2017"],
+      "types": ["node"]
+   },
+   "include": ["./src"]
+}

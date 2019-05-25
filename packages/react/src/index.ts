@@ -1,0 +1,3 @@
+interface Aaa {
+  aaa: string;
+}

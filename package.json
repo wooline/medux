@@ -1,38 +1,51 @@
 {
-  "name": "medux",
-  "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/wooline/medux.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/wooline/medux/issues"
-  },
-  "homepage": "https://github.com/wooline/medux#readme",
-  "dependencies": {
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6"
-  },
-  "devDependencies": {
-    "lerna": "^3.13.4",
-    "eslint": "^5.16.0",
-    "@typescript-eslint/eslint-plugin": "^1.7.0",
-    "@typescript-eslint/parser": "^1.7.0",
-    "eslint-config-prettier": "^4.2.0",
-    "eslint-plugin-prettier": "^3.0.1",
-    "prettier": "^1.17.0",
-    "typescript": "^3.4.5"
-  }
+   "name": "medux",
+   "version": "0.0.0",
+   "description": "",
+   "main": "index.js",
+   "private": true,
+   "workspaces": [
+      "packages/*"
+   ],
+   "scripts": {
+      "build:core": "lerna run build --scope @medux/core",
+      "test": "eslint ./packages/core/scripts/build.js"
+   },
+   "repository": {
+      "type": "git",
+      "url": "git+https://github.com/wooline/medux.git"
+   },
+   "keywords": [],
+   "author": "",
+   "license": "MIT",
+   "bugs": {
+      "url": "https://github.com/wooline/medux/issues"
+   },
+   "homepage": "https://github.com/wooline/medux#readme",
+   "dependencies": {
+      "react": "^16.8.6",
+      "react-dom": "^16.8.6"
+   },
+   "devDependencies": {
+      "@babel/cli": "^7.4.4",
+      "@babel/core": "^7.4.5",
+      "@babel/plugin-proposal-class-properties": "^7.4.4",
+      "@babel/plugin-proposal-object-rest-spread": "^7.4.4",
+      "@babel/plugin-transform-runtime": "^7.4.4",
+      "@babel/preset-env": "^7.4.5",
+      "@babel/preset-typescript": "^7.3.3",
+      "@types/fs-extra": "^7.0.0",
+      "@types/node": "^12.0.2",
+      "@typescript-eslint/eslint-plugin": "^1.7.0",
+      "@typescript-eslint/parser": "^1.7.0",
+      "babel-preset-minify": "^0.5.0",
+      "eslint": "^5.16.0",
+      "eslint-config-prettier": "^4.2.0",
+      "eslint-plugin-prettier": "^3.0.1",
+      "eslint-plugin-react": "^7.13.0",
+      "fs-extra": "^8.0.1",
+      "lerna": "^3.13.4",
+      "prettier": "^1.17.0",
+      "typescript": "^3.4.5"
+   }
 }
