@@ -3,6 +3,7 @@ module.exports = {
     [
       '@babel/env',
       {
+        include: ['es6.promise'],
         useBuiltIns: 'usage',
         corejs: 3,
       },

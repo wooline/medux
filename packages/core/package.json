@@ -7,7 +7,9 @@
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
       "lint": "eslint \"./src/**/*.{ts,js}\"",
       "types": "tsc",
-      "build": "babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps"
+      "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
+      "build:dev": "babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
+      "build": "yarn build:dev & yarn build:prod"
    },
    "browserslist": [
       "ie >= 11"

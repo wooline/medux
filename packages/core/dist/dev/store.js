@@ -1,3 +1,373 @@
-"use strict";var _interopRequireDefault=require("@babel/runtime-corejs3/helpers/interopRequireDefault");var _Object$defineProperty=require("@babel/runtime-corejs3/core-js-stable/object/define-property");require("core-js/modules/es.array.iterator"),require("core-js/modules/es.object.to-string"),require("core-js/modules/es.promise"),require("core-js/modules/es.regexp.constructor"),require("core-js/modules/es.regexp.to-string"),require("core-js/modules/es.string.iterator"),require("core-js/modules/es.string.replace"),require("core-js/modules/es.string.split"),require("core-js/modules/web.dom-collections.iterator");_Object$defineProperty(exports,"__esModule",{value:!0}),exports.invalidview=invalidview,exports.buildStore=buildStore;var invalidViewTimer,_concat=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/concat")),_promise=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/promise")),_some=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/some")),_toConsumableArray2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/toConsumableArray")),_forEach=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/for-each")),_getIterator2=_interopRequireDefault(require("@babel/runtime-corejs3/core-js/get-iterator")),_typeof2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/typeof")),_objectSpread2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/objectSpread")),_keys=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/object/keys")),_filter=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/filter")),_setTimeout2=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/set-timeout")),_redux=require("redux"),_global=require("./global"),_sprite=require("sprite"),_actions=require("actions");function checkInvalidview(){invalidViewTimer=0;var a=_global.MetaData.clientStore._meta_.currentViews,b={};for(var c in a)if(a.hasOwnProperty(c)){var d=a[c];for(var e in d)d[e]&&(b[c]||(b[c]={}),b[c][e]=d[e])}_global.MetaData.clientStore.dispatch((0,_actions.viewInvalidAction)(b))}function invalidview(){invalidViewTimer||(invalidViewTimer=(0,_setTimeout2.default)(checkInvalidview,4))}function getActionData(a){var b,c=(0,_filter.default)(b=(0,_keys.default)(a)).call(b,function(a){return"type"!==a&&"priority"!==a&&"time"!==a});if(0!==c.length){if(1===c.length)return a[c[0]];var d=(0,_objectSpread2.default)({},a);return delete d.type,delete d.priority,delete d.time,d}}function simpleEqual(a,b){if(a===b)return!0;if((0,_typeof2.default)(a)!==(0,_typeof2.default)(b)||"object"!==(0,_typeof2.default)(a))return!1;var c=(0,_keys.default)(a),d=(0,_keys.default)(b);if(c.length!==d.length)return!1;var e=!0,f=!1,g=void 0;try{for(var h,i,j=(0,_getIterator2.default)(c);!(e=(h=j.next()).done);e=!0)if(i=h.value,!simpleEqual(a[i],b[i]))return!1}catch(a){f=!0,g=a}finally{try{e||null==j.return||j.return()}finally{if(f)throw g}}return!0}function buildStore(){var a,b,c=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},d=1<arguments.length&&void 0!==arguments[1]?arguments[1]:{},e=2<arguments.length&&void 0!==arguments[2]?arguments[2]:[],f=3<arguments.length&&void 0!==arguments[3]?arguments[3]:[];if(!(0,_sprite.isPlainObject)(c))throw new Error("preloadedState must be plain objects!");if(!(0,_sprite.isPlainObject)(d))throw new Error("storeReducers must be plain objects!");var g,h=function(a,b){var c,e;if(!g)return a;var f=g._meta_;f.prevState=a;var h=(0,_objectSpread2.default)({},a);if(f.currentState=h,h.views||(h.views={}),(0,_forEach.default)(c=(0,_keys.default)(d)).call(c,function(a){h[a]=d[a](h[a],b)}),b.type===_actions.ActionTypes.F_VIEW_INVALID){var n=getActionData(b);simpleEqual(h.views,n)||(h.views=n)}var i=f.reducerMap[b.type]||{},j=f.reducerMap[b.type.replace(new RegExp("[^".concat(_global.NSP,"]+")),"*")]||{},k=(0,_objectSpread2.default)({},i,j),l=(0,_keys.default)(k);// 支持泛监听，形如 */loading
-if(0<l.length){var o=b.priority?(0,_toConsumableArray2.default)(b.priority):[];(0,_forEach.default)(l).call(l,function(a){var b=k[a];b.__isHandler__?o.push(a):o.unshift(a)});var p={};(0,_forEach.default)(o).call(o,function(a){if(!p[a]){p[a]=!0;var c=k[a];h[a]=c(getActionData(b))}})}var m=(0,_keys.default)(a).length!==(0,_keys.default)(h).length||(0,_some.default)(e=(0,_keys.default)(a)).call(e,function(b){return a[b]!==h[b]});return f.prevState=m?h:a,f.prevState},i=_redux.applyMiddleware.apply(void 0,(0,_concat.default)(a=(0,_toConsumableArray2.default)(e)).call(a,[function middleware(){return function(a){return function(b){if(_global.MetaData.isServer&&b.type.split(_global.NSP)[1]===_actions.ActionTypes.M_LOADING)return b;var c=a(b),d=g._meta_.effectMap[c.type]||{},e=g._meta_.effectMap[c.type.replace(new RegExp("[^".concat(_global.NSP,"]+")),"*")]||{},f=(0,_objectSpread2.default)({},d,e),h=(0,_keys.default)(f);if(0<h.length){var k=c.priority?(0,_toConsumableArray2.default)(c.priority):[];(0,_forEach.default)(h).call(h,function(a){var b=f[a];b.__isHandler__?k.push(a):k.unshift(a)});var i={},j=[];if((0,_forEach.default)(k).call(k,function(a){if(!i[a]){i[a]=!0;var b=f[a],d=b(getActionData(c)),e=b.__decorators__;if(e){var g=[];(0,_forEach.default)(e).call(e,function(b,e){g[e]=b[0](c,a,d)}),b.__decoratorResults__=g}d.then(function(a){if(e){var c=b.__decoratorResults__||[];(0,_forEach.default)(e).call(e,function(b,d){b[1]&&b[1]("Resolved",c[d],a)}),b.__decoratorResults__=void 0}return a},function(a){if(e){var c=b.__decoratorResults__||[];(0,_forEach.default)(e).call(e,function(b,d){b[1]&&b[1]("Rejected",c[d],a)}),b.__decoratorResults__=void 0}}),j.push(d)}}),j.length)return _promise.default.all(j)}return c}}}])),j=(0,_concat.default)(b=[]).call(b,(0,_toConsumableArray2.default)(f),[i,function enhancer(a){return function(){var b=a.apply(void 0,arguments);return b._meta_={prevState:{router:null},currentState:{router:null},reducerMap:{},effectMap:{},injectedModules:{},currentViews:{}},b}}]);return _global.MetaData.isDev&&_global.root.__REDUX_DEVTOOLS_EXTENSION__&&j.push(_global.root.__REDUX_DEVTOOLS_EXTENSION__(_global.root.__REDUX_DEVTOOLS_EXTENSION__OPTIONS)),g=(0,_redux.createStore)(h,c,_redux.compose.apply(void 0,(0,_toConsumableArray2.default)(j))),_global.MetaData.clientStore=g,_global.MetaData.isServer||(_global.root.onerror=function(a,b,c,d,e){g.dispatch((0,_actions.errorAction)(e||a))},"onunhandledrejection"in _global.root&&(_global.root.onunhandledrejection=function(a){g.dispatch((0,_actions.errorAction)(a.reason))})),g}
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime-corejs3/helpers/interopRequireDefault");
+
+require("core-js/modules/es.array.iterator");
+
+require("core-js/modules/es.object.to-string");
+
+require("core-js/modules/es.promise");
+
+require("core-js/modules/es.regexp.constructor");
+
+require("core-js/modules/es.regexp.to-string");
+
+require("core-js/modules/es.string.iterator");
+
+require("core-js/modules/es.string.replace");
+
+require("core-js/modules/es.string.split");
+
+require("core-js/modules/web.dom-collections.iterator");
+
+var _Object$defineProperty = require("@babel/runtime-corejs3/core-js-stable/object/define-property");
+
+_Object$defineProperty(exports, "__esModule", {
+  value: true
+});
+
+exports.invalidview = invalidview;
+exports.buildStore = buildStore;
+
+var _concat = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/concat"));
+
+var _promise = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/promise"));
+
+var _some = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/some"));
+
+var _toConsumableArray2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/toConsumableArray"));
+
+var _forEach = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/for-each"));
+
+var _getIterator2 = _interopRequireDefault(require("@babel/runtime-corejs3/core-js/get-iterator"));
+
+var _typeof2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/typeof"));
+
+var _objectSpread2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/objectSpread"));
+
+var _keys = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/object/keys"));
+
+var _filter = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/filter"));
+
+var _setTimeout2 = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/set-timeout"));
+
+var _redux = require("redux");
+
+var _global = require("./global");
+
+var _sprite = require("sprite");
+
+var _actions = require("actions");
+
+var invalidViewTimer;
+
+function checkInvalidview() {
+  invalidViewTimer = 0;
+  var currentViews = _global.MetaData.clientStore._meta_.currentViews;
+  var views = {};
+
+  for (var moduleName in currentViews) {
+    if (currentViews.hasOwnProperty(moduleName)) {
+      var element = currentViews[moduleName];
+
+      for (var viewname in element) {
+        if (element[viewname]) {
+          if (!views[moduleName]) {
+            views[moduleName] = {};
+          }
+
+          views[moduleName][viewname] = element[viewname];
+        }
+      }
+    }
+  }
+
+  _global.MetaData.clientStore.dispatch((0, _actions.viewInvalidAction)(views));
+}
+
+function invalidview() {
+  if (!invalidViewTimer) {
+    invalidViewTimer = (0, _setTimeout2.default)(checkInvalidview, 4);
+  }
+}
+
+function getActionData(action) {
+  var _context;
+
+  var arr = (0, _filter.default)(_context = (0, _keys.default)(action)).call(_context, function (key) {
+    return key !== 'type' && key !== 'priority' && key !== 'time';
+  });
+
+  if (arr.length === 0) {
+    return undefined;
+  } else if (arr.length === 1) {
+    return action[arr[0]];
+  } else {
+    var data = (0, _objectSpread2.default)({}, action);
+    delete data['type'];
+    delete data['priority'];
+    delete data['time'];
+    return data;
+  }
+}
+
+function simpleEqual(obj1, obj2) {
+  if (obj1 === obj2) {
+    return true;
+  } else if ((0, _typeof2.default)(obj1) !== (0, _typeof2.default)(obj2) || (0, _typeof2.default)(obj1) !== 'object') {
+    return false;
+  } else {
+    var keys1 = (0, _keys.default)(obj1);
+    var keys2 = (0, _keys.default)(obj2);
+
+    if (keys1.length !== keys2.length) {
+      return false;
+    } else {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = (0, _getIterator2.default)(keys1), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var _key = _step.value;
+
+          if (!simpleEqual(obj1[_key], obj2[_key])) {
+            return false;
+          }
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return != null) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+
+      return true;
+    }
+  }
+}
+
+function buildStore() {
+  var _context4, _context5;
+
+  var preloadedState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var storeReducers = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var storeMiddlewares = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+  var storeEnhancers = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+
+  if (!(0, _sprite.isPlainObject)(preloadedState)) {
+    throw new Error('preloadedState must be plain objects!');
+  }
+
+  if (!(0, _sprite.isPlainObject)(storeReducers)) {
+    throw new Error('storeReducers must be plain objects!');
+  }
+
+  var store;
+
+  var combineReducers = function combineReducers(rootState, action) {
+    var _context2, _context3;
+
+    if (!store) {
+      return rootState;
+    }
+
+    var meta = store._meta_;
+    meta.prevState = rootState;
+    var currentState = (0, _objectSpread2.default)({}, rootState);
+    meta.currentState = currentState;
+
+    if (!currentState.views) {
+      currentState.views = {};
+    }
+
+    (0, _forEach.default)(_context2 = (0, _keys.default)(storeReducers)).call(_context2, function (namespace) {
+      currentState[namespace] = storeReducers[namespace](currentState[namespace], action);
+    });
+
+    if (action.type === _actions.ActionTypes.F_VIEW_INVALID) {
+      var views = getActionData(action);
+
+      if (!simpleEqual(currentState.views, views)) {
+        currentState.views = views;
+      }
+    }
+
+    var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
+
+    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^".concat(_global.NSP, "]+")), '*')] || {};
+    var handlers = (0, _objectSpread2.default)({}, handlersCommon, handlersEvery);
+    var handlerModules = (0, _keys.default)(handlers);
+
+    if (handlerModules.length > 0) {
+      var orderList = action.priority ? (0, _toConsumableArray2.default)(action.priority) : [];
+      (0, _forEach.default)(handlerModules).call(handlerModules, function (namespace) {
+        var fun = handlers[namespace];
+
+        if (fun.__isHandler__) {
+          orderList.push(namespace);
+        } else {
+          orderList.unshift(namespace);
+        }
+      });
+      var moduleNameMap = {};
+      (0, _forEach.default)(orderList).call(orderList, function (namespace) {
+        if (!moduleNameMap[namespace]) {
+          moduleNameMap[namespace] = true;
+          var fun = handlers[namespace];
+          currentState[namespace] = fun(getActionData(action));
+        }
+      });
+    }
+
+    var changed = (0, _keys.default)(rootState).length !== (0, _keys.default)(currentState).length || (0, _some.default)(_context3 = (0, _keys.default)(rootState)).call(_context3, function (namespace) {
+      return rootState[namespace] !== currentState[namespace];
+    });
+    meta.prevState = changed ? currentState : rootState;
+    return meta.prevState;
+  };
+
+  var middleware = function middleware() {
+    return function (next) {
+      return function (originalAction) {
+        if (_global.MetaData.isServer) {
+          if (originalAction.type.split(_global.NSP)[1] === _actions.ActionTypes.M_LOADING) {
+            return originalAction;
+          }
+        }
+
+        var action = next(originalAction);
+        var handlersCommon = store._meta_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
+
+        var handlersEvery = store._meta_.effectMap[action.type.replace(new RegExp("[^".concat(_global.NSP, "]+")), '*')] || {};
+        var handlers = (0, _objectSpread2.default)({}, handlersCommon, handlersEvery);
+        var handlerModules = (0, _keys.default)(handlers);
+
+        if (handlerModules.length > 0) {
+          var orderList = action.priority ? (0, _toConsumableArray2.default)(action.priority) : [];
+          (0, _forEach.default)(handlerModules).call(handlerModules, function (namespace) {
+            var fun = handlers[namespace];
+
+            if (fun.__isHandler__) {
+              orderList.push(namespace);
+            } else {
+              orderList.unshift(namespace);
+            }
+          });
+          var moduleNameMap = {};
+          var promiseResults = [];
+          (0, _forEach.default)(orderList).call(orderList, function (namespace) {
+            if (!moduleNameMap[namespace]) {
+              moduleNameMap[namespace] = true;
+              var fun = handlers[namespace];
+              var effectResult = fun(getActionData(action));
+              var decorators = fun.__decorators__;
+
+              if (decorators) {
+                var results = [];
+                (0, _forEach.default)(decorators).call(decorators, function (decorator, index) {
+                  results[index] = decorator[0](action, namespace, effectResult);
+                });
+                fun.__decoratorResults__ = results;
+              }
+
+              effectResult.then(function (reslove) {
+                if (decorators) {
+                  var _results = fun.__decoratorResults__ || [];
+
+                  (0, _forEach.default)(decorators).call(decorators, function (decorator, index) {
+                    if (decorator[1]) {
+                      decorator[1]('Resolved', _results[index], reslove);
+                    }
+                  });
+                  fun.__decoratorResults__ = undefined;
+                }
+
+                return reslove;
+              }, function (reject) {
+                if (decorators) {
+                  var _results2 = fun.__decoratorResults__ || [];
+
+                  (0, _forEach.default)(decorators).call(decorators, function (decorator, index) {
+                    if (decorator[1]) {
+                      decorator[1]('Rejected', _results2[index], reject);
+                    }
+                  });
+                  fun.__decoratorResults__ = undefined;
+                }
+              });
+              promiseResults.push(effectResult);
+            }
+          });
+
+          if (promiseResults.length) {
+            return _promise.default.all(promiseResults);
+          }
+        }
+
+        return action;
+      };
+    };
+  }; // const enhancers = [applyMiddleware(...[effectMiddleware, routerMiddleware(storeHistory), ...storeMiddlewares]), ...storeEnhancers];
+  // if (MetaData.isBrowser && MetaData.isDev && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
+  //
+  // __REDUX_DEVTOOLS_EXTENSION_COMPOSE__
+  // enhancers.push(window["__REDUX_DEVTOOLS_EXTENSION__"](window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"]));
+  // }
+  // store = createStore(combineReducers as any, initData, compose(...enhancers));
+
+
+  var middlewareEnhancer = _redux.applyMiddleware.apply(void 0, (0, _concat.default)(_context4 = (0, _toConsumableArray2.default)(storeMiddlewares)).call(_context4, [middleware]));
+
+  var enhancer = function enhancer(newCreateStore) {
+    return function () {
+      var newStore = newCreateStore.apply(void 0, arguments);
+      var modelStore = newStore;
+      modelStore._meta_ = {
+        prevState: {
+          router: null
+        },
+        currentState: {
+          router: null
+        },
+        reducerMap: {},
+        effectMap: {},
+        injectedModules: {},
+        currentViews: {}
+      };
+      return newStore;
+    };
+  };
+
+  var enhancers = (0, _concat.default)(_context5 = []).call(_context5, (0, _toConsumableArray2.default)(storeEnhancers), [middlewareEnhancer, enhancer]);
+
+  if (_global.MetaData.isDev && _global.root.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(_global.root.__REDUX_DEVTOOLS_EXTENSION__(_global.root.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  }
+
+  store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, (0, _toConsumableArray2.default)(enhancers)));
+  _global.MetaData.clientStore = store;
+
+  if (!_global.MetaData.isServer) {
+    _global.root.onerror = function (evt, source, fileno, columnNumber, error) {
+      store.dispatch((0, _actions.errorAction)(error || evt));
+    };
+
+    if ('onunhandledrejection' in _global.root) {
+      _global.root.onunhandledrejection = function (error) {
+        store.dispatch((0, _actions.errorAction)(error.reason));
+      };
+    }
+  }
+
+  return store;
+}
 //# sourceMappingURL=store.js.map

@@ -1,2 +1,271 @@
-"use strict";var _interopRequireDefault=require("@babel/runtime-corejs3/helpers/interopRequireDefault");var _Object$defineProperty=require("@babel/runtime-corejs3/core-js-stable/object/define-property");require("core-js/modules/es.function.name");_Object$defineProperty(exports,"__esModule",{value:!0}),exports.isPlainObject=isPlainObject,exports.TaskCounter=exports.PDispatcher=exports.PEvent=exports.LoadingState=exports.TaskCountEvent=void 0;var _findIndex=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/find-index")),_setTimeout2=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/set-timeout")),_some=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/some")),_possibleConstructorReturn2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/possibleConstructorReturn")),_getPrototypeOf2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/getPrototypeOf")),_assertThisInitialized2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/assertThisInitialized")),_inherits2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/inherits")),_splice=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/splice")),_indexOf=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/index-of")),_keys=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/object/keys")),_forEach=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/for-each")),_classCallCheck2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/classCallCheck")),_createClass2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/createClass")),_defineProperty2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/defineProperty")),_getPrototypeOf3=_interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/object/get-prototype-of")),_typeof2=_interopRequireDefault(require("@babel/runtime-corejs3/helpers/typeof"));function isPlainObject(a){if("object"!==(0,_typeof2.default)(a)||null===a)return!1;for(var b=a;null!==(0,_getPrototypeOf3.default)(b);)b=(0,_getPrototypeOf3.default)(b);return(0,_getPrototypeOf3.default)(a)===proto}var TaskCountEvent="TaskCountEvent";exports.TaskCountEvent="TaskCountEvent";var LoadingState;exports.LoadingState=LoadingState,function(a){a.Start="Start",a.Stop="Stop",a.Depth="Depth"}(LoadingState||(exports.LoadingState=LoadingState={}));var PEvent=/*#__PURE__*/function(){function a(b,c){var d=!!(2<arguments.length&&void 0!==arguments[2])&&arguments[2];(0,_classCallCheck2.default)(this,a),this.name=b,this.data=c,this.bubbling=d,(0,_defineProperty2.default)(this,"target",null),(0,_defineProperty2.default)(this,"currentTarget",null)}return(0,_createClass2.default)(a,[{key:"setTarget",value:function setTarget(a){this.target=a}},{key:"setCurrentTarget",value:function setCurrentTarget(a){this.currentTarget=a}}]),a}();exports.PEvent=PEvent;var PDispatcher=/*#__PURE__*/function(){function a(b){(0,_classCallCheck2.default)(this,a),this.parent=b,(0,_defineProperty2.default)(this,"storeHandlers",{})}return(0,_createClass2.default)(a,[{key:"addListener",value:function addListener(a,b){var c=this.storeHandlers[a];return c||(this.storeHandlers[a]=c=[]),c.push(b),this}},{key:"removeListener",value:function removeListener(a,b){var c=this;if(!a){var d;(0,_forEach.default)(d=(0,_keys.default)(this.storeHandlers)).call(d,function(a){delete c.storeHandlers[a]})}else{var e=this.storeHandlers;if(e.propertyIsEnumerable(a)){var f=e[a];if(!b)delete e[a];else{var g=(0,_indexOf.default)(f).call(f,b);-1<g&&(0,_splice.default)(f).call(f,g,1),0===f.length&&delete e[a]}}}return this}},{key:"dispatch",value:function dispatch(a){a.target||a.setTarget(this),a.setCurrentTarget(this);var b=this.storeHandlers[a.name];if(b)for(var c=0,d=b.length;c<d;c++)b[c](a);return this.parent&&a.bubbling&&this.parent.dispatch(a),this}},{key:"setParent",value:function setParent(a){return this.parent=a,this}}]),a}();exports.PDispatcher=PDispatcher;var TaskCounter=/*#__PURE__*/function(a){function b(a){var c;return(0,_classCallCheck2.default)(this,b),c=(0,_possibleConstructorReturn2.default)(this,(0,_getPrototypeOf2.default)(b).call(this)),c.deferSecond=a,(0,_defineProperty2.default)((0,_assertThisInitialized2.default)(c),"list",[]),(0,_defineProperty2.default)((0,_assertThisInitialized2.default)(c),"ctimer",0),c}return(0,_inherits2.default)(b,a),(0,_createClass2.default)(b,[{key:"addItem",value:function addItem(a){var b,c=this,d=1<arguments.length&&void 0!==arguments[1]?arguments[1]:"";return(0,_some.default)(b=this.list).call(b,function(b){return b.promise===a})||(this.list.push({promise:a,note:d}),a.then(function(){return c.completeItem(a)},function(){return c.completeItem(a)}),1===this.list.length&&(this.dispatch(new PEvent(TaskCountEvent,LoadingState.Start)),this.ctimer=(0,_setTimeout2.default)(function(){c.ctimer=0,0<c.list.length&&c.dispatch(new PEvent(TaskCountEvent,LoadingState.Depth))},1e3*this.deferSecond))),a}},{key:"completeItem",value:function completeItem(a){var b,c=(0,_findIndex.default)(b=this.list).call(b,function(b){return b.promise===a});if(-1<c){var d;(0,_splice.default)(d=this.list).call(d,c,1),0===this.list.length&&(this.ctimer&&(clearTimeout(this.ctimer),this.ctimer=0),this.dispatch(new PEvent(TaskCountEvent,LoadingState.Stop)))}return this}}]),b}(PDispatcher);exports.TaskCounter=TaskCounter;
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime-corejs3/helpers/interopRequireDefault");
+
+require("core-js/modules/es.function.name");
+
+var _Object$defineProperty = require("@babel/runtime-corejs3/core-js-stable/object/define-property");
+
+_Object$defineProperty(exports, "__esModule", {
+  value: true
+});
+
+exports.isPlainObject = isPlainObject;
+exports.TaskCounter = exports.PDispatcher = exports.PEvent = exports.LoadingState = exports.TaskCountEvent = void 0;
+
+var _findIndex = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/find-index"));
+
+var _setTimeout2 = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/set-timeout"));
+
+var _some = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/some"));
+
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/possibleConstructorReturn"));
+
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/getPrototypeOf"));
+
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/assertThisInitialized"));
+
+var _inherits2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/inherits"));
+
+var _splice = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/splice"));
+
+var _indexOf = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/index-of"));
+
+var _keys = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/object/keys"));
+
+var _forEach = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/instance/for-each"));
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/createClass"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/defineProperty"));
+
+var _getPrototypeOf3 = _interopRequireDefault(require("@babel/runtime-corejs3/core-js-stable/object/get-prototype-of"));
+
+var _typeof2 = _interopRequireDefault(require("@babel/runtime-corejs3/helpers/typeof"));
+
+function isPlainObject(obj) {
+  if ((0, _typeof2.default)(obj) !== 'object' || obj === null) return false;
+  var proto = obj;
+
+  while ((0, _getPrototypeOf3.default)(proto) !== null) {
+    proto = (0, _getPrototypeOf3.default)(proto);
+  }
+
+  return (0, _getPrototypeOf3.default)(obj) === proto;
+}
+
+var TaskCountEvent = 'TaskCountEvent';
+exports.TaskCountEvent = TaskCountEvent;
+var LoadingState;
+exports.LoadingState = LoadingState;
+
+(function (LoadingState) {
+  LoadingState["Start"] = "Start";
+  LoadingState["Stop"] = "Stop";
+  LoadingState["Depth"] = "Depth";
+})(LoadingState || (exports.LoadingState = LoadingState = {}));
+
+var PEvent =
+/*#__PURE__*/
+function () {
+  function PEvent(name, data) {
+    var bubbling = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+    (0, _classCallCheck2.default)(this, PEvent);
+    this.name = name;
+    this.data = data;
+    this.bubbling = bubbling;
+    (0, _defineProperty2.default)(this, "target", null);
+    (0, _defineProperty2.default)(this, "currentTarget", null);
+  }
+
+  (0, _createClass2.default)(PEvent, [{
+    key: "setTarget",
+    value: function setTarget(target) {
+      this.target = target;
+    }
+  }, {
+    key: "setCurrentTarget",
+    value: function setCurrentTarget(target) {
+      this.currentTarget = target;
+    }
+  }]);
+  return PEvent;
+}();
+
+exports.PEvent = PEvent;
+
+var PDispatcher =
+/*#__PURE__*/
+function () {
+  function PDispatcher(parent) {
+    (0, _classCallCheck2.default)(this, PDispatcher);
+    this.parent = parent;
+    (0, _defineProperty2.default)(this, "storeHandlers", {});
+  }
+
+  (0, _createClass2.default)(PDispatcher, [{
+    key: "addListener",
+    value: function addListener(ename, handler) {
+      var dictionary = this.storeHandlers[ename];
+
+      if (!dictionary) {
+        this.storeHandlers[ename] = dictionary = [];
+      }
+
+      dictionary.push(handler);
+      return this;
+    }
+  }, {
+    key: "removeListener",
+    value: function removeListener(ename, handler) {
+      var _this = this;
+
+      if (!ename) {
+        var _context;
+
+        (0, _forEach.default)(_context = (0, _keys.default)(this.storeHandlers)).call(_context, function (key) {
+          delete _this.storeHandlers[key];
+        });
+      } else {
+        var handlers = this.storeHandlers;
+
+        if (handlers.propertyIsEnumerable(ename)) {
+          var dictionary = handlers[ename];
+
+          if (!handler) {
+            delete handlers[ename];
+          } else {
+            var n = (0, _indexOf.default)(dictionary).call(dictionary, handler);
+
+            if (n > -1) {
+              (0, _splice.default)(dictionary).call(dictionary, n, 1);
+            }
+
+            if (dictionary.length === 0) {
+              delete handlers[ename];
+            }
+          }
+        }
+      }
+
+      return this;
+    }
+  }, {
+    key: "dispatch",
+    value: function dispatch(evt) {
+      if (!evt.target) {
+        evt.setTarget(this);
+      }
+
+      evt.setCurrentTarget(this);
+      var dictionary = this.storeHandlers[evt.name];
+
+      if (dictionary) {
+        for (var i = 0, k = dictionary.length; i < k; i++) {
+          dictionary[i](evt);
+        }
+      }
+
+      if (this.parent && evt.bubbling) {
+        this.parent.dispatch(evt);
+      }
+
+      return this;
+    }
+  }, {
+    key: "setParent",
+    value: function setParent(parent) {
+      this.parent = parent;
+      return this;
+    }
+  }]);
+  return PDispatcher;
+}();
+
+exports.PDispatcher = PDispatcher;
+
+var TaskCounter =
+/*#__PURE__*/
+function (_PDispatcher) {
+  (0, _inherits2.default)(TaskCounter, _PDispatcher);
+
+  function TaskCounter(deferSecond) {
+    var _this2;
+
+    (0, _classCallCheck2.default)(this, TaskCounter);
+    _this2 = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(TaskCounter).call(this));
+    _this2.deferSecond = deferSecond;
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "list", []);
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "ctimer", 0);
+    return _this2;
+  }
+
+  (0, _createClass2.default)(TaskCounter, [{
+    key: "addItem",
+    value: function addItem(promise) {
+      var _context2,
+          _this3 = this;
+
+      var note = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+
+      if (!(0, _some.default)(_context2 = this.list).call(_context2, function (item) {
+        return item.promise === promise;
+      })) {
+        this.list.push({
+          promise: promise,
+          note: note
+        });
+        promise.then(function () {
+          return _this3.completeItem(promise);
+        }, function () {
+          return _this3.completeItem(promise);
+        });
+
+        if (this.list.length === 1) {
+          this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
+          this.ctimer = (0, _setTimeout2.default)(function () {
+            _this3.ctimer = 0;
+
+            if (_this3.list.length > 0) {
+              _this3.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
+            }
+          }, this.deferSecond * 1000);
+        }
+      }
+
+      return promise;
+    }
+  }, {
+    key: "completeItem",
+    value: function completeItem(promise) {
+      var _context3;
+
+      var i = (0, _findIndex.default)(_context3 = this.list).call(_context3, function (item) {
+        return item.promise === promise;
+      });
+
+      if (i > -1) {
+        var _context4;
+
+        (0, _splice.default)(_context4 = this.list).call(_context4, i, 1);
+
+        if (this.list.length === 0) {
+          if (this.ctimer) {
+            clearTimeout(this.ctimer);
+            this.ctimer = 0;
+          }
+
+          this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
+        }
+      }
+
+      return this;
+    }
+  }]);
+  return TaskCounter;
+}(PDispatcher);
+
+exports.TaskCounter = TaskCounter;
 //# sourceMappingURL=sprite.js.map
