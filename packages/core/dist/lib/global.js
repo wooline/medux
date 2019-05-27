@@ -1,7 +1,7 @@
 /*global global:true process:true*/
-export var NSP = '/';
-export var root = typeof self == 'object' && self.self === self && self || typeof global == 'object' && global.global === global && global || this;
-export var MetaData = {
+export const NSP = '/';
+export const root = typeof self == 'object' && self.self === self && self || typeof global == 'object' && global.global === global && global || this;
+export const MetaData = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: {},
@@ -24,7 +24,7 @@ export function getModuleActionCreatorList(namespace) {
   if (MetaData.actionCreatorMap[namespace]) {
     return MetaData.actionCreatorMap[namespace];
   } else {
-    var obj = {};
+    const obj = {};
     MetaData.actionCreatorMap[namespace] = obj;
     return obj;
   }

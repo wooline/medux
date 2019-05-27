@@ -1,5 +1,5 @@
 import { NSP } from './global';
-export var ActionTypes = {
+export const ActionTypes = {
   M_LOADING: 'LOADING',
   M_INIT: 'INIT',
   F_ERROR: "@@framework" + NSP + "ERROR",
@@ -8,13 +8,13 @@ export var ActionTypes = {
 export function errorAction(error) {
   return {
     type: ActionTypes.F_ERROR,
-    error: error
+    error
   };
 }
 export function viewInvalidAction(currentViews) {
   return {
     type: ActionTypes.F_VIEW_INVALID,
-    currentViews: currentViews
+    currentViews
   };
 }
 //# sourceMappingURL=actions.js.map

@@ -1,8 +1,8 @@
 import { MetaData, getModuleActionCreatorList, NSP } from './global';
 import { TaskCounter, TaskCountEvent } from './sprite';
 import { ActionTypes } from './actions';
-var loadings = {};
-var depthTime = 2;
+const loadings = {};
+let depthTime = 2;
 export function setLoadingDepthTime(second) {
   depthTime = second;
 }
@@ -19,18 +19,18 @@ export function setLoading(item, namespace, group) {
     return item;
   }
 
-  var key = namespace + NSP + group;
+  const key = namespace + NSP + group;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, function (e) {
-      var store = MetaData.clientStore;
+    loadings[key].addListener(TaskCountEvent, e => {
+      const store = MetaData.clientStore;
 
       if (store) {
-        var _actions;
-
-        var actions = getModuleActionCreatorList(namespace)[ActionTypes.M_LOADING];
-        var action = actions((_actions = {}, _actions[group] = e.data, _actions));
+        const actions = getModuleActionCreatorList(namespace)[ActionTypes.M_LOADING];
+        const action = actions({
+          [group]: e.data
+        });
         store.dispatch(action);
       }
     });

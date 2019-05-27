@@ -7,9 +7,10 @@
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
       "lint": "eslint \"./src/**/*.{ts,js}\"",
       "types": "tsc",
+      "build:lib": "cross-env NODE_ENV=library babel ./src --out-dir ./dist/lib  --extensions \".ts,.tsx\" --source-maps",
       "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
-      "build:dev": "babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
-      "build": "yarn build:dev & yarn build:prod"
+      "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
+      "build": "yarn build:dev & yarn build:prod & yarn build:lib"
    },
    "browserslist": [
       "ie >= 11"
@@ -22,6 +23,6 @@
    "dependencies": {
       "redux": "^4.0.1",
       "core-js": "3",
-      "@babel/runtime-corejs3": "^7.4.5"
+      "@babel/runtime": "^7.4.5"
    }
 }
