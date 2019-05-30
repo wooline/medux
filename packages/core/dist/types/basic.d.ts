@@ -1,11 +1,5 @@
 import { LoadingState } from './sprite';
 export declare const NSP = "/";
-export declare const root: {
-    __REDUX_DEVTOOLS_EXTENSION__?: any;
-    __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any;
-    onerror: any;
-    onunhandledrejection: any;
-};
 export declare const MetaData: {
     isServer: boolean;
     isDev: boolean;
@@ -13,6 +7,7 @@ export declare const MetaData: {
     clientStore: ModelStore;
     appModuleName: string;
 };
+export declare const client: Window | undefined;
 export interface ActionCreatorMap {
     [moduleName: string]: ActionCreatorList;
 }
@@ -22,9 +17,12 @@ export interface ActionCreatorList {
 export declare type ActionCreator = (payload?: any) => Action;
 interface Store {
     dispatch(action: Action): void;
+    getState(): {
+        [key: string]: any;
+    };
 }
 export interface ModelStore extends Store {
-    _meta_: {
+    _medux_: {
         reducerMap: ReducerMap;
         effectMap: EffectMap;
         injectedModules: {
@@ -49,6 +47,9 @@ export interface ReducerHandler extends ActionHandler {
 }
 export interface EffectHandler extends ActionHandler {
     (payload?: any): Promise<any>;
+}
+export interface ActionHandlerList {
+    [actionName: string]: ActionHandler;
 }
 export interface ActionHandlerMap {
     [actionName: string]: {
@@ -86,5 +87,11 @@ export interface BaseModuleState {
     };
 }
 export declare function getModuleActionCreatorList(namespace: string): ActionCreatorList;
+export declare function isPromise(data: any): data is Promise<any>;
+export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor;
+export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;
+export declare function delayPromise(second: number): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
+export declare function injectActions(store: ModelStore, namespace: string, handlers: ActionHandlerList): ActionCreatorList;
 export {};
-//# sourceMappingURL=global.d.ts.map
+//# sourceMappingURL=basic.d.ts.map

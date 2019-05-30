@@ -1,7 +1,6 @@
 import "core-js/modules/es.array.concat";
 import "core-js/modules/es.array.filter";
 import "core-js/modules/es.array.iterator";
-import "core-js/modules/es.object.assign";
 import "core-js/modules/es.object.keys";
 import "core-js/modules/es.object.to-string";
 import "core-js/modules/es.promise";
@@ -12,15 +11,16 @@ import "core-js/modules/es.string.replace";
 import "core-js/modules/es.string.split";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
+import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { applyMiddleware, compose, createStore } from 'redux';
-import { MetaData, NSP, root } from './global';
+import { MetaData, NSP, client } from './basic';
 import { isPlainObject } from 'sprite';
 import { errorAction, viewInvalidAction, ActionTypes } from 'actions';
 var invalidViewTimer;
 
 function checkInvalidview() {
   invalidViewTimer = 0;
-  var currentViews = MetaData.clientStore._meta_.currentViews;
+  var currentViews = MetaData.clientStore._medux_.currentViews;
   var views = {};
 
   for (var moduleName in currentViews) {
@@ -42,10 +42,39 @@ function checkInvalidview() {
   MetaData.clientStore.dispatch(viewInvalidAction(views));
 }
 
-export function invalidview() {
+function invalidview() {
   if (!invalidViewTimer) {
-    invalidViewTimer = setTimeout(checkInvalidview, 4);
+    invalidViewTimer = setTimeout(checkInvalidview, 0);
   }
+}
+
+export function viewWillMount(moduleName, viewName) {
+  var currentViews = MetaData.clientStore._medux_.currentViews;
+
+  if (!currentViews[moduleName]) {
+    var _currentViews$moduleN;
+
+    currentViews[moduleName] = (_currentViews$moduleN = {}, _currentViews$moduleN[viewName] = 1, _currentViews$moduleN);
+  } else {
+    var views = currentViews[moduleName];
+
+    if (!views[viewName]) {
+      views[viewName] = 1;
+    } else {
+      views[viewName]++;
+    }
+  }
+
+  invalidview();
+}
+export function viewWillUnmount(moduleName, viewName) {
+  var currentViews = MetaData.clientStore._medux_.currentViews;
+
+  if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
+    currentViews[moduleName][viewName]--;
+  }
+
+  invalidview();
 }
 
 function getActionData(action) {
@@ -58,7 +87,8 @@ function getActionData(action) {
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
-    var data = Object.assign({}, action);
+    var data = _objectSpread({}, action);
+
     delete data['type'];
     delete data['priority'];
     delete data['time'];
@@ -123,9 +153,11 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
       return rootState;
     }
 
-    var meta = store._meta_;
+    var meta = store._medux_;
     meta.prevState = rootState;
-    var currentState = Object.assign({}, rootState);
+
+    var currentState = _objectSpread({}, rootState);
+
     meta.currentState = currentState;
 
     if (!currentState.views) {
@@ -147,7 +179,9 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
 
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
-    var handlers = Object.assign({}, handlersCommon, handlersEvery);
+
+    var handlers = _objectSpread({}, handlersCommon, handlersEvery);
+
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -188,10 +222,12 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
         }
 
         var action = next(originalAction);
-        var handlersCommon = store._meta_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
+        var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-        var handlersEvery = store._meta_.effectMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
-        var handlers = Object.assign({}, handlersCommon, handlersEvery);
+        var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
+
+        var handlers = _objectSpread({}, handlersCommon, handlersEvery);
+
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
@@ -274,7 +310,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     return function () {
       var newStore = newCreateStore.apply(void 0, arguments);
       var modelStore = newStore;
-      modelStore._meta_ = {
+      modelStore._medux_ = {
         prevState: {
           router: null
         },
@@ -292,22 +328,24 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
 
   var enhancers = [].concat(storeEnhancers, [middlewareEnhancer, enhancer]);
 
-  if (MetaData.isDev && root.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(root.__REDUX_DEVTOOLS_EXTENSION__(root.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
   store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
   MetaData.clientStore = store;
 
-  if (!MetaData.isServer) {
-    root.onerror = function (evt, source, fileno, columnNumber, error) {
-      store.dispatch(errorAction(error || evt));
-    };
+  if (client) {
+    if ('onerror' in client) {
+      client.addEventListener('error', function (event) {
+        store.dispatch(errorAction(event));
+      }, true);
+    }
 
-    if ('onunhandledrejection' in root) {
-      root.onunhandledrejection = function (error) {
-        store.dispatch(errorAction(error.reason));
-      };
+    if ('onunhandledrejection' in client) {
+      client.addEventListener('unhandledrejection', function (event) {
+        store.dispatch(errorAction(event.reason));
+      }, true);
     }
   }
 

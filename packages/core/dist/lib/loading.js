@@ -1,4 +1,4 @@
-import { MetaData, getModuleActionCreatorList, NSP } from './global';
+import { MetaData, getModuleActionCreatorList, NSP } from './basic';
 import { TaskCounter, TaskCountEvent } from './sprite';
 import { ActionTypes } from './actions';
 const loadings = {};

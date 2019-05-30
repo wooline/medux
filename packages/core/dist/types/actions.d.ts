@@ -1,4 +1,4 @@
-import { CurrentViews } from './global';
+import { CurrentViews } from './basic';
 export declare const ActionTypes: {
     M_LOADING: string;
     M_INIT: string;

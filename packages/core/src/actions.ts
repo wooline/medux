@@ -1,4 +1,4 @@
-import {CurrentViews, NSP} from './global';
+import {CurrentViews, NSP} from './basic';
 
 export const ActionTypes = {
   M_LOADING: 'LOADING',

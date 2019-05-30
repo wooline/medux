@@ -1,4 +1,3 @@
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 export function isPlainObject(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   let proto = obj;
@@ -27,10 +26,8 @@ export class PEvent {
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
-
-    _defineProperty(this, "target", null);
-
-    _defineProperty(this, "currentTarget", null);
+    this.target = null;
+    this.currentTarget = null;
   }
 
   setTarget(target) {
@@ -45,8 +42,7 @@ export class PEvent {
 export class PDispatcher {
   constructor(parent) {
     this.parent = parent;
-
-    _defineProperty(this, "storeHandlers", {});
+    this.storeHandlers = {};
   }
 
   addListener(ename, handler) {
@@ -121,10 +117,8 @@ export class TaskCounter extends PDispatcher {
   constructor(deferSecond) {
     super();
     this.deferSecond = deferSecond;
-
-    _defineProperty(this, "list", []);
-
-    _defineProperty(this, "ctimer", 0);
+    this.list = [];
+    this.ctimer = 0;
   }
 
   addItem(promise, note) {

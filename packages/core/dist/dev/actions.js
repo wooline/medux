@@ -1,4 +1,4 @@
-import { NSP } from './global';
+import { NSP } from './basic';
 export var ActionTypes = {
   M_LOADING: 'LOADING',
   M_INIT: 'INIT',

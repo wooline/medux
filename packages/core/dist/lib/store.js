@@ -1,13 +1,13 @@
-import _extends from "@babel/runtime/helpers/esm/extends";
+import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { applyMiddleware, compose, createStore } from 'redux';
-import { MetaData, NSP, root } from './global';
+import { MetaData, NSP, client } from './basic';
 import { isPlainObject } from 'sprite';
 import { errorAction, viewInvalidAction, ActionTypes } from 'actions';
 let invalidViewTimer;
 
 function checkInvalidview() {
   invalidViewTimer = 0;
-  const currentViews = MetaData.clientStore._meta_.currentViews;
+  const currentViews = MetaData.clientStore._medux_.currentViews;
   const views = {};
 
   for (const moduleName in currentViews) {
@@ -29,10 +29,39 @@ function checkInvalidview() {
   MetaData.clientStore.dispatch(viewInvalidAction(views));
 }
 
-export function invalidview() {
+function invalidview() {
   if (!invalidViewTimer) {
-    invalidViewTimer = setTimeout(checkInvalidview, 4);
+    invalidViewTimer = setTimeout(checkInvalidview, 0);
   }
+}
+
+export function viewWillMount(moduleName, viewName) {
+  const currentViews = MetaData.clientStore._medux_.currentViews;
+
+  if (!currentViews[moduleName]) {
+    currentViews[moduleName] = {
+      [viewName]: 1
+    };
+  } else {
+    const views = currentViews[moduleName];
+
+    if (!views[viewName]) {
+      views[viewName] = 1;
+    } else {
+      views[viewName]++;
+    }
+  }
+
+  invalidview();
+}
+export function viewWillUnmount(moduleName, viewName) {
+  const currentViews = MetaData.clientStore._medux_.currentViews;
+
+  if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
+    currentViews[moduleName][viewName]--;
+  }
+
+  invalidview();
 }
 
 function getActionData(action) {
@@ -43,7 +72,7 @@ function getActionData(action) {
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
-    const data = _extends({}, action);
+    const data = _objectSpread({}, action);
 
     delete data['type'];
     delete data['priority'];
@@ -107,10 +136,10 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
       return rootState;
     }
 
-    const meta = store._meta_;
+    const meta = store._medux_;
     meta.prevState = rootState;
 
-    const currentState = _extends({}, rootState);
+    const currentState = _objectSpread({}, rootState);
 
     meta.currentState = currentState;
 
@@ -134,7 +163,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
 
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
 
-    const handlers = _extends({}, handlersCommon, handlersEvery);
+    const handlers = _objectSpread({}, handlersCommon, handlersEvery);
 
     const handlerModules = Object.keys(handlers);
 
@@ -172,11 +201,11 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     }
 
     const action = next(originalAction);
-    const handlersCommon = store._meta_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
+    const handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-    const handlersEvery = store._meta_.effectMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
+    const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
 
-    const handlers = _extends({}, handlersCommon, handlersEvery);
+    const handlers = _objectSpread({}, handlersCommon, handlersEvery);
 
     const handlerModules = Object.keys(handlers);
 
@@ -256,7 +285,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     return function () {
       const newStore = newCreateStore(...arguments);
       const modelStore = newStore;
-      modelStore._meta_ = {
+      modelStore._medux_ = {
         prevState: {
           router: null
         },
@@ -274,22 +303,24 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
 
   const enhancers = [...storeEnhancers, middlewareEnhancer, enhancer];
 
-  if (MetaData.isDev && root.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(root.__REDUX_DEVTOOLS_EXTENSION__(root.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
   store = createStore(combineReducers, preloadedState, compose(...enhancers));
   MetaData.clientStore = store;
 
-  if (!MetaData.isServer) {
-    root.onerror = (evt, source, fileno, columnNumber, error) => {
-      store.dispatch(errorAction(error || evt));
-    };
+  if (client) {
+    if ('onerror' in client) {
+      client.addEventListener('error', event => {
+        store.dispatch(errorAction(event));
+      }, true);
+    }
 
-    if ('onunhandledrejection' in root) {
-      root.onunhandledrejection = error => {
-        store.dispatch(errorAction(error.reason));
-      };
+    if ('onunhandledrejection' in client) {
+      client.addEventListener('unhandledrejection', event => {
+        store.dispatch(errorAction(event.reason));
+      }, true);
     }
   }
 

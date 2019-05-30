@@ -2,7 +2,7 @@
    "name": "@medux/core",
    "version": "0.0.3",
    "description": "",
-   "main": "dist/index.js",
+   "main": "index.js",
    "scripts": {
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
       "lint": "eslint \"./src/**/*.{ts,js}\"",

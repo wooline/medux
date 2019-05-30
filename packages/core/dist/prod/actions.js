@@ -1,2 +1,2 @@
-import{NSP}from"./global";export var ActionTypes={M_LOADING:"LOADING",M_INIT:"INIT",F_ERROR:"@@framework"+NSP+"ERROR",F_VIEW_INVALID:"@@framework"+NSP+"VIEW_INVALID"};export function errorAction(a){return{type:ActionTypes.F_ERROR,error:a}}export function viewInvalidAction(a){return{type:ActionTypes.F_VIEW_INVALID,currentViews:a}}
+import{NSP}from"./basic";export var ActionTypes={M_LOADING:"LOADING",M_INIT:"INIT",F_ERROR:"@@framework"+NSP+"ERROR",F_VIEW_INVALID:"@@framework"+NSP+"VIEW_INVALID"};export function errorAction(a){return{type:ActionTypes.F_ERROR,error:a}}export function viewInvalidAction(a){return{type:ActionTypes.F_VIEW_INVALID,currentViews:a}}
 //# sourceMappingURL=actions.js.map
