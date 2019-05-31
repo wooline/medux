@@ -141,8 +141,11 @@ export function exportModel<S extends BaseModuleState, N extends string>(
   fun.initState = initState;
   return fun;
 }
-function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
+export function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
   return typeof module['then'] === 'function';
+}
+export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
+  return typeof moduleView['then'] === 'function';
 }
 export function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['model']> {
   const result = getModule();
@@ -160,12 +163,14 @@ export function getView<M extends Module, N extends Extract<keyof M['views'], st
     return result.views[viewName];
   }
 }
-export interface ExportView<C> {
-  (ComponentView: C, model: Model, viewName: string): C;
-}
-export interface LoadView<MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>> {
-  (moduleGetter: MG, moduleName: M, viewName: N): V[N];
-}
+export type ExportView<C> = (ComponentView: C, model: Model, viewName: string) => C;
+
+export type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(
+  moduleGetter: MG,
+  moduleName: M,
+  viewName: N
+) => V[N];
+
 function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module {
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
@@ -195,39 +200,39 @@ export interface StoreOptions {
   enhancers?: StoreEnhancer[];
   initData?: {[key: string]: any};
 }
-export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (store: Store, appModel: Model, appViews: {[key: string]: any}) => void,
+export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
+  render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
   moduleGetter: M,
-  appName: A,
+  appModuleName: A,
   storeOptions: StoreOptions = {}
 ): Promise<void> {
-  MetaData.appModuleName = appName;
+  MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
   if (storeOptions.initData || window[ssrInitStoreKey]) {
     initData = {...window[ssrInitStoreKey], ...storeOptions.initData};
   }
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames: string[] = [appName];
+  const preModuleNames: string[] = [appModuleName];
   if (initData) {
-    preModuleNames.push(...Object.keys(initData).filter(key => key !== appName && initData[key].isModule));
+    preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
   }
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
     const initModel = appModule.model(store);
-    render(store as any, appModule.model, appModule.views);
+    render(store as any, appModule.model, appModule.views, ssrInitStoreKey);
     return initModel;
   });
 }
-export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
+export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
+  render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string},
   moduleGetter: M,
-  appName: A,
+  appModuleName: A,
   storeOptions: StoreOptions = {}
-): Promise<void> {
-  MetaData.appModuleName = appName;
+) {
+  MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModule = moduleGetter[appName]() as Module;
+  const appModule = moduleGetter[appModuleName]() as Module;
 
   return appModule
     .model(store)
@@ -235,6 +240,6 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
       return store.dispatch(errorAction(err));
     })
     .then(() => {
-      render(store as any, appModule.model, appModule.views, ssrInitStoreKey);
+      return render(store as any, appModule.model, appModule.views, ssrInitStoreKey);
     });
 }

@@ -38,6 +38,12 @@ export function getModuleActionCreatorList(namespace) {
 export function isPromise(data) {
   return typeof data['then'] === 'function';
 }
+export function getClientStore() {
+  return MetaData.clientStore;
+}
+export function isServer() {
+  return MetaData.isServer;
+}
 export function reducer(target, key, descriptor) {
   const fun = descriptor.value;
   fun.__actionName__ = key;

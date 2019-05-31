@@ -1,9 +1,12 @@
 {
    "extends": "../../.tsconfig.json",
    "compilerOptions": {
-      "baseUrl": ".",
-      "outDir": "./libs"
+      "declaration": true,
+      "declarationMap": true,
+      "emitDeclarationOnly": true,
+      "target": "esnext",
+      "baseUrl": "./src",
+      "outDir": "./dist/types"
    },
-   "include": ["./src", "./test"],
-   "exclude": ["./dist"]
+   "include": ["./src"]
 }

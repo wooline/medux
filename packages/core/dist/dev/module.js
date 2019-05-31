@@ -129,11 +129,12 @@ export function exportModel(namespace, HandlersClass, initState) {
   fun.initState = initState;
   return fun;
 }
-
-function isPromiseModule(module) {
+export function isPromiseModule(module) {
   return typeof module['then'] === 'function';
 }
-
+export function isPromiseView(moduleView) {
+  return typeof moduleView['then'] === 'function';
+}
 export function loadModel(getModule) {
   var result = getModule();
 
@@ -186,12 +187,12 @@ function getModuleListByNames(moduleNames, moduleGetter) {
   return Promise.all(preModules);
 }
 
-export function buildApp(render, moduleGetter, appName, storeOptions) {
+export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  MetaData.appModuleName = appName;
+  MetaData.appModuleName = appModuleName;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var initData = {};
 
@@ -200,34 +201,34 @@ export function buildApp(render, moduleGetter, appName, storeOptions) {
   }
 
   var store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  var preModuleNames = [appName];
+  var preModuleNames = [appModuleName];
 
   if (initData) {
     preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) {
-      return key !== appName && initData[key].isModule;
+      return key !== appModuleName && initData[key].isModule;
     }));
   }
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
     var initModel = appModule.model(store);
-    render(store, appModule.model, appModule.views);
+    render(store, appModule.model, appModule.views, ssrInitStoreKey);
     return initModel;
   });
 }
-export function buildSSR(render, moduleGetter, appName, storeOptions) {
+export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  MetaData.appModuleName = appName;
+  MetaData.appModuleName = appModuleName;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  var appModule = moduleGetter[appName]();
+  var appModule = moduleGetter[appModuleName]();
   return appModule.model(store).catch(function (err) {
     return store.dispatch(errorAction(err));
   }).then(function () {
-    render(store, appModule.model, appModule.views, ssrInitStoreKey);
+    return render(store, appModule.model, appModule.views, ssrInitStoreKey);
   });
 }
 //# sourceMappingURL=module.js.map

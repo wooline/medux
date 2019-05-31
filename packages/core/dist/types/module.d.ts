@@ -65,14 +65,12 @@ export declare type Actions<Ins> = {
 export declare function exportModel<S extends BaseModuleState, N extends string>(namespace: N, HandlersClass: {
     new (initState: S, presetData?: any): BaseModuleHandlers<BaseModuleState, RootState<{}>, N>;
 }, initState: S): Model<S>;
+export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
+export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
 export declare function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['model']>;
 export declare function getView<M extends Module, N extends Extract<keyof M['views'], string>>(getModule: GetModule<M>, viewName: N): M['views'][N] | Promise<M['views'][N]>;
-export interface ExportView<C> {
-    (ComponentView: C, model: Model, viewName: string): C;
-}
-export interface LoadView<MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>> {
-    (moduleGetter: MG, moduleName: M, viewName: N): V[N];
-}
+export declare type ExportView<C> = (ComponentView: C, model: Model, viewName: string) => C;
+export declare type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N) => V[N];
 export interface StoreOptions {
     ssrInitStoreKey?: string;
     reducers?: ReducersMapObject;
@@ -82,11 +80,19 @@ export interface StoreOptions {
         [key: string]: any;
     };
 }
-export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
+export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
     [key: string]: any;
-}) => void, moduleGetter: M, appName: A, storeOptions?: StoreOptions): Promise<void>;
-export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
+}, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, storeOptions?: StoreOptions): Promise<void>;
+export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
     [key: string]: any;
-}, ssrInitStoreKey: string) => void, moduleGetter: M, appName: A, storeOptions?: StoreOptions): Promise<void>;
+}, ssrInitStoreKey: string) => {
+    html: any;
+    data: any;
+    ssrInitStoreKey: string;
+}, moduleGetter: M, appModuleName: A, storeOptions?: StoreOptions): Promise<{
+    html: any;
+    data: any;
+    ssrInitStoreKey: string;
+}>;
 export {};
 //# sourceMappingURL=module.d.ts.map

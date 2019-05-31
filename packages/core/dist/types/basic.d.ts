@@ -88,6 +88,8 @@ export interface BaseModuleState {
 }
 export declare function getModuleActionCreatorList(namespace: string): ActionCreatorList;
 export declare function isPromise(data: any): data is Promise<any>;
+export declare function getClientStore(): ModelStore;
+export declare function isServer(): boolean;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
 export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;

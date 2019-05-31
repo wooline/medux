@@ -3,9 +3,10 @@
    "version": "0.0.3",
    "description": "",
    "main": "index.js",
+   "types": "./dist/types",
    "scripts": {
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
-      "lint": "eslint \"./src/**/*.{ts,js}\"",
+      "lint": "eslint \"./src/**/*.ts\"",
       "types": "tsc",
       "build:lib": "cross-env NODE_ENV=library babel ./src --out-dir ./dist/lib  --extensions \".ts,.tsx\" --source-maps",
       "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",

@@ -9,6 +9,7 @@
    ],
    "scripts": {
       "build:core": "lerna run build --scope @medux/core",
+      "build:react": "lerna run build --scope @medux/react",
       "test": "eslint ./packages/core/scripts/build.js"
    },
    "repository": {
@@ -35,6 +36,7 @@
       "@babel/plugin-transform-runtime": "^7.4.4",
       "@babel/preset-env": "^7.4.5",
       "@babel/preset-typescript": "^7.3.3",
+      "@babel/preset-react": "^7.0.0",
       "@types/fs-extra": "^7.0.0",
       "@types/node": "^12.0.2",
       "@typescript-eslint/eslint-plugin": "^1.7.0",

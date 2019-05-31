@@ -110,6 +110,12 @@ export function getModuleActionCreatorList(namespace: string): ActionCreatorList
 export function isPromise(data: any): data is Promise<any> {
   return typeof data['then'] === 'function';
 }
+export function getClientStore() {
+  return MetaData.clientStore;
+}
+export function isServer(): boolean {
+  return MetaData.isServer;
+}
 export function reducer(target: any, key: string, descriptor: PropertyDescriptor) {
   const fun = descriptor.value as ActionHandler;
   fun.__actionName__ = key;

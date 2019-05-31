@@ -2,17 +2,42 @@
    "name": "@medux/react",
    "version": "0.0.4",
    "description": "",
-   "main": "dist/index.js",
-   "scripts": {},
+   "main": "index.js",
+   "types": "./dist/types",
+   "scripts": {
+      "prebuild": "yarn lint && rimraf ./dist && yarn types",
+      "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+      "types": "tsc",
+      "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
+      "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
+      "build": "yarn build:dev & yarn build:prod"
+   },
    "publishConfig": {
       "access": "public"
    },
    "author": "",
    "license": "MIT",
+   "browserslist": [
+      "ie >= 11"
+   ],
+   "peerDependencies": {
+      "@types/react": "^16.4.0",
+      "@types/react-dom": "^16.4.0",
+      "react": "^16.4.0",
+      "react-dom": "^16.4.0"
+   },
    "dependencies": {
-      "@types/react": "^16.8.18",
-      "@types/react-dom": "^16.8.4",
+      "@types/react-redux": "^7.0.9",
+      "@types/react-router-dom": "^4.3.3",
+      "@types/history": "^4.7.2",
+      "history": "^4.9.0",
+      "connected-react-router": "^6.4.0",
       "react-redux": "^7.0.3",
+      "react-router-dom": "^5.0.0",
       "@medux/core": "^0.0.3"
+   },
+   "devDependencies": {
+      "@types/react": "^16.8.18",
+      "@types/react-dom": "^16.8.4"
    }
 }
