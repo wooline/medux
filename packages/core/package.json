@@ -1,6 +1,6 @@
 {
    "name": "@medux/core",
-   "version": "0.0.3",
+   "version": "0.0.5",
    "description": "",
    "main": "index.js",
    "types": "./dist/types",
@@ -26,8 +26,8 @@
    "author": "",
    "license": "MIT",
    "dependencies": {
-      "redux": "^4.0.1",
+      "@babel/runtime": "^7.4.5",
       "core-js": "3",
-      "@babel/runtime": "^7.4.5"
+      "redux": "^4.0.1"
    }
 }

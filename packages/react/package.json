@@ -1,6 +1,6 @@
 {
    "name": "@medux/react",
-   "version": "0.0.4",
+   "version": "0.0.5",
    "description": "",
    "main": "index.js",
    "types": "./dist/types",
@@ -31,14 +31,14 @@
       "react-dom": "^16.8.0"
    },
    "dependencies": {
+      "@medux/core": "^0.0.5",
+      "@types/history": "^4.7.2",
       "@types/react-redux": "^7.0.9",
       "@types/react-router-dom": "^4.3.3",
-      "@types/history": "^4.7.2",
-      "history": "^4.9.0",
       "connected-react-router": "^6.4.0",
+      "history": "^4.9.0",
       "react-redux": "^7.0.3",
-      "react-router-dom": "^5.0.0",
-      "@medux/core": "^0.0.3"
+      "react-router-dom": "^5.0.0"
    },
    "devDependencies": {
       "@types/react": "^16.8.18",
