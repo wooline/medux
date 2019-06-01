@@ -5,8 +5,8 @@
    "main": "index.js",
    "types": "./dist/types",
    "files": [
-      "./dist",
-      "./index.js"
+      "dist/",
+      "index.js"
    ],
    "scripts": {
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
@@ -31,7 +31,7 @@
       "react-dom": "^16.8.0"
    },
    "dependencies": {
-      "@medux/core": "^0.0.5",
+      "@medux/core": "^0.0.7",
       "@types/history": "^4.7.2",
       "@types/react-redux": "^7.0.9",
       "@types/react-router-dom": "^4.3.3",

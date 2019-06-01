@@ -5,8 +5,8 @@
    "main": "index.js",
    "types": "./dist/types",
    "files": [
-      "./dist",
-      "./index.js"
+      "dist/",
+      "index.js"
    ],
    "scripts": {
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
