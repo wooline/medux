@@ -4,6 +4,10 @@
    "description": "",
    "main": "index.js",
    "types": "./dist/types",
+   "files": [
+      "./dist",
+      "./index.js"
+   ],
    "scripts": {
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
       "lint": "eslint \"./src/**/*.ts\"",

@@ -1,6 +1,6 @@
 import { Middleware, ReducersMapObject, StoreEnhancer, Store } from 'redux';
 import { Action, ActionCreatorList, ModelStore, BaseModuleState } from './basic';
-export interface Model<ModuleState = BaseModuleState> {
+export interface Model<ModuleState extends BaseModuleState = BaseModuleState> {
     namespace: string;
     initState: ModuleState;
     (store: ModelStore): Promise<void>;
@@ -17,7 +17,7 @@ export declare type GetModule<M extends Module = Module> = () => M | Promise<M>;
 export interface ModuleGetter {
     [moduleName: string]: GetModule;
 }
-export declare type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : Module;
+export declare type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 export declare type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : never;
 declare type ModuleStates<M extends any> = M['model']['initState'];
 declare type ModuleViews<M extends any> = {

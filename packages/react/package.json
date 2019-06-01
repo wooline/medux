@@ -4,6 +4,10 @@
    "description": "",
    "main": "index.js",
    "types": "./dist/types",
+   "files": [
+      "./dist",
+      "./index.js"
+   ],
    "scripts": {
       "prebuild": "yarn lint && rimraf ./dist && yarn types",
       "lint": "eslint \"./src/**/*.{ts,tsx}\"",
@@ -21,10 +25,10 @@
       "ie >= 11"
    ],
    "peerDependencies": {
-      "@types/react": "^16.4.0",
-      "@types/react-dom": "^16.4.0",
-      "react": "^16.4.0",
-      "react-dom": "^16.4.0"
+      "@types/react": "^16.8.0",
+      "@types/react-dom": "^16.8.0",
+      "react": "^16.8.0",
+      "react-dom": "^16.8.0"
    },
    "dependencies": {
       "@types/react-redux": "^7.0.9",

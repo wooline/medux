@@ -1,5 +1,5 @@
 export {ActionTypes, errorAction} from './actions';
-export {reducer, effect, logger, BaseModuleState, isServer, getClientStore, CurrentViews, delayPromise, ModelStore} from './basic';
+export {reducer, effect, logger, BaseModuleState, isServer, getClientStore, CurrentViews, delayPromise} from './basic';
 export {viewWillMount, viewWillUnmount} from './store';
 export {setLoading, setLoadingDepthTime} from './loading';
 export {LoadingState} from './sprite';
@@ -14,8 +14,6 @@ export {
   isPromiseModule,
   isPromiseView,
   getView,
-  Model,
-  Module,
   GetModule,
   ModuleGetter,
   RootState,

@@ -3,7 +3,7 @@ import {Action, ActionHandler, ActionCreatorList, reducer, getModuleActionCreato
 import {buildStore} from './store';
 import {errorAction} from './actions';
 
-export interface Model<ModuleState = BaseModuleState> {
+export interface Model<ModuleState extends BaseModuleState = BaseModuleState> {
   namespace: string;
   initState: ModuleState;
   (store: ModelStore): Promise<void>;
@@ -18,7 +18,7 @@ export type GetModule<M extends Module = Module> = () => M | Promise<M>;
 export interface ModuleGetter {
   [moduleName: string]: GetModule;
 }
-export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : Module;
+export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : never;
 type ModuleStates<M extends any> = M['model']['initState'];
 type ModuleViews<M extends any> = {[key in keyof M['views']]?: number};

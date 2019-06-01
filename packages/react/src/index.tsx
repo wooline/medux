@@ -92,7 +92,7 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
       store,
       appModel,
       appViews: {
-        [key: string]: React.ComponentType<any>;
+        [key: string]: React.ComponentType;
       },
       ssrInitStoreKey
     ) => {
@@ -117,9 +117,9 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
 
 export const loadView: LoadView = (moduleGetter, moduleName, viewName, loadingComponent: React.ReactNode = null) => {
   return function Loading(props: any) {
-    const [Component, setComponent] = useState<ComponentType<any> | null>(() => {
+    const [Component, setComponent] = useState<ComponentType | null>(() => {
       const moduleViewResult = getView(moduleGetter[moduleName], viewName);
-      if (isPromiseView<ComponentType<any>>(moduleViewResult)) {
+      if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(view => {
           setComponent(view);
         });
@@ -131,7 +131,7 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, loadingCo
     return Component ? <Component {...props} /> : loadingComponent;
   } as any;
 };
-export const exportView: ExportView<ComponentType<any>> = (ComponentView, model, viewName) => {
+export const exportView: ExportView<ComponentType> = (ComponentView, model, viewName) => {
   if (isServer()) {
     return ComponentView;
   } else {

@@ -12,5 +12,5 @@ export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof
     ssrInitStoreKey: string;
 }>;
 export declare const loadView: LoadView;
-export declare const exportView: ExportView<ComponentType<any>>;
+export declare const exportView: ExportView<ComponentType>;
 //# sourceMappingURL=index.d.ts.map
