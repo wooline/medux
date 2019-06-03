@@ -1,5 +1,5 @@
 import { ReactElement, ComponentType } from 'react';
-import { ModuleGetter, StoreOptions, LoadView, ExportView } from '@medux/core';
+import { ModuleGetter, StoreOptions, LoadView, ExportView } from '@medux/core/types/export';
 export declare type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, storeOptions?: StoreOptions & {
     routerParser?: RouterParser;

@@ -6,7 +6,8 @@ import {createBrowserHistory} from 'history';
 import createMemoryHistory from 'history/createMemoryHistory';
 import {withRouter} from 'react-router-dom';
 import {ConnectedRouter, connectRouter, routerMiddleware} from 'connected-react-router';
-import {renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore, ModuleGetter, StoreOptions, LoadView, ExportView} from '@medux/core';
+import {renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore} from '@medux/core';
+import {ModuleGetter, StoreOptions, LoadView, ExportView} from '@medux/core/types/export';
 
 export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 

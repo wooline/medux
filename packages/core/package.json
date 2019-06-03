@@ -3,15 +3,16 @@
    "version": "0.0.10",
    "description": "",
    "main": "index.js",
-   "types": "dist/types",
+   "types": "types/",
    "files": [
+      "types/",
       "dist/",
       "index.js"
    ],
    "scripts": {
-      "prebuild": "yarn lint && rimraf ./dist && yarn types",
+      "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
       "lint": "eslint \"./src/**/*.ts\"",
-      "types": "tsc && copyfiles -f ./src/*.d.ts ./dist/types",
+      "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
       "build:lib": "cross-env NODE_ENV=library babel ./src --out-dir ./dist/lib  --extensions \".ts,.tsx\" --source-maps",
       "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
       "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
