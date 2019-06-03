@@ -5,6 +5,7 @@
    "main": "index.js",
    "types": "types/",
    "files": [
+      "src/",
       "types/",
       "dist/",
       "index.js"
