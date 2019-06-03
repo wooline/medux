@@ -14,8 +14,8 @@ import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { applyMiddleware, compose, createStore } from 'redux';
 import { MetaData, NSP, client } from './basic';
-import { isPlainObject } from 'sprite';
-import { errorAction, viewInvalidAction, ActionTypes } from 'actions';
+import { isPlainObject } from './sprite';
+import { errorAction, viewInvalidAction, ActionTypes } from './actions';
 var invalidViewTimer;
 
 function checkInvalidview() {

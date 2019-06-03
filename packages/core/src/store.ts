@@ -1,7 +1,7 @@
 import {applyMiddleware, compose, createStore, Middleware, ReducersMapObject, StoreEnhancer} from 'redux';
 import {Action, CurrentViews, MetaData, ModelStore, NSP, client} from './basic';
-import {isPlainObject} from 'sprite';
-import {errorAction, viewInvalidAction, ActionTypes} from 'actions';
+import {isPlainObject} from './sprite';
+import {errorAction, viewInvalidAction, ActionTypes} from './actions';
 
 let invalidViewTimer: number;
 
