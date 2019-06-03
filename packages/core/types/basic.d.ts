@@ -96,4 +96,3 @@ export declare function logger(before: (action: Action, moduleName: string, prom
 export declare function delayPromise(second: number): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
 export declare function injectActions(store: ModelStore, namespace: string, handlers: ActionHandlerList): ActionCreatorList;
 export {};
-//# sourceMappingURL=basic.d.ts.map

@@ -37,4 +37,3 @@ export declare class TaskCounter extends PDispatcher {
     addItem(promise: Promise<any>, note?: string): Promise<any>;
     private completeItem;
 }
-//# sourceMappingURL=sprite.d.ts.map

@@ -5,4 +5,3 @@ export declare function viewWillUnmount(moduleName: string, viewName: string): v
 export declare function buildStore(preloadedState?: {
     [key: string]: any;
 }, storeReducers?: ReducersMapObject<any, any>, storeMiddlewares?: Middleware[], storeEnhancers?: StoreEnhancer[]): ModelStore;
-//# sourceMappingURL=store.d.ts.map

@@ -13,4 +13,3 @@ export declare function viewInvalidAction(currentViews: CurrentViews): {
     type: string;
     currentViews: CurrentViews;
 };
-//# sourceMappingURL=actions.d.ts.map
