@@ -103,40 +103,49 @@ function () {
   return BaseModuleHandlers;
 }(), _temp), (_applyDecoratedDescriptor(_class.prototype, "INIT", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "INIT"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "UPDATE", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "UPDATE"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "LOADING", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "LOADING"), _class.prototype)), _class);
 export function exportModel(HandlersClass, initState) {
-  return function (moduleName) {
-    var fun = function fun(store) {
-      var hasInjected = store._medux_.injectedModules[moduleName];
+  var wrap = function wrap(moduleName) {
+    if (moduleName === void 0) {
+      moduleName = '';
+    }
 
-      if (!hasInjected) {
-        store._medux_.injectedModules[moduleName] = true;
-        var moduleState = store.getState()[moduleName];
-        var handlers = new HandlersClass(initState, moduleState);
-        handlers.moduleName = moduleName;
-        handlers.store = store;
-        var actions = injectActions(store, moduleName, handlers);
-        handlers.actions = actions;
+    if (!wrap.loadModule) {
+      wrap.loadModule = function (store) {
+        var hasInjected = store._medux_.injectedModules[moduleName];
 
-        if (!moduleState) {
-          var initAction = actions.INIT(handlers.initState);
-          var action = store.dispatch(initAction);
+        if (!hasInjected) {
+          store._medux_.injectedModules[moduleName] = true;
+          var moduleState = store.getState()[moduleName];
+          var handlers = new HandlersClass(initState, moduleState);
+          handlers.moduleName = moduleName;
+          handlers.store = store;
+          var actions = injectActions(store, moduleName, handlers);
+          handlers.actions = actions;
 
-          if (isPromise(action)) {
-            return action;
+          if (!moduleState) {
+            var initAction = actions.INIT(handlers.initState);
+            var action = store.dispatch(initAction);
+
+            if (isPromise(action)) {
+              return action;
+            } else {
+              return Promise.resolve(void 0);
+            }
           } else {
             return Promise.resolve(void 0);
           }
         } else {
           return Promise.resolve(void 0);
         }
-      } else {
-        return Promise.resolve(void 0);
-      }
-    };
+      };
 
-    fun.moduleName = moduleName;
-    fun.initState = initState;
-    return fun;
+      wrap.loadModule.moduleName = moduleName;
+      wrap.loadModule.initState = initState;
+    }
+
+    return wrap.loadModule;
   };
+
+  return wrap;
 }
 export function isPromiseModule(module) {
   return typeof module['then'] === 'function';

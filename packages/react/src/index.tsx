@@ -132,13 +132,14 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, loadingCo
     return Component ? <Component {...props} /> : loadingComponent;
   } as any;
 };
-export const exportView: ExportView<ComponentType> = (ComponentView, model, viewName) => {
+export const exportView: ExportView<ComponentType> = (ComponentView, loadModel, viewName) => {
   if (isServer()) {
     return ComponentView;
   } else {
     return function View(props) {
       const [modelReady, setModelReady] = useState(() => {
         const state = getClientStore().getState();
+        const model = loadModel();
         const moduleName = model.moduleName;
         model(getClientStore()).then(() => {
           if (!modelReady) {
@@ -148,6 +149,7 @@ export const exportView: ExportView<ComponentType> = (ComponentView, model, view
         return !!state[moduleName];
       });
       useEffect(() => {
+        const model = loadModel();
         viewWillMount(model.moduleName, viewName);
         return () => {
           viewWillUnmount(model.moduleName, viewName);

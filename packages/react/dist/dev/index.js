@@ -123,13 +123,14 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, load
     return Component ? React.createElement(Component, props) : loadingComponent;
   };
 };
-export var exportView = function exportView(ComponentView, model, viewName) {
+export var exportView = function exportView(ComponentView, loadModel, viewName) {
   if (isServer()) {
     return ComponentView;
   } else {
     return function View(props) {
       var _useState2 = useState(function () {
         var state = getClientStore().getState();
+        var model = loadModel();
         var moduleName = model.moduleName;
         model(getClientStore()).then(function () {
           if (!modelReady) {
@@ -142,6 +143,7 @@ export var exportView = function exportView(ComponentView, model, viewName) {
           setModelReady = _useState2[1];
 
       useEffect(function () {
+        var model = loadModel();
         viewWillMount(model.moduleName, viewName);
         return function () {
           viewWillUnmount(model.moduleName, viewName);
