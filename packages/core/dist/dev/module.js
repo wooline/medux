@@ -16,11 +16,18 @@ var _class, _temp;
 import { reducer, getModuleActionCreatorList, isPromise, injectActions, MetaData } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
-export function exportModule(namespace) {
-  var actions = getModuleActionCreatorList(namespace);
+export function exportFacade(moduleName) {
+  var actions = getModuleActionCreatorList(moduleName);
   return {
-    namespace: namespace,
+    moduleName: moduleName,
     actions: actions
+  };
+}
+export function exportModule(moduleName, model, views) {
+  return {
+    moduleName: moduleName,
+    model: model,
+    views: views
   };
 }
 export var BaseModuleHandlers = (_class = (_temp =
@@ -29,7 +36,7 @@ function () {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function BaseModuleHandlers(initState, presetData) {
     this.initState = void 0;
-    this.namespace = '';
+    this.moduleName = '';
     this.store = null;
     this.actions = null;
     initState.isModule = true;
@@ -43,7 +50,7 @@ function () {
   };
 
   _proto.callThisAction = function callThisAction(handler) {
-    var actions = getModuleActionCreatorList(this.namespace);
+    var actions = getModuleActionCreatorList(this.moduleName);
     return actions[handler.__actionName__](arguments.length <= 1 ? undefined : arguments[1]);
   };
 
@@ -74,7 +81,7 @@ function () {
   _createClass(BaseModuleHandlers, [{
     key: "state",
     get: function get() {
-      return this.store._medux_.prevState[this.namespace];
+      return this.store._medux_.prevState[this.moduleName];
     }
   }, {
     key: "rootState",
@@ -84,7 +91,7 @@ function () {
   }, {
     key: "currentState",
     get: function get() {
-      return this.store._medux_.currentState[this.namespace];
+      return this.store._medux_.currentState[this.moduleName];
     }
   }, {
     key: "currentRootState",
@@ -95,39 +102,41 @@ function () {
 
   return BaseModuleHandlers;
 }(), _temp), (_applyDecoratedDescriptor(_class.prototype, "INIT", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "INIT"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "UPDATE", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "UPDATE"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "LOADING", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "LOADING"), _class.prototype)), _class);
-export function exportModel(namespace, HandlersClass, initState) {
-  var fun = function fun(store) {
-    var hasInjected = store._medux_.injectedModules[namespace];
+export function exportModel(HandlersClass, initState) {
+  return function (moduleName) {
+    var fun = function fun(store) {
+      var hasInjected = store._medux_.injectedModules[moduleName];
 
-    if (!hasInjected) {
-      store._medux_.injectedModules[namespace] = true;
-      var moduleState = store.getState()[namespace];
-      var handlers = new HandlersClass(initState, moduleState);
-      handlers.namespace = namespace;
-      handlers.store = store;
-      var actions = injectActions(store, namespace, handlers);
-      handlers.actions = actions;
+      if (!hasInjected) {
+        store._medux_.injectedModules[moduleName] = true;
+        var moduleState = store.getState()[moduleName];
+        var handlers = new HandlersClass(initState, moduleState);
+        handlers.moduleName = moduleName;
+        handlers.store = store;
+        var actions = injectActions(store, moduleName, handlers);
+        handlers.actions = actions;
 
-      if (!moduleState) {
-        var initAction = actions.INIT(handlers.initState);
-        var action = store.dispatch(initAction);
+        if (!moduleState) {
+          var initAction = actions.INIT(handlers.initState);
+          var action = store.dispatch(initAction);
 
-        if (isPromise(action)) {
-          return action;
+          if (isPromise(action)) {
+            return action;
+          } else {
+            return Promise.resolve(void 0);
+          }
         } else {
           return Promise.resolve(void 0);
         }
       } else {
         return Promise.resolve(void 0);
       }
-    } else {
-      return Promise.resolve(void 0);
-    }
-  };
+    };
 
-  fun.namespace = namespace;
-  fun.initState = initState;
-  return fun;
+    fun.moduleName = moduleName;
+    fun.initState = initState;
+    return fun;
+  };
 }
 export function isPromiseModule(module) {
   return typeof module['then'] === 'function';

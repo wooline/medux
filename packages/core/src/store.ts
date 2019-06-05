@@ -114,8 +114,8 @@ export function buildStore(
     if (!currentState.views) {
       currentState.views = {};
     }
-    Object.keys(storeReducers).forEach(namespace => {
-      currentState[namespace] = storeReducers[namespace](currentState[namespace], action);
+    Object.keys(storeReducers).forEach(moduleName => {
+      currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
     if (action.type === ActionTypes.F_VIEW_INVALID) {
       const views: CurrentViews = getActionData(action);
@@ -131,24 +131,24 @@ export function buildStore(
 
     if (handlerModules.length > 0) {
       const orderList: string[] = action.priority ? [...action.priority] : [];
-      handlerModules.forEach(namespace => {
-        const fun = handlers[namespace];
+      handlerModules.forEach(moduleName => {
+        const fun = handlers[moduleName];
         if (fun.__isHandler__) {
-          orderList.push(namespace);
+          orderList.push(moduleName);
         } else {
-          orderList.unshift(namespace);
+          orderList.unshift(moduleName);
         }
       });
       const moduleNameMap: {[key: string]: boolean} = {};
-      orderList.forEach(namespace => {
-        if (!moduleNameMap[namespace]) {
-          moduleNameMap[namespace] = true;
-          const fun = handlers[namespace];
-          currentState[namespace] = fun(getActionData(action));
+      orderList.forEach(moduleName => {
+        if (!moduleNameMap[moduleName]) {
+          moduleNameMap[moduleName] = true;
+          const fun = handlers[moduleName];
+          currentState[moduleName] = fun(getActionData(action));
         }
       });
     }
-    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(namespace => rootState[namespace] !== currentState[namespace]);
+    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
   };
@@ -168,26 +168,26 @@ export function buildStore(
 
     if (handlerModules.length > 0) {
       const orderList: string[] = action.priority ? [...action.priority] : [];
-      handlerModules.forEach(namespace => {
-        const fun = handlers[namespace];
+      handlerModules.forEach(moduleName => {
+        const fun = handlers[moduleName];
         if (fun.__isHandler__) {
-          orderList.push(namespace);
+          orderList.push(moduleName);
         } else {
-          orderList.unshift(namespace);
+          orderList.unshift(moduleName);
         }
       });
       const moduleNameMap: {[key: string]: boolean} = {};
       const promiseResults: Promise<any>[] = [];
-      orderList.forEach(namespace => {
-        if (!moduleNameMap[namespace]) {
-          moduleNameMap[namespace] = true;
-          const fun = handlers[namespace];
+      orderList.forEach(moduleName => {
+        if (!moduleNameMap[moduleName]) {
+          moduleNameMap[moduleName] = true;
+          const fun = handlers[moduleName];
           const effectResult = fun(getActionData(action));
           const decorators = fun.__decorators__;
           if (decorators) {
             const results: any[] = [];
             decorators.forEach((decorator, index) => {
-              results[index] = decorator[0](action, namespace, effectResult);
+              results[index] = decorator[0](action, moduleName, effectResult);
             });
             fun.__decoratorResults__ = results;
           }

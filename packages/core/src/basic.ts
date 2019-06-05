@@ -41,7 +41,7 @@ export interface ModelStore extends Store {
   _medux_: {
     reducerMap: ReducerMap;
     effectMap: EffectMap;
-    injectedModules: {[namespace: string]: boolean};
+    injectedModules: {[moduleName: string]: boolean};
     currentViews: CurrentViews;
     prevState: {[key: string]: any};
     currentState: {[key: string]: any};
@@ -86,24 +86,24 @@ export interface BaseModuleState {
   isModule?: boolean;
   loading?: {[key: string]: LoadingState};
 }
-export function getModuleActionCreatorList(namespace: string): ActionCreatorList {
+export function getModuleActionCreatorList(moduleName: string): ActionCreatorList {
   // if (window["Proxy"]) {
   //   actions = new window["Proxy"](
   //     {},
   //     {
   //       get: (target: {}, key: string) => {
-  //         return (data: any) => ({ type: namespace + "/" + key, data });
+  //         return (data: any) => ({ type: moduleName + "/" + key, data });
   //       }
   //     }
   //   );
   // } else {
-  //   actions = getModuleActions(namespace) as any;
+  //   actions = getModuleActions(moduleName) as any;
   // }
-  if (MetaData.actionCreatorMap[namespace]) {
-    return MetaData.actionCreatorMap[namespace];
+  if (MetaData.actionCreatorMap[moduleName]) {
+    return MetaData.actionCreatorMap[moduleName];
   } else {
     const obj = {};
-    MetaData.actionCreatorMap[namespace] = obj;
+    MetaData.actionCreatorMap[moduleName] = obj;
     return obj;
   }
 }
@@ -195,13 +195,13 @@ function transformAction(actionName: string, action: ActionHandler, listenerModu
   actionHandlerMap[actionName][listenerModule] = action;
 }
 
-function addModuleActionCreatorList(namespace: string, actionName: string) {
-  const actions = getModuleActionCreatorList(namespace);
+function addModuleActionCreatorList(moduleName: string, actionName: string) {
+  const actions = getModuleActionCreatorList(moduleName);
   if (!actions[actionName]) {
-    actions[actionName] = payload => ({type: namespace + NSP + actionName, payload});
+    actions[actionName] = payload => ({type: moduleName + NSP + actionName, payload});
   }
 }
-export function injectActions(store: ModelStore, namespace: string, handlers: ActionHandlerList) {
+export function injectActions(store: ModelStore, moduleName: string, handlers: ActionHandlerList) {
   for (const actionName in handlers) {
     if (typeof handlers[actionName] === 'function') {
       let handler = handlers[actionName];
@@ -210,14 +210,14 @@ export function injectActions(store: ModelStore, namespace: string, handlers: Ac
         const arr = actionName.split(NSP);
         if (arr[1]) {
           handler.__isHandler__ = true;
-          transformAction(actionName, handler, namespace, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+          transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
         } else {
           handler.__isHandler__ = false;
-          transformAction(namespace + NSP + actionName, handler, namespace, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-          addModuleActionCreatorList(namespace, actionName);
+          transformAction(moduleName + NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+          addModuleActionCreatorList(moduleName, actionName);
         }
       }
     }
   }
-  return getModuleActionCreatorList(namespace);
+  return getModuleActionCreatorList(moduleName);
 }

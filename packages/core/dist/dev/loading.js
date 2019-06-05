@@ -6,9 +6,9 @@ var depthTime = 2;
 export function setLoadingDepthTime(second) {
   depthTime = second;
 }
-export function setLoading(item, namespace, group) {
-  if (namespace === void 0) {
-    namespace = MetaData.appModuleName;
+export function setLoading(item, moduleName, group) {
+  if (moduleName === void 0) {
+    moduleName = MetaData.appModuleName;
   }
 
   if (group === void 0) {
@@ -19,7 +19,7 @@ export function setLoading(item, namespace, group) {
     return item;
   }
 
-  var key = namespace + NSP + group;
+  var key = moduleName + NSP + group;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
@@ -29,7 +29,7 @@ export function setLoading(item, namespace, group) {
       if (store) {
         var _actions;
 
-        var actions = getModuleActionCreatorList(namespace)[ActionTypes.M_LOADING];
+        var actions = getModuleActionCreatorList(moduleName)[ActionTypes.M_LOADING];
         var action = actions((_actions = {}, _actions[group] = e.data, _actions));
         store.dispatch(action);
       }

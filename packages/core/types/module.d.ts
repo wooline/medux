@@ -1,7 +1,7 @@
 import { Middleware, ReducersMapObject, StoreEnhancer, Store } from 'redux';
 import { Action, ActionCreatorList, ModelStore, BaseModuleState } from './basic';
 export interface Model<ModuleState extends BaseModuleState = BaseModuleState> {
-    namespace: string;
+    moduleName: string;
     initState: ModuleState;
     (store: ModelStore): Promise<void>;
 }
@@ -10,6 +10,7 @@ export interface Module<M extends Model = Model, VS extends {
 } = {
     [key: string]: any;
 }> {
+    moduleName: string;
     model: M;
     views: VS;
 }
@@ -30,13 +31,14 @@ export declare type RootState<G extends ModuleGetter = {}> = {
 } & {
     [key in keyof G]?: ModuleStates<ReturnModule<G[key]>>;
 };
-export declare function exportModule<T extends ActionCreatorList>(namespace: string): {
-    namespace: string;
+export declare function exportFacade<T extends ActionCreatorList, N extends string>(moduleName: N): {
+    moduleName: N;
     actions: T;
 };
-export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState<{}>, N extends string> {
+export declare function exportModule<M extends Model, V, N extends string>(moduleName: N, model: M, views: V): Module<M, V>;
+export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
     protected readonly initState: S;
-    protected readonly namespace: N;
+    protected readonly moduleName: string;
     protected readonly store: ModelStore;
     protected readonly actions: Actions<this>;
     constructor(initState: S, presetData?: any);
@@ -62,9 +64,9 @@ declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => 
 export declare type Actions<Ins> = {
     [K in keyof Ins]: Ins[K] extends (...args: any[]) => any ? Handler<Ins[K]> : never;
 };
-export declare function exportModel<S extends BaseModuleState, N extends string>(namespace: N, HandlersClass: {
-    new (initState: S, presetData?: any): BaseModuleHandlers<BaseModuleState, RootState<{}>, N>;
-}, initState: S): Model<S>;
+export declare function exportModel<S extends BaseModuleState>(HandlersClass: {
+    new (initState: S, presetData?: any): BaseModuleHandlers<BaseModuleState, RootState>;
+}, initState: S): (moduleName: string) => Model<S>;
 export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
 export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
 export declare function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['model']>;

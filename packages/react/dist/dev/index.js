@@ -130,21 +130,21 @@ export var exportView = function exportView(ComponentView, model, viewName) {
     return function View(props) {
       var _useState2 = useState(function () {
         var state = getClientStore().getState();
-        var namespace = model.namespace;
+        var moduleName = model.moduleName;
         model(getClientStore()).then(function () {
           if (!modelReady) {
             setModelReady(true);
           }
         });
-        return !!state[namespace];
+        return !!state[moduleName];
       }),
           modelReady = _useState2[0],
           setModelReady = _useState2[1];
 
       useEffect(function () {
-        viewWillMount(model.namespace, viewName);
+        viewWillMount(model.moduleName, viewName);
         return function () {
-          viewWillUnmount(model.namespace, viewName);
+          viewWillUnmount(model.moduleName, viewName);
         };
       }, []);
       return modelReady ? React.createElement(ComponentView, props) : null;

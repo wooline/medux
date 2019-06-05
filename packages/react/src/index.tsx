@@ -139,18 +139,18 @@ export const exportView: ExportView<ComponentType> = (ComponentView, model, view
     return function View(props) {
       const [modelReady, setModelReady] = useState(() => {
         const state = getClientStore().getState();
-        const namespace = model.namespace;
+        const moduleName = model.moduleName;
         model(getClientStore()).then(() => {
           if (!modelReady) {
             setModelReady(true);
           }
         });
-        return !!state[namespace];
+        return !!state[moduleName];
       });
       useEffect(() => {
-        viewWillMount(model.namespace, viewName);
+        viewWillMount(model.moduleName, viewName);
         return () => {
-          viewWillUnmount(model.namespace, viewName);
+          viewWillUnmount(model.moduleName, viewName);
         };
       }, []);
       return modelReady ? <ComponentView {...props} /> : null;

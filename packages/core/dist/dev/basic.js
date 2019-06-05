@@ -23,24 +23,24 @@ export var MetaData = {
   appModuleName: null
 };
 export var client = MetaData.isServer ? undefined : window || global;
-export function getModuleActionCreatorList(namespace) {
+export function getModuleActionCreatorList(moduleName) {
   // if (window["Proxy"]) {
   //   actions = new window["Proxy"](
   //     {},
   //     {
   //       get: (target: {}, key: string) => {
-  //         return (data: any) => ({ type: namespace + "/" + key, data });
+  //         return (data: any) => ({ type: moduleName + "/" + key, data });
   //       }
   //     }
   //   );
   // } else {
-  //   actions = getModuleActions(namespace) as any;
+  //   actions = getModuleActions(moduleName) as any;
   // }
-  if (MetaData.actionCreatorMap[namespace]) {
-    return MetaData.actionCreatorMap[namespace];
+  if (MetaData.actionCreatorMap[moduleName]) {
+    return MetaData.actionCreatorMap[moduleName];
   } else {
     var obj = {};
-    MetaData.actionCreatorMap[namespace] = obj;
+    MetaData.actionCreatorMap[moduleName] = obj;
     return obj;
   }
 }
@@ -146,20 +146,20 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
   actionHandlerMap[actionName][listenerModule] = action;
 }
 
-function addModuleActionCreatorList(namespace, actionName) {
-  var actions = getModuleActionCreatorList(namespace);
+function addModuleActionCreatorList(moduleName, actionName) {
+  var actions = getModuleActionCreatorList(moduleName);
 
   if (!actions[actionName]) {
     actions[actionName] = function (payload) {
       return {
-        type: namespace + NSP + actionName,
+        type: moduleName + NSP + actionName,
         payload: payload
       };
     };
   }
 }
 
-export function injectActions(store, namespace, handlers) {
+export function injectActions(store, moduleName, handlers) {
   for (var _actionName in handlers) {
     if (typeof handlers[_actionName] === 'function') {
       var handler = handlers[_actionName];
@@ -171,16 +171,16 @@ export function injectActions(store, namespace, handlers) {
 
         if (arr[1]) {
           handler.__isHandler__ = true;
-          transformAction(_actionName, handler, namespace, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+          transformAction(_actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
         } else {
           handler.__isHandler__ = false;
-          transformAction(namespace + NSP + _actionName, handler, namespace, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-          addModuleActionCreatorList(namespace, _actionName);
+          transformAction(moduleName + NSP + _actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+          addModuleActionCreatorList(moduleName, _actionName);
         }
       }
     }
   }
 
-  return getModuleActionCreatorList(namespace);
+  return getModuleActionCreatorList(moduleName);
 }
 //# sourceMappingURL=basic.js.map

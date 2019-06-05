@@ -164,8 +164,8 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
       currentState.views = {};
     }
 
-    Object.keys(storeReducers).forEach(function (namespace) {
-      currentState[namespace] = storeReducers[namespace](currentState[namespace], action);
+    Object.keys(storeReducers).forEach(function (moduleName) {
+      currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
 
     if (action.type === ActionTypes.F_VIEW_INVALID) {
@@ -186,27 +186,27 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
 
     if (handlerModules.length > 0) {
       var orderList = action.priority ? [].concat(action.priority) : [];
-      handlerModules.forEach(function (namespace) {
-        var fun = handlers[namespace];
+      handlerModules.forEach(function (moduleName) {
+        var fun = handlers[moduleName];
 
         if (fun.__isHandler__) {
-          orderList.push(namespace);
+          orderList.push(moduleName);
         } else {
-          orderList.unshift(namespace);
+          orderList.unshift(moduleName);
         }
       });
       var moduleNameMap = {};
-      orderList.forEach(function (namespace) {
-        if (!moduleNameMap[namespace]) {
-          moduleNameMap[namespace] = true;
-          var fun = handlers[namespace];
-          currentState[namespace] = fun(getActionData(action));
+      orderList.forEach(function (moduleName) {
+        if (!moduleNameMap[moduleName]) {
+          moduleNameMap[moduleName] = true;
+          var fun = handlers[moduleName];
+          currentState[moduleName] = fun(getActionData(action));
         }
       });
     }
 
-    var changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(function (namespace) {
-      return rootState[namespace] !== currentState[namespace];
+    var changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(function (moduleName) {
+      return rootState[moduleName] !== currentState[moduleName];
     });
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
@@ -232,28 +232,28 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
 
         if (handlerModules.length > 0) {
           var orderList = action.priority ? [].concat(action.priority) : [];
-          handlerModules.forEach(function (namespace) {
-            var fun = handlers[namespace];
+          handlerModules.forEach(function (moduleName) {
+            var fun = handlers[moduleName];
 
             if (fun.__isHandler__) {
-              orderList.push(namespace);
+              orderList.push(moduleName);
             } else {
-              orderList.unshift(namespace);
+              orderList.unshift(moduleName);
             }
           });
           var moduleNameMap = {};
           var promiseResults = [];
-          orderList.forEach(function (namespace) {
-            if (!moduleNameMap[namespace]) {
-              moduleNameMap[namespace] = true;
-              var fun = handlers[namespace];
+          orderList.forEach(function (moduleName) {
+            if (!moduleNameMap[moduleName]) {
+              moduleNameMap[moduleName] = true;
+              var fun = handlers[moduleName];
               var effectResult = fun(getActionData(action));
               var decorators = fun.__decorators__;
 
               if (decorators) {
                 var results = [];
                 decorators.forEach(function (decorator, index) {
-                  results[index] = decorator[0](action, namespace, effectResult);
+                  results[index] = decorator[0](action, moduleName, effectResult);
                 });
                 fun.__decoratorResults__ = results;
               }
