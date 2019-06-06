@@ -23,10 +23,10 @@ export function exportFacade(moduleName) {
     actions: actions
   };
 }
-export function exportModule(moduleName, model, views) {
+export function exportModule(moduleName, loadModel, views) {
   return {
     moduleName: moduleName,
-    model: model,
+    model: loadModel(moduleName),
     views: views
   };
 }
@@ -158,10 +158,10 @@ export function loadModel(getModule) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      return module.model;
+      return module.default.model;
     });
   } else {
-    return Promise.resolve(result.model);
+    return Promise.resolve(result.default.model);
   }
 }
 export function getView(getModule, viewName) {
@@ -169,10 +169,10 @@ export function getView(getModule, viewName) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      return module.views[viewName];
+      return module.default.views[viewName];
     });
   } else {
-    return result.views[viewName];
+    return result.default.views[viewName];
   }
 }
 
@@ -229,8 +229,8 @@ export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
-    var initModel = appModule.model(store);
-    render(store, appModule.model, appModule.views, ssrInitStoreKey);
+    var initModel = appModule.default.model(store);
+    render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey);
     return initModel;
   });
 }
@@ -243,10 +243,10 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   var appModule = moduleGetter[appModuleName]();
-  return appModule.model(store).catch(function (err) {
+  return appModule.default.model(store).catch(function (err) {
     return store.dispatch(errorAction(err));
   }).then(function () {
-    return render(store, appModule.model, appModule.views, ssrInitStoreKey);
+    return render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey);
   });
 }
 //# sourceMappingURL=module.js.map

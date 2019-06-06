@@ -10,9 +10,11 @@ export interface Module<M extends Model = Model, VS extends {
 } = {
     [key: string]: any;
 }> {
-    moduleName: string;
-    model: M;
-    views: VS;
+    default: {
+        moduleName: string;
+        model: M;
+        views: VS;
+    };
 }
 export declare type GetModule<M extends Module = Module> = () => M | Promise<M>;
 export interface ModuleGetter {
@@ -35,7 +37,7 @@ export declare function exportFacade<T extends ActionCreatorList>(moduleName: st
     moduleName: string;
     actions: T;
 };
-export declare function exportModule<M extends Model, V, N extends string>(moduleName: N, model: M, views: V): Module<M, V>;
+export declare function exportModule<L extends (moduleName?: string) => Model, V, N extends string>(moduleName: N, loadModel: L, views: V): Module<ReturnType<L>, V>['default'];
 export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
     protected readonly initState: S;
     protected readonly moduleName: string;
@@ -69,8 +71,8 @@ export declare function exportModel<S extends BaseModuleState>(HandlersClass: {
 }, initState: S): (moduleName?: string) => Model<S>;
 export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
 export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
-export declare function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['model']>;
-export declare function getView<M extends Module, N extends Extract<keyof M['views'], string>>(getModule: GetModule<M>, viewName: N): M['views'][N] | Promise<M['views'][N]>;
+export declare function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['default']['model']>;
+export declare function getView<M extends Module, N extends Extract<keyof M['default']['views'], string>>(getModule: GetModule<M>, viewName: N): M['default']['views'][N] | Promise<M['default']['views'][N]>;
 export declare type ExportView<C> = (ComponentView: C, loadModel: (moduleName?: string) => Model, viewName: string) => C;
 export declare type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N) => V[N];
 export interface StoreOptions {

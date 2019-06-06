@@ -10,9 +10,11 @@ export interface Model<ModuleState extends BaseModuleState = BaseModuleState> {
 }
 
 export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}> {
-  moduleName: string;
-  model: M;
-  views: VS;
+  default: {
+    moduleName: string;
+    model: M;
+    views: VS;
+  };
 }
 export type GetModule<M extends Module = Module> = () => M | Promise<M>;
 
@@ -35,10 +37,10 @@ export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
     actions,
   };
 }
-export function exportModule<M extends Model, V, N extends string>(moduleName: N, model: M, views: V): Module<M, V> {
+export function exportModule<L extends (moduleName?: string) => Model, V, N extends string>(moduleName: N, loadModel: L, views: V): Module<ReturnType<L>, V>['default'] {
   return {
     moduleName,
-    model,
+    model: loadModel(moduleName) as any,
     views,
   };
 }
@@ -159,20 +161,20 @@ export function isPromiseModule(module: Module | Promise<Module>): module is Pro
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
-export function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['model']> {
+export function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['default']['model']> {
   const result = getModule();
   if (isPromiseModule(result)) {
-    return result.then(module => module.model);
+    return result.then(module => module.default.model);
   } else {
-    return Promise.resolve(result.model);
+    return Promise.resolve(result.default.model);
   }
 }
-export function getView<M extends Module, N extends Extract<keyof M['views'], string>>(getModule: GetModule<M>, viewName: N): M['views'][N] | Promise<M['views'][N]> {
+export function getView<M extends Module, N extends Extract<keyof M['default']['views'], string>>(getModule: GetModule<M>, viewName: N): M['default']['views'][N] | Promise<M['default']['views'][N]> {
   const result = getModule();
   if (isPromiseModule(result)) {
-    return result.then(module => module.views[viewName]);
+    return result.then(module => module.default.views[viewName]);
   } else {
-    return result.views[viewName];
+    return result.default.views[viewName];
   }
 }
 export type ExportView<C> = (ComponentView: C, loadModel: (moduleName?: string) => Model, viewName: string) => C;
@@ -230,8 +232,8 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
   }
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
-    const initModel = appModule.model(store);
-    render(store as any, appModule.model, appModule.views, ssrInitStoreKey);
+    const initModel = appModule.default.model(store);
+    render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
     return initModel;
   });
 }
@@ -246,12 +248,12 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = moduleGetter[appModuleName]() as Module;
 
-  return appModule
+  return appModule.default
     .model(store)
     .catch(err => {
       return store.dispatch(errorAction(err));
     })
     .then(() => {
-      return render(store as any, appModule.model, appModule.views, ssrInitStoreKey);
+      return render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
     });
 }
