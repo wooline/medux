@@ -21,9 +21,12 @@ export type GetModule<M extends Module = Module> = () => M | Promise<M>;
 export interface ModuleGetter {
   [moduleName: string]: GetModule;
 }
+export function defineModuleGetter<E extends string, T extends {[K in E]: () => any}>(getter: T) {
+  return getter as {[key in E]: T[key]};
+}
 export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
-export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : never;
-type ModuleStates<M extends any> = M['model']['initState'];
+export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
+type ModuleStates<M extends any> = M['default']['model']['initState'];
 type ModuleViews<M extends any> = {[key in keyof M['views']]?: number};
 
 export type RootState<G extends ModuleGetter = {}> = {
@@ -37,7 +40,7 @@ export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
     actions,
   };
 }
-export function exportModule<L extends (moduleName?: string) => Model, V, N extends string>(moduleName: N, loadModel: L, views: V): Module<ReturnType<L>, V>['default'] {
+export function exportModule<L extends (moduleName?: string) => Model, V>(moduleName: string, loadModel: L, views: V): Module<ReturnType<L>, V>['default'] {
   return {
     moduleName,
     model: loadModel(moduleName) as any,
@@ -177,7 +180,7 @@ export function getView<M extends Module, N extends Extract<keyof M['default']['
     return result.default.views[viewName];
   }
 }
-export type ExportView<C> = (ComponentView: C, loadModel: (moduleName?: string) => Model, viewName: string) => C;
+export type ExportView<D> = <C extends D>(ComponentView: C, loadModel: (moduleName?: string) => Model, viewName: string) => C;
 
 export type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(
   moduleGetter: MG,

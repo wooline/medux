@@ -12,4 +12,4 @@ export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof
     ssrInitStoreKey: string;
 }>;
 export declare const loadView: LoadView;
-export declare const exportView: ExportView<ComponentType>;
+export declare const exportView: ExportView<ComponentType<any>>;

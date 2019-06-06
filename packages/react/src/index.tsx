@@ -132,7 +132,8 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, loadingCo
     return Component ? <Component {...props} /> : loadingComponent;
   } as any;
 };
-export const exportView: ExportView<ComponentType> = (ComponentView, loadModel, viewName) => {
+
+export const exportView: ExportView<ComponentType<any>> = (ComponentView: any, loadModel, viewName) => {
   if (isServer()) {
     return ComponentView;
   } else {

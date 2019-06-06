@@ -16,6 +16,9 @@ var _class, _temp;
 import { reducer, getModuleActionCreatorList, isPromise, injectActions, MetaData } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
+export function defineModuleGetter(getter) {
+  return getter;
+}
 export function exportFacade(moduleName) {
   var actions = getModuleActionCreatorList(moduleName);
   return {
