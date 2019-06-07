@@ -40,7 +40,12 @@ export declare function exportFacade<T extends ActionCreatorList>(moduleName: st
     moduleName: string;
     actions: T;
 };
-export declare function exportModule<L extends (moduleName?: string) => Model, V>(moduleName: string, loadModel: L, views: V): Module<ReturnType<L>, V>['default'];
+export declare type ExportModule<Component> = <N extends string, S extends BaseModuleState, V extends {
+    [key: string]: Component;
+}>(moduleName: N, initState: S, ActionHandles: {
+    new (initState: S, presetData?: any): BaseModuleHandlers<S, any>;
+}, views: V) => Module<Model<S>, V>['default'];
+export declare const exportModule: ExportModule<any>;
 export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
     protected readonly initState: S;
     protected readonly moduleName: string;
@@ -69,14 +74,10 @@ declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => 
 export declare type Actions<Ins> = {
     [K in keyof Ins]: Ins[K] extends (...args: any[]) => any ? Handler<Ins[K]> : never;
 };
-export declare function exportModel<S extends BaseModuleState>(HandlersClass: {
-    new (initState: S, presetData?: any): BaseModuleHandlers<BaseModuleState, RootState>;
-}, initState: S): (moduleName?: string) => Model<S>;
 export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
 export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
 export declare function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['default']['model']>;
 export declare function getView<M extends Module, N extends Extract<keyof M['default']['views'], string>>(getModule: GetModule<M>, viewName: N): M['default']['views'][N] | Promise<M['default']['views'][N]>;
-export declare type ExportView<D> = <C extends D>(ComponentView: C, loadModel: (moduleName?: string) => Model, viewName: string) => C;
 export declare type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N) => V[N];
 export interface StoreOptions {
     ssrInitStoreKey?: string;

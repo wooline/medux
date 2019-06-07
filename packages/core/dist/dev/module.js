@@ -26,13 +26,44 @@ export function exportFacade(moduleName) {
     actions: actions
   };
 }
-export function exportModule(moduleName, loadModel, views) {
+export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
+  var model = function model(store) {
+    var hasInjected = store._medux_.injectedModules[moduleName];
+
+    if (!hasInjected) {
+      store._medux_.injectedModules[moduleName] = true;
+      var moduleState = store.getState()[moduleName];
+      var handlers = new ActionHandles(initState, moduleState);
+      handlers.moduleName = moduleName;
+      handlers.store = store;
+      var actions = injectActions(store, moduleName, handlers);
+      handlers.actions = actions;
+
+      if (!moduleState) {
+        var initAction = actions.INIT(handlers.initState);
+        var action = store.dispatch(initAction);
+
+        if (isPromise(action)) {
+          return action;
+        } else {
+          return Promise.resolve(void 0);
+        }
+      } else {
+        return Promise.resolve(void 0);
+      }
+    } else {
+      return Promise.resolve(void 0);
+    }
+  };
+
+  model.moduleName = moduleName;
+  model.initState = initState;
   return {
     moduleName: moduleName,
-    model: loadModel(moduleName),
+    model: model,
     views: views
   };
-}
+};
 export var BaseModuleHandlers = (_class = (_temp =
 /*#__PURE__*/
 function () {
@@ -105,51 +136,6 @@ function () {
 
   return BaseModuleHandlers;
 }(), _temp), (_applyDecoratedDescriptor(_class.prototype, "INIT", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "INIT"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "UPDATE", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "UPDATE"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "LOADING", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "LOADING"), _class.prototype)), _class);
-export function exportModel(HandlersClass, initState) {
-  var wrap = function wrap(moduleName) {
-    if (moduleName === void 0) {
-      moduleName = '';
-    }
-
-    if (!wrap.loadModule) {
-      wrap.loadModule = function (store) {
-        var hasInjected = store._medux_.injectedModules[moduleName];
-
-        if (!hasInjected) {
-          store._medux_.injectedModules[moduleName] = true;
-          var moduleState = store.getState()[moduleName];
-          var handlers = new HandlersClass(initState, moduleState);
-          handlers.moduleName = moduleName;
-          handlers.store = store;
-          var actions = injectActions(store, moduleName, handlers);
-          handlers.actions = actions;
-
-          if (!moduleState) {
-            var initAction = actions.INIT(handlers.initState);
-            var action = store.dispatch(initAction);
-
-            if (isPromise(action)) {
-              return action;
-            } else {
-              return Promise.resolve(void 0);
-            }
-          } else {
-            return Promise.resolve(void 0);
-          }
-        } else {
-          return Promise.resolve(void 0);
-        }
-      };
-
-      wrap.loadModule.moduleName = moduleName;
-      wrap.loadModule.initState = initState;
-    }
-
-    return wrap.loadModule;
-  };
-
-  return wrap;
-}
 export function isPromiseModule(module) {
   return typeof module['then'] === 'function';
 }

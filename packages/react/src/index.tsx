@@ -1,4 +1,4 @@
-import React, {ReactElement, ComponentType, useState, useEffect} from 'react';
+import React, {ReactElement, ComponentType, FunctionComponent, useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 import {Provider} from 'react-redux';
@@ -6,8 +6,8 @@ import {createBrowserHistory} from 'history';
 import createMemoryHistory from 'history/createMemoryHistory';
 import {withRouter} from 'react-router-dom';
 import {ConnectedRouter, connectRouter, routerMiddleware} from 'connected-react-router';
-import {renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore} from '@medux/core';
-import {ModuleGetter, StoreOptions, LoadView, ExportView} from '@medux/core/types/export';
+import {renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule} from '@medux/core';
+import {Model, ModuleGetter, StoreOptions, LoadView, ExportModule} from '@medux/core/types/export';
 
 export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 
@@ -116,8 +116,8 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
   );
 }
 
-export const loadView: LoadView = (moduleGetter, moduleName, viewName, loadingComponent: React.ReactNode = null) => {
-  return function Loading(props: any) {
+export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
+  return function Wrap(props: any) {
     const [Component, setComponent] = useState<ComponentType | null>(() => {
       const moduleViewResult = getView(moduleGetter[moduleName], viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
@@ -129,18 +129,17 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, loadingCo
         return moduleViewResult;
       }
     });
-    return Component ? <Component {...props} /> : loadingComponent;
+    return Component ? <Component {...props} /> : Loading ? <Loading {...props} /> : null;
   } as any;
 };
 
-export const exportView: ExportView<ComponentType<any>> = (ComponentView: any, loadModel, viewName) => {
+function exportView<V extends ComponentType>(Component: V, model: Model, viewName: string, Loading?: ComponentType<any>): V {
   if (isServer()) {
-    return ComponentView;
+    return Component;
   } else {
-    return function View(props) {
+    const View: FunctionComponent<any> = function View(props: any) {
       const [modelReady, setModelReady] = useState(() => {
         const state = getClientStore().getState();
-        const model = loadModel();
         const moduleName = model.moduleName;
         model(getClientStore()).then(() => {
           if (!modelReady) {
@@ -150,13 +149,28 @@ export const exportView: ExportView<ComponentType<any>> = (ComponentView: any, l
         return !!state[moduleName];
       });
       useEffect(() => {
-        const model = loadModel();
         viewWillMount(model.moduleName, viewName);
         return () => {
           viewWillUnmount(model.moduleName, viewName);
         };
       }, []);
-      return modelReady ? <ComponentView {...props} /> : null;
+      return modelReady ? <Component {...props} /> : Loading ? <Loading {...props} /> : null;
     };
+    View.propTypes = Component.propTypes;
+    View.contextTypes = Component.contextTypes;
+    View.defaultProps = Component.defaultProps;
+    return View as any;
   }
+}
+
+export const exportModule: ExportModule<ComponentType<any>> = (moduleName, initState, ActionHandles, views, Loading?: ComponentType<any>) => {
+  const data = baseExportModule(moduleName, initState, ActionHandles, views);
+  const maps: typeof views = {} as any;
+  for (const key in data.views) {
+    if (data.views.hasOwnProperty(key)) {
+      maps[key] = exportView(data.views[key], data.model, key, Loading);
+    }
+  }
+  data.views = maps;
+  return data;
 };

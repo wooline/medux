@@ -6,7 +6,7 @@ import { createBrowserHistory } from 'history';
 import createMemoryHistory from 'history/createMemoryHistory';
 import { withRouter } from 'react-router-dom';
 import { ConnectedRouter, connectRouter, routerMiddleware } from 'connected-react-router';
-import { renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore } from '@medux/core';
+import { renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule } from '@medux/core';
 export function buildApp(moduleGetter, appModuleName, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};
@@ -99,12 +99,8 @@ export function buildSSR(moduleGetter, appModuleName, initialEntries, storeOptio
     };
   }, moduleGetter, appModuleName, storeOptions);
 }
-export var loadView = function loadView(moduleGetter, moduleName, viewName, loadingComponent) {
-  if (loadingComponent === void 0) {
-    loadingComponent = null;
-  }
-
-  return function Loading(props) {
+export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
+  return function Wrap(props) {
     var _useState = useState(function () {
       var moduleViewResult = getView(moduleGetter[moduleName], viewName);
 
@@ -120,17 +116,17 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, load
         Component = _useState[0],
         setComponent = _useState[1];
 
-    return Component ? React.createElement(Component, props) : loadingComponent;
+    return Component ? React.createElement(Component, props) : Loading ? React.createElement(Loading, props) : null;
   };
 };
-export var exportView = function exportView(ComponentView, loadModel, viewName) {
+
+function exportView(Component, model, viewName, Loading) {
   if (isServer()) {
-    return ComponentView;
+    return Component;
   } else {
-    return function View(props) {
+    var View = function View(props) {
       var _useState2 = useState(function () {
         var state = getClientStore().getState();
-        var model = loadModel();
         var moduleName = model.moduleName;
         model(getClientStore()).then(function () {
           if (!modelReady) {
@@ -143,14 +139,32 @@ export var exportView = function exportView(ComponentView, loadModel, viewName) 
           setModelReady = _useState2[1];
 
       useEffect(function () {
-        var model = loadModel();
         viewWillMount(model.moduleName, viewName);
         return function () {
           viewWillUnmount(model.moduleName, viewName);
         };
       }, []);
-      return modelReady ? React.createElement(ComponentView, props) : null;
+      return modelReady ? React.createElement(Component, props) : Loading ? React.createElement(Loading, props) : null;
     };
+
+    View.propTypes = Component.propTypes;
+    View.contextTypes = Component.contextTypes;
+    View.defaultProps = Component.defaultProps;
+    return View;
   }
+}
+
+export var exportModule = function exportModule(moduleName, initState, ActionHandles, views, Loading) {
+  var data = baseExportModule(moduleName, initState, ActionHandles, views);
+  var maps = {};
+
+  for (var _key in data.views) {
+    if (data.views.hasOwnProperty(_key)) {
+      maps[_key] = exportView(data.views[_key], data.model, _key, Loading);
+    }
+  }
+
+  data.views = maps;
+  return data;
 };
 //# sourceMappingURL=index.js.map

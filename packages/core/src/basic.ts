@@ -1,5 +1,4 @@
 /*global global:true process:true*/
-
 import {LoadingState} from './sprite';
 import {setLoading} from './loading';
 
@@ -34,7 +33,7 @@ export interface ActionCreatorList {
 }
 export type ActionCreator = (payload?: any) => Action;
 interface Store {
-  dispatch(action: Action): void;
+  dispatch(action: Action): Action | Promise<void>;
   getState(): {[key: string]: any};
 }
 export interface ModelStore extends Store {

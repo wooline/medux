@@ -16,7 +16,7 @@ export interface ActionCreatorList {
 }
 export declare type ActionCreator = (payload?: any) => Action;
 interface Store {
-    dispatch(action: Action): void;
+    dispatch(action: Action): Action | Promise<void>;
     getState(): {
         [key: string]: any;
     };

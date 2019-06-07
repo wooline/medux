@@ -40,13 +40,48 @@ export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
     actions,
   };
 }
-export function exportModule<L extends (moduleName?: string) => Model, V>(moduleName: string, loadModel: L, views: V): Module<ReturnType<L>, V>['default'] {
+export type ExportModule<Component> = <N extends string, S extends BaseModuleState, V extends {[key: string]: Component}>(
+  moduleName: N,
+  initState: S,
+  ActionHandles: {new (initState: S, presetData?: any): BaseModuleHandlers<S, any>},
+  views: V
+) => Module<Model<S>, V>['default'];
+
+export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
+  const model = (store: ModelStore) => {
+    const hasInjected = store._medux_.injectedModules[moduleName];
+    if (!hasInjected) {
+      store._medux_.injectedModules[moduleName] = true;
+      const moduleState: BaseModuleState = store.getState()[moduleName];
+      const handlers = new ActionHandles(initState, moduleState);
+      (handlers as any).moduleName = moduleName;
+      (handlers as any).store = store;
+      const actions = injectActions(store, moduleName, handlers as any);
+      (handlers as any).actions = actions;
+      if (!moduleState) {
+        const initAction = actions.INIT((handlers as any).initState);
+        const action = store.dispatch(initAction);
+        if (isPromise(action)) {
+          return action;
+        } else {
+          return Promise.resolve(void 0);
+        }
+      } else {
+        return Promise.resolve(void 0);
+      }
+    } else {
+      return Promise.resolve(void 0);
+    }
+  };
+  model.moduleName = moduleName;
+  model.initState = initState;
   return {
     moduleName,
-    model: loadModel(moduleName) as any,
+    model,
     views,
   };
-}
+};
+
 export class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
   protected readonly initState: S;
   protected readonly moduleName: string = '';
@@ -120,44 +155,7 @@ type Handler<F> = F extends (...args: infer P) => any
   : never;
 
 export type Actions<Ins> = {[K in keyof Ins]: Ins[K] extends (...args: any[]) => any ? Handler<Ins[K]> : never};
-export function exportModel<S extends BaseModuleState>(
-  HandlersClass: {new (initState: S, presetData?: any): BaseModuleHandlers<BaseModuleState, RootState>},
-  initState: S
-): (moduleName?: string) => Model<S> {
-  const wrap: {(moduleName?: string): Model<S>; loadModule?: Model<S>} = (moduleName: string = '') => {
-    if (!wrap.loadModule) {
-      wrap.loadModule = ((store: ModelStore) => {
-        const hasInjected = store._medux_.injectedModules[moduleName];
-        if (!hasInjected) {
-          store._medux_.injectedModules[moduleName] = true;
-          const moduleState: BaseModuleState = store.getState()[moduleName];
-          const handlers = new HandlersClass(initState, moduleState);
-          (handlers as any).moduleName = moduleName;
-          (handlers as any).store = store;
-          const actions = injectActions(store, moduleName, handlers as any);
-          (handlers as any).actions = actions;
-          if (!moduleState) {
-            const initAction = actions.INIT((handlers as any).initState);
-            const action = store.dispatch(initAction);
-            if (isPromise(action)) {
-              return action;
-            } else {
-              return Promise.resolve(void 0);
-            }
-          } else {
-            return Promise.resolve(void 0);
-          }
-        } else {
-          return Promise.resolve(void 0);
-        }
-      }) as any;
-      wrap.loadModule!.moduleName = moduleName;
-      wrap.loadModule!.initState = initState;
-    }
-    return wrap.loadModule!;
-  };
-  return wrap;
-}
+
 export function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
   return typeof module['then'] === 'function';
 }
@@ -180,7 +178,6 @@ export function getView<M extends Module, N extends Extract<keyof M['default']['
     return result.default.views[viewName];
   }
 }
-export type ExportView<D> = <C extends D>(ComponentView: C, loadModel: (moduleName?: string) => Model, viewName: string) => C;
 
 export type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(
   moduleGetter: MG,
@@ -254,7 +251,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   return appModule.default
     .model(store)
     .catch(err => {
-      return store.dispatch(errorAction(err));
+      return store.dispatch(errorAction(err)) as any;
     })
     .then(() => {
       return render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
