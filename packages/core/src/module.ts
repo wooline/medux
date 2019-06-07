@@ -1,11 +1,11 @@
 import {Middleware, ReducersMapObject, StoreEnhancer, Store} from 'redux';
-import {Action, ActionHandler, ActionCreatorList, reducer, getModuleActionCreatorList, ModelStore, BaseModuleState, isPromise, injectActions, MetaData} from './basic';
+import {Action, ActionHandler, ActionCreatorList, reducer, getModuleActionCreatorList, ModelStore, BaseModelState, isPromise, injectActions, MetaData} from './basic';
 import {buildStore} from './store';
 import {errorAction} from './actions';
 
-export interface Model<ModuleState extends BaseModuleState = BaseModuleState> {
+export interface Model<ModelState extends BaseModelState = BaseModelState> {
   moduleName: string;
-  initState: ModuleState;
+  initState: ModelState;
   (store: ModelStore): Promise<void>;
 }
 
@@ -40,10 +40,10 @@ export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
     actions,
   };
 }
-export type ExportModule<Component> = <N extends string, S extends BaseModuleState, V extends {[key: string]: Component}>(
+export type ExportModule<Component> = <N extends string, S extends BaseModelState, V extends {[key: string]: Component}>(
   moduleName: N,
   initState: S,
-  ActionHandles: {new (initState: S, presetData?: any): BaseModuleHandlers<S, any>},
+  ActionHandles: {new (initState: S, presetData?: any): BaseModelHandlers<S, any>},
   views: V
 ) => Module<Model<S>, V>['default'];
 
@@ -52,7 +52,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
     const hasInjected = store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = true;
-      const moduleState: BaseModuleState = store.getState()[moduleName];
+      const moduleState: BaseModelState = store.getState()[moduleName];
       const handlers = new ActionHandles(initState, moduleState);
       (handlers as any).moduleName = moduleName;
       (handlers as any).store = store;
@@ -82,7 +82,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
 };
 
-export class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
+export class BaseModelHandlers<S extends BaseModelState, R extends RootState> {
   protected readonly initState: S;
   protected readonly moduleName: string = '';
   protected readonly store: ModelStore = null as any;

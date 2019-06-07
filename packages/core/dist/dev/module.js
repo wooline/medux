@@ -64,11 +64,11 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
     views: views
   };
 };
-export var BaseModuleHandlers = (_class = (_temp =
+export var BaseModelHandlers = (_class = (_temp =
 /*#__PURE__*/
 function () {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function BaseModuleHandlers(initState, presetData) {
+  function BaseModelHandlers(initState, presetData) {
     this.initState = void 0;
     this.moduleName = '';
     this.store = null;
@@ -77,7 +77,7 @@ function () {
     this.initState = initState;
   }
 
-  var _proto = BaseModuleHandlers.prototype;
+  var _proto = BaseModelHandlers.prototype;
 
   _proto.dispatch = function dispatch(action) {
     return this.store.dispatch(action);
@@ -112,7 +112,7 @@ function () {
     this.dispatch(this.callThisAction(this.UPDATE, _objectSpread({}, this.state, payload)));
   };
 
-  _createClass(BaseModuleHandlers, [{
+  _createClass(BaseModelHandlers, [{
     key: "state",
     get: function get() {
       return this.store._medux_.prevState[this.moduleName];
@@ -134,7 +134,7 @@ function () {
     }
   }]);
 
-  return BaseModuleHandlers;
+  return BaseModelHandlers;
 }(), _temp), (_applyDecoratedDescriptor(_class.prototype, "INIT", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "INIT"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "UPDATE", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "UPDATE"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "LOADING", [reducer], Object.getOwnPropertyDescriptor(_class.prototype, "LOADING"), _class.prototype)), _class);
 export function isPromiseModule(module) {
   return typeof module['then'] === 'function';

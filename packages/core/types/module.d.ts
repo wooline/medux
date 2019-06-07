@@ -1,8 +1,8 @@
 import { Middleware, ReducersMapObject, StoreEnhancer, Store } from 'redux';
-import { Action, ActionCreatorList, ModelStore, BaseModuleState } from './basic';
-export interface Model<ModuleState extends BaseModuleState = BaseModuleState> {
+import { Action, ActionCreatorList, ModelStore, BaseModelState } from './basic';
+export interface Model<ModelState extends BaseModelState = BaseModelState> {
     moduleName: string;
-    initState: ModuleState;
+    initState: ModelState;
     (store: ModelStore): Promise<void>;
 }
 export interface Module<M extends Model = Model, VS extends {
@@ -40,13 +40,13 @@ export declare function exportFacade<T extends ActionCreatorList>(moduleName: st
     moduleName: string;
     actions: T;
 };
-export declare type ExportModule<Component> = <N extends string, S extends BaseModuleState, V extends {
+export declare type ExportModule<Component> = <N extends string, S extends BaseModelState, V extends {
     [key: string]: Component;
 }>(moduleName: N, initState: S, ActionHandles: {
-    new (initState: S, presetData?: any): BaseModuleHandlers<S, any>;
+    new (initState: S, presetData?: any): BaseModelHandlers<S, any>;
 }, views: V) => Module<Model<S>, V>['default'];
 export declare const exportModule: ExportModule<any>;
-export declare class BaseModuleHandlers<S extends BaseModuleState, R extends RootState> {
+export declare class BaseModelHandlers<S extends BaseModelState, R extends RootState> {
     protected readonly initState: S;
     protected readonly moduleName: string;
     protected readonly store: ModelStore;

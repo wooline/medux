@@ -50,7 +50,7 @@ export interface CurrentViews {
   [moduleName: string]: {[viewName: string]: number};
 }
 export interface ReducerHandler extends ActionHandler {
-  (payload?: any): BaseModuleState;
+  (payload?: any): BaseModelState;
 }
 export interface EffectHandler extends ActionHandler {
   (payload?: any): Promise<any>;
@@ -81,7 +81,7 @@ export interface ActionHandler {
   __decoratorResults__?: any[];
   (payload?: any): any;
 }
-export interface BaseModuleState {
+export interface BaseModelState {
   isModule?: boolean;
   loading?: {[key: string]: LoadingState};
 }
