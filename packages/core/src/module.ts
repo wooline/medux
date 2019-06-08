@@ -27,7 +27,7 @@ export function defineModuleGetter<E extends string, T extends {[K in E]: () => 
 export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
 type ModuleStates<M extends any> = M['default']['model']['initState'];
-type ModuleViews<M extends any> = {[key in keyof M['views']]?: number};
+type ModuleViews<M extends any> = {[key in keyof M['default']['views']]?: number};
 
 export type RootState<G extends ModuleGetter = {}> = {
   views: {[key in keyof G]?: ModuleViews<ReturnModule<G[key]>>};
@@ -40,8 +40,8 @@ export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
     actions,
   };
 }
-export type ExportModule<Component> = <N extends string, S extends BaseModelState, V extends {[key: string]: Component}>(
-  moduleName: N,
+export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}>(
+  moduleName: string,
   initState: S,
   ActionHandles: {new (initState: S, presetData?: any): BaseModelHandlers<S, any>},
   views: V

@@ -27,7 +27,7 @@ export declare type ReturnModule<T extends () => any> = T extends () => Promise<
 export declare type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
 declare type ModuleStates<M extends any> = M['default']['model']['initState'];
 declare type ModuleViews<M extends any> = {
-    [key in keyof M['views']]?: number;
+    [key in keyof M['default']['views']]?: number;
 };
 export declare type RootState<G extends ModuleGetter = {}> = {
     views: {
@@ -40,9 +40,9 @@ export declare function exportFacade<T extends ActionCreatorList>(moduleName: st
     moduleName: string;
     actions: T;
 };
-export declare type ExportModule<Component> = <N extends string, S extends BaseModelState, V extends {
+export declare type ExportModule<Component> = <S extends BaseModelState, V extends {
     [key: string]: Component;
-}>(moduleName: N, initState: S, ActionHandles: {
+}>(moduleName: string, initState: S, ActionHandles: {
     new (initState: S, presetData?: any): BaseModelHandlers<S, any>;
 }, views: V) => Module<Model<S>, V>['default'];
 export declare const exportModule: ExportModule<any>;
