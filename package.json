@@ -1,57 +1,39 @@
 {
-   "name": "medux",
-   "version": "0.0.0",
-   "description": "",
-   "main": "index.js",
-   "private": true,
-   "workspaces": [
-      "packages/*"
-   ],
-   "scripts": {
-      "build:core": "lerna run build --scope @medux/core",
-      "build:react": "lerna run build --scope @medux/react",
-      "test": "eslint ./packages/core/scripts/build.js"
-   },
-   "repository": {
-      "type": "git",
-      "url": "git+https://github.com/wooline/medux.git"
-   },
-   "keywords": [],
-   "author": "",
-   "license": "MIT",
-   "bugs": {
-      "url": "https://github.com/wooline/medux/issues"
-   },
-   "homepage": "https://github.com/wooline/medux#readme",
-   "dependencies": {
-      "react": "^16.8.6",
-      "react-dom": "^16.8.6"
-   },
-   "devDependencies": {
-      "@babel/cli": "^7.4.4",
-      "@babel/core": "^7.4.5",
-      "@babel/plugin-proposal-class-properties": "^7.4.4",
-      "@babel/plugin-proposal-decorators": "^7.4.4",
-      "@babel/plugin-proposal-object-rest-spread": "^7.4.4",
-      "@babel/plugin-transform-runtime": "^7.4.4",
-      "@babel/preset-env": "^7.4.5",
-      "@babel/preset-react": "^7.0.0",
-      "@babel/preset-typescript": "^7.3.3",
-      "@types/fs-extra": "^7.0.0",
-      "@types/node": "^12.0.2",
-      "@typescript-eslint/eslint-plugin": "^1.7.0",
-      "@typescript-eslint/parser": "^1.7.0",
-      "rimraf": "^2.6.3",
-      "babel-preset-minify": "^0.5.0",
-      "cross-env": "^5.2.0",
-      "copyfiles": "^2.1.0",
-      "eslint": "^5.16.0",
-      "eslint-config-prettier": "^4.2.0",
-      "eslint-plugin-prettier": "^3.0.1",
-      "eslint-plugin-react": "^7.13.0",
-      "fs-extra": "^8.0.1",
-      "lerna": "^3.14.1",
-      "prettier": "^1.17.0",
-      "typescript": "^3.4.5"
-   }
+  "name": "medux",
+  "version": "0.0.0",
+  "description": "",
+  "repository": "https://github.com/wooline/medux",
+  "homepage": "https://github.com/wooline/medux/blob/master/npm.md",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "keywords": [],
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build:core": "lerna run build --scope @medux/core",
+    "build:react": "lerna run build --scope @medux/react",
+    "build:dev-utils": "lerna run build --scope @medux/dev-utils",
+    "test": "eslint ./packages/core/scripts/build.js"
+  },
+  "dependencies": {
+    "@types/react": "~16.8.18",
+    "@types/react-dom": "~16.8.4",
+    "react": "~16.8.6",
+    "react-dom": "~16.8.6",
+    "@babel/runtime": "~7.4.5",
+    "core-js": "~3.1.3"
+  },
+  "devDependencies": {
+    "@babel/cli": "~7.4.4",
+    "rimraf": "~2.6.3",
+    "babel-preset-minify": "~0.5.0",
+    "copyfiles": "~2.1.0",
+    "lerna": "~3.14.1",
+    "typescript": "~3.4.5"
+  }
 }

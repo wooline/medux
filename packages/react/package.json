@@ -1,53 +1,52 @@
 {
-   "name": "@medux/react",
-   "version": "0.0.19",
-   "description": "",
-   "main": "index.js",
-   "types": "types/",
-   "files": [
-      "src/",
-      "types/",
-      "dist/",
-      "index.js"
-   ],
-   "scripts": {
-      "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
-      "lint": "eslint \"./src/**/*.{ts,tsx}\"",
-      "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
-      "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
-      "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
-      "build": "yarn build:dev & yarn build:prod"
-   },
-   "publishConfig": {
-      "access": "public"
-   },
-   "author": "",
-   "license": "MIT",
-   "browserslist": [
-      "ie >= 11"
-   ],
-   "peerDependencies": {
-      "@types/react": "^16.8.0",
-      "@types/react-dom": "^16.8.0",
-      "react": "^16.8.0",
-      "react-dom": "^16.8.0"
-   },
-   "dependencies": {
-      "@babel/runtime": "^7.4.5",
-      "@medux/core": "^0.0.19",
-      "@types/history": "^4.7.2",
-      "@types/react-redux": "^7.0.9",
-      "@types/react-router-dom": "^4.3.3",
-      "connected-react-router": "^6.4.0",
-      "core-js": "^3.1.3",
-      "history": "^4.9.0",
-      "react-redux": "^7.0.3",
-      "react-router-dom": "^5.0.0"
-   },
-   "devDependencies": {
-      "@types/react": "^16.8.18",
-      "@types/react-dom": "^16.8.4",
-      "react": "^16.8.0",
-      "react-dom": "^16.8.0"
-   }
+  "name": "@medux/react",
+  "version": "0.0.19",
+  "description": "",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/react",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/react/npm.md",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "main": "index.js",
+  "types": "types/",
+  "files": [
+    "src/",
+    "types/",
+    "dist/",
+    "index.js"
+  ],
+  "scripts": {
+    "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
+    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+    "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
+    "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
+    "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
+    "build": "yarn build:dev & yarn build:prod"
+  },
+  "browserslist": [
+    "ie >= 11"
+  ],
+  "peerDependencies": {
+    "@types/react": "^16.8.0",
+    "@types/react-dom": "^16.8.0",
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0",
+    "core-js": "^3.0.0",
+    "@babel/runtime": "^7.0.0"
+  },
+  "dependencies": {
+    "@medux/core": "~0.0.19",
+    "@types/history": "~4.7.2",
+    "@types/react-redux": "~7.0.9",
+    "@types/react-router-dom": "~4.3.3",
+    "connected-react-router": "~6.4.0",
+    "history": "~4.9.0",
+    "react-redux": "~7.0.3",
+    "react-router-dom": "~5.0.0"
+  }
 }

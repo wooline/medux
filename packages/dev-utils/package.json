@@ -1,0 +1,34 @@
+{
+  "name": "@medux/dev-utils",
+  "version": "0.0.19",
+  "description": "",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/dev-utils/npm.md",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "prebuild": "yarn lint && rimraf ./dist",
+    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+    "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
+    "build": "tsc"
+  },
+  "browserslist": [
+    "ie >= 11"
+  ],
+  "peerDependencies": {
+    "axios": "^0.18.0",
+    "json-format": "^1.0.0",
+    "chalk": "^2.4.0",
+    "micromatch": "^4.0.0"
+  },
+  "dependencies": {}
+}

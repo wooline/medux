@@ -2,6 +2,16 @@
   "name": "@medux/core",
   "version": "0.0.19",
   "description": "",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/core",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/core/npm.md",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
   "main": "index.js",
   "types": "types/",
   "files": [
@@ -21,15 +31,12 @@
   "browserslist": [
     "ie >= 11"
   ],
-  "publishConfig": {
-    "access": "public"
+  "peerDependencies": {
+    "core-js": "^3.0.0",
+    "@babel/runtime": "^7.0.0"
   },
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "@babel/runtime": "^7.4.5",
-    "core-js": "^3.1.3",
-    "redux": "^4.0.1"
+    "redux": "~4.0.1"
   },
   "gitHead": "4f3a36fcc1f8c9eabeb07d491572b5e2c3e2f496"
 }

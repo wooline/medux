@@ -1,0 +1,12 @@
+{
+  "extends": "../../.tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "baseUrl": "./src",
+    "outDir": "./dist",
+    "lib": ["es2017"],
+    "types": ["node"]
+  },
+  "include": ["./src"]
+}
