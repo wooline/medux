@@ -1,6 +1,6 @@
 {
   "name": "@medux/react",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/react/npm.md",
@@ -32,15 +32,15 @@
     "ie >= 11"
   ],
   "peerDependencies": {
+    "@babel/runtime": "^7.0.0",
     "@types/react": "^16.8.0",
     "@types/react-dom": "^16.8.0",
-    "react": "^16.8.0",
-    "react-dom": "^16.8.0",
     "core-js": "^3.0.0",
-    "@babel/runtime": "^7.0.0"
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0"
   },
   "dependencies": {
-    "@medux/core": "~0.0.19",
+    "@medux/core": "^0.0.20",
     "@types/history": "~4.7.2",
     "@types/react-redux": "~7.0.9",
     "@types/react-router-dom": "~4.3.3",

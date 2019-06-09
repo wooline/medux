@@ -1,6 +1,6 @@
 {
   "name": "@medux/core",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/core",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/core/npm.md",
@@ -32,8 +32,8 @@
     "ie >= 11"
   ],
   "peerDependencies": {
-    "core-js": "^3.0.0",
-    "@babel/runtime": "^7.0.0"
+    "@babel/runtime": "^7.0.0",
+    "core-js": "^3.0.0"
   },
   "dependencies": {
     "redux": "~4.0.1"

@@ -1,13 +1,21 @@
 {
-  "packages": ["packages/*"],
+  "packages": [
+    "packages/*"
+  ],
   "command": {
     "publish": {
       "message": "chore(release): publish",
       "npmClient": "npm",
-      "ignoreChanges": ["**/*.md", "**/test/**", "**/dist/**", "**/__test__/**", "package.json"]
+      "ignoreChanges": [
+        "**/*.md",
+        "**/test/**",
+        "**/dist/**",
+        "**/__test__/**",
+        "package.json"
+      ]
     }
   },
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "version": "0.0.19"
+  "version": "0.0.20"
 }

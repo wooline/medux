@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/dev-utils/npm.md",
@@ -26,9 +26,8 @@
   ],
   "peerDependencies": {
     "axios": "^0.18.0",
-    "json-format": "^1.0.0",
     "chalk": "^2.4.0",
+    "json-format": "^1.0.0",
     "micromatch": "^4.0.0"
-  },
-  "dependencies": {}
+  }
 }
