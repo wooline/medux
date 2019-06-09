@@ -1,8 +1,13 @@
 {
-   "packages": [
-      "packages/*"
-   ],
-   "npmClient": "yarn",
-   "useWorkspaces": true,
-   "version": "0.0.19"
+  "packages": ["packages/*"],
+  "command": {
+    "publish": {
+      "message": "chore(release): publish",
+      "npmClient": "npm",
+      "ignoreChanges": ["**/*.md", "**/test/**", "**/dist/**", "**/__test__/**", "package.json"]
+    }
+  },
+  "npmClient": "yarn",
+  "useWorkspaces": true,
+  "version": "0.0.19"
 }
