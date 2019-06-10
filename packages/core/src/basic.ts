@@ -116,6 +116,10 @@ export function isServer(): boolean {
   return MetaData.isServer;
 }
 export function reducer(target: any, key: string, descriptor: PropertyDescriptor) {
+  if (!key && !descriptor) {
+    key = target.key;
+    descriptor = target.descriptor;
+  }
   const fun = descriptor.value as ActionHandler;
   fun.__actionName__ = key;
   fun.__isReducer__ = true;
@@ -128,6 +132,10 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
     loadingForModuleName = MetaData.appModuleName;
   }
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
     const fun = descriptor.value as ActionHandler;
     fun.__actionName__ = key;
     fun.__isEffect__ = true;
@@ -154,6 +162,10 @@ export function logger(
   after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
 ) {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
     const fun: ActionHandler = descriptor.value;
     if (!fun.__decorators__) {
       fun.__decorators__ = [];
@@ -162,7 +174,11 @@ export function logger(
   };
 }
 export function delayPromise(second: number) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
     const fun = descriptor.value;
     descriptor.value = (...args: any[]) => {
       const delay = new Promise(resolve => {

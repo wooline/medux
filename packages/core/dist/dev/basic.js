@@ -54,6 +54,11 @@ export function isServer() {
   return MetaData.isServer;
 }
 export function reducer(target, key, descriptor) {
+  if (!key && !descriptor) {
+    key = target.key;
+    descriptor = target.descriptor;
+  }
+
   var fun = descriptor.value;
   fun.__actionName__ = key;
   fun.__isReducer__ = true;
@@ -67,6 +72,11 @@ export function effect(loadingForGroupName, loadingForModuleName) {
   }
 
   return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
     var fun = descriptor.value;
     fun.__actionName__ = key;
     fun.__isEffect__ = true;
@@ -95,6 +105,11 @@ export function effect(loadingForGroupName, loadingForModuleName) {
 }
 export function logger(before, after) {
   return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
     var fun = descriptor.value;
 
     if (!fun.__decorators__) {
@@ -105,7 +120,12 @@ export function logger(before, after) {
   };
 }
 export function delayPromise(second) {
-  return function (target, propertyKey, descriptor) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
     var fun = descriptor.value;
 
     descriptor.value = function () {

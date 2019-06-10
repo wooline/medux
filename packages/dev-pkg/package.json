@@ -12,9 +12,6 @@
   "engines": {
     "node": ">=9.0.0"
   },
-  "peerDependencies": {
-    "@medux/core": "0.0.19"
-  },
   "dependencies": {
     "@babel/core": "~7.4.5",
     "@babel/plugin-proposal-class-properties": "~7.4.4",

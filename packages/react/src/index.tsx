@@ -2,8 +2,7 @@ import React, {ReactElement, ComponentType, FunctionComponent, useState, useEffe
 import ReactDOM from 'react-dom';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 import {Provider} from 'react-redux';
-import {createBrowserHistory} from 'history';
-import createMemoryHistory from 'history/createMemoryHistory';
+import {createBrowserHistory, createMemoryHistory} from 'history';
 import {withRouter} from 'react-router-dom';
 import {ConnectedRouter, connectRouter, routerMiddleware} from 'connected-react-router';
 import {renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule} from '@medux/core';
