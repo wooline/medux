@@ -63,7 +63,7 @@ export function reducer(target, key, descriptor) {
   fun.__actionName__ = key;
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
-  return descriptor;
+  return target.descriptor === descriptor ? target : descriptor;
 }
 export function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
@@ -100,7 +100,7 @@ export function effect(loadingForGroupName, loadingForModuleName) {
       fun.__decorators__.push([before, null]);
     }
 
-    return descriptor;
+    return target.descriptor === descriptor ? target : descriptor;
   };
 }
 export function logger(before, after) {

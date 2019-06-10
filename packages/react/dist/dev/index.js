@@ -5,7 +5,7 @@ import { Provider } from 'react-redux';
 import { createBrowserHistory, createMemoryHistory } from 'history';
 import { withRouter } from 'react-router-dom';
 import { ConnectedRouter, connectRouter, routerMiddleware } from 'connected-react-router';
-import { renderApp, renderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule } from '@medux/core';
+import { renderApp, renderSSR, getView, isPromiseView, invalidview, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule } from '@medux/core';
 export function buildApp(moduleGetter, appModuleName, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};
@@ -25,17 +25,37 @@ export function buildApp(moduleGetter, appModuleName, storeOptions, container) {
   var router = connectRouter(history);
 
   storeOptions.reducers.router = function (state, action) {
-    var routerData = router(state.router, action);
+    var routerData = router(state, action);
 
-    if (storeOptions.routerParser && state.router !== routerData) {
-      state.router = storeOptions.routerParser(routerData, state.router);
+    if (storeOptions.routerParser && state !== routerData) {
+      return storeOptions.routerParser(routerData, state);
     } else {
-      state.router = routerData;
+      return routerData;
     }
+  }; // SSR需要数据是单向的，store->view，不能store->view->store->view，而view:ConnectedRouter初始化时会触发一次LOCATION_CHANGE
+
+
+  var routerInited = false;
+
+  var filterRouter = function filterRouter() {
+    return function (next) {
+      return function (action) {
+        if (action.type === '@@router/LOCATION_CHANGE') {
+          if (!routerInited) {
+            routerInited = true;
+            return action;
+          } else {
+            invalidview();
+          }
+        }
+
+        return next(action);
+      };
+    };
   };
 
   storeOptions.middlewares = storeOptions.middlewares || [];
-  storeOptions.middlewares.unshift(routerMiddleware(history));
+  storeOptions.middlewares.unshift(filterRouter, routerMiddleware(history));
   return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
     var WithRouter = withRouter(appViews.Main);
     var app = React.createElement(Provider, {
@@ -82,8 +102,27 @@ export function buildSSR(moduleGetter, appModuleName, initialEntries, storeOptio
     }
   };
 
+  var routerInited = false;
+
+  var filterRouter = function filterRouter() {
+    return function (next) {
+      return function (action) {
+        if (action.type === '@@router/LOCATION_CHANGE') {
+          if (!routerInited) {
+            routerInited = true;
+            return action;
+          } else {
+            invalidview();
+          }
+        }
+
+        return next(action);
+      };
+    };
+  };
+
   storeOptions.middlewares = storeOptions.middlewares || [];
-  storeOptions.middlewares.unshift(routerMiddleware(history));
+  storeOptions.middlewares.unshift(filterRouter, routerMiddleware(history));
   var render = renderToStream ? renderToNodeStream : renderToString;
   return renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
     var data = store.getState();

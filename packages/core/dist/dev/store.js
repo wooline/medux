@@ -42,12 +42,11 @@ function checkInvalidview() {
   MetaData.clientStore.dispatch(viewInvalidAction(views));
 }
 
-function invalidview() {
+export function invalidview() {
   if (!invalidViewTimer) {
     invalidViewTimer = setTimeout(checkInvalidview, 0);
   }
 }
-
 export function viewWillMount(moduleName, viewName) {
   var currentViews = MetaData.clientStore._medux_.currentViews;
 

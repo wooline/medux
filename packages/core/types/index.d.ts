@@ -1,6 +1,6 @@
 export { ActionTypes, errorAction } from './actions';
 export { reducer, effect, logger, isServer, getClientStore, delayPromise } from './basic';
-export { viewWillMount, viewWillUnmount } from './store';
+export { invalidview, viewWillMount, viewWillUnmount } from './store';
 export { setLoading, setLoadingDepthTime } from './loading';
 export { LoadingState } from './sprite';
 export { renderApp, renderSSR, BaseModelHandlers, defineModuleGetter, exportFacade, exportModule, loadModel, isPromiseModule, isPromiseView, getView } from './module';

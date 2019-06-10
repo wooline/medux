@@ -124,7 +124,7 @@ export function reducer(target: any, key: string, descriptor: PropertyDescriptor
   fun.__actionName__ = key;
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
-  return descriptor;
+  return target.descriptor === descriptor ? target : descriptor;
 }
 export function effect(loadingForGroupName?: string | null, loadingForModuleName?: string) {
   if (loadingForGroupName === undefined) {
@@ -154,7 +154,7 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
       }
       fun.__decorators__.push([before, null]);
     }
-    return descriptor;
+    return target.descriptor === descriptor ? target : descriptor;
   };
 }
 export function logger(

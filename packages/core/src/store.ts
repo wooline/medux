@@ -25,7 +25,7 @@ function checkInvalidview() {
   MetaData.clientStore.dispatch(viewInvalidAction(views));
 }
 
-function invalidview() {
+export function invalidview() {
   if (!invalidViewTimer) {
     invalidViewTimer = setTimeout(checkInvalidview, 0);
   }
