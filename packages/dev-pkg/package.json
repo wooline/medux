@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-pkg",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/dev-pkg/npm.md",
@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@babel/core": "~7.4.5",
-    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@babel/plugin-proposal-class-properties": "~7.4.4",
     "@babel/plugin-proposal-decorators": "~7.4.4",
     "@babel/plugin-proposal-object-rest-spread": "~7.4.4",
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@babel/plugin-transform-runtime": "~7.4.4",
     "@babel/preset-env": "~7.4.5",
     "@babel/preset-react": "~7.0.0",
