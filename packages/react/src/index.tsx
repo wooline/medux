@@ -4,9 +4,9 @@ import {renderToNodeStream, renderToString} from 'react-dom/server';
 import {Provider} from 'react-redux';
 import {createBrowserHistory, createMemoryHistory} from 'history';
 import {withRouter} from 'react-router-dom';
-import {ConnectedRouter, connectRouter, routerMiddleware} from 'connected-react-router';
+import {RouterState, ConnectedRouter, connectRouter, routerMiddleware} from 'connected-react-router';
 import {renderApp, renderSSR, getView, isPromiseView, invalidview, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule} from '@medux/core';
-import {Model, ModuleGetter, StoreOptions, LoadView, ExportModule} from '@medux/core/types/export';
+import {Model, ModuleGetter, StoreOptions, LoadView, ExportModule, RootState as BaseRootState} from '@medux/core/types/export';
 
 export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 
@@ -198,3 +198,5 @@ export const exportModule: ExportModule<ComponentType<any>> = (moduleName, initS
   data.views = maps;
   return data;
 };
+
+export type RootState<G extends ModuleGetter = {}, R = RouterState> = BaseRootState<G> & {router: R};
