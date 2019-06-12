@@ -3,7 +3,7 @@ import"core-js/modules/es.array.iterator";import"core-js/modules/es.object.keys"
 //   self) ||
 //   (typeof global == 'object' && global.global === global && global) ||
 //   this) as any;
-export var MetaData={isServer:"undefined"!=typeof global&&"undefined"==typeof window,isDev:"production"!==process.env.NODE_ENV,actionCreatorMap:{},clientStore:null,appModuleName:null};export var client=MetaData.isServer?void 0:window||global;export function getModuleActionCreatorList(a){// if (window["Proxy"]) {
+export var MetaData={isServer:"undefined"!=typeof global&&"undefined"==typeof window,isDev:"production"!==process.env.NODE_ENV,actionCreatorMap:{},clientStore:null,appModuleName:null,moduleGetter:null};export var client=MetaData.isServer?void 0:window||global;export function getModuleActionCreatorList(a){// if (window["Proxy"]) {
 //   actions = new window["Proxy"](
 //     {},
 //     {

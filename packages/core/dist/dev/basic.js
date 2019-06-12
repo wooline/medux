@@ -20,7 +20,8 @@ export var MetaData = {
   isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: {},
   clientStore: null,
-  appModuleName: null
+  appModuleName: null,
+  moduleGetter: null
 };
 export var client = MetaData.isServer ? undefined : window || global;
 export function getModuleActionCreatorList(moduleName) {

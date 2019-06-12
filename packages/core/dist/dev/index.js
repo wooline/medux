@@ -3,6 +3,6 @@ export { reducer, effect, logger, isServer, getClientStore, delayPromise } from 
 export { invalidview, viewWillMount, viewWillUnmount } from './store';
 export { setLoading, setLoadingDepthTime } from './loading';
 export { LoadingState } from './sprite';
-export { renderApp, renderSSR, BaseModelHandlers, defineModuleGetter, exportFacade, exportModule, loadModel, isPromiseModule, isPromiseView, getView } from './module';
+export { renderApp, renderSSR, BaseModelHandlers, exportFacade, exportModule, loadModel, isPromiseModule, isPromiseView, getView } from './module';
 export { routerActions } from 'connected-react-router';
 //# sourceMappingURL=index.js.map

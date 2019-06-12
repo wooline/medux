@@ -142,7 +142,7 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
 }
 
 export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
-  return function Wrap(props: any) {
+  return function Loader(props: any) {
     const [view, setView] = useState<{Component: ComponentType} | null>(() => {
       const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {

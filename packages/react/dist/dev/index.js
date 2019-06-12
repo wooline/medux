@@ -138,7 +138,7 @@ export function buildSSR(moduleGetter, appModuleName, initialEntries, storeOptio
   }, moduleGetter, appModuleName, storeOptions);
 }
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
-  return function Wrap(props) {
+  return function Loader(props) {
     var _useState = useState(function () {
       var moduleViewResult = getView(moduleGetter, moduleName, viewName);
 

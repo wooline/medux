@@ -16,15 +16,12 @@ export interface Module<M extends Model = Model, VS extends {
         views: VS;
     };
 }
-export declare type GetModule<M extends Module = Module> = () => M | Promise<M>;
 export interface ModuleGetter {
-    [moduleName: string]: GetModule;
+    [moduleName: string]: () => Module | Promise<Module>;
 }
-export declare function defineModuleGetter<E extends string, T extends {
-    [K in E]: () => any;
-}>(getter: T): { [key in E]: T[key]; };
 export declare type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 export declare type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
+declare type ModuleModel<M extends any> = M['default']['model'];
 declare type ModuleStates<M extends any> = M['default']['model']['initState'];
 declare type ModuleViews<M extends any> = {
     [key in keyof M['default']['views']]?: number;
@@ -76,7 +73,7 @@ export declare type Actions<Ins> = {
 };
 export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
 export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
-export declare function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['default']['model']>;
+export declare function loadModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>, M extends ReturnModule<MG[N]>>(moduleGetter: MG, moduleName: N): Promise<ModuleModel<M>>;
 export declare function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T>;
 export declare type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N) => V[N];
 export interface StoreOptions {

@@ -1,4 +1,5 @@
 import { LoadingState } from './sprite';
+import { ModuleGetter } from './module';
 export declare const NSP = "/";
 export declare const MetaData: {
     isServer: boolean;
@@ -6,6 +7,7 @@ export declare const MetaData: {
     actionCreatorMap: ActionCreatorMap;
     clientStore: ModelStore;
     appModuleName: string;
+    moduleGetter: ModuleGetter;
 };
 export declare const client: Window | undefined;
 export interface ActionCreatorMap {

@@ -16,9 +16,6 @@ var _class, _temp;
 import { MetaData, getModuleActionCreatorList, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
-export function defineModuleGetter(getter) {
-  return getter;
-}
 export function exportFacade(moduleName) {
   var actions = getModuleActionCreatorList(moduleName);
   return {
@@ -142,11 +139,16 @@ export function isPromiseModule(module) {
 export function isPromiseView(moduleView) {
   return typeof moduleView['then'] === 'function';
 }
-export function loadModel(getModule) {
-  var result = getModule();
+export function loadModel(moduleGetter, moduleName) {
+  moduleGetter = MetaData.moduleGetter;
+  var result = moduleGetter[moduleName]();
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
+      moduleGetter[moduleName] = function () {
+        return module;
+      };
+
       return module.default.model;
     });
   } else {
@@ -154,6 +156,7 @@ export function loadModel(getModule) {
   }
 }
 export function getView(moduleGetter, moduleName, viewName) {
+  moduleGetter = MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();
 
   if (isPromiseModule(result)) {
@@ -205,6 +208,7 @@ export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
   }
 
   MetaData.appModuleName = appModuleName;
+  MetaData.moduleGetter = moduleGetter;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var initData = {};
 
@@ -234,6 +238,7 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
   }
 
   MetaData.appModuleName = appModuleName;
+  MetaData.moduleGetter = moduleGetter;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   var appModule = moduleGetter[appModuleName]();

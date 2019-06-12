@@ -17,16 +17,14 @@ export interface Module<M extends Model = Model, VS extends {[key: string]: any}
     views: VS;
   };
 }
-export type GetModule<M extends Module = Module> = () => M | Promise<M>;
 
 export interface ModuleGetter {
-  [moduleName: string]: GetModule;
+  [moduleName: string]: () => Module | Promise<Module>;
 }
-export function defineModuleGetter<E extends string, T extends {[K in E]: () => any}>(getter: T) {
-  return getter as {[key in E]: T[key]};
-}
+
 export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
+type ModuleModel<M extends any> = M['default']['model'];
 type ModuleStates<M extends any> = M['default']['model']['initState'];
 type ModuleViews<M extends any> = {[key in keyof M['default']['views']]?: number};
 
@@ -163,15 +161,20 @@ export function isPromiseModule(module: Module | Promise<Module>): module is Pro
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
-export function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['default']['model']> {
-  const result = getModule();
+export function loadModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>, M extends ReturnModule<MG[N]>>(moduleGetter: MG, moduleName: N): Promise<ModuleModel<M>> {
+  moduleGetter = MetaData.moduleGetter as any;
+  const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
-    return result.then(module => module.default.model);
+    return result.then(module => {
+      moduleGetter[moduleName] = (() => module) as any;
+      return module.default.model as any;
+    });
   } else {
-    return Promise.resolve(result.default.model);
+    return Promise.resolve(result.default.model as any);
   }
 }
 export function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T> {
+  moduleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
     return result.then(module => {
@@ -226,6 +229,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   storeOptions: StoreOptions = {}
 ): Promise<void> {
   MetaData.appModuleName = appModuleName;
+  MetaData.moduleGetter = moduleGetter;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
   if (storeOptions.initData || window[ssrInitStoreKey]) {
@@ -249,6 +253,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   storeOptions: StoreOptions = {}
 ) {
   MetaData.appModuleName = appModuleName;
+  MetaData.moduleGetter = moduleGetter;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = moduleGetter[appModuleName]() as Module;

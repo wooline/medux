@@ -1,5 +1,6 @@
 /*global global:true process:true*/
 import {LoadingState} from './sprite';
+import {ModuleGetter} from './module';
 import {setLoading} from './loading';
 
 export const NSP = '/';
@@ -16,12 +17,14 @@ export const MetaData: {
   actionCreatorMap: ActionCreatorMap;
   clientStore: ModelStore;
   appModuleName: string;
+  moduleGetter: ModuleGetter;
 } = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: {},
   clientStore: null as any,
   appModuleName: null as any,
+  moduleGetter: null as any,
 };
 
 export const client = MetaData.isServer ? undefined : window || global;
