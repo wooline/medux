@@ -1,5 +1,6 @@
-import {Middleware, ReducersMapObject, StoreEnhancer, Store} from 'redux';
-import {Action, ActionHandler, ActionCreatorList, reducer, getModuleActionCreatorList, ModelStore, BaseModelState, isPromise, injectActions, MetaData} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, getModuleActionCreatorList, injectActions, isPromise, reducer} from './basic';
+import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
+
 import {buildStore} from './store';
 import {errorAction} from './actions';
 
@@ -170,10 +171,13 @@ export function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M[
     return Promise.resolve(result.default.model);
   }
 }
-export function getView<M extends Module, N extends Extract<keyof M['default']['views'], string>>(getModule: GetModule<M>, viewName: N): M['default']['views'][N] | Promise<M['default']['views'][N]> {
-  const result = getModule();
+export function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T> {
+  const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
-    return result.then(module => module.default.views[viewName]);
+    return result.then(module => {
+      moduleGetter[moduleName] = () => module;
+      return module.default.views[viewName];
+    });
   } else {
     return result.default.views[viewName];
   }
@@ -189,6 +193,7 @@ function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promis
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
     return result.then(module => {
+      //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       moduleGetter[moduleName] = () => module;
       return module;
     });

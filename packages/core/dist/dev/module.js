@@ -13,7 +13,7 @@ import _applyDecoratedDescriptor from "@babel/runtime/helpers/esm/applyDecorated
 
 var _class, _temp;
 
-import { reducer, getModuleActionCreatorList, isPromise, injectActions, MetaData } from './basic';
+import { MetaData, getModuleActionCreatorList, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
 export function defineModuleGetter(getter) {
@@ -153,11 +153,15 @@ export function loadModel(getModule) {
     return Promise.resolve(result.default.model);
   }
 }
-export function getView(getModule, viewName) {
-  var result = getModule();
+export function getView(moduleGetter, moduleName, viewName) {
+  var result = moduleGetter[moduleName]();
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
+      moduleGetter[moduleName] = function () {
+        return module;
+      };
+
       return module.default.views[viewName];
     });
   } else {
@@ -170,6 +174,7 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
+      //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       moduleGetter[moduleName] = function () {
         return module;
       };

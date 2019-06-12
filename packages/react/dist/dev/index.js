@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import { ConnectedRouter, connectRouter, routerMiddleware } from 'connected-react-router';
+import React, { useEffect, useState } from 'react';
+import { exportModule as baseExportModule, getClientStore, getView, invalidview, isPromiseView, isServer, renderApp, renderSSR, viewWillMount, viewWillUnmount } from '@medux/core';
+import { createBrowserHistory, createMemoryHistory } from 'history';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
-import { createBrowserHistory, createMemoryHistory } from 'history';
+import ReactDOM from 'react-dom';
 import { withRouter } from 'react-router-dom';
-import { ConnectedRouter, connectRouter, routerMiddleware } from 'connected-react-router';
-import { renderApp, renderSSR, getView, isPromiseView, invalidview, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule } from '@medux/core';
 export function buildApp(moduleGetter, appModuleName, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};
@@ -140,21 +140,25 @@ export function buildSSR(moduleGetter, appModuleName, initialEntries, storeOptio
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
   return function Wrap(props) {
     var _useState = useState(function () {
-      var moduleViewResult = getView(moduleGetter[moduleName], viewName);
+      var moduleViewResult = getView(moduleGetter, moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
-        moduleViewResult.then(function (view) {
-          setComponent(view);
+        moduleViewResult.then(function (Component) {
+          setView({
+            Component: Component
+          });
         });
         return null;
       } else {
-        return moduleViewResult;
+        return {
+          Component: moduleViewResult
+        };
       }
     }),
-        Component = _useState[0],
-        setComponent = _useState[1];
+        view = _useState[0],
+        setView = _useState[1];
 
-    return Component ? React.createElement(Component, props) : Loading ? React.createElement(Loading, props) : null;
+    return view ? React.createElement(view.Component, props) : Loading ? React.createElement(Loading, props) : null;
   };
 };
 

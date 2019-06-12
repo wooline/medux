@@ -1,12 +1,13 @@
-import React, {ReactElement, ComponentType, FunctionComponent, useState, useEffect} from 'react';
-import ReactDOM from 'react-dom';
-import {renderToNodeStream, renderToString} from 'react-dom/server';
-import {Provider} from 'react-redux';
+import {RootState as BaseRootState, ExportModule, LoadView, Model, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import {ConnectedRouter, RouterState, connectRouter, routerMiddleware} from 'connected-react-router';
+import React, {ComponentType, FunctionComponent, ReactElement, useEffect, useState} from 'react';
+import {exportModule as baseExportModule, getClientStore, getView, invalidview, isPromiseView, isServer, renderApp, renderSSR, viewWillMount, viewWillUnmount} from '@medux/core';
 import {createBrowserHistory, createMemoryHistory} from 'history';
+import {renderToNodeStream, renderToString} from 'react-dom/server';
+
+import {Provider} from 'react-redux';
+import ReactDOM from 'react-dom';
 import {withRouter} from 'react-router-dom';
-import {RouterState, ConnectedRouter, connectRouter, routerMiddleware} from 'connected-react-router';
-import {renderApp, renderSSR, getView, isPromiseView, invalidview, viewWillMount, viewWillUnmount, isServer, getClientStore, exportModule as baseExportModule} from '@medux/core';
-import {Model, ModuleGetter, StoreOptions, LoadView, ExportModule, RootState as BaseRootState} from '@medux/core/types/export';
 
 export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 
@@ -142,18 +143,18 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
 
 export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
   return function Wrap(props: any) {
-    const [Component, setComponent] = useState<ComponentType | null>(() => {
-      const moduleViewResult = getView(moduleGetter[moduleName], viewName);
+    const [view, setView] = useState<{Component: ComponentType} | null>(() => {
+      const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
-        moduleViewResult.then(view => {
-          setComponent(view);
+        moduleViewResult.then(Component => {
+          setView({Component});
         });
         return null;
       } else {
-        return moduleViewResult;
+        return {Component: moduleViewResult};
       }
     });
-    return Component ? <Component {...props} /> : Loading ? <Loading {...props} /> : null;
+    return view ? <view.Component {...props} /> : Loading ? <Loading {...props} /> : null;
   } as any;
 };
 

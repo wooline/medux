@@ -1,5 +1,5 @@
-import { Middleware, ReducersMapObject, StoreEnhancer, Store } from 'redux';
-import { Action, ActionCreatorList, ModelStore, BaseModelState } from './basic';
+import { Action, ActionCreatorList, BaseModelState, ModelStore } from './basic';
+import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
     moduleName: string;
     initState: ModelState;
@@ -77,7 +77,7 @@ export declare type Actions<Ins> = {
 export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
 export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
 export declare function loadModel<M extends Module>(getModule: GetModule<M>): Promise<M['default']['model']>;
-export declare function getView<M extends Module, N extends Extract<keyof M['default']['views'], string>>(getModule: GetModule<M>, viewName: N): M['default']['views'][N] | Promise<M['default']['views'][N]>;
+export declare function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T>;
 export declare type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N) => V[N];
 export interface StoreOptions {
     ssrInitStoreKey?: string;
