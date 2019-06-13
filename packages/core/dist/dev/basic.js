@@ -48,7 +48,7 @@ export function getModuleActionCreatorList(moduleName) {
 export function isPromise(data) {
   return typeof data['then'] === 'function';
 }
-export function getClientStore() {
+export function getStore() {
   return MetaData.clientStore;
 }
 export function isServer() {

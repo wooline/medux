@@ -90,7 +90,7 @@ export interface BaseModelState {
 }
 export declare function getModuleActionCreatorList(moduleName: string): ActionCreatorList;
 export declare function isPromise(data: any): data is Promise<any>;
-export declare function getClientStore(): ModelStore;
+export declare function getStore(): ModelStore;
 export declare function isServer(): boolean;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;

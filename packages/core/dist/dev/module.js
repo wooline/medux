@@ -158,6 +158,7 @@ export function loadModel(moduleGetter, moduleName) {
 export function getView(moduleGetter, moduleName, viewName) {
   moduleGetter = MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();
+  var store = MetaData.clientStore;
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
@@ -165,10 +166,26 @@ export function getView(moduleGetter, moduleName, viewName) {
         return module;
       };
 
-      return module.default.views[viewName];
+      var view = module.default.views[viewName];
+
+      if (!MetaData.isServer) {
+        return module.default.model(store).then(function () {
+          return view;
+        });
+      }
+
+      return view;
     });
   } else {
-    return result.default.views[viewName];
+    var view = result.default.views[viewName];
+
+    if (!MetaData.isServer) {
+      result.default.model(store).then(function () {
+        return view;
+      });
+    }
+
+    return view;
   }
 }
 

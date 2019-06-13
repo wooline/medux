@@ -112,7 +112,7 @@ export function getModuleActionCreatorList(moduleName: string): ActionCreatorLis
 export function isPromise(data: any): data is Promise<any> {
   return typeof data['then'] === 'function';
 }
-export function getClientStore() {
+export function getStore() {
   return MetaData.clientStore;
 }
 export function isServer(): boolean {

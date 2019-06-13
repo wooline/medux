@@ -173,16 +173,26 @@ export function loadModel<MG extends ModuleGetter, N extends Extract<keyof MG, s
     return Promise.resolve(result.default.model as any);
   }
 }
+
 export function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T> {
   moduleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
+  const store = MetaData.clientStore;
   if (isPromiseModule(result)) {
     return result.then(module => {
       moduleGetter[moduleName] = () => module;
-      return module.default.views[viewName];
+      const view = module.default.views[viewName];
+      if (!MetaData.isServer) {
+        return module.default.model(store).then(() => view);
+      }
+      return view;
     });
   } else {
-    return result.default.views[viewName];
+    const view = result.default.views[viewName];
+    if (!MetaData.isServer) {
+      result.default.model(store).then(() => view);
+    }
+    return view;
   }
 }
 

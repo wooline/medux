@@ -1,6 +1,6 @@
 import { ConnectedRouter, connectRouter, routerMiddleware } from 'connected-react-router';
 import React, { useEffect, useState } from 'react';
-import { exportModule as baseExportModule, getClientStore, getView, invalidview, isPromiseView, isServer, renderApp, renderSSR, viewWillMount, viewWillUnmount } from '@medux/core';
+import { exportModule as baseExportModule, getView, invalidview, isPromiseView, renderApp, renderSSR, viewWillMount, viewWillUnmount } from '@medux/core';
 import { createBrowserHistory, createMemoryHistory } from 'history';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
@@ -138,18 +138,24 @@ export function buildSSR(moduleGetter, appModuleName, initialEntries, storeOptio
   }, moduleGetter, appModuleName, storeOptions);
 }
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
-  return function Loader(props) {
+  var loader = function Loader(props) {
     var _useState = useState(function () {
       var moduleViewResult = getView(moduleGetter, moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
+          loader.propTypes = Component.propTypes;
+          loader.contextTypes = Component.contextTypes;
+          loader.defaultProps = Component.defaultProps;
           setView({
             Component: Component
           });
         });
         return null;
       } else {
+        loader.propTypes = moduleViewResult.propTypes;
+        loader.contextTypes = moduleViewResult.contextTypes;
+        loader.defaultProps = moduleViewResult.defaultProps;
         return {
           Component: moduleViewResult
         };
@@ -158,55 +164,16 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
         view = _useState[0],
         setView = _useState[1];
 
+    useEffect(function () {
+      view && viewWillMount(moduleName, viewName);
+      return function () {
+        view && viewWillUnmount(moduleName, viewName);
+      };
+    }, [view]);
     return view ? React.createElement(view.Component, props) : Loading ? React.createElement(Loading, props) : null;
   };
+
+  return loader;
 };
-
-function exportView(Component, model, viewName, Loading) {
-  if (isServer()) {
-    return Component;
-  } else {
-    var View = function View(props) {
-      var _useState2 = useState(function () {
-        var state = getClientStore().getState();
-        var moduleName = model.moduleName;
-        model(getClientStore()).then(function () {
-          if (!modelReady) {
-            setModelReady(true);
-          }
-        });
-        return !!state[moduleName];
-      }),
-          modelReady = _useState2[0],
-          setModelReady = _useState2[1];
-
-      useEffect(function () {
-        viewWillMount(model.moduleName, viewName);
-        return function () {
-          viewWillUnmount(model.moduleName, viewName);
-        };
-      }, []);
-      return modelReady ? React.createElement(Component, props) : Loading ? React.createElement(Loading, props) : null;
-    };
-
-    View.propTypes = Component.propTypes;
-    View.contextTypes = Component.contextTypes;
-    View.defaultProps = Component.defaultProps;
-    return View;
-  }
-}
-
-export var exportModule = function exportModule(moduleName, initState, ActionHandles, views, Loading) {
-  var data = baseExportModule(moduleName, initState, ActionHandles, views);
-  var maps = {};
-
-  for (var _key in data.views) {
-    if (data.views.hasOwnProperty(_key)) {
-      maps[_key] = exportView(data.views[_key], data.model, _key, Loading);
-    }
-  }
-
-  data.views = maps;
-  return data;
-};
+export var exportModule = baseExportModule;
 //# sourceMappingURL=index.js.map
