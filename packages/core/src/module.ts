@@ -35,13 +35,13 @@ export type RootState<G extends ModuleGetter = {}> = {
   views: {[key in keyof G]?: ModuleViewsNum<ReturnModule<G[key]>>};
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
-// export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
-//   const actions: T = getModuleActionCreatorList(moduleName) as T;
-//   return {
-//     moduleName,
-//     actions,
-//   };
-// }
+export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
+  const actions: T = getModuleActionCreatorList(moduleName) as T;
+  return {
+    moduleName,
+    actions,
+  };
+}
 export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>>(
   moduleName: string,
   initState: S,

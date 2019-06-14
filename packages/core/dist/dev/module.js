@@ -16,6 +16,13 @@ var _class, _temp;
 import { MetaData, getModuleActionCreatorList, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
+export function exportFacade(moduleName) {
+  var actions = getModuleActionCreatorList(moduleName);
+  return {
+    moduleName: moduleName,
+    actions: actions
+  };
+}
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store) {
     var hasInjected = store._medux_.injectedModules[moduleName];

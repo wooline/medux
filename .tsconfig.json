@@ -8,7 +8,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "sourceMap": false,
-    "inlineSources": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strict": true,
