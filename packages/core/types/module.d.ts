@@ -35,10 +35,6 @@ export declare type RootState<G extends ModuleGetter = {}> = {
 } & {
     [key in keyof G]?: ModuleStates<ReturnModule<G[key]>>;
 };
-export declare function exportFacade<T extends ActionCreatorList>(moduleName: string): {
-    moduleName: string;
-    actions: T;
-};
 export declare type ExportModule<Component> = <S extends BaseModelState, V extends {
     [key: string]: Component;
 }, T extends BaseModelHandlers<S, any>>(moduleName: string, initState: S, ActionHandles: {
