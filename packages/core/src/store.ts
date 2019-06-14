@@ -1,7 +1,8 @@
-import {applyMiddleware, compose, createStore, Middleware, ReducersMapObject, StoreEnhancer} from 'redux';
 import {Action, CurrentViews, MetaData, ModelStore, NSP, client} from './basic';
+import {ActionTypes, errorAction, viewInvalidAction} from './actions';
+import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
+
 import {isPlainObject} from './sprite';
-import {errorAction, viewInvalidAction, ActionTypes} from './actions';
 
 let invalidViewTimer: number;
 
@@ -26,12 +27,18 @@ function checkInvalidview() {
 }
 
 export function invalidview() {
+  if (MetaData.isServer) {
+    return;
+  }
   if (!invalidViewTimer) {
     invalidViewTimer = setTimeout(checkInvalidview, 0);
   }
 }
 
 export function viewWillMount(moduleName: string, viewName: string) {
+  if (MetaData.isServer) {
+    return;
+  }
   const currentViews = MetaData.clientStore._medux_.currentViews;
   if (!currentViews[moduleName]) {
     currentViews[moduleName] = {[viewName]: 1};
@@ -47,6 +54,9 @@ export function viewWillMount(moduleName: string, viewName: string) {
 }
 
 export function viewWillUnmount(moduleName: string, viewName: string) {
+  if (MetaData.isServer) {
+    return;
+  }
   const currentViews = MetaData.clientStore._medux_.currentViews;
   if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
     currentViews[moduleName][viewName]--;

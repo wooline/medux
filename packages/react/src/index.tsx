@@ -161,10 +161,14 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?:
       }
     });
     useEffect(() => {
-      view && viewWillMount(moduleName, viewName);
-      return () => {
-        view && viewWillUnmount(moduleName, viewName);
-      };
+      if (view) {
+        viewWillMount(moduleName, viewName);
+        return () => {
+          viewWillUnmount(moduleName, viewName);
+        };
+      } else {
+        return void 0;
+      }
     }, [view]);
     return view ? <view.Component {...props} /> : Loading ? <Loading {...props} /> : null;
   };

@@ -165,10 +165,14 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
         setView = _useState[1];
 
     useEffect(function () {
-      view && viewWillMount(moduleName, viewName);
-      return function () {
-        view && viewWillUnmount(moduleName, viewName);
-      };
+      if (view) {
+        viewWillMount(moduleName, viewName);
+        return function () {
+          viewWillUnmount(moduleName, viewName);
+        };
+      } else {
+        return void 0;
+      }
     }, [view]);
     return view ? React.createElement(view.Component, props) : Loading ? React.createElement(Loading, props) : null;
   };

@@ -16,13 +16,6 @@ var _class, _temp;
 import { MetaData, getModuleActionCreatorList, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
-export function exportFacade(moduleName) {
-  var actions = getModuleActionCreatorList(moduleName);
-  return {
-    moduleName: moduleName,
-    actions: actions
-  };
-}
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store) {
     var hasInjected = store._medux_.injectedModules[moduleName];
@@ -33,11 +26,14 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       var handlers = new ActionHandles(initState, moduleState);
       handlers.moduleName = moduleName;
       handlers.store = store;
-      var actions = injectActions(store, moduleName, handlers);
-      handlers.actions = actions;
+
+      var _actions = injectActions(store, moduleName, handlers);
+
+      handlers.actions = _actions;
 
       if (!moduleState) {
-        var initAction = actions.INIT(handlers.initState);
+        var initAction = _actions.INIT(handlers.initState);
+
         var action = store.dispatch(initAction);
 
         if (isPromise(action)) {
@@ -55,10 +51,12 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
 
   model.moduleName = moduleName;
   model.initState = initState;
+  var actions = getModuleActionCreatorList(moduleName);
   return {
     moduleName: moduleName,
     model: model,
-    views: views
+    views: views,
+    actions: actions
   };
 };
 export var BaseModelHandlers = (_class = (_temp =
@@ -138,6 +136,12 @@ export function isPromiseModule(module) {
 }
 export function isPromiseView(moduleView) {
   return typeof moduleView['then'] === 'function';
+}
+export function exportActions(moduleGetter) {
+  return Object.keys(moduleGetter).reduce(function (prev, cur) {
+    prev[cur] = getModuleActionCreatorList(cur);
+    return prev;
+  }, {});
 }
 export function loadModel(moduleGetter, moduleName) {
   moduleGetter = MetaData.moduleGetter;

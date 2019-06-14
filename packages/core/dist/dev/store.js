@@ -12,10 +12,10 @@ import "core-js/modules/es.string.split";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { applyMiddleware, compose, createStore } from 'redux';
 import { MetaData, NSP, client } from './basic';
+import { ActionTypes, errorAction, viewInvalidAction } from './actions';
+import { applyMiddleware, compose, createStore } from 'redux';
 import { isPlainObject } from './sprite';
-import { errorAction, viewInvalidAction, ActionTypes } from './actions';
 var invalidViewTimer;
 
 function checkInvalidview() {
@@ -43,11 +43,19 @@ function checkInvalidview() {
 }
 
 export function invalidview() {
+  if (MetaData.isServer) {
+    return;
+  }
+
   if (!invalidViewTimer) {
     invalidViewTimer = setTimeout(checkInvalidview, 0);
   }
 }
 export function viewWillMount(moduleName, viewName) {
+  if (MetaData.isServer) {
+    return;
+  }
+
   var currentViews = MetaData.clientStore._medux_.currentViews;
 
   if (!currentViews[moduleName]) {
@@ -67,6 +75,10 @@ export function viewWillMount(moduleName, viewName) {
   invalidview();
 }
 export function viewWillUnmount(moduleName, viewName) {
+  if (MetaData.isServer) {
+    return;
+  }
+
   var currentViews = MetaData.clientStore._medux_.currentViews;
 
   if (currentViews[moduleName] && currentViews[moduleName][viewName]) {

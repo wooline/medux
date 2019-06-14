@@ -10,11 +10,12 @@ export interface Model<ModelState extends BaseModelState = BaseModelState> {
   (store: ModelStore): Promise<void>;
 }
 
-export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}> {
+export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = {}> {
   default: {
     moduleName: string;
     model: M;
     views: VS;
+    actions: AS;
   };
 }
 
@@ -23,28 +24,30 @@ export interface ModuleGetter {
 }
 
 export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
-export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
+// export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
 type ModuleModel<M extends any> = M['default']['model'];
 type ModuleStates<M extends any> = M['default']['model']['initState'];
-type ModuleViews<M extends any> = {[key in keyof M['default']['views']]?: number};
+type ModuleViews<M extends any> = M['default']['views'];
+type ModuleActions<M extends any> = M['default']['actions'];
+type ModuleViewsNum<M extends any> = {[key in keyof M['default']['views']]?: number};
 
 export type RootState<G extends ModuleGetter = {}> = {
-  views: {[key in keyof G]?: ModuleViews<ReturnModule<G[key]>>};
+  views: {[key in keyof G]?: ModuleViewsNum<ReturnModule<G[key]>>};
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
-export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
-  const actions: T = getModuleActionCreatorList(moduleName) as T;
-  return {
-    moduleName,
-    actions,
-  };
-}
-export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}>(
+// export function exportFacade<T extends ActionCreatorList>(moduleName: string) {
+//   const actions: T = getModuleActionCreatorList(moduleName) as T;
+//   return {
+//     moduleName,
+//     actions,
+//   };
+// }
+export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>>(
   moduleName: string,
   initState: S,
-  ActionHandles: {new (initState: S, presetData?: any): BaseModelHandlers<S, any>},
+  ActionHandles: {new (initState: S, presetData?: any): T},
   views: V
-) => Module<Model<S>, V>['default'];
+) => Module<Model<S>, V, Actions<T>>['default'];
 
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
   const model = (store: ModelStore) => {
@@ -74,10 +77,12 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
   model.moduleName = moduleName;
   model.initState = initState;
+  const actions = getModuleActionCreatorList(moduleName) as any;
   return {
     moduleName,
     model,
     views,
+    actions,
   };
 };
 
@@ -161,6 +166,12 @@ export function isPromiseModule(module: Module | Promise<Module>): module is Pro
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
+export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
+  return Object.keys(moduleGetter).reduce((prev, cur) => {
+    prev[cur] = getModuleActionCreatorList(cur);
+    return prev;
+  }, {}) as any;
+}
 export function loadModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>, M extends ReturnModule<MG[N]>>(moduleGetter: MG, moduleName: N): Promise<ModuleModel<M>> {
   moduleGetter = MetaData.moduleGetter as any;
   const result = moduleGetter[moduleName]();
@@ -196,7 +207,7 @@ export function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewN
   }
 }
 
-export type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ReturnViews<MG[M]>, N extends Extract<keyof V, string>>(
+export type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
   moduleGetter: MG,
   moduleName: M,
   viewName: N
