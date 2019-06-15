@@ -3,7 +3,7 @@ import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
     moduleName: string;
     initState: ModelState;
-    (store: ModelStore): Promise<void>;
+    (store: ModelStore): void | Promise<void>;
 }
 export interface Module<M extends Model = Model, VS extends {
     [key: string]: any;
@@ -21,7 +21,6 @@ export interface ModuleGetter {
     [moduleName: string]: () => Module | Promise<Module>;
 }
 export declare type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
-declare type ModuleModel<M extends any> = M['default']['model'];
 declare type ModuleStates<M extends any> = M['default']['model']['initState'];
 declare type ModuleViews<M extends any> = M['default']['views'];
 declare type ModuleActions<M extends any> = M['default']['actions'];
@@ -74,7 +73,7 @@ export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView
 export declare function exportActions<G extends ModuleGetter>(moduleGetter: G): {
     [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
 };
-export declare function loadModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>, M extends ReturnModule<MG[N]>>(moduleGetter: MG, moduleName: N): Promise<ModuleModel<M>>;
+export declare function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void>;
 export declare function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T>;
 export declare type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N) => V[N];
 export interface StoreOptions {

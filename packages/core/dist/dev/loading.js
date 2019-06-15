@@ -1,5 +1,5 @@
-import { MetaData, getModuleActionCreatorList, NSP } from './basic';
-import { TaskCounter, TaskCountEvent } from './sprite';
+import { MetaData, NSP } from './basic';
+import { TaskCountEvent, TaskCounter } from './sprite';
 import { ActionTypes } from './actions';
 var loadings = {};
 var depthTime = 2;
@@ -29,7 +29,7 @@ export function setLoading(item, moduleName, group) {
       if (store) {
         var _actions;
 
-        var actions = getModuleActionCreatorList(moduleName)[ActionTypes.M_LOADING];
+        var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.M_LOADING];
         var action = actions((_actions = {}, _actions[group] = e.data, _actions));
         store.dispatch(action);
       }

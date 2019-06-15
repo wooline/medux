@@ -1,7 +1,8 @@
-import {Action, CurrentViews, MetaData, ModelStore, NSP, client} from './basic';
+import {Action, CurrentViews, MetaData, ModelStore, NSP, client, isPromise} from './basic';
 import {ActionTypes, errorAction, viewInvalidAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
+import {injectModel} from './module';
 import {isPlainObject} from './sprite';
 
 let invalidViewTimer: number;
@@ -249,7 +250,19 @@ export function buildStore(
   const enhancer: StoreEnhancer = newCreateStore => {
     return (...args) => {
       const newStore = newCreateStore(...args);
+      const dispatch = newStore.dispatch;
       const modelStore: ModelStore = newStore as any;
+      modelStore.dispatch = action => {
+        const [moduleName, actionName] = action.type.split(NSP);
+        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+          const initModel = injectModel(MetaData.moduleGetter, moduleName, modelStore);
+          if (isPromise(initModel)) {
+            return initModel.then(() => dispatch<any>(action));
+          }
+        } else {
+          return dispatch<any>(action);
+        }
+      };
       modelStore._medux_ = {
         prevState: {router: null},
         currentState: {router: null},

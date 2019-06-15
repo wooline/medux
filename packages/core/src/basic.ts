@@ -21,7 +21,7 @@ export const MetaData: {
 } = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
-  actionCreatorMap: {},
+  actionCreatorMap: null as any,
   clientStore: null as any,
   appModuleName: null as any,
   moduleGetter: null as any,
@@ -88,27 +88,7 @@ export interface BaseModelState {
   isModule?: boolean;
   loading?: {[key: string]: LoadingState};
 }
-export function getModuleActionCreatorList(moduleName: string): ActionCreatorList {
-  // if (window["Proxy"]) {
-  //   actions = new window["Proxy"](
-  //     {},
-  //     {
-  //       get: (target: {}, key: string) => {
-  //         return (data: any) => ({ type: moduleName + "/" + key, data });
-  //       }
-  //     }
-  //   );
-  // } else {
-  //   actions = getModuleActions(moduleName) as any;
-  // }
-  if (MetaData.actionCreatorMap[moduleName]) {
-    return MetaData.actionCreatorMap[moduleName];
-  } else {
-    const obj = {};
-    MetaData.actionCreatorMap[moduleName] = obj;
-    return obj;
-  }
-}
+
 export function isPromise(data: any): data is Promise<any> {
   return typeof data['then'] === 'function';
 }
@@ -214,7 +194,7 @@ function transformAction(actionName: string, action: ActionHandler, listenerModu
 }
 
 function addModuleActionCreatorList(moduleName: string, actionName: string) {
-  const actions = getModuleActionCreatorList(moduleName);
+  const actions = MetaData.actionCreatorMap[moduleName];
   if (!actions[actionName]) {
     actions[actionName] = payload => ({type: moduleName + NSP + actionName, payload});
   }
@@ -237,5 +217,5 @@ export function injectActions(store: ModelStore, moduleName: string, handlers: A
       }
     }
   }
-  return getModuleActionCreatorList(moduleName);
+  return MetaData.actionCreatorMap[moduleName];
 }

@@ -13,7 +13,7 @@ import _applyDecoratedDescriptor from "@babel/runtime/helpers/esm/applyDecorated
 
 var _class, _temp;
 
-import { MetaData, getModuleActionCreatorList, injectActions, isPromise, reducer } from './basic';
+import { MetaData, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
@@ -34,24 +34,24 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       if (!moduleState) {
         var initAction = _actions.INIT(handlers.initState);
 
-        var action = store.dispatch(initAction);
+        var result = store.dispatch(initAction);
 
-        if (isPromise(action)) {
-          return action;
-        } else {
-          return Promise.resolve(void 0);
+        if (isPromise(result)) {
+          return result.catch(function (err) {
+            return store.dispatch(errorAction(err));
+          }).then(function () {
+            return void 0;
+          });
         }
-      } else {
-        return Promise.resolve(void 0);
       }
-    } else {
-      return Promise.resolve(void 0);
     }
+
+    return void 0;
   };
 
   model.moduleName = moduleName;
   model.initState = initState;
-  var actions = getModuleActionCreatorList(moduleName);
+  var actions = MetaData.actionCreatorMap[moduleName];
   return {
     moduleName: moduleName,
     model: model,
@@ -79,7 +79,7 @@ function () {
   };
 
   _proto.callThisAction = function callThisAction(handler) {
-    var actions = getModuleActionCreatorList(this.moduleName);
+    var actions = MetaData.actionCreatorMap[this.moduleName];
     return actions[handler.__actionName__](arguments.length <= 1 ? undefined : arguments[1]);
   };
 
@@ -136,33 +136,34 @@ export function isPromiseModule(module) {
 }
 export function isPromiseView(moduleView) {
   return typeof moduleView['then'] === 'function';
-}
+} // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export function exportActions(moduleGetter) {
-  return Object.keys(moduleGetter).reduce(function (prev, cur) {
-    prev[cur] = getModuleActionCreatorList(cur);
-    return prev;
-  }, {});
+  return MetaData.actionCreatorMap;
 }
-export function loadModel(moduleGetter, moduleName) {
-  moduleGetter = MetaData.moduleGetter;
-  var result = moduleGetter[moduleName]();
+export function injectModel(moduleGetter, moduleName, store) {
+  var hasInjected = store._medux_.injectedModules[moduleName];
 
-  if (isPromiseModule(result)) {
-    return result.then(function (module) {
-      moduleGetter[moduleName] = function () {
-        return module;
-      };
+  if (!hasInjected) {
+    moduleGetter = MetaData.moduleGetter;
+    var result = moduleGetter[moduleName]();
 
-      return module.default.model;
-    });
-  } else {
-    return Promise.resolve(result.default.model);
+    if (isPromiseModule(result)) {
+      return result.then(function (module) {
+        moduleGetter[moduleName] = function () {
+          return module;
+        };
+
+        return module.default.model(store);
+      });
+    } else {
+      return result.default.model(store);
+    }
   }
 }
 export function getView(moduleGetter, moduleName, viewName) {
   moduleGetter = MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();
-  var store = MetaData.clientStore;
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
@@ -172,24 +173,36 @@ export function getView(moduleGetter, moduleName, viewName) {
 
       var view = module.default.views[viewName];
 
-      if (!MetaData.isServer) {
-        return module.default.model(store).then(function () {
-          return view;
-        });
+      if (MetaData.isServer) {
+        return view;
       }
 
-      return view;
+      var initModel = module.default.model(MetaData.clientStore);
+
+      if (isPromise(initModel)) {
+        return initModel.then(function () {
+          return view;
+        });
+      } else {
+        return view;
+      }
     });
   } else {
     var view = result.default.views[viewName];
 
-    if (!MetaData.isServer) {
-      result.default.model(store).then(function () {
-        return view;
-      });
+    if (MetaData.isServer) {
+      return view;
     }
 
-    return view;
+    var initModel = result.default.model(MetaData.clientStore);
+
+    if (isPromise(initModel)) {
+      return initModel.then(function () {
+        return view;
+      });
+    } else {
+      return view;
+    }
   }
 }
 
@@ -223,13 +236,36 @@ function getModuleListByNames(moduleNames, moduleGetter) {
   return Promise.all(preModules);
 }
 
+function buildMetaData(appModuleName, moduleGetter) {
+  MetaData.appModuleName = appModuleName;
+  MetaData.moduleGetter = moduleGetter;
+
+  if (!MetaData.actionCreatorMap) {
+    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
+      maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
+        get: function get(target, key) {
+          return function (data) {
+            return {
+              type: moduleName + '/' + key,
+              data: data
+            };
+          };
+        },
+        set: function set() {
+          return true;
+        }
+      });
+      return maps;
+    }, {});
+  }
+}
+
 export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
+  buildMetaData(appModuleName, moduleGetter);
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var initData = {};
 
@@ -258,14 +294,17 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
     storeOptions = {};
   }
 
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
+  buildMetaData(appModuleName, moduleGetter);
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   var appModule = moduleGetter[appModuleName]();
-  return appModule.default.model(store).catch(function (err) {
-    return store.dispatch(errorAction(err));
-  }).then(function () {
+  var initAppModel = appModule.default.model(store);
+
+  if (!isPromise(initAppModel)) {
+    initAppModel = Promise.resolve();
+  }
+
+  return initAppModel.then(function () {
     return render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey);
   });
 }

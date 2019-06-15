@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, getModuleActionCreatorList, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, injectActions, isPromise, reducer} from './basic';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
 import {buildStore} from './store';
@@ -7,7 +7,7 @@ import {errorAction} from './actions';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
   moduleName: string;
   initState: ModelState;
-  (store: ModelStore): Promise<void>;
+  (store: ModelStore): void | Promise<void>;
 }
 
 export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = {}> {
@@ -25,7 +25,6 @@ export interface ModuleGetter {
 
 export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 // export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
-type ModuleModel<M extends any> = M['default']['model'];
 type ModuleStates<M extends any> = M['default']['model']['initState'];
 type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
@@ -55,22 +54,21 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       (handlers as any).actions = actions;
       if (!moduleState) {
         const initAction = actions.INIT((handlers as any).initState);
-        const action = store.dispatch(initAction);
-        if (isPromise(action)) {
-          return action;
-        } else {
-          return Promise.resolve(void 0);
+        const result = store.dispatch(initAction);
+        if (isPromise(result)) {
+          return result
+            .catch(err => {
+              return store.dispatch(errorAction(err)) as any;
+            })
+            .then(() => void 0);
         }
-      } else {
-        return Promise.resolve(void 0);
       }
-    } else {
-      return Promise.resolve(void 0);
     }
+    return void 0;
   };
   model.moduleName = moduleName;
   model.initState = initState;
-  const actions = getModuleActionCreatorList(moduleName) as any;
+  const actions = MetaData.actionCreatorMap[moduleName] as any;
   return {
     moduleName,
     model,
@@ -112,7 +110,7 @@ export class BaseModelHandlers<S extends BaseModelState, R extends RootState> {
   }
 
   protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; playload?: any} {
-    const actions = getModuleActionCreatorList(this.moduleName);
+    const actions = MetaData.actionCreatorMap[this.moduleName];
     return actions[(handler as ActionHandler).__actionName__](rest[0]);
   }
 
@@ -159,44 +157,54 @@ export function isPromiseModule(module: Module | Promise<Module>): module is Pro
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
-  return Object.keys(moduleGetter).reduce((prev, cur) => {
-    prev[cur] = getModuleActionCreatorList(cur);
-    return prev;
-  }, {}) as any;
+  return MetaData.actionCreatorMap as any;
 }
-export function loadModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>, M extends ReturnModule<MG[N]>>(moduleGetter: MG, moduleName: N): Promise<ModuleModel<M>> {
-  moduleGetter = MetaData.moduleGetter as any;
-  const result = moduleGetter[moduleName]();
-  if (isPromiseModule(result)) {
-    return result.then(module => {
-      moduleGetter[moduleName] = (() => module) as any;
-      return module.default.model as any;
-    });
-  } else {
-    return Promise.resolve(result.default.model as any);
+export function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void> {
+  const hasInjected = store._medux_.injectedModules[moduleName];
+  if (!hasInjected) {
+    moduleGetter = MetaData.moduleGetter as any;
+    const result = moduleGetter[moduleName]();
+    if (isPromiseModule(result)) {
+      return result.then(module => {
+        moduleGetter[moduleName] = (() => module) as any;
+        return module.default.model(store);
+      });
+    } else {
+      return result.default.model(store);
+    }
   }
 }
 
 export function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T> {
   moduleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
-  const store = MetaData.clientStore;
   if (isPromiseModule(result)) {
     return result.then(module => {
       moduleGetter[moduleName] = () => module;
-      const view = module.default.views[viewName];
-      if (!MetaData.isServer) {
-        return module.default.model(store).then(() => view);
+      const view: T = module.default.views[viewName];
+      if (MetaData.isServer) {
+        return view;
       }
-      return view;
+      const initModel = module.default.model(MetaData.clientStore);
+      if (isPromise(initModel)) {
+        return initModel.then(() => view);
+      } else {
+        return view;
+      }
     });
   } else {
-    const view = result.default.views[viewName];
-    if (!MetaData.isServer) {
-      result.default.model(store).then(() => view);
+    const view: T = result.default.views[viewName];
+    if (MetaData.isServer) {
+      return view;
     }
-    return view;
+    const initModel = result.default.model(MetaData.clientStore);
+    if (isPromise(initModel)) {
+      return initModel.then(() => view);
+    } else {
+      return view;
+    }
   }
 }
 
@@ -236,14 +244,37 @@ export interface StoreOptions {
   enhancers?: StoreEnhancer[];
   initData?: {[key: string]: any};
 }
+
+function buildMetaData(appModuleName: string, moduleGetter: ModuleGetter) {
+  MetaData.appModuleName = appModuleName;
+  MetaData.moduleGetter = moduleGetter;
+  if (!MetaData.actionCreatorMap) {
+    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
+      maps[moduleName] =
+        typeof Proxy === 'undefined'
+          ? {}
+          : new Proxy(
+              {},
+              {
+                get: (target: {}, key: string) => {
+                  return (data: any) => ({type: moduleName + '/' + key, data});
+                },
+                set: () => {
+                  return true;
+                },
+              }
+            );
+      return maps;
+    }, {});
+  }
+}
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
   moduleGetter: M,
   appModuleName: A,
   storeOptions: StoreOptions = {}
 ): Promise<void> {
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
+  buildMetaData(appModuleName, moduleGetter);
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
   if (storeOptions.initData || window[ssrInitStoreKey]) {
@@ -266,18 +297,15 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   appModuleName: A,
   storeOptions: StoreOptions = {}
 ) {
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
+  buildMetaData(appModuleName, moduleGetter);
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = moduleGetter[appModuleName]() as Module;
-
-  return appModule.default
-    .model(store)
-    .catch(err => {
-      return store.dispatch(errorAction(err)) as any;
-    })
-    .then(() => {
-      return render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-    });
+  let initAppModel = appModule.default.model(store);
+  if (!isPromise(initAppModel)) {
+    initAppModel = Promise.resolve();
+  }
+  return initAppModel.then(() => {
+    return render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+  });
 }

@@ -1,5 +1,6 @@
-import {MetaData, getModuleActionCreatorList, NSP} from './basic';
-import {TaskCounter, TaskCountEvent} from './sprite';
+import {MetaData, NSP} from './basic';
+import {TaskCountEvent, TaskCounter} from './sprite';
+
 import {ActionTypes} from './actions';
 
 const loadings: {[moduleName: string]: TaskCounter} = {};
@@ -19,7 +20,7 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
     loadings[key].addListener(TaskCountEvent, e => {
       const store = MetaData.clientStore;
       if (store) {
-        const actions = getModuleActionCreatorList(moduleName)[ActionTypes.M_LOADING];
+        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.M_LOADING];
         const action = actions({[group]: e.data});
         store.dispatch(action);
       }

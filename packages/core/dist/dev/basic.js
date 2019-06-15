@@ -18,33 +18,12 @@ export var NSP = '/'; // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any;
 export var MetaData = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
-  actionCreatorMap: {},
+  actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,
   moduleGetter: null
 };
 export var client = MetaData.isServer ? undefined : window || global;
-export function getModuleActionCreatorList(moduleName) {
-  // if (window["Proxy"]) {
-  //   actions = new window["Proxy"](
-  //     {},
-  //     {
-  //       get: (target: {}, key: string) => {
-  //         return (data: any) => ({ type: moduleName + "/" + key, data });
-  //       }
-  //     }
-  //   );
-  // } else {
-  //   actions = getModuleActions(moduleName) as any;
-  // }
-  if (MetaData.actionCreatorMap[moduleName]) {
-    return MetaData.actionCreatorMap[moduleName];
-  } else {
-    var obj = {};
-    MetaData.actionCreatorMap[moduleName] = obj;
-    return obj;
-  }
-}
 export function isPromise(data) {
   return typeof data['then'] === 'function';
 }
@@ -168,7 +147,7 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
 }
 
 function addModuleActionCreatorList(moduleName, actionName) {
-  var actions = getModuleActionCreatorList(moduleName);
+  var actions = MetaData.actionCreatorMap[moduleName];
 
   if (!actions[actionName]) {
     actions[actionName] = function (payload) {
@@ -202,6 +181,6 @@ export function injectActions(store, moduleName, handlers) {
     }
   }
 
-  return getModuleActionCreatorList(moduleName);
+  return MetaData.actionCreatorMap[moduleName];
 }
 //# sourceMappingURL=basic.js.map

@@ -5,6 +5,7 @@ module.exports = {
    },
    globals: {
       Promise: true,
+      Proxy: true,
    },
    parser: '@typescript-eslint/parser',
    extends: [

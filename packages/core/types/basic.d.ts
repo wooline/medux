@@ -88,7 +88,6 @@ export interface BaseModelState {
         [key: string]: LoadingState;
     };
 }
-export declare function getModuleActionCreatorList(moduleName: string): ActionCreatorList;
 export declare function isPromise(data: any): data is Promise<any>;
 export declare function getStore(): ModelStore;
 export declare function isServer(): boolean;

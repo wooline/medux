@@ -12,9 +12,10 @@ import "core-js/modules/es.string.split";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { MetaData, NSP, client } from './basic';
+import { MetaData, NSP, client, isPromise } from './basic';
 import { ActionTypes, errorAction, viewInvalidAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
+import { injectModel } from './module';
 import { isPlainObject } from './sprite';
 var invalidViewTimer;
 
@@ -320,7 +321,27 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
   var enhancer = function enhancer(newCreateStore) {
     return function () {
       var newStore = newCreateStore.apply(void 0, arguments);
+      var dispatch = newStore.dispatch;
       var modelStore = newStore;
+
+      modelStore.dispatch = function (action) {
+        var _action$type$split = action.type.split(NSP),
+            moduleName = _action$type$split[0],
+            actionName = _action$type$split[1];
+
+        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+          var initModel = injectModel(MetaData.moduleGetter, moduleName, modelStore);
+
+          if (isPromise(initModel)) {
+            return initModel.then(function () {
+              return dispatch(action);
+            });
+          }
+        } else {
+          return dispatch(action);
+        }
+      };
+
       modelStore._medux_ = {
         prevState: {
           router: null
