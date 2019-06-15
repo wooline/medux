@@ -159,6 +159,24 @@ export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Prom
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
+  MetaData.moduleGetter = moduleGetter;
+  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
+    maps[moduleName] =
+      typeof Proxy === 'undefined'
+        ? {}
+        : new Proxy(
+            {},
+            {
+              get: (target: {}, key: string) => {
+                return (data: any) => ({type: moduleName + '/' + key, data});
+              },
+              set: () => {
+                return true;
+              },
+            }
+          );
+    return maps;
+  }, {});
   return MetaData.actionCreatorMap as any;
 }
 export function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void> {
@@ -245,36 +263,13 @@ export interface StoreOptions {
   initData?: {[key: string]: any};
 }
 
-function buildMetaData(appModuleName: string, moduleGetter: ModuleGetter) {
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
-  if (!MetaData.actionCreatorMap) {
-    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
-      maps[moduleName] =
-        typeof Proxy === 'undefined'
-          ? {}
-          : new Proxy(
-              {},
-              {
-                get: (target: {}, key: string) => {
-                  return (data: any) => ({type: moduleName + '/' + key, data});
-                },
-                set: () => {
-                  return true;
-                },
-              }
-            );
-      return maps;
-    }, {});
-  }
-}
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
   moduleGetter: M,
   appModuleName: A,
   storeOptions: StoreOptions = {}
 ): Promise<void> {
-  buildMetaData(appModuleName, moduleGetter);
+  MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
   if (storeOptions.initData || window[ssrInitStoreKey]) {
@@ -297,7 +292,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   appModuleName: A,
   storeOptions: StoreOptions = {}
 ) {
-  buildMetaData(appModuleName, moduleGetter);
+  MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = moduleGetter[appModuleName]() as Module;

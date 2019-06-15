@@ -139,6 +139,23 @@ export function isPromiseView(moduleView) {
 } // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 export function exportActions(moduleGetter) {
+  MetaData.moduleGetter = moduleGetter;
+  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
+    maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
+      get: function get(target, key) {
+        return function (data) {
+          return {
+            type: moduleName + '/' + key,
+            data: data
+          };
+        };
+      },
+      set: function set() {
+        return true;
+      }
+    });
+    return maps;
+  }, {});
   return MetaData.actionCreatorMap;
 }
 export function injectModel(moduleGetter, moduleName, store) {
@@ -236,36 +253,12 @@ function getModuleListByNames(moduleNames, moduleGetter) {
   return Promise.all(preModules);
 }
 
-function buildMetaData(appModuleName, moduleGetter) {
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
-
-  if (!MetaData.actionCreatorMap) {
-    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
-      maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-        get: function get(target, key) {
-          return function (data) {
-            return {
-              type: moduleName + '/' + key,
-              data: data
-            };
-          };
-        },
-        set: function set() {
-          return true;
-        }
-      });
-      return maps;
-    }, {});
-  }
-}
-
 export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  buildMetaData(appModuleName, moduleGetter);
+  MetaData.appModuleName = appModuleName;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var initData = {};
 
@@ -294,7 +287,7 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
     storeOptions = {};
   }
 
-  buildMetaData(appModuleName, moduleGetter);
+  MetaData.appModuleName = appModuleName;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   var appModule = moduleGetter[appModuleName]();
