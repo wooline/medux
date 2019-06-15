@@ -25,7 +25,7 @@ export var MetaData = {
 };
 export var client = MetaData.isServer ? undefined : window || global;
 export function isPromise(data) {
-  return typeof data['then'] === 'function';
+  return typeof data === 'object' && typeof data['then'] === 'function';
 }
 export function getStore() {
   return MetaData.clientStore;

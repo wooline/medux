@@ -51,7 +51,7 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
 
   model.moduleName = moduleName;
   model.initState = initState;
-  var actions = MetaData.actionCreatorMap[moduleName];
+  var actions = {};
   return {
     moduleName: moduleName,
     model: model,

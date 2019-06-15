@@ -245,24 +245,22 @@ export function buildStore(
   // enhancers.push(window["__REDUX_DEVTOOLS_EXTENSION__"](window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"]));
   // }
   // store = createStore(combineReducers as any, initData, compose(...enhancers));
-
-  const middlewareEnhancer = applyMiddleware(...storeMiddlewares, middleware);
+  const preLoadMiddleware = () => (next: Function) => (action: Action) => {
+    const [moduleName, actionName] = action.type.split(NSP);
+    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+      const initModel = injectModel(MetaData.moduleGetter, moduleName, store);
+      if (isPromise(initModel)) {
+        return initModel.then(() => next(action));
+      }
+    } else {
+      return next(action);
+    }
+  };
+  const middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
   const enhancer: StoreEnhancer = newCreateStore => {
     return (...args) => {
       const newStore = newCreateStore(...args);
-      const dispatch = newStore.dispatch;
       const modelStore: ModelStore = newStore as any;
-      modelStore.dispatch = action => {
-        const [moduleName, actionName] = action.type.split(NSP);
-        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-          const initModel = injectModel(MetaData.moduleGetter, moduleName, modelStore);
-          if (isPromise(initModel)) {
-            return initModel.then(() => dispatch<any>(action));
-          }
-        } else {
-          return dispatch<any>(action);
-        }
-      };
       modelStore._medux_ = {
         prevState: {router: null},
         currentState: {router: null},

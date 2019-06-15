@@ -316,32 +316,34 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
   // store = createStore(combineReducers as any, initData, compose(...enhancers));
 
 
-  var middlewareEnhancer = applyMiddleware.apply(void 0, storeMiddlewares.concat([middleware]));
-
-  var enhancer = function enhancer(newCreateStore) {
-    return function () {
-      var newStore = newCreateStore.apply(void 0, arguments);
-      var dispatch = newStore.dispatch;
-      var modelStore = newStore;
-
-      modelStore.dispatch = function (action) {
+  var preLoadMiddleware = function preLoadMiddleware() {
+    return function (next) {
+      return function (action) {
         var _action$type$split = action.type.split(NSP),
             moduleName = _action$type$split[0],
             actionName = _action$type$split[1];
 
         if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-          var initModel = injectModel(MetaData.moduleGetter, moduleName, modelStore);
+          var initModel = injectModel(MetaData.moduleGetter, moduleName, store);
 
           if (isPromise(initModel)) {
             return initModel.then(function () {
-              return dispatch(action);
+              return next(action);
             });
           }
         } else {
-          return dispatch(action);
+          return next(action);
         }
       };
+    };
+  };
 
+  var middlewareEnhancer = applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
+
+  var enhancer = function enhancer(newCreateStore) {
+    return function () {
+      var newStore = newCreateStore.apply(void 0, arguments);
+      var modelStore = newStore;
       modelStore._medux_ = {
         prevState: {
           router: null

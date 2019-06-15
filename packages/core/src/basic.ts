@@ -90,7 +90,7 @@ export interface BaseModelState {
 }
 
 export function isPromise(data: any): data is Promise<any> {
-  return typeof data['then'] === 'function';
+  return typeof data === 'object' && typeof data['then'] === 'function';
 }
 export function getStore() {
   return MetaData.clientStore;

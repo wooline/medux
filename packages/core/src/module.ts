@@ -68,7 +68,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
   model.moduleName = moduleName;
   model.initState = initState;
-  const actions = MetaData.actionCreatorMap[moduleName] as any;
+  const actions = {} as any;
   return {
     moduleName,
     model,
