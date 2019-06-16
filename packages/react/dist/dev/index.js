@@ -1,6 +1,6 @@
 import { ConnectedRouter, connectRouter, routerMiddleware } from 'connected-react-router';
 import React, { useEffect, useState } from 'react';
-import { exportModule as baseExportModule, getView, invalidview, isPromiseView, renderApp, renderSSR, viewWillMount, viewWillUnmount } from '@medux/core';
+import { exportGlobals as baseExportGlobals, exportModule as baseExportModule, getView, invalidview, isPromiseView, renderApp, renderSSR, viewWillMount, viewWillUnmount } from '@medux/core';
 import { createBrowserHistory, createMemoryHistory } from 'history';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
@@ -180,4 +180,5 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
   return loader;
 };
 export var exportModule = baseExportModule;
+export var exportGlobals = baseExportGlobals;
 //# sourceMappingURL=index.js.map

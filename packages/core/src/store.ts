@@ -238,13 +238,6 @@ export function buildStore(
     return action;
   };
 
-  // const enhancers = [applyMiddleware(...[effectMiddleware, routerMiddleware(storeHistory), ...storeMiddlewares]), ...storeEnhancers];
-  // if (MetaData.isBrowser && MetaData.isDev && window["__REDUX_DEVTOOLS_EXTENSION__"]) {
-  //
-  // __REDUX_DEVTOOLS_EXTENSION_COMPOSE__
-  // enhancers.push(window["__REDUX_DEVTOOLS_EXTENSION__"](window["__REDUX_DEVTOOLS_EXTENSION__OPTIONS"]));
-  // }
-  // store = createStore(combineReducers as any, initData, compose(...enhancers));
   const preLoadMiddleware = () => (next: Function) => (action: Action) => {
     const [moduleName, actionName] = action.type.split(NSP);
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
@@ -252,9 +245,8 @@ export function buildStore(
       if (isPromise(initModel)) {
         return initModel.then(() => next(action));
       }
-    } else {
-      return next(action);
     }
+    return next(action);
   };
   const middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
   const enhancer: StoreEnhancer = newCreateStore => {

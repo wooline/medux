@@ -9,9 +9,9 @@ export interface Module<M extends Model = Model, VS extends {
     [key: string]: any;
 } = {
     [key: string]: any;
-}, AS extends ActionCreatorList = {}> {
+}, AS extends ActionCreatorList = {}, N extends string = string> {
     default: {
-        moduleName: string;
+        moduleName: N;
         model: M;
         views: VS;
         actions: AS;
@@ -20,14 +20,15 @@ export interface Module<M extends Model = Model, VS extends {
 export interface ModuleGetter {
     [moduleName: string]: () => Module | Promise<Module>;
 }
-export declare type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
+export declare type ReturnModule<T> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
+declare type ModuleName<M extends any> = M['default']['moduleName'];
 declare type ModuleStates<M extends any> = M['default']['model']['initState'];
 declare type ModuleViews<M extends any> = M['default']['views'];
 declare type ModuleActions<M extends any> = M['default']['actions'];
 declare type ModuleViewsNum<M extends any> = {
     [key in keyof M['default']['views']]?: number;
 };
-export declare type RootState<G extends ModuleGetter = {}> = {
+declare type RootState<G> = {
     views: {
         [key in keyof G]?: ModuleViewsNum<ReturnModule<G[key]>>;
     };
@@ -36,11 +37,11 @@ export declare type RootState<G extends ModuleGetter = {}> = {
 };
 export declare type ExportModule<Component> = <S extends BaseModelState, V extends {
     [key: string]: Component;
-}, T extends BaseModelHandlers<S, any>>(moduleName: string, initState: S, ActionHandles: {
+}, T extends BaseModelHandlers<S, any>, N extends string>(moduleName: N, initState: S, ActionHandles: {
     new (initState: S, presetData?: any): T;
-}, views: V) => Module<Model<S>, V, Actions<T>>['default'];
+}, views: V) => Module<Model<S>, V, Actions<T>, N>['default'];
 export declare const exportModule: ExportModule<any>;
-export declare class BaseModelHandlers<S extends BaseModelState, R extends RootState> {
+export declare class BaseModelHandlers<S extends BaseModelState, R> {
     protected readonly initState: S;
     protected readonly moduleName: string;
     protected readonly store: ModelStore;
@@ -70,9 +71,15 @@ export declare type Actions<Ins> = {
 };
 export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
 export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
-export declare function exportActions<G extends ModuleGetter>(moduleGetter: G): {
-    [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
+export declare type ExportGlobals<S> = <G extends {
+    [N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never;
+}>(moduleGetter: G) => {
+    actions: {
+        [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
+    };
+    states: RootState<G> & S;
 };
+export declare const exportGlobals: ExportGlobals<{}>;
 export declare function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void>;
 export declare function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T>;
 export declare type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleGetter: MG, moduleName: M, viewName: N) => V[N];

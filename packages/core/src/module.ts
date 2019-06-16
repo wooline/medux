@@ -10,9 +10,9 @@ export interface Model<ModelState extends BaseModelState = BaseModelState> {
   (store: ModelStore): void | Promise<void>;
 }
 
-export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = {}> {
+export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = {}, N extends string = string> {
   default: {
-    moduleName: string;
+    moduleName: N;
     model: M;
     views: VS;
     actions: AS;
@@ -23,23 +23,23 @@ export interface ModuleGetter {
   [moduleName: string]: () => Module | Promise<Module>;
 }
 
-export type ReturnModule<T extends () => any> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
+export type ReturnModule<T> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 // export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
+type ModuleName<M extends any> = M['default']['moduleName'];
 type ModuleStates<M extends any> = M['default']['model']['initState'];
 type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
 type ModuleViewsNum<M extends any> = {[key in keyof M['default']['views']]?: number};
-
-export type RootState<G extends ModuleGetter = {}> = {
+type RootState<G> = {
   views: {[key in keyof G]?: ModuleViewsNum<ReturnModule<G[key]>>};
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
-export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>>(
-  moduleName: string,
+export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>, N extends string>(
+  moduleName: N,
   initState: S,
   ActionHandles: {new (initState: S, presetData?: any): T},
   views: V
-) => Module<Model<S>, V, Actions<T>>['default'];
+) => Module<Model<S>, V, Actions<T>, N>['default'];
 
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
   const model = (store: ModelStore) => {
@@ -77,7 +77,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
 };
 
-export class BaseModelHandlers<S extends BaseModelState, R extends RootState> {
+export class BaseModelHandlers<S extends BaseModelState, R> {
   protected readonly initState: S;
   protected readonly moduleName: string = '';
   protected readonly store: ModelStore = null as any;
@@ -157,9 +157,11 @@ export function isPromiseModule(module: Module | Promise<Module>): module is Pro
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
-  MetaData.moduleGetter = moduleGetter;
+export type ExportGlobals<S> = <G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(
+  moduleGetter: G
+) => {actions: {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>}; states: RootState<G> & S};
+export const exportGlobals: ExportGlobals<{}> = moduleGetter => {
+  MetaData.moduleGetter = moduleGetter as any;
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
     maps[moduleName] =
       typeof Proxy === 'undefined'
@@ -177,8 +179,8 @@ export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in
           );
     return maps;
   }, {});
-  return MetaData.actionCreatorMap as any;
-}
+  return {actions: MetaData.actionCreatorMap as any, states: {} as any};
+};
 export function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void> {
   const hasInjected = store._medux_.injectedModules[moduleName];
   if (!hasInjected) {

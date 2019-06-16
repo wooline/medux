@@ -1,2 +1,2 @@
 export {BaseModelState, CurrentViews} from './basic';
-export {ModuleGetter, StoreOptions, Model, Module, ExportModule, LoadView, RootState} from './module';
+export {ExportGlobals, ModuleGetter, StoreOptions, Model, Module, ExportModule, LoadView} from './module';

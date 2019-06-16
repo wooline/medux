@@ -136,9 +136,8 @@ export function isPromiseModule(module) {
 }
 export function isPromiseView(moduleView) {
   return typeof moduleView['then'] === 'function';
-} // eslint-disable-next-line @typescript-eslint/no-unused-vars
-
-export function exportActions(moduleGetter) {
+}
+export var exportGlobals = function exportGlobals(moduleGetter) {
   MetaData.moduleGetter = moduleGetter;
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
     maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
@@ -156,8 +155,11 @@ export function exportActions(moduleGetter) {
     });
     return maps;
   }, {});
-  return MetaData.actionCreatorMap;
-}
+  return {
+    actions: MetaData.actionCreatorMap,
+    states: {}
+  };
+};
 export function injectModel(moduleGetter, moduleName, store) {
   var hasInjected = store._medux_.injectedModules[moduleName];
 
