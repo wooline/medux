@@ -137,6 +137,46 @@ export function isPromiseModule(module) {
 export function isPromiseView(moduleView) {
   return typeof moduleView['then'] === 'function';
 }
+export function exportActions(moduleGetter) {
+  MetaData.moduleGetter = moduleGetter;
+  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
+    maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
+      get: function get(target, key) {
+        return function (data) {
+          return {
+            type: moduleName + '/' + key,
+            data: data
+          };
+        };
+      },
+      set: function set() {
+        return true;
+      }
+    });
+    return maps;
+  }, {});
+  return MetaData.actionCreatorMap;
+}
+export function exportActions2(moduleGetter) {
+  MetaData.moduleGetter = moduleGetter;
+  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
+    maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
+      get: function get(target, key) {
+        return function (data) {
+          return {
+            type: moduleName + '/' + key,
+            data: data
+          };
+        };
+      },
+      set: function set() {
+        return true;
+      }
+    });
+    return maps;
+  }, {});
+  return MetaData.actionCreatorMap;
+}
 export var exportGlobals = function exportGlobals(moduleGetter) {
   MetaData.moduleGetter = moduleGetter;
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {

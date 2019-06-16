@@ -1,5 +1,5 @@
+import { RootState as BaseRootState, ExportGlobals, ExportModule, LoadView, ModuleGetter, StoreOptions } from '@medux/core/types/export';
 import { RouterState } from 'connected-react-router';
-import { ExportGlobals, ExportModule, LoadView, ModuleGetter, StoreOptions } from '@medux/core/types/export';
 import { ComponentType, ReactElement } from 'react';
 export declare type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, storeOptions?: StoreOptions & {
@@ -17,3 +17,6 @@ export declare const exportModule: ExportModule<ComponentType<any>>;
 export declare const exportGlobals: ExportGlobals<{
     router: RouterState;
 }>;
+export declare type RootState<G extends ModuleGetter = {}, R = RouterState> = BaseRootState<G> & {
+    router: R;
+};

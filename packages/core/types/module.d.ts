@@ -28,7 +28,7 @@ declare type ModuleActions<M extends any> = M['default']['actions'];
 declare type ModuleViewsNum<M extends any> = {
     [key in keyof M['default']['views']]?: number;
 };
-declare type RootState<G> = {
+export declare type RootState<G> = {
     views: {
         [key in keyof G]?: ModuleViewsNum<ReturnModule<G[key]>>;
     };
@@ -71,6 +71,14 @@ export declare type Actions<Ins> = {
 };
 export declare function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module>;
 export declare function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T>;
+export declare function exportActions<G extends ModuleGetter>(moduleGetter: G): {
+    [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
+};
+export declare function exportActions2<G extends {
+    [N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never;
+}>(moduleGetter: G): {
+    [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
+};
 export declare type ExportGlobals<S> = <G extends {
     [N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never;
 }>(moduleGetter: G) => {

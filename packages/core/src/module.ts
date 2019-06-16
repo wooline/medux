@@ -30,7 +30,7 @@ type ModuleStates<M extends any> = M['default']['model']['initState'];
 type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
 type ModuleViewsNum<M extends any> = {[key in keyof M['default']['views']]?: number};
-type RootState<G> = {
+export type RootState<G> = {
   views: {[key in keyof G]?: ModuleViewsNum<ReturnModule<G[key]>>};
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
@@ -157,6 +157,49 @@ export function isPromiseModule(module: Module | Promise<Module>): module is Pro
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
+export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
+  MetaData.moduleGetter = moduleGetter;
+  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
+    maps[moduleName] =
+      typeof Proxy === 'undefined'
+        ? {}
+        : new Proxy(
+            {},
+            {
+              get: (target: {}, key: string) => {
+                return (data: any) => ({type: moduleName + '/' + key, data});
+              },
+              set: () => {
+                return true;
+              },
+            }
+          );
+    return maps;
+  }, {});
+  return MetaData.actionCreatorMap as any;
+}
+export function exportActions2<G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
+  MetaData.moduleGetter = moduleGetter as any;
+  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
+    maps[moduleName] =
+      typeof Proxy === 'undefined'
+        ? {}
+        : new Proxy(
+            {},
+            {
+              get: (target: {}, key: string) => {
+                return (data: any) => ({type: moduleName + '/' + key, data});
+              },
+              set: () => {
+                return true;
+              },
+            }
+          );
+    return maps;
+  }, {});
+  return MetaData.actionCreatorMap as any;
+}
+
 export type ExportGlobals<S> = <G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(
   moduleGetter: G
 ) => {actions: {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>}; states: RootState<G> & S};
