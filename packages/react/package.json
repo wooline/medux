@@ -46,7 +46,7 @@
     "@types/react-router-dom": "~4.3.3",
     "connected-react-router": "~6.4.0",
     "history": "~4.9.0",
-    "react-redux": "~7.0.3",
+    "react-redux": "~7.1.0",
     "react-router-dom": "~5.0.0"
   }
 }

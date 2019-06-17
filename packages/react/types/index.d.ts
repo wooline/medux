@@ -14,6 +14,6 @@ export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof
 }>;
 export declare const loadView: LoadView;
 export declare const exportModule: ExportModule<ComponentType<any>>;
-export declare type RootState<G extends ModuleGetter = {}, R = RouterState> = BaseRootState<G> & {
+export declare type RootState<G extends ModuleGetter, R = RouterState> = BaseRootState<G> & {
     router: R;
 };

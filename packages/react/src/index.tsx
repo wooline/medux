@@ -177,4 +177,4 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?:
 
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
 
-export type RootState<G extends ModuleGetter = {}, R = RouterState> = BaseRootState<G> & {router: R};
+export type RootState<G extends ModuleGetter, R = RouterState> = BaseRootState<G> & {router: R};
