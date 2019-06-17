@@ -23,15 +23,15 @@ export interface ModuleGetter {
   [moduleName: string]: () => Module | Promise<Module>;
 }
 
-export type ReturnModule<T> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
+type ReturnModule<T> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 // export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
 type ModuleName<M extends any> = M['default']['moduleName'];
 type ModuleStates<M extends any> = M['default']['model']['initState'];
 type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
-type ModuleViewsNum<M extends any> = {[key in keyof M['default']['views']]?: number};
-export type RootState<G> = {
-  views: {[key in keyof G]?: ModuleViewsNum<ReturnModule<G[key]>>};
+type MountViews<M extends any> = {[key in keyof M['default']['views']]?: number};
+export type RootState<G extends ModuleGetter> = {
+  views: {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
 export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>, N extends string>(
@@ -157,28 +157,8 @@ export function isPromiseModule(module: Module | Promise<Module>): module is Pro
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
-export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
-  MetaData.moduleGetter = moduleGetter;
-  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
-    maps[moduleName] =
-      typeof Proxy === 'undefined'
-        ? {}
-        : new Proxy(
-            {},
-            {
-              get: (target: {}, key: string) => {
-                return (data: any) => ({type: moduleName + '/' + key, data});
-              },
-              set: () => {
-                return true;
-              },
-            }
-          );
-    return maps;
-  }, {});
-  return MetaData.actionCreatorMap as any;
-}
-export function exportActions2<G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
+
+export function exportActions<G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
   MetaData.moduleGetter = moduleGetter as any;
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
     maps[moduleName] =
@@ -200,30 +180,6 @@ export function exportActions2<G extends {[N in keyof G]: N extends ModuleName<R
   return MetaData.actionCreatorMap as any;
 }
 
-export type ExportGlobals<S> = <G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(
-  moduleGetter: G
-) => {actions: {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>}; states: RootState<G> & S};
-export const exportGlobals: ExportGlobals<{}> = moduleGetter => {
-  MetaData.moduleGetter = moduleGetter as any;
-  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
-    maps[moduleName] =
-      typeof Proxy === 'undefined'
-        ? {}
-        : new Proxy(
-            {},
-            {
-              get: (target: {}, key: string) => {
-                return (data: any) => ({type: moduleName + '/' + key, data});
-              },
-              set: () => {
-                return true;
-              },
-            }
-          );
-    return maps;
-  }, {});
-  return {actions: MetaData.actionCreatorMap as any, states: {} as any};
-};
 export function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void> {
   const hasInjected = store._medux_.injectedModules[moduleName];
   if (!hasInjected) {

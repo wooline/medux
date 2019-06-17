@@ -1,4 +1,4 @@
-import { RootState as BaseRootState, ExportGlobals, ExportModule, LoadView, ModuleGetter, StoreOptions } from '@medux/core/types/export';
+import { RootState as BaseRootState, ExportModule, LoadView, ModuleGetter, StoreOptions } from '@medux/core/types/export';
 import { RouterState } from 'connected-react-router';
 import { ComponentType, ReactElement } from 'react';
 export declare type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
@@ -14,9 +14,6 @@ export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof
 }>;
 export declare const loadView: LoadView;
 export declare const exportModule: ExportModule<ComponentType<any>>;
-export declare const exportGlobals: ExportGlobals<{
-    router: RouterState;
-}>;
 export declare type RootState<G extends ModuleGetter = {}, R = RouterState> = BaseRootState<G> & {
     router: R;
 };

@@ -1,7 +1,7 @@
-import {RootState as BaseRootState, ExportGlobals, ExportModule, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import {RootState as BaseRootState, ExportModule, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
 import {ConnectedRouter, RouterState, connectRouter, routerMiddleware} from 'connected-react-router';
 import React, {ComponentType, FunctionComponent, ReactElement, useEffect, useState} from 'react';
-import {exportGlobals as baseExportGlobals, exportModule as baseExportModule, getView, invalidview, isPromiseView, renderApp, renderSSR, viewWillMount, viewWillUnmount} from '@medux/core';
+import {exportModule as baseExportModule, getView, invalidview, isPromiseView, renderApp, renderSSR, viewWillMount, viewWillUnmount} from '@medux/core';
 import {createBrowserHistory, createMemoryHistory} from 'history';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 
@@ -176,7 +176,5 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?:
 };
 
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
-
-export const exportGlobals: ExportGlobals<{router: RouterState}> = baseExportGlobals as any;
 
 export type RootState<G extends ModuleGetter = {}, R = RouterState> = BaseRootState<G> & {router: R};
