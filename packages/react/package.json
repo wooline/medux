@@ -42,11 +42,11 @@
   "dependencies": {
     "@medux/core": "^0.0.35",
     "@types/history": "~4.7.2",
-    "@types/react-redux": "~7.0.9",
-    "@types/react-router-dom": "~4.3.3",
+    "@types/react-redux": "~7.1.0",
+    "@types/react-router-dom": "~4.3.4",
     "connected-react-router": "~6.4.0",
     "history": "~4.9.0",
     "react-redux": "~7.1.0",
-    "react-router-dom": "~5.0.0"
+    "react-router-dom": "~5.0.1"
   }
 }
