@@ -13,7 +13,7 @@
     "node": ">=9.0.0"
   },
   "main": "index.js",
-  "typescript": "src/index.ts",
+  "typescript": "src/",
   "types": "types/",
   "files": [
     "src/",
