@@ -9,6 +9,8 @@ import {Provider} from 'react-redux';
 import ReactDOM from 'react-dom';
 import {withRouter} from 'react-router-dom';
 
+export {routerActions} from 'connected-react-router';
+
 export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(

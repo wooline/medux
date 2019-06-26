@@ -1,6 +1,7 @@
 import { RootState as BaseRootState, ExportModule, LoadView, ModuleGetter, StoreOptions } from '@medux/core/types/export';
 import { RouterState } from 'connected-react-router';
 import { ComponentType, ReactElement } from 'react';
+export { routerActions } from 'connected-react-router';
 export declare type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
 export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, storeOptions?: StoreOptions & {
     routerParser?: RouterParser;

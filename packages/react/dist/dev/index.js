@@ -6,6 +6,7 @@ import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
 import { withRouter } from 'react-router-dom';
+export { routerActions } from 'connected-react-router';
 export function buildApp(moduleGetter, appModuleName, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};
