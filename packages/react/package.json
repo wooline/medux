@@ -1,6 +1,6 @@
 {
   "name": "@medux/react",
-  "version": "0.0.36",
+  "version": "0.0.37",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/react/npm.md",
@@ -41,7 +41,7 @@
     "react-dom": "^16.8.0"
   },
   "dependencies": {
-    "@medux/core": "^0.0.36",
+    "@medux/core": "^0.0.37",
     "@types/history": "~4.7.2",
     "@types/react-redux": "~7.1.0",
     "@types/react-router-dom": "~4.3.4",
