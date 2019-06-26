@@ -13,6 +13,7 @@
     "node": ">=9.0.0"
   },
   "main": "index.js",
+  "typescript": "src/index.ts",
   "types": "types/",
   "files": [
     "src/",
@@ -29,7 +30,7 @@
     "build": "yarn build:dev & yarn build:prod"
   },
   "browserslist": [
-    "ie >= 11"
+    "> 1%"
   ],
   "peerDependencies": {
     "@babel/runtime": "^7.0.0",
