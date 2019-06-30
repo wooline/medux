@@ -1,77 +1,29 @@
-import {RootState as BaseRootState, ExportModule, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
-import {ConnectedRouter, RouterState, connectRouter, routerMiddleware} from 'connected-react-router';
-import React, {ComponentType, FunctionComponent, ReactElement, useEffect, useState} from 'react';
-import {exportModule as baseExportModule, getView, invalidview, isPromiseView, renderApp, renderSSR, viewWillMount, viewWillUnmount} from '@medux/core';
-import {createBrowserHistory, createMemoryHistory} from 'history';
-import {renderToNodeStream, renderToString} from 'react-dom/server';
+import {ExportModule, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import React, {ComponentType, FunctionComponent, ReactNode, useEffect, useState} from 'react';
+import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount} from '@medux/core';
 
 import {Provider} from 'react-redux';
-import ReactDOM from 'react-dom';
-import {withRouter} from 'react-router-dom';
 
-export {routerActions} from 'connected-react-router';
-
-export type RouterParser<T = any> = (nextRouter: T, prevRouter?: T) => T;
-
-export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
+export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
+  render: (Provider: ComponentType<{children: ReactNode}>, AppMainView: ComponentType<any>, ssrInitStoreKey: string) => void,
   moduleGetter: M,
   appModuleName: A,
-  storeOptions: StoreOptions & {routerParser?: RouterParser} = {},
-  container: string | Element | ((component: ReactElement<any>) => void) = 'root'
+  storeOptions: StoreOptions
 ): Promise<void> {
-  const history = createBrowserHistory();
-  storeOptions.reducers = storeOptions.reducers || {};
-  if (storeOptions.reducers && storeOptions.reducers.router) {
-    throw new Error("the reducer name 'router' is not allowed");
-  }
-  const router = connectRouter(history);
-  storeOptions.reducers.router = (state, action) => {
-    const routerData = router(state, action as any);
-    if (storeOptions.routerParser && state !== routerData) {
-      return storeOptions.routerParser(routerData, state);
-    } else {
-      return routerData;
-    }
-  };
-  // SSR需要数据是单向的，store->view，不能store->view->store->view，而view:ConnectedRouter初始化时会触发一次LOCATION_CHANGE
-  let routerInited = false;
-  const filterRouter = () => (next: Function) => (action: {type: string}) => {
-    if (action.type === '@@router/LOCATION_CHANGE') {
-      if (!routerInited) {
-        routerInited = true;
-        return action;
-      } else {
-        invalidview();
-      }
-    }
-    return next(action);
-  };
-  storeOptions.middlewares = storeOptions.middlewares || [];
-  storeOptions.middlewares.unshift(filterRouter, routerMiddleware(history));
-
-  return renderApp(
+  return baseRenderApp(
     (
       store,
       appModel,
       appViews: {
-        [key: string]: React.ComponentType<any>;
+        [key: string]: ComponentType<any>;
       },
       ssrInitStoreKey
     ) => {
-      const WithRouter = withRouter(appViews.Main);
-      const app = (
-        <Provider store={store}>
-          <ConnectedRouter history={history}>
-            <WithRouter />
-          </ConnectedRouter>
-        </Provider>
-      );
-      if (typeof container === 'function') {
-        container(app);
-      } else {
-        const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(app, typeof container === 'string' ? document.getElementById(container) : container);
-      }
+      const ReduxProvider: ComponentType<{children: ReactNode}> = props => {
+        // eslint-disable-next-line react/prop-types
+        return <Provider store={store}>{props.children}</Provider>;
+      };
+      render(ReduxProvider, appViews.Main, ssrInitStoreKey);
     },
     moduleGetter,
     appModuleName,
@@ -79,43 +31,13 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   );
 }
 
-export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
+export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
+  render: (Provider: ComponentType<{children: ReactNode}>, AppMainView: ComponentType<any>) => any,
   moduleGetter: M,
   appModuleName: A,
-  initialEntries: string[],
-  storeOptions: StoreOptions & {routerParser?: RouterParser} = {},
-  renderToStream: boolean = false
-): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
-  const history = createMemoryHistory({initialEntries});
-  storeOptions.reducers = storeOptions.reducers || {};
-  if (storeOptions.reducers && storeOptions.reducers.router) {
-    throw new Error("the reducer name 'router' is not allowed");
-  }
-  const router = connectRouter(history);
-  storeOptions.reducers.router = (state, action) => {
-    const routerData = router(state.router, action as any);
-    if (storeOptions.routerParser && state.router !== routerData) {
-      state.router = storeOptions.routerParser(routerData, state.router);
-    } else {
-      state.router = routerData;
-    }
-  };
-  let routerInited = false;
-  const filterRouter = () => (next: Function) => (action: {type: string}) => {
-    if (action.type === '@@router/LOCATION_CHANGE') {
-      if (!routerInited) {
-        routerInited = true;
-        return action;
-      } else {
-        invalidview();
-      }
-    }
-    return next(action);
-  };
-  storeOptions.middlewares = storeOptions.middlewares || [];
-  storeOptions.middlewares.unshift(filterRouter, routerMiddleware(history));
-  const render = renderToStream ? renderToNodeStream : renderToString;
-  return renderSSR(
+  storeOptions: StoreOptions = {}
+) {
+  return baseRenderSSR(
     (
       store,
       appModel,
@@ -125,16 +47,14 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
       ssrInitStoreKey
     ) => {
       const data = store.getState();
+      const ReduxProvider: ComponentType<{children: ReactNode}> = props => {
+        // eslint-disable-next-line react/prop-types
+        return <Provider store={store}>{props.children}</Provider>;
+      };
       return {
         ssrInitStoreKey,
         data,
-        html: render(
-          <Provider store={store}>
-            <ConnectedRouter history={history}>
-              <appViews.Main />
-            </ConnectedRouter>
-          </Provider>
-        ),
+        html: render(ReduxProvider, appViews.Main),
       };
     },
     moduleGetter,
@@ -178,5 +98,3 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?:
 };
 
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
-
-export type RootState<G extends ModuleGetter, R = RouterState> = BaseRootState<G> & {router: R};

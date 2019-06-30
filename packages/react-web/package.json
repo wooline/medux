@@ -1,9 +1,9 @@
 {
-  "name": "@medux/core",
+  "name": "@medux/react-web",
   "version": "0.0.39",
   "description": "",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/core",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/core/npm.md",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/react-web",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/react-web/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -23,8 +23,8 @@
   ],
   "scripts": {
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
-    "lint": "eslint \"./src/**/*.ts\"",
-    "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
+    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+    "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
     "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
     "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
     "build": "yarn build:dev & yarn build:prod"
@@ -33,11 +33,15 @@
     "> 1%"
   ],
   "peerDependencies": {
-    "@babel/runtime": "^7.0.0",
-    "core-js": "^3.0.0"
+    "@types/react-dom": "^16.8.0",
+    "react-dom": "^16.8.0"
   },
   "dependencies": {
-    "redux": "~4.0.1"
-  },
-  "gitHead": "4f3a36fcc1f8c9eabeb07d491572b5e2c3e2f496"
+    "@medux/react": "^0.0.39",
+    "@types/history": "~4.7.2",
+    "@types/react-router-dom": "~4.3.4",
+    "connected-react-router": "~6.4.0",
+    "history": "~4.9.0",
+    "react-router-dom": "~5.0.1"
+  }
 }
