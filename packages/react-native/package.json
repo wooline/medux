@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-native",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-native",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/react-native/npm.md",
@@ -37,7 +37,7 @@
     "react-native": "^0.50.0"
   },
   "dependencies": {
-    "@medux/react": "^0.0.40"
+    "@medux/react": "^0.0.41"
   },
   "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }
