@@ -38,5 +38,6 @@
   },
   "dependencies": {
     "@medux/react": "^0.0.40"
-  }
+  },
+  "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }

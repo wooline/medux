@@ -29,5 +29,6 @@
     "chalk": "^2.4.0",
     "json-format": "^1.0.0",
     "micromatch": "^4.0.0"
-  }
+  },
+  "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }

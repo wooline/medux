@@ -40,5 +40,6 @@
     "@medux/core": "^0.0.40",
     "@types/react-redux": "~7.1.0",
     "react-redux": "~7.1.0"
-  }
+  },
+  "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }

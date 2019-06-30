@@ -63,5 +63,6 @@
     "webpack-dev-server": "~3.5.1",
     "webpack-manifest-plugin": "~2.0.4",
     "yargs": "~13.2.4"
-  }
+  },
+  "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }
