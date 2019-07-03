@@ -64,14 +64,17 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
 }
 let autoID = 0;
 export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
-  let vid = 0;
-  const onFocus = () => viewWillMount(moduleName, viewName, vid + '');
-  const onBlur = () => viewWillUnmount(moduleName, viewName, vid + '');
+  const onFocus = (vid: number) => viewWillMount(moduleName, viewName, vid + '');
+  const onBlur = (vid: number) => viewWillUnmount(moduleName, viewName, vid + '');
   const loader: FunctionComponent<any> = function Loader(props: any) {
-    const [view, setView] = useState<{Component: ComponentType} | null>(() => {
+    const [vid] = useState<number>(() => {
       if (!isServer()) {
-        vid = autoID++;
+        return autoID++;
+      } else {
+        return 0;
       }
+    });
+    const [view, setView] = useState<{Component: ComponentType} | null>(() => {
       const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(Component => {
@@ -90,15 +93,15 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?:
       if (view) {
         let subscriptions: {didFocus: null | {remove: Function}; didBlur: null | {remove: Function}} = {didFocus: null, didBlur: null};
         if (props.navigation) {
-          subscriptions.didFocus = props.navigation.addListener('didFocus', onFocus);
-          subscriptions.didBlur = props.navigation.addListener('didBlur', onBlur);
+          subscriptions.didFocus = props.navigation.addListener('didFocus', () => onFocus(vid));
+          subscriptions.didBlur = props.navigation.addListener('didBlur', () => onBlur(vid));
         }
-        onFocus();
+        onFocus(vid);
 
         return () => {
           subscriptions.didFocus && subscriptions.didFocus.remove();
           subscriptions.didBlur && subscriptions.didBlur.remove();
-          onBlur();
+          onBlur(vid);
         };
       } else {
         return void 0;

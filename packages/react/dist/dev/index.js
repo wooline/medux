@@ -40,22 +40,25 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
 }
 var autoID = 0;
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
-  var vid = 0;
-
-  var onFocus = function onFocus() {
+  var onFocus = function onFocus(vid) {
     return viewWillMount(moduleName, viewName, vid + '');
   };
 
-  var onBlur = function onBlur() {
+  var onBlur = function onBlur(vid) {
     return viewWillUnmount(moduleName, viewName, vid + '');
   };
 
   var loader = function Loader(props) {
     var _useState = useState(function () {
       if (!isServer()) {
-        vid = autoID++;
+        return autoID++;
+      } else {
+        return 0;
       }
+    }),
+        vid = _useState[0];
 
+    var _useState2 = useState(function () {
       var moduleViewResult = getView(moduleGetter, moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
@@ -83,8 +86,8 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
         };
       }
     }),
-        view = _useState[0],
-        setView = _useState[1];
+        view = _useState2[0],
+        setView = _useState2[1];
 
     useEffect(function () {
       if (view) {
@@ -94,15 +97,19 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
         };
 
         if (props.navigation) {
-          subscriptions.didFocus = props.navigation.addListener('didFocus', onFocus);
-          subscriptions.didBlur = props.navigation.addListener('didBlur', onBlur);
+          subscriptions.didFocus = props.navigation.addListener('didFocus', function () {
+            return onFocus(vid);
+          });
+          subscriptions.didBlur = props.navigation.addListener('didBlur', function () {
+            return onBlur(vid);
+          });
         }
 
-        onFocus();
+        onFocus(vid);
         return function () {
           subscriptions.didFocus && subscriptions.didFocus.remove();
           subscriptions.didBlur && subscriptions.didBlur.remove();
-          onBlur();
+          onBlur(vid);
         };
       } else {
         return void 0;
