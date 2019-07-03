@@ -29,7 +29,7 @@ type ModuleName<M extends any> = M['default']['moduleName'];
 type ModuleStates<M extends any> = M['default']['model']['initState'];
 type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
-type MountViews<M extends any> = {[key in keyof M['default']['views']]?: number};
+type MountViews<M extends any> = {[key in keyof M['default']['views']]?: boolean};
 export type RootState<G extends ModuleGetter> = {
   views: {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};

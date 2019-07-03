@@ -30,11 +30,15 @@ function checkInvalidview() {
 
       for (var viewname in element) {
         if (element[viewname]) {
-          if (!views[moduleName]) {
-            views[moduleName] = {};
-          }
+          var n = Object.keys(element[viewname]).length;
 
-          views[moduleName][viewname] = element[viewname];
+          if (n) {
+            if (!views[moduleName]) {
+              views[moduleName] = {};
+            }
+
+            views[moduleName][viewname] = true;
+          }
         }
       }
     }
@@ -52,7 +56,7 @@ export function invalidview() {
     invalidViewTimer = setTimeout(checkInvalidview, 0);
   }
 }
-export function viewWillMount(moduleName, viewName) {
+export function viewWillMount(moduleName, viewName, vid) {
   if (MetaData.isServer) {
     return;
   }
@@ -60,22 +64,24 @@ export function viewWillMount(moduleName, viewName) {
   var currentViews = MetaData.clientStore._medux_.currentViews;
 
   if (!currentViews[moduleName]) {
-    var _currentViews$moduleN;
+    var _viewName, _currentViews$moduleN;
 
-    currentViews[moduleName] = (_currentViews$moduleN = {}, _currentViews$moduleN[viewName] = 1, _currentViews$moduleN);
+    currentViews[moduleName] = (_currentViews$moduleN = {}, _currentViews$moduleN[viewName] = (_viewName = {}, _viewName[vid] = true, _viewName), _currentViews$moduleN);
   } else {
     var views = currentViews[moduleName];
 
     if (!views[viewName]) {
-      views[viewName] = 1;
+      var _views$viewName;
+
+      views[viewName] = (_views$viewName = {}, _views$viewName[vid] = true, _views$viewName);
     } else {
-      views[viewName]++;
+      views[viewName][vid] = true;
     }
   }
 
   invalidview();
 }
-export function viewWillUnmount(moduleName, viewName) {
+export function viewWillUnmount(moduleName, viewName, vid) {
   if (MetaData.isServer) {
     return;
   }
@@ -83,7 +89,8 @@ export function viewWillUnmount(moduleName, viewName) {
   var currentViews = MetaData.clientStore._medux_.currentViews;
 
   if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
-    currentViews[moduleName][viewName]--;
+    var views = currentViews[moduleName][viewName];
+    delete views[vid];
   }
 
   invalidview();

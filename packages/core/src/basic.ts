@@ -49,8 +49,11 @@ export interface ModelStore extends Store {
     currentState: {[key: string]: any};
   };
 }
+export interface DisplayViews {
+  [moduleName: string]: {[viewName: string]: boolean};
+}
 export interface CurrentViews {
-  [moduleName: string]: {[viewName: string]: number};
+  [moduleName: string]: {[viewName: string]: {[key: string]: boolean}};
 }
 export interface ReducerHandler extends ActionHandler {
   (payload?: any): BaseModelState;

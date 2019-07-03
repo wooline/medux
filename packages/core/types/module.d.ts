@@ -26,7 +26,7 @@ declare type ModuleStates<M extends any> = M['default']['model']['initState'];
 declare type ModuleViews<M extends any> = M['default']['views'];
 declare type ModuleActions<M extends any> = M['default']['actions'];
 declare type MountViews<M extends any> = {
-    [key in keyof M['default']['views']]?: number;
+    [key in keyof M['default']['views']]?: boolean;
 };
 export declare type RootState<G extends ModuleGetter> = {
     views: {

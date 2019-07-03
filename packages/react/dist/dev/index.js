@@ -1,5 +1,8 @@
+import "core-js/modules/es.object.keys";
+import "core-js/modules/web.dom-collections.for-each";
+import _extends from "@babel/runtime/helpers/esm/extends";
 import React, { useEffect, useState } from 'react';
-import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount } from '@medux/core';
+import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, isServer, viewWillMount, viewWillUnmount } from '@medux/core';
 import { Provider } from 'react-redux';
 export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
   return baseRenderApp(function (store, appModel, appViews, ssrInitStoreKey) {
@@ -35,45 +38,115 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
     };
   }, moduleGetter, appModuleName, storeOptions);
 }
+var autoID = 0;
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
-  var loader = function Loader(props) {
-    var _useState = useState(function () {
-      var moduleViewResult = getView(moduleGetter, moduleName, viewName);
+  var loader = null;
 
-      if (isPromiseView(moduleViewResult)) {
-        moduleViewResult.then(function (Component) {
-          loader.propTypes = Component.propTypes;
-          loader.contextTypes = Component.contextTypes;
-          loader.defaultProps = Component.defaultProps;
-          setView({
-            Component: Component
+  if (isServer()) {
+    var onFocus = function onFocus() {
+      return void 0;
+    };
+
+    var onBlur = function onBlur() {
+      return void 0;
+    };
+
+    loader = function Loader(props) {
+      var _useState = useState(function () {
+        var moduleViewResult = getView(moduleGetter, moduleName, viewName);
+
+        if (isPromiseView(moduleViewResult)) {
+          return null;
+        } else {
+          Object.keys(loader).forEach(function (key) {
+            return moduleViewResult[key] = loader[key];
           });
-        });
-        return null;
-      } else {
-        loader.propTypes = moduleViewResult.propTypes;
-        loader.contextTypes = moduleViewResult.contextTypes;
-        loader.defaultProps = moduleViewResult.defaultProps;
-        return {
-          Component: moduleViewResult
-        };
-      }
-    }),
-        view = _useState[0],
-        setView = _useState[1];
+          Object.keys(moduleViewResult).forEach(function (key) {
+            return loader[key] = moduleViewResult[key];
+          });
+          return {
+            Component: moduleViewResult
+          };
+        }
+      }),
+          view = _useState[0];
 
-    useEffect(function () {
-      if (view) {
-        viewWillMount(moduleName, viewName);
-        return function () {
-          viewWillUnmount(moduleName, viewName);
-        };
-      } else {
-        return void 0;
-      }
-    }, [view]);
-    return view ? React.createElement(view.Component, props) : Loading ? React.createElement(Loading, props) : null;
-  };
+      return view ? React.createElement(view.Component, _extends({}, props, {
+        onFocus: onFocus,
+        onBlur: onBlur
+      })) : Loading ? React.createElement(Loading, props) : null;
+    };
+  } else {
+    var aid = autoID++;
+
+    var _onFocus = function _onFocus() {
+      return viewWillMount(moduleName, viewName, aid + '');
+    };
+
+    var _onBlur = function _onBlur() {
+      return viewWillUnmount(moduleName, viewName, aid + '');
+    };
+
+    loader = function Loader(props) {
+      var _useState2 = useState(function () {
+        var moduleViewResult = getView(moduleGetter, moduleName, viewName);
+
+        if (isPromiseView(moduleViewResult)) {
+          moduleViewResult.then(function (Component) {
+            Object.keys(loader).forEach(function (key) {
+              return Component[key] = loader[key];
+            });
+            Object.keys(Component).forEach(function (key) {
+              return loader[key] = Component[key];
+            });
+            setView({
+              Component: Component
+            });
+          });
+          return null;
+        } else {
+          Object.keys(loader).forEach(function (key) {
+            return moduleViewResult[key] = loader[key];
+          });
+          Object.keys(moduleViewResult).forEach(function (key) {
+            return loader[key] = moduleViewResult[key];
+          });
+          return {
+            Component: moduleViewResult
+          };
+        }
+      }),
+          view = _useState2[0],
+          setView = _useState2[1];
+
+      useEffect(function () {
+        if (view) {
+          var subscriptions = {
+            didFocus: null,
+            didBlur: null
+          };
+
+          if (props.navigation) {
+            subscriptions.didFocus = props.navigation.addListener('didFocus', _onFocus);
+            subscriptions.didBlur = props.navigation.addListener('didBlur', _onBlur);
+          }
+
+          viewWillMount(moduleName, viewName, aid + '');
+          return function () {
+            subscriptions.didFocus && subscriptions.didFocus.remove();
+            subscriptions.didBlur && subscriptions.didBlur.remove();
+            viewWillUnmount(moduleName, viewName, aid + '');
+          };
+        } else {
+          return void 0;
+        }
+      }, [view]);
+      return view ? React.createElement(view.Component, _extends({}, props, {
+        onFocus: _onFocus,
+        onBlur: _onBlur
+      })) : Loading ? React.createElement(Loading, props) : null;
+    };
+  }
 
   return loader;
 };

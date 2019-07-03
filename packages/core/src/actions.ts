@@ -1,4 +1,4 @@
-import {CurrentViews, NSP} from './basic';
+import {DisplayViews, NSP} from './basic';
 
 export const ActionTypes = {
   M_LOADING: 'LOADING',
@@ -14,7 +14,7 @@ export function errorAction(error: any) {
   };
 }
 
-export function viewInvalidAction(currentViews: CurrentViews) {
+export function viewInvalidAction(currentViews: DisplayViews) {
   return {
     type: ActionTypes.F_VIEW_INVALID,
     currentViews,
