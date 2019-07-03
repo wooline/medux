@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-web",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-web",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/react-web/npm.md",
@@ -37,7 +37,7 @@
     "react-dom": "^16.8.0"
   },
   "dependencies": {
-    "@medux/react": "^0.0.44",
+    "@medux/react": "^0.0.45",
     "@types/history": "~4.7.2",
     "@types/react-router-dom": "~4.3.4",
     "connected-react-router": "~6.4.0",
