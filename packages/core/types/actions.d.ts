@@ -1,4 +1,4 @@
-import { DisplayViews } from './basic';
+import { CurrentViews } from './basic';
 export declare const ActionTypes: {
     M_LOADING: string;
     M_INIT: string;
@@ -9,7 +9,7 @@ export declare function errorAction(error: any): {
     type: string;
     error: any;
 };
-export declare function viewInvalidAction(currentViews: DisplayViews): {
+export declare function viewInvalidAction(currentViews: CurrentViews): {
     type: string;
-    currentViews: DisplayViews;
+    currentViews: CurrentViews;
 };

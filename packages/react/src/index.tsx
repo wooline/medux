@@ -1,6 +1,6 @@
 import {ExportModule, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
 import React, {ComponentType, FunctionComponent, ReactNode, useEffect, useState} from 'react';
-import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, isServer, viewWillMount, viewWillUnmount} from '@medux/core';
+import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount} from '@medux/core';
 
 import {Provider} from 'react-redux';
 
@@ -62,66 +62,47 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
     storeOptions
   );
 }
-let autoID = 0;
-export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
-  let loader: FunctionComponent<any> = null as any;
-  if (isServer()) {
-    const onFocus = () => void 0;
-    const onBlur = () => void 0;
-    loader = function Loader(props: any) {
-      const [view] = useState<{Component: ComponentType} | null>(() => {
-        const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
-        if (isPromiseView<ComponentType>(moduleViewResult)) {
-          return null;
-        } else {
-          Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
-          Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
-          return {Component: moduleViewResult};
-        }
-      });
-      return view ? <view.Component {...props} onFocus={onFocus} onBlur={onBlur} /> : Loading ? <Loading {...props} /> : null;
-    };
-  } else {
-    const aid = autoID++;
-    const onFocus = () => viewWillMount(moduleName, viewName, aid + '');
-    const onBlur = () => viewWillUnmount(moduleName, viewName, aid + '');
-    loader = function Loader(props: any) {
-      const [view, setView] = useState<{Component: ComponentType} | null>(() => {
-        const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
-        if (isPromiseView<ComponentType>(moduleViewResult)) {
-          moduleViewResult.then(Component => {
-            Object.keys(loader).forEach(key => (Component[key] = loader[key]));
-            Object.keys(Component).forEach(key => (loader[key] = Component[key]));
-            setView({Component});
-          });
-          return null;
-        } else {
-          Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
-          Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
-          return {Component: moduleViewResult};
-        }
-      });
-      useEffect(() => {
-        if (view) {
-          let subscriptions: {didFocus: null | {remove: Function}; didBlur: null | {remove: Function}} = {didFocus: null, didBlur: null};
-          if (props.navigation) {
-            subscriptions.didFocus = props.navigation.addListener('didFocus', onFocus);
-            subscriptions.didBlur = props.navigation.addListener('didBlur', onBlur);
-          }
-          viewWillMount(moduleName, viewName, aid + '');
 
-          return () => {
-            subscriptions.didFocus && subscriptions.didFocus.remove();
-            subscriptions.didBlur && subscriptions.didBlur.remove();
-            viewWillUnmount(moduleName, viewName, aid + '');
-          };
-        } else {
-          return void 0;
+export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
+  const onFocus = () => viewWillMount(moduleName, viewName);
+  const onBlur = () => viewWillUnmount(moduleName, viewName);
+  const loader: FunctionComponent<any> = function Loader(props: any) {
+    const [view, setView] = useState<{Component: ComponentType} | null>(() => {
+      const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
+      if (isPromiseView<ComponentType>(moduleViewResult)) {
+        moduleViewResult.then(Component => {
+          Object.keys(loader).forEach(key => (Component[key] = loader[key]));
+          Object.keys(Component).forEach(key => (loader[key] = Component[key]));
+          setView({Component});
+        });
+        return null;
+      } else {
+        Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
+        Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
+        return {Component: moduleViewResult};
+      }
+    });
+    useEffect(() => {
+      if (view) {
+        let subscriptions: {didFocus: null | {remove: Function}; didBlur: null | {remove: Function}} = {didFocus: null, didBlur: null};
+        if (props.navigation) {
+          subscriptions.didFocus = props.navigation.addListener('didFocus', onFocus);
+          subscriptions.didBlur = props.navigation.addListener('didBlur', onBlur);
         }
-      }, [view]);
-      return view ? <view.Component {...props} onFocus={onFocus} onBlur={onBlur} /> : Loading ? <Loading {...props} /> : null;
-    };
-  }
+        onFocus();
+
+        return () => {
+          subscriptions.didFocus && subscriptions.didFocus.remove();
+          subscriptions.didBlur && subscriptions.didBlur.remove();
+          onBlur();
+        };
+      } else {
+        return void 0;
+      }
+    }, [view]);
+    return view ? <view.Component {...props} onFocus={onFocus} onBlur={onBlur} /> : Loading ? <Loading {...props} /> : null;
+  };
+
   return loader as any;
 };
 

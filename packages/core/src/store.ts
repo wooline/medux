@@ -1,4 +1,4 @@
-import {Action, CurrentViews, DisplayViews, MetaData, ModelStore, NSP, client, isPromise} from './basic';
+import {Action, CurrentViews, MetaData, ModelStore, NSP, client, isPromise} from './basic';
 import {ActionTypes, errorAction, viewInvalidAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
@@ -10,19 +10,13 @@ let invalidViewTimer: number;
 function checkInvalidview() {
   invalidViewTimer = 0;
   const currentViews = MetaData.clientStore._medux_.currentViews;
-  const views: DisplayViews = {};
+  const views: CurrentViews = {};
   for (const moduleName in currentViews) {
     if (currentViews.hasOwnProperty(moduleName)) {
       const element = currentViews[moduleName];
       for (const viewname in element) {
         if (element[viewname]) {
-          const n = Object.keys(element[viewname]).length;
-          if (n) {
-            if (!views[moduleName]) {
-              views[moduleName] = {};
-            }
-            views[moduleName][viewname] = true;
-          }
+          views[moduleName][viewname] = true;
         }
       }
     }
@@ -35,36 +29,30 @@ export function invalidview() {
     return;
   }
   if (!invalidViewTimer) {
-    invalidViewTimer = setTimeout(checkInvalidview, 0);
+    invalidViewTimer = setTimeout(checkInvalidview, 300);
   }
 }
 
-export function viewWillMount(moduleName: string, viewName: string, vid: string) {
+export function viewWillMount(moduleName: string, viewName: string) {
   if (MetaData.isServer) {
     return;
   }
   const currentViews = MetaData.clientStore._medux_.currentViews;
   if (!currentViews[moduleName]) {
-    currentViews[moduleName] = {[viewName]: {[vid]: true}};
+    currentViews[moduleName] = {[viewName]: true};
   } else {
-    const views = currentViews[moduleName];
-    if (!views[viewName]) {
-      views[viewName] = {[vid]: true};
-    } else {
-      views[viewName][vid] = true;
-    }
+    currentViews[moduleName][viewName] = true;
   }
   invalidview();
 }
 
-export function viewWillUnmount(moduleName: string, viewName: string, vid: string) {
+export function viewWillUnmount(moduleName: string, viewName: string) {
   if (MetaData.isServer) {
     return;
   }
   const currentViews = MetaData.clientStore._medux_.currentViews;
   if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
-    const views = currentViews[moduleName][viewName];
-    delete views[vid];
+    delete currentViews[moduleName][viewName];
   }
   invalidview();
 }
