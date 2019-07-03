@@ -1,6 +1,6 @@
 import {ExportModule, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
 import React, {ComponentType, FunctionComponent, ReactNode, useEffect, useState} from 'react';
-import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount} from '@medux/core';
+import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, isServer, viewWillMount, viewWillUnmount} from '@medux/core';
 
 import {Provider} from 'react-redux';
 
@@ -62,12 +62,16 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
     storeOptions
   );
 }
-
+let autoID = 0;
 export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
-  const onFocus = () => viewWillMount(moduleName, viewName);
-  const onBlur = () => viewWillUnmount(moduleName, viewName);
+  let vid = 0;
+  const onFocus = () => viewWillMount(moduleName, viewName, vid + '');
+  const onBlur = () => viewWillUnmount(moduleName, viewName, vid + '');
   const loader: FunctionComponent<any> = function Loader(props: any) {
     const [view, setView] = useState<{Component: ComponentType} | null>(() => {
+      if (!isServer()) {
+        vid = autoID++;
+      }
       const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(Component => {

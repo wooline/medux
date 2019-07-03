@@ -2,7 +2,7 @@ import "core-js/modules/es.object.keys";
 import "core-js/modules/web.dom-collections.for-each";
 import _extends from "@babel/runtime/helpers/esm/extends";
 import React, { useEffect, useState } from 'react';
-import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, viewWillMount, viewWillUnmount } from '@medux/core';
+import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, isServer, viewWillMount, viewWillUnmount } from '@medux/core';
 import { Provider } from 'react-redux';
 export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
   return baseRenderApp(function (store, appModel, appViews, ssrInitStoreKey) {
@@ -38,17 +38,24 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
     };
   }, moduleGetter, appModuleName, storeOptions);
 }
+var autoID = 0;
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
+  var vid = 0;
+
   var onFocus = function onFocus() {
-    return viewWillMount(moduleName, viewName);
+    return viewWillMount(moduleName, viewName, vid + '');
   };
 
   var onBlur = function onBlur() {
-    return viewWillUnmount(moduleName, viewName);
+    return viewWillUnmount(moduleName, viewName, vid + '');
   };
 
   var loader = function Loader(props) {
     var _useState = useState(function () {
+      if (!isServer()) {
+        vid = autoID++;
+      }
+
       var moduleViewResult = getView(moduleGetter, moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {

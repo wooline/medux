@@ -39,9 +39,16 @@ export interface ModelStore extends Store {
         };
     };
 }
-export interface CurrentViews {
+export interface DisplayViews {
     [moduleName: string]: {
         [viewName: string]: boolean;
+    };
+}
+export interface CurrentViews {
+    [moduleName: string]: {
+        [viewName: string]: {
+            [key: string]: boolean;
+        };
     };
 }
 export interface ReducerHandler extends ActionHandler {
