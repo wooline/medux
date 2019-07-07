@@ -1,8 +1,7 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
+import {ActionTypes, errorAction} from './actions';
+import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
-
-import {buildStore} from './store';
-import {errorAction} from './actions';
 
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
   moduleName: string;
@@ -27,29 +26,36 @@ type ReturnModule<T> = T extends () => Promise<infer R> ? R : T extends () => in
 // export type ReturnViews<T extends () => any> = T extends () => Promise<Module<Model, infer R>> ? R : T extends () => Module<Model, infer R> ? R : never;
 type ModuleName<M extends any> = M['default']['moduleName'];
 type ModuleStates<M extends any> = M['default']['model']['initState'];
+type ModuleParams<M extends any> = M['default']['model']['initState']['routeParams'];
 type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
 type MountViews<M extends any> = {[key in keyof M['default']['views']]?: boolean};
-export type RootState<G extends ModuleGetter> = {
-  views: {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
+export type RootState<G extends ModuleGetter, L> = {
+  route: {
+    location: L;
+    data: {
+      views: {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
+      params: {[key in keyof G]?: ModuleParams<ReturnModule<G[key]>>};
+      paths: any;
+    };
+  };
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
 export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>, N extends string>(
   moduleName: N,
   initState: S,
-  ActionHandles: {new (initState: S, presetData?: any): T},
+  ActionHandles: {new (moduleName: string, store: any, initState: any, presetData?: any): T},
   views: V
 ) => Module<Model<S>, V, Actions<T>, N>['default'];
 
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
+  defaultRouteParams[moduleName] = initState.routeParams;
   const model = (store: ModelStore) => {
     const hasInjected = store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = true;
       const moduleState: BaseModelState = store.getState()[moduleName];
-      const handlers = new ActionHandles(initState, moduleState);
-      (handlers as any).moduleName = moduleName;
-      (handlers as any).store = store;
+      const handlers = new ActionHandles(moduleName, store, initState, moduleState);
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
       if (!moduleState) {
@@ -77,16 +83,32 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
 };
 
-export class BaseModelHandlers<S extends BaseModelState, R> {
-  protected readonly initState: S;
-  protected readonly moduleName: string = '';
-  protected readonly store: ModelStore = null as any;
+function simpleEqual(obj1: any, obj2: any): boolean {
+  if (obj1 === obj2) {
+    return true;
+  } else if (typeof obj1 !== typeof obj2 || typeof obj1 !== 'object') {
+    return false;
+  } else {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) {
+      return false;
+    } else {
+      for (const key of keys1) {
+        if (!simpleEqual(obj1[key], obj2[key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+}
+export abstract class BaseModelHandlers<S extends BaseModelState, R> {
   protected readonly actions: Actions<this> = null as any;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public constructor(initState: S, presetData?: any) {
+  public constructor(protected readonly moduleName: string, protected readonly store: ModelStore, protected readonly initState: S, presetData?: any) {
     initState.isModule = true;
-    this.initState = initState;
   }
 
   protected get state(): S {
@@ -114,9 +136,18 @@ export class BaseModelHandlers<S extends BaseModelState, R> {
     return actions[(handler as ActionHandler).__actionName__](rest[0]);
   }
 
+  protected mergeRouteState(state: S, routeData: RouteState): S {
+    if (routeData.data.views[this.moduleName]) {
+      const routeParams = routeData.data.params[this.moduleName];
+      if (!simpleEqual(routeParams, state.routeParams)) {
+        return {...state, routeParams: routeParams};
+      }
+    }
+    return state;
+  }
   @reducer
   protected INIT(payload: S): S {
-    return payload;
+    return this.mergeRouteState(payload, this.rootState['route']);
   }
 
   @reducer
@@ -138,6 +169,11 @@ export class BaseModelHandlers<S extends BaseModelState, R> {
 
   protected updateState(payload: Partial<S>) {
     this.dispatch(this.callThisAction(this.UPDATE, {...this.state, ...payload}));
+  }
+
+  @reducer
+  protected [ActionTypes.F_ROUTE_CHANGE](routeData: RouteState): S {
+    return this.mergeRouteState(this.state, routeData);
   }
 }
 
@@ -268,6 +304,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
   moduleGetter: M,
   appModuleName: A,
+  history: HistoryProxy,
   storeOptions: StoreOptions = {}
 ): Promise<void> {
   MetaData.appModuleName = appModuleName;
@@ -276,7 +313,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   if (storeOptions.initData || window[ssrInitStoreKey]) {
     initData = {...window[ssrInitStoreKey], ...storeOptions.initData};
   }
-  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames: string[] = [appModuleName];
   if (initData) {
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
@@ -291,11 +328,12 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string},
   moduleGetter: M,
   appModuleName: A,
+  history: HistoryProxy,
   storeOptions: StoreOptions = {}
 ) {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = moduleGetter[appModuleName]() as Module;
   let initAppModel = appModule.default.model(store);
   if (!isPromise(initAppModel)) {

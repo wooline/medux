@@ -1,9 +1,9 @@
 {
-  "name": "@medux/react-web",
+  "name": "@medux/react-web-router",
   "version": "0.0.45",
   "description": "",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/react-web",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/react-web/npm.md",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/react-web-router",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/react-web-router/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -38,10 +38,8 @@
   },
   "dependencies": {
     "@medux/react": "^0.0.45",
-    "@types/history": "~4.7.2",
+    "@medux/web": "^0.0.45",
     "@types/react-router-dom": "~4.3.4",
-    "connected-react-router": "~6.4.0",
-    "history": "~4.9.0",
     "react-router-dom": "~5.0.1"
   },
   "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"

@@ -4,7 +4,9 @@ import "core-js/modules/es.function.name";
 import "core-js/modules/es.object.get-prototype-of";
 import "core-js/modules/es.object.keys";
 import "core-js/modules/web.dom-collections.for-each";
+import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 export function isPlainObject(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   var proto = obj;
@@ -35,8 +37,10 @@ function () {
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
-    this.target = null;
-    this.currentTarget = null;
+
+    _defineProperty(this, "target", null);
+
+    _defineProperty(this, "currentTarget", null);
   }
 
   var _proto = PEvent.prototype;
@@ -56,7 +60,8 @@ export var PDispatcher =
 function () {
   function PDispatcher(parent) {
     this.parent = parent;
-    this.storeHandlers = {};
+
+    _defineProperty(this, "storeHandlers", {});
   }
 
   var _proto2 = PDispatcher.prototype;
@@ -142,8 +147,11 @@ function (_PDispatcher) {
 
     _this2 = _PDispatcher.call(this) || this;
     _this2.deferSecond = deferSecond;
-    _this2.list = [];
-    _this2.ctimer = 0;
+
+    _defineProperty(_assertThisInitialized(_this2), "list", []);
+
+    _defineProperty(_assertThisInitialized(_this2), "ctimer", 0);
+
     return _this2;
   }
 

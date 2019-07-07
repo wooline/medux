@@ -1,9 +1,16 @@
-import {Action, CurrentViews, DisplayViews, MetaData, ModelStore, NSP, client, isPromise} from './basic';
-import {ActionTypes, errorAction, viewInvalidAction} from './actions';
+import {Action, BaseModelState, DisplayViews, MetaData, ModelStore, NSP, RouteData, RouteState, client, isPromise} from './basic';
+import {ActionTypes, errorAction, routeChangeAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
 import {injectModel} from './module';
 import {isPlainObject} from './sprite';
+
+/**
+ * dispatch push action
+ * middleware 拦截并调用history.push
+ * history触发侦听器，dispatch change action
+ * store侦听器，判断是否时光
+ */
 
 let invalidViewTimer: number;
 
@@ -27,7 +34,7 @@ function checkInvalidview() {
       }
     }
   }
-  MetaData.clientStore.dispatch(viewInvalidAction(views));
+  // MetaData.clientStore.dispatch(viewInvalidAction(views));
 }
 
 export function invalidview() {
@@ -69,6 +76,30 @@ export function viewWillUnmount(moduleName: string, viewName: string, vid: strin
   invalidview();
 }
 
+// function excludeDefaultParams(data:any){
+//   return excludeDefaultData(data, MetaData.defaultRouteParams);
+// }
+// function excludeDefaultData(data: any, def: any) {
+//   const result: any = {};
+//   for (const key in data) {
+//     if (data.hasOwnProperty(key)) {
+//       const value = data[key];
+//       const defaultValue = def[key];
+//       if (value !== defaultValue) {
+//         if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+//           result[key] = excludeDefaultData(value, defaultValue);
+//         } else {
+//           result[key] = value;
+//         }
+//       }
+//     }
+//   }
+//   if (Object.keys(result).length === 0) {
+//     return undefined;
+//   }
+//   return result;
+// }
+
 function getActionData(action: Action) {
   const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
   if (arr.length === 0) {
@@ -83,29 +114,37 @@ function getActionData(action: Action) {
     return data;
   }
 }
+export interface HistoryProxy<L = any> {
+  getLocation(): L;
+  subscribe(listener: (location: L) => void): void;
+  locationToRouteData(location: L): RouteData;
+  isTimeTravel(storeLocation: L): boolean;
+  patch(location: L, routeData: RouteData): void;
+}
 
-function simpleEqual(obj1: any, obj2: any): boolean {
-  if (obj1 === obj2) {
-    return true;
-  } else if (typeof obj1 !== typeof obj2 || typeof obj1 !== 'object') {
-    return false;
-  } else {
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
-    if (keys1.length !== keys2.length) {
-      return false;
+function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
+  let inTimeTravelling = false;
+  const handleLocationChange = (location: L) => {
+    if (!inTimeTravelling) {
+      const data = history.locationToRouteData(location);
+      store.dispatch(routeChangeAction({location, data}));
     } else {
-      for (const key of keys1) {
-        if (!simpleEqual(obj1[key], obj2[key])) {
-          return false;
-        }
-      }
-      return true;
+      inTimeTravelling = false;
     }
-  }
+  };
+  history.subscribe(handleLocationChange);
+  store.subscribe(() => {
+    const storeRouteState: RouteState<L> = store.getState().route;
+    if (history.isTimeTravel(storeRouteState.location)) {
+      inTimeTravelling = true;
+      history.patch(storeRouteState.location, storeRouteState.data);
+    }
+  });
+  handleLocationChange(history.getLocation());
 }
 
 export function buildStore(
+  history: HistoryProxy<any>,
   preloadedState: {[key: string]: any} = {},
   storeReducers: ReducersMapObject<any, any> = {},
   storeMiddlewares: Middleware[] = [],
@@ -117,8 +156,21 @@ export function buildStore(
   if (!isPlainObject(storeReducers)) {
     throw new Error('storeReducers must be plain objects!');
   }
+  if (storeReducers.route) {
+    throw new Error("the reducer name 'route' is not allowed");
+  }
+  storeReducers.route = (state: RouteState, action: Action) => {
+    if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+      const payload: RouteState = getActionData(action);
+      if (!state) {
+        return payload;
+      }
+      return {...state, ...payload};
+    }
+    return state;
+  };
   let store: ModelStore;
-  const combineReducers = (rootState: {[key: string]: any}, action: Action) => {
+  const combineReducers = (rootState: {[moduleName: string]: BaseModelState}, action: Action) => {
     if (!store) {
       return rootState;
     }
@@ -126,19 +178,9 @@ export function buildStore(
     meta.prevState = rootState;
     const currentState = {...rootState};
     meta.currentState = currentState;
-
-    if (!currentState.views) {
-      currentState.views = {};
-    }
     Object.keys(storeReducers).forEach(moduleName => {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
-    if (action.type === ActionTypes.F_VIEW_INVALID) {
-      const views: CurrentViews = getActionData(action);
-      if (!simpleEqual(currentState.views, views)) {
-        currentState.views = views;
-      }
-    }
     const handlersCommon = meta.reducerMap[action.type] || {};
     // 支持泛监听，形如 */loading
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${NSP}]+`), '*')] || {};
@@ -146,15 +188,20 @@ export function buildStore(
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
-      const orderList: string[] = action.priority ? [...action.priority] : [];
+      const orderList: string[] = []; //
+      const priority: string[] = action.priority ? [...action.priority] : [];
       handlerModules.forEach(moduleName => {
         const fun = handlers[moduleName];
-        if (fun.__isHandler__) {
-          orderList.push(moduleName);
-        } else {
+        if (moduleName === MetaData.appModuleName) {
           orderList.unshift(moduleName);
+        } else {
+          orderList.push(moduleName);
+        }
+        if (!fun.__isHandler__) {
+          priority.unshift(moduleName);
         }
       });
+      orderList.unshift(...priority);
       const moduleNameMap: {[key: string]: boolean} = {};
       orderList.forEach(moduleName => {
         if (!moduleNameMap[moduleName]) {
@@ -253,6 +300,7 @@ export function buildStore(
     }
     return next(action);
   };
+
   const middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
   const enhancer: StoreEnhancer = newCreateStore => {
     return (...args) => {
@@ -274,6 +322,7 @@ export function buildStore(
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
   store = createStore(combineReducers as any, preloadedState, compose(...enhancers));
+  bindHistory(store, history);
   MetaData.clientStore = store;
   if (client) {
     if ('onerror' in client) {

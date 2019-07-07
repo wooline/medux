@@ -20,7 +20,7 @@ module.exports = {
       '@babel/preset-typescript',
    ].filter(Boolean),
    plugins: [
-      ['@babel/plugin-proposal-decorators', {legacy: true}],
+      ['@babel/plugin-proposal-decorators', {legacy: false, decoratorsBeforeExport:true}],
       ['@babel/plugin-proposal-class-properties', {loose: true}],
       '@babel/plugin-proposal-object-rest-spread',
       [

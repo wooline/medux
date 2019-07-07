@@ -13,10 +13,17 @@ import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { MetaData, NSP, client, isPromise } from './basic';
-import { ActionTypes, errorAction, viewInvalidAction } from './actions';
+import { ActionTypes, errorAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { injectModel } from './module';
 import { isPlainObject } from './sprite';
+/**
+ * dispatch push action
+ * middleware 拦截并调用history.push
+ * history触发侦听器，dispatch change action
+ * store侦听器，判断是否时光
+ */
+
 var invalidViewTimer;
 
 function checkInvalidview() {
@@ -24,27 +31,26 @@ function checkInvalidview() {
   var currentViews = MetaData.clientStore._medux_.currentViews;
   var views = {};
 
-  for (var moduleName in currentViews) {
-    if (currentViews.hasOwnProperty(moduleName)) {
-      var element = currentViews[moduleName];
+  for (var _moduleName in currentViews) {
+    if (currentViews.hasOwnProperty(_moduleName)) {
+      var element = currentViews[_moduleName];
 
       for (var viewname in element) {
         if (element[viewname]) {
           var n = Object.keys(element[viewname]).length;
 
           if (n) {
-            if (!views[moduleName]) {
-              views[moduleName] = {};
+            if (!views[_moduleName]) {
+              views[_moduleName] = {};
             }
 
-            views[moduleName][viewname] = true;
+            views[_moduleName][viewname] = true;
           }
         }
       }
     }
-  }
+  } // MetaData.clientStore.dispatch(viewInvalidAction(views));
 
-  MetaData.clientStore.dispatch(viewInvalidAction(views));
 }
 
 export function invalidview() {
@@ -94,7 +100,29 @@ export function viewWillUnmount(moduleName, viewName, vid) {
   }
 
   invalidview();
-}
+} // function excludeDefaultParams(data:any){
+//   return excludeDefaultData(data, MetaData.defaultRouteParams);
+// }
+// function excludeDefaultData(data: any, def: any) {
+//   const result: any = {};
+//   for (const key in data) {
+//     if (data.hasOwnProperty(key)) {
+//       const value = data[key];
+//       const defaultValue = def[key];
+//       if (value !== defaultValue) {
+//         if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+//           result[key] = excludeDefaultData(value, defaultValue);
+//         } else {
+//           result[key] = value;
+//         }
+//       }
+//     }
+//   }
+//   if (Object.keys(result).length === 0) {
+//     return undefined;
+//   }
+//   return result;
+// }
 
 function getActionData(action) {
   var arr = Object.keys(action).filter(function (key) {
@@ -115,32 +143,37 @@ function getActionData(action) {
   }
 }
 
-function simpleEqual(obj1, obj2) {
-  if (obj1 === obj2) {
-    return true;
-  } else if (typeof obj1 !== typeof obj2 || typeof obj1 !== 'object') {
-    return false;
-  } else {
-    var keys1 = Object.keys(obj1);
-    var keys2 = Object.keys(obj2);
+function bindHistory(store, history) {
+  var inTimeTravelling = false;
 
-    if (keys1.length !== keys2.length) {
-      return false;
+  var handleLocationChange = function handleLocationChange(location) {
+    if (!inTimeTravelling) {
+      var data = history.locationToRouteData(location);
+      store.dispatch(routeChangeAction({
+        location: location,
+        data: data
+      }));
     } else {
-      for (var _i = 0, _keys = keys1; _i < _keys.length; _i++) {
-        var _key = _keys[_i];
-
-        if (!simpleEqual(obj1[_key], obj2[_key])) {
-          return false;
-        }
-      }
-
-      return true;
+      inTimeTravelling = false;
     }
+  };
+
+  if (!MetaData.isServer) {
+    history.subscribe(handleLocationChange);
+    store.subscribe(function () {
+      var storeRouteState = store.getState().route;
+
+      if (history.isTimeTravel(storeRouteState.location)) {
+        inTimeTravelling = true;
+        history.patch(storeRouteState.location, storeRouteState.data);
+      }
+    });
   }
+
+  handleLocationChange(history.getLocation());
 }
 
-export function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
+export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
   if (preloadedState === void 0) {
     preloadedState = {};
   }
@@ -165,6 +198,24 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     throw new Error('storeReducers must be plain objects!');
   }
 
+  if (storeReducers.route) {
+    throw new Error("the reducer name 'route' is not allowed");
+  }
+
+  storeReducers.route = function (state, action) {
+    if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+      var payload = getActionData(action);
+
+      if (!state) {
+        return payload;
+      }
+
+      return _objectSpread({}, state, payload);
+    }
+
+    return state;
+  };
+
   var store;
 
   var combineReducers = function combineReducers(rootState, action) {
@@ -178,23 +229,9 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     var currentState = _objectSpread({}, rootState);
 
     meta.currentState = currentState;
-
-    if (!currentState.views) {
-      currentState.views = {};
-    }
-
     Object.keys(storeReducers).forEach(function (moduleName) {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
-
-    if (action.type === ActionTypes.F_VIEW_INVALID) {
-      var views = getActionData(action);
-
-      if (!simpleEqual(currentState.views, views)) {
-        currentState.views = views;
-      }
-    }
-
     var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
 
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
@@ -204,16 +241,23 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
-      var orderList = action.priority ? [].concat(action.priority) : [];
+      var orderList = []; //
+
+      var priority = action.priority ? [].concat(action.priority) : [];
       handlerModules.forEach(function (moduleName) {
         var fun = handlers[moduleName];
 
-        if (fun.__isHandler__) {
-          orderList.push(moduleName);
-        } else {
+        if (moduleName === MetaData.appModuleName) {
           orderList.unshift(moduleName);
+        } else {
+          orderList.push(moduleName);
+        }
+
+        if (!fun.__isHandler__) {
+          priority.unshift(moduleName);
         }
       });
+      orderList.unshift.apply(orderList, priority);
       var moduleNameMap = {};
       orderList.forEach(function (moduleName) {
         if (!moduleNameMap[moduleName]) {
@@ -367,6 +411,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
   }
 
   store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
+  bindHistory(store, history);
   MetaData.clientStore = store;
 
   if (client) {

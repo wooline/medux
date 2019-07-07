@@ -21,8 +21,10 @@ export var MetaData = {
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,
-  moduleGetter: null
+  moduleGetter: null,
+  defaultRouteParams: {}
 };
+export var defaultRouteParams = MetaData.defaultRouteParams;
 export var client = MetaData.isServer ? undefined : window || global;
 export function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';

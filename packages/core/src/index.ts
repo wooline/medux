@@ -1,5 +1,5 @@
-export {ActionTypes, errorAction} from './actions';
-export {reducer, effect, logger, isServer, getStore, delayPromise} from './basic';
+export {ActionTypes, errorAction, routeChangeAction} from './actions';
+export {defaultRouteParams, reducer, NSP, effect, logger, isServer, getStore, delayPromise} from './basic';
 export {invalidview, viewWillMount, viewWillUnmount} from './store';
 export {setLoading, setLoadingDepthTime} from './loading';
 export {LoadingState} from './sprite';

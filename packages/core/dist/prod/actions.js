@@ -1,2 +1,8 @@
-import{NSP}from"./basic";export var ActionTypes={M_LOADING:"LOADING",M_INIT:"INIT",F_ERROR:"@@framework"+NSP+"ERROR",F_VIEW_INVALID:"@@framework"+NSP+"VIEW_INVALID"};export function errorAction(a){return{type:ActionTypes.F_ERROR,error:a}}export function viewInvalidAction(a){return{type:ActionTypes.F_VIEW_INVALID,currentViews:a}}
+import{NSP}from"./basic";export var ActionTypes={M_LOADING:"LOADING",M_INIT:"INIT",F_ERROR:"@@framework"+NSP+"ERROR",// F_VIEW_INVALID: `@@framework${NSP}VIEW_INVALID`,
+F_ROUTE_CHANGE:"@@framework"+NSP+"ROUTE_CHANGE",F_ROUTE_METHOD:"@@framework"+NSP+"ROUTE_METHOD"};export function errorAction(a){return{type:ActionTypes.F_ERROR,payload:a}}export function routeChangeAction(a){return{type:ActionTypes.F_ROUTE_CHANGE,payload:a}}// export function viewInvalidAction(currentViews: DisplayViews) {
+//   return {
+//     type: ActionTypes.F_VIEW_INVALID,
+//     currentViews,
+//   };
+// }
 //# sourceMappingURL=actions.js.map

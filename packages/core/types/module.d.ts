@@ -1,4 +1,5 @@
-import { Action, ActionCreatorList, BaseModelState, ModelStore } from './basic';
+import { Action, ActionCreatorList, BaseModelState, ModelStore, RouteState } from './basic';
+import { HistoryProxy } from './store';
 import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
     moduleName: string;
@@ -23,14 +24,24 @@ export interface ModuleGetter {
 declare type ReturnModule<T> = T extends () => Promise<infer R> ? R : T extends () => infer R ? R : never;
 declare type ModuleName<M extends any> = M['default']['moduleName'];
 declare type ModuleStates<M extends any> = M['default']['model']['initState'];
+declare type ModuleParams<M extends any> = M['default']['model']['initState']['routeParams'];
 declare type ModuleViews<M extends any> = M['default']['views'];
 declare type ModuleActions<M extends any> = M['default']['actions'];
 declare type MountViews<M extends any> = {
     [key in keyof M['default']['views']]?: boolean;
 };
-export declare type RootState<G extends ModuleGetter> = {
-    views: {
-        [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
+export declare type RootState<G extends ModuleGetter, L> = {
+    route: {
+        location: L;
+        data: {
+            views: {
+                [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
+            };
+            params: {
+                [key in keyof G]?: ModuleParams<ReturnModule<G[key]>>;
+            };
+            paths: any;
+        };
     };
 } & {
     [key in keyof G]?: ModuleStates<ReturnModule<G[key]>>;
@@ -38,15 +49,15 @@ export declare type RootState<G extends ModuleGetter> = {
 export declare type ExportModule<Component> = <S extends BaseModelState, V extends {
     [key: string]: Component;
 }, T extends BaseModelHandlers<S, any>, N extends string>(moduleName: N, initState: S, ActionHandles: {
-    new (initState: S, presetData?: any): T;
+    new (moduleName: string, store: any, initState: any, presetData?: any): T;
 }, views: V) => Module<Model<S>, V, Actions<T>, N>['default'];
 export declare const exportModule: ExportModule<any>;
-export declare class BaseModelHandlers<S extends BaseModelState, R> {
-    protected readonly initState: S;
+export declare abstract class BaseModelHandlers<S extends BaseModelState, R> {
     protected readonly moduleName: string;
     protected readonly store: ModelStore;
+    protected readonly initState: S;
     protected readonly actions: Actions<this>;
-    constructor(initState: S, presetData?: any);
+    constructor(moduleName: string, store: ModelStore, initState: S, presetData?: any);
     protected readonly state: S;
     protected readonly rootState: R;
     protected readonly currentState: S;
@@ -56,6 +67,7 @@ export declare class BaseModelHandlers<S extends BaseModelState, R> {
         type: string;
         playload?: any;
     };
+    protected mergeRouteState(state: S, routeData: RouteState): S;
     protected INIT(payload: S): S;
     protected UPDATE(payload: S): S;
     protected LOADING(payload: {
@@ -90,14 +102,14 @@ export interface StoreOptions {
 }
 export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
     [key: string]: any;
-}, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, storeOptions?: StoreOptions): Promise<void>;
+}, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions): Promise<void>;
 export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
     [key: string]: any;
 }, ssrInitStoreKey: string) => {
     html: any;
     data: any;
     ssrInitStoreKey: string;
-}, moduleGetter: M, appModuleName: A, storeOptions?: StoreOptions): Promise<{
+}, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions): Promise<{
     html: any;
     data: any;
     ssrInitStoreKey: string;

@@ -1,9 +1,9 @@
 {
-  "name": "@medux/react-native",
+  "name": "@medux/web",
   "version": "0.0.45",
   "description": "",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/react-native",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/react-native/npm.md",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/web",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/web/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -32,12 +32,11 @@
   "browserslist": [
     "> 1%"
   ],
-  "peerDependencies": {
-    "@types/react-native": "^0.50.0",
-    "react-native": "^0.50.0"
-  },
+  "peerDependencies": {},
   "dependencies": {
-    "@medux/react": "^0.0.45"
+    "@medux/react": "^0.0.45",
+    "@types/history": "~4.7.2",
+    "history": "~4.9.0"
   },
   "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }

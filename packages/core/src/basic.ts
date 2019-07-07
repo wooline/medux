@@ -18,6 +18,7 @@ export const MetaData: {
   clientStore: ModelStore;
   appModuleName: string;
   moduleGetter: ModuleGetter;
+  defaultRouteParams: {[moduleName: string]: {[key: string]: any} | undefined};
 } = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
@@ -25,8 +26,9 @@ export const MetaData: {
   clientStore: null as any,
   appModuleName: null as any,
   moduleGetter: null as any,
+  defaultRouteParams: {},
 };
-
+export const defaultRouteParams = MetaData.defaultRouteParams;
 export const client = MetaData.isServer ? undefined : window || global;
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;
@@ -38,6 +40,7 @@ export type ActionCreator = (payload?: any) => Action;
 interface Store {
   dispatch(action: Action): Action | Promise<void>;
   getState(): {[key: string]: any};
+  subscribe(listener: () => void): void;
 }
 export interface ModelStore extends Store {
   _medux_: {
@@ -48,6 +51,16 @@ export interface ModelStore extends Store {
     prevState: {[key: string]: any};
     currentState: {[key: string]: any};
   };
+}
+export interface RouteData {
+  action: string;
+  views: DisplayViews;
+  params: {[moduleName: string]: {[key: string]: any} | undefined};
+  paths: any;
+}
+export interface RouteState<L = any> {
+  location: L;
+  data: RouteData;
 }
 export interface DisplayViews {
   [moduleName: string]: {[viewName: string]: boolean};
@@ -73,10 +86,10 @@ export interface ReducerMap extends ActionHandlerMap {
 export interface EffectMap extends ActionHandlerMap {
   [actionName: string]: {[moduleName: string]: EffectHandler};
 }
-export interface Action {
+export interface Action<P = any> {
   type: string;
   priority?: string[];
-  payload?: any;
+  payload?: P;
 }
 export interface ActionHandler {
   __actionName__: string;
@@ -87,9 +100,12 @@ export interface ActionHandler {
   __decoratorResults__?: any[];
   (payload?: any): any;
 }
-export interface BaseModelState {
+export interface BaseModelState<R = {[key: string]: any}> {
   isModule?: boolean;
-  loading?: {[key: string]: LoadingState};
+  routeParams?: R;
+  loading?: {
+    [key: string]: LoadingState;
+  };
 }
 
 export function isPromise(data: any): data is Promise<any> {

@@ -8,6 +8,16 @@ export declare const MetaData: {
     clientStore: ModelStore;
     appModuleName: string;
     moduleGetter: ModuleGetter;
+    defaultRouteParams: {
+        [moduleName: string]: {
+            [key: string]: any;
+        } | undefined;
+    };
+};
+export declare const defaultRouteParams: {
+    [moduleName: string]: {
+        [key: string]: any;
+    } | undefined;
 };
 export declare const client: Window | undefined;
 export interface ActionCreatorMap {
@@ -22,6 +32,7 @@ interface Store {
     getState(): {
         [key: string]: any;
     };
+    subscribe(listener: () => void): void;
 }
 export interface ModelStore extends Store {
     _medux_: {
@@ -38,6 +49,20 @@ export interface ModelStore extends Store {
             [key: string]: any;
         };
     };
+}
+export interface RouteData {
+    action: string;
+    views: DisplayViews;
+    params: {
+        [moduleName: string]: {
+            [key: string]: any;
+        } | undefined;
+    };
+    paths: any;
+}
+export interface RouteState<L = any> {
+    location: L;
+    data: RouteData;
 }
 export interface DisplayViews {
     [moduleName: string]: {
@@ -75,10 +100,10 @@ export interface EffectMap extends ActionHandlerMap {
         [moduleName: string]: EffectHandler;
     };
 }
-export interface Action {
+export interface Action<P = any> {
     type: string;
     priority?: string[];
-    payload?: any;
+    payload?: P;
 }
 export interface ActionHandler {
     __actionName__: string;
@@ -89,8 +114,11 @@ export interface ActionHandler {
     __decoratorResults__?: any[];
     (payload?: any): any;
 }
-export interface BaseModelState {
+export interface BaseModelState<R = {
+    [key: string]: any;
+}> {
     isModule?: boolean;
+    routeParams?: R;
     loading?: {
         [key: string]: LoadingState;
     };

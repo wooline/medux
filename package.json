@@ -16,8 +16,9 @@
   ],
   "scripts": {
     "build:core": "lerna run build --scope @medux/core",
+    "build:web": "lerna run build --scope @medux/web",
     "build:react": "lerna run build --scope @medux/react",
-    "build:react-web": "lerna run build --scope @medux/react-web",
+    "build:react-web-router": "lerna run build --scope @medux/react-web-router",
     "build:react-native": "lerna run build --scope @medux/react-native",
     "build:dev-utils": "lerna run build --scope @medux/dev-utils",
     "test": "eslint ./packages/core/scripts/build.js"

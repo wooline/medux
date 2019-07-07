@@ -1,0 +1,43 @@
+{
+  "name": "@medux/react-native-router",
+  "version": "0.0.45",
+  "description": "",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/react-native-router",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/react-native-router/npm.md",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "main": "index.js",
+  "tsSource": "src/",
+  "types": "types/",
+  "files": [
+    "src/",
+    "types/",
+    "dist/",
+    "index.js"
+  ],
+  "scripts": {
+    "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
+    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+    "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
+    "build:prod": "cross-env NODE_ENV=production babel ./src --out-dir ./dist/prod  --extensions \".ts,.tsx\" --source-maps",
+    "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
+    "build": "yarn build:dev & yarn build:prod"
+  },
+  "browserslist": [
+    "> 1%"
+  ],
+  "peerDependencies": {
+    "@types/react-native": "^0.50.0",
+    "react-native": "^0.50.0"
+  },
+  "dependencies": {
+    "@medux/react": "^0.0.45"
+  },
+  "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
+}

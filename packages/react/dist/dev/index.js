@@ -4,7 +4,7 @@ import _extends from "@babel/runtime/helpers/esm/extends";
 import React, { useEffect, useState } from 'react';
 import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, isServer, viewWillMount, viewWillUnmount } from '@medux/core';
 import { Provider } from 'react-redux';
-export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
+export function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   return baseRenderApp(function (store, appModel, appViews, ssrInitStoreKey) {
     var ReduxProvider = function ReduxProvider(props) {
       // eslint-disable-next-line react/prop-types
@@ -14,9 +14,9 @@ export function renderApp(render, moduleGetter, appModuleName, storeOptions) {
     };
 
     render(ReduxProvider, appViews.Main, ssrInitStoreKey);
-  }, moduleGetter, appModuleName, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
+export function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -36,7 +36,7 @@ export function renderSSR(render, moduleGetter, appModuleName, storeOptions) {
       data: data,
       html: render(ReduxProvider, appViews.Main)
     };
-  }, moduleGetter, appModuleName, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
 var autoID = 0;
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {

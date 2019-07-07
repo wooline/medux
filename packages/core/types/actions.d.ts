@@ -1,15 +1,16 @@
-import { DisplayViews } from './basic';
+import { RouteState } from './basic';
 export declare const ActionTypes: {
     M_LOADING: string;
     M_INIT: string;
     F_ERROR: string;
-    F_VIEW_INVALID: string;
+    F_ROUTE_CHANGE: string;
+    F_ROUTE_METHOD: string;
 };
 export declare function errorAction(error: any): {
     type: string;
-    error: any;
+    payload: any;
 };
-export declare function viewInvalidAction(currentViews: DisplayViews): {
+export declare function routeChangeAction(route: RouteState): {
     type: string;
-    currentViews: DisplayViews;
+    payload: RouteState<any>;
 };
