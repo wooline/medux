@@ -3,6 +3,8 @@ import {HistoryProxy, RouteData} from '@medux/core/types/export';
 
 import {isServer} from '@medux/core';
 
+export {buildLocationToRoute} from './routePlanA';
+
 interface Location {
   pathname: string;
   search: string;

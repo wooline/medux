@@ -35,7 +35,6 @@
   "dependencies": {
     "@medux/react": "^0.0.47",
     "@types/history": "~4.7.2",
-    "@types/path-to-regexp": "^1.7.0",
     "history": "~4.9.0",
     "path-to-regexp": "^3.0.0"
   },
