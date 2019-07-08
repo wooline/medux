@@ -1,6 +1,6 @@
 {
   "name": "@medux/web",
-  "version": "0.0.46",
+  "version": "0.0.47",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/web/npm.md",
@@ -33,9 +33,9 @@
     "> 1%"
   ],
   "dependencies": {
-    "@types/path-to-regexp": "^1.7.0",
-    "@medux/react": "^0.0.46",
+    "@medux/react": "^0.0.47",
     "@types/history": "~4.7.2",
+    "@types/path-to-regexp": "^1.7.0",
     "history": "~4.9.0",
     "path-to-regexp": "^3.0.0"
   },
