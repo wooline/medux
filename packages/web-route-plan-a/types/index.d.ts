@@ -1,4 +1,4 @@
-import { TransformRoute } from './index';
+import { TransformRoute } from '@medux/web';
 export interface RouteConfig {
     [path: string]: string | [string, RouteConfig];
 }

@@ -281,4 +281,4 @@ export function buildLocationToRoute(routeConfig) {
     routeToLocation: routeToLocation
   };
 }
-//# sourceMappingURL=routePlanA.js.map
+//# sourceMappingURL=index.js.map

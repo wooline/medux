@@ -1,6 +1,5 @@
 import { BrowserHistoryBuildOptions, History, MemoryHistoryBuildOptions } from 'history';
 import { HistoryProxy, RouteData } from '@medux/core/types/export';
-export { buildLocationToRoute } from './routePlanA';
 interface Location {
     pathname: string;
     search: string;
@@ -32,3 +31,4 @@ export declare function createHistory(options: BrowserHistoryOptions | MemoryHis
     historyProxy: HistoryProxy<Location>;
     historyActions: HistoryActions;
 };
+export {};

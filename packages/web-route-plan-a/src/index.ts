@@ -1,4 +1,4 @@
-import {BrowserLocation, TransformRoute} from './index';
+import {BrowserLocation, TransformRoute} from '@medux/web';
 import {DisplayViews, RouteData} from '@medux/core/types/export';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 

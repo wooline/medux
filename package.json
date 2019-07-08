@@ -17,6 +17,7 @@
   "scripts": {
     "build:core": "lerna run build --scope @medux/core",
     "build:web": "lerna run build --scope @medux/web",
+    "build:web-route-plan-a": "lerna run build --scope @medux/web-route-plan-a",
     "build:react": "lerna run build --scope @medux/react",
     "build:react-web-router": "lerna run build --scope @medux/react-web-router",
     "build:react-native": "lerna run build --scope @medux/react-native",

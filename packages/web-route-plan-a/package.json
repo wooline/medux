@@ -1,9 +1,9 @@
 {
-  "name": "@medux/web",
+  "name": "@medux/web-route-plan-a",
   "version": "0.0.48",
   "description": "",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/web",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/web/npm.md",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/web-route-plan-a",
+  "homepage": "https://github.com/wooline/medux/blob/master/packages/web-route-plan-a/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -33,9 +33,8 @@
     "> 1%"
   ],
   "dependencies": {
-    "@medux/core": "^0.0.48",
-    "@types/history": "~4.7.2",
-    "history": "~4.9.0"
+    "@medux/web": "^0.0.48",
+    "path-to-regexp": "^3.0.0"
   },
   "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }
