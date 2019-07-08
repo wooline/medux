@@ -158,18 +158,15 @@ function bindHistory(store, history) {
     }
   };
 
-  if (!MetaData.isServer) {
-    history.subscribe(handleLocationChange);
-    store.subscribe(function () {
-      var storeRouteState = store.getState().route;
+  history.subscribe(handleLocationChange);
+  store.subscribe(function () {
+    var storeRouteState = store.getState().route;
 
-      if (history.isTimeTravel(storeRouteState.location)) {
-        inTimeTravelling = true;
-        history.patch(storeRouteState.location, storeRouteState.data);
-      }
-    });
-  }
-
+    if (history.isTimeTravel(storeRouteState.location)) {
+      inTimeTravelling = true;
+      history.patch(storeRouteState.location, storeRouteState.data);
+    }
+  });
   handleLocationChange(history.getLocation());
 }
 

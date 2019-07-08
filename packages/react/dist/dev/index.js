@@ -1,8 +1,7 @@
 import "core-js/modules/es.object.keys";
 import "core-js/modules/web.dom-collections.for-each";
-import _extends from "@babel/runtime/helpers/esm/extends";
-import React, { useEffect, useState } from 'react';
-import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, isServer, viewWillMount, viewWillUnmount } from '@medux/core';
+import React, { useState } from 'react';
+import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView } from '@medux/core';
 import { Provider } from 'react-redux';
 export function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   return baseRenderApp(function (store, appModel, appViews, ssrInitStoreKey) {
@@ -38,27 +37,9 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-var autoID = 0;
 export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
-  var onFocus = function onFocus(vid) {
-    return viewWillMount(moduleName, viewName, vid + '');
-  };
-
-  var onBlur = function onBlur(vid) {
-    return viewWillUnmount(moduleName, viewName, vid + '');
-  };
-
   var loader = function Loader(props) {
     var _useState = useState(function () {
-      if (!isServer()) {
-        return autoID++;
-      } else {
-        return 0;
-      }
-    }),
-        vid = _useState[0];
-
-    var _useState2 = useState(function () {
       var moduleViewResult = getView(moduleGetter, moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
@@ -86,39 +67,10 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
         };
       }
     }),
-        view = _useState2[0],
-        setView = _useState2[1];
+        view = _useState[0],
+        setView = _useState[1];
 
-    useEffect(function () {
-      if (view) {
-        var subscriptions = {
-          didFocus: null,
-          didBlur: null
-        };
-
-        if (props.navigation) {
-          subscriptions.didFocus = props.navigation.addListener('didFocus', function () {
-            return onFocus(vid);
-          });
-          subscriptions.didBlur = props.navigation.addListener('didBlur', function () {
-            return onBlur(vid);
-          });
-        }
-
-        onFocus(vid);
-        return function () {
-          subscriptions.didFocus && subscriptions.didFocus.remove();
-          subscriptions.didBlur && subscriptions.didBlur.remove();
-          onBlur(vid);
-        };
-      } else {
-        return void 0;
-      }
-    }, [view]);
-    return view ? React.createElement(view.Component, _extends({}, props, {
-      onFocus: onFocus,
-      onBlur: onBlur
-    })) : Loading ? React.createElement(Loading, props) : null;
+    return view ? React.createElement(view.Component, props) : Loading ? React.createElement(Loading, props) : null;
   };
 
   return loader;

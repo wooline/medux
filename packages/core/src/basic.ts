@@ -53,10 +53,9 @@ export interface ModelStore extends Store {
   };
 }
 export interface RouteData {
-  action: string;
   views: DisplayViews;
   params: {[moduleName: string]: {[key: string]: any} | undefined};
-  paths: any;
+  paths: string[];
 }
 export interface RouteState<L = any> {
   location: L;

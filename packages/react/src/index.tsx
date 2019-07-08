@@ -1,6 +1,6 @@
 import {ExportModule, HistoryProxy, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
 import React, {ComponentType, FunctionComponent, ReactNode, useState} from 'react';
-import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView, isServer, viewWillMount, viewWillUnmount} from '@medux/core';
+import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView} from '@medux/core';
 
 import {Provider} from 'react-redux';
 

@@ -13,14 +13,12 @@ export interface BrowserLocation {
     hash: string;
     key?: string;
 }
-export interface BrowserHistoryOptions extends BrowserHistoryBuildOptions {
+export interface TransformRoute {
     locationToRoute: (location: BrowserLocation) => RouteData;
-    routeToLocation: (data: RouteData) => BrowserLocation;
+    routeToLocation: (routeData: RouteData) => BrowserLocation;
 }
-export interface MemoryHistoryOptions extends MemoryHistoryBuildOptions {
-    locationToRoute: (location: BrowserLocation) => RouteData;
-    routeToLocation: (data: RouteData) => BrowserLocation;
-}
+export declare type BrowserHistoryOptions = BrowserHistoryBuildOptions & TransformRoute;
+export declare type MemoryHistoryOptions = MemoryHistoryBuildOptions & TransformRoute;
 export interface HistoryActions {
     push(data: RouteData | BrowserLocation | string): void;
     replace(data: RouteData | BrowserLocation | string): void;

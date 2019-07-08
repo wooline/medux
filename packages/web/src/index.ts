@@ -18,14 +18,13 @@ export interface BrowserLocation {
   key?: string;
 }
 
-export interface BrowserHistoryOptions extends BrowserHistoryBuildOptions {
+export interface TransformRoute {
   locationToRoute: (location: BrowserLocation) => RouteData;
-  routeToLocation: (data: RouteData) => BrowserLocation;
+  routeToLocation: (routeData: RouteData) => BrowserLocation;
 }
-export interface MemoryHistoryOptions extends MemoryHistoryBuildOptions {
-  locationToRoute: (location: BrowserLocation) => RouteData;
-  routeToLocation: (data: RouteData) => BrowserLocation;
-}
+
+export type BrowserHistoryOptions = BrowserHistoryBuildOptions & TransformRoute;
+export type MemoryHistoryOptions = MemoryHistoryBuildOptions & TransformRoute;
 function isLocation(data: RouteData | BrowserLocation): data is Location {
   return !data['views'];
 }
