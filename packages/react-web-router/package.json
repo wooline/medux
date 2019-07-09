@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-web-router",
-  "version": "0.0.51",
+  "version": "0.0.52",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-web-router",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/react-web-router/npm.md",
@@ -37,8 +37,8 @@
     "react-dom": "^16.8.0"
   },
   "dependencies": {
-    "@medux/react": "^0.0.51",
-    "@medux/web": "^0.0.51",
+    "@medux/react": "^0.0.52",
+    "@medux/web": "^0.0.52",
     "@types/react-router-dom": "~4.3.4",
     "react-router-dom": "~5.0.1"
   },
