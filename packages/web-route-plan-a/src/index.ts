@@ -1,6 +1,6 @@
-import {ActionTypes, defaultRouteParams} from '@medux/core';
+import {ActionTypes, NSP, defaultRouteParams, getActionData} from '@medux/core';
+import {BaseModelState, DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
 import {BrowserLocation, TransformRoute} from '@medux/web';
-import {DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import {Middleware} from 'redux';
@@ -32,7 +32,7 @@ function excludeDefaultData(data: any, def: any) {
 function mergeDefaultData(views: {[moduleName: string]: any}, data: any, def: any) {
   const newData = {...data};
   Object.keys(views).forEach(moduleName => {
-    if (!newData[moduleName]) {
+    if (!newData[moduleName] && def[moduleName]) {
       newData[moduleName] = {};
     }
   });
@@ -44,6 +44,21 @@ function mergeDefaultData(views: {[moduleName: string]: any}, data: any, def: an
   return newData;
 }
 
+export const mergeDefaultParamsMiddleware: Middleware = () => (next: Function) => (action: any) => {
+  if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+    const payload = getActionData<RouteState>(action);
+    const params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
+    action = {...action, payload: {...payload, data: {...payload.data, params}}};
+  } else {
+    const [moduleName, actionName] = action.type.endsWith(NSP);
+    if (moduleName && actionName === ActionTypes.M_INIT) {
+      const payload = getActionData<BaseModelState>(action);
+      const routeParams = mergeDefaultData({[moduleName]: true}, payload.routeParams, defaultRouteParams);
+      action = {...action, payload: {...payload, routeParams}};
+    }
+  }
+  return next(action);
+};
 export interface RouteConfig {
   [path: string]: string | [string, RouteConfig];
 }
@@ -88,21 +103,21 @@ function searchStringify(searchData: any, key: string = 'q'): string {
   }
   return `${key}=${escape(str)}`;
 }
-function pathnameParse(pathname: string, routeConfig: RouteConfig, path: string[], args: {[moduleName: string]: {[key: string]: any}}) {
+function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string[], args: {[moduleName: string]: {[key: string]: any}}) {
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
       const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
       if (match) {
         const item = routeConfig[rule];
         const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-        path.push(viewName);
+        paths.push(viewName);
         const moduleName = viewName.split('.')[0];
         const {params} = match;
         if (params && Object.keys(params).length > 0) {
           args[moduleName] = {...args[moduleName], ...params};
         }
         if (pathConfig) {
-          pathnameParse(pathname, pathConfig, path, args);
+          pathnameParse(pathname, pathConfig, paths, args);
         }
         return;
       }
@@ -212,11 +227,3 @@ export function buildLocationToRoute(routeConfig: RouteConfig): TransformRoute {
     routeToLocation,
   };
 }
-
-export const mergeDefaultParamsMiddleware: Middleware = () => (next: Function) => (action: {type: string; payload: RouteState}) => {
-  if (action.type === ActionTypes.F_ROUTE_CHANGE) {
-    const {data} = action.payload;
-    data.params = mergeDefaultData(data.views, data.params, defaultRouteParams);
-  }
-  return next(action);
-};

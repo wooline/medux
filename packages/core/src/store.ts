@@ -76,34 +76,10 @@ import {isPlainObject} from './sprite';
 //   invalidview();
 // }
 
-// function excludeDefaultParams(data:any){
-//   return excludeDefaultData(data, MetaData.defaultRouteParams);
-// }
-// function excludeDefaultData(data: any, def: any) {
-//   const result: any = {};
-//   for (const key in data) {
-//     if (data.hasOwnProperty(key)) {
-//       const value = data[key];
-//       const defaultValue = def[key];
-//       if (value !== defaultValue) {
-//         if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-//           result[key] = excludeDefaultData(value, defaultValue);
-//         } else {
-//           result[key] = value;
-//         }
-//       }
-//     }
-//   }
-//   if (Object.keys(result).length === 0) {
-//     return undefined;
-//   }
-//   return result;
-// }
-
-function getActionData(action: Action) {
+export function getActionData<T>(action: Action): T {
   const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
   if (arr.length === 0) {
-    return undefined;
+    return undefined as any;
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
@@ -111,7 +87,7 @@ function getActionData(action: Action) {
     delete data['type'];
     delete data['priority'];
     delete data['time'];
-    return data;
+    return data as any;
   }
 }
 export interface HistoryProxy<L = any> {

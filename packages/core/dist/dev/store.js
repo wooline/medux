@@ -23,108 +23,67 @@ import { isPlainObject } from './sprite';
  * history触发侦听器，dispatch change action
  * store侦听器，判断是否时光
  */
-
-var invalidViewTimer;
-
-function checkInvalidview() {
-  invalidViewTimer = 0;
-  var currentViews = MetaData.clientStore._medux_.currentViews;
-  var views = {};
-
-  for (var _moduleName in currentViews) {
-    if (currentViews.hasOwnProperty(_moduleName)) {
-      var element = currentViews[_moduleName];
-
-      for (var viewname in element) {
-        if (element[viewname]) {
-          var n = Object.keys(element[viewname]).length;
-
-          if (n) {
-            if (!views[_moduleName]) {
-              views[_moduleName] = {};
-            }
-
-            views[_moduleName][viewname] = true;
-          }
-        }
-      }
-    }
-  } // MetaData.clientStore.dispatch(viewInvalidAction(views));
-
-}
-
-export function invalidview() {
-  if (MetaData.isServer) {
-    return;
-  }
-
-  if (!invalidViewTimer) {
-    invalidViewTimer = setTimeout(checkInvalidview, 300);
-  }
-}
-export function viewWillMount(moduleName, viewName, vid) {
-  if (MetaData.isServer) {
-    return;
-  }
-
-  var currentViews = MetaData.clientStore._medux_.currentViews;
-
-  if (!currentViews[moduleName]) {
-    var _viewName, _currentViews$moduleN;
-
-    currentViews[moduleName] = (_currentViews$moduleN = {}, _currentViews$moduleN[viewName] = (_viewName = {}, _viewName[vid] = true, _viewName), _currentViews$moduleN);
-  } else {
-    var views = currentViews[moduleName];
-
-    if (!views[viewName]) {
-      var _views$viewName;
-
-      views[viewName] = (_views$viewName = {}, _views$viewName[vid] = true, _views$viewName);
-    } else {
-      views[viewName][vid] = true;
-    }
-  }
-
-  invalidview();
-}
-export function viewWillUnmount(moduleName, viewName, vid) {
-  if (MetaData.isServer) {
-    return;
-  }
-
-  var currentViews = MetaData.clientStore._medux_.currentViews;
-
-  if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
-    var views = currentViews[moduleName][viewName];
-    delete views[vid];
-  }
-
-  invalidview();
-} // function excludeDefaultParams(data:any){
-//   return excludeDefaultData(data, MetaData.defaultRouteParams);
-// }
-// function excludeDefaultData(data: any, def: any) {
-//   const result: any = {};
-//   for (const key in data) {
-//     if (data.hasOwnProperty(key)) {
-//       const value = data[key];
-//       const defaultValue = def[key];
-//       if (value !== defaultValue) {
-//         if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-//           result[key] = excludeDefaultData(value, defaultValue);
-//         } else {
-//           result[key] = value;
+// let invalidViewTimer: number;
+// function checkInvalidview() {
+//   invalidViewTimer = 0;
+//   const currentViews = MetaData.clientStore._medux_.currentViews;
+//   const views: DisplayViews = {};
+//   for (const moduleName in currentViews) {
+//     if (currentViews.hasOwnProperty(moduleName)) {
+//       const element = currentViews[moduleName];
+//       for (const viewname in element) {
+//         if (element[viewname]) {
+//           const n = Object.keys(element[viewname]).length;
+//           if (n) {
+//             if (!views[moduleName]) {
+//               views[moduleName] = {};
+//             }
+//             views[moduleName][viewname] = true;
+//           }
 //         }
 //       }
 //     }
 //   }
-//   if (Object.keys(result).length === 0) {
-//     return undefined;
+//   // MetaData.clientStore.dispatch(viewInvalidAction(views));
+// }
+// export function invalidview() {
+//   if (MetaData.isServer) {
+//     return;
 //   }
-//   return result;
+//   if (!invalidViewTimer) {
+//     invalidViewTimer = setTimeout(checkInvalidview, 300);
+//   }
+// }
+// export function viewWillMount(moduleName: string, viewName: string, vid: string) {
+//   if (MetaData.isServer) {
+//     return;
+//   }
+//   const currentViews = MetaData.clientStore._medux_.currentViews;
+//   if (!currentViews[moduleName]) {
+//     currentViews[moduleName] = {[viewName]: {[vid]: true}};
+//   } else {
+//     const views = currentViews[moduleName];
+//     if (!views[viewName]) {
+//       views[viewName] = {[vid]: true};
+//     } else {
+//       views[viewName][vid] = true;
+//     }
+//   }
+//   invalidview();
+// }
+// export function viewWillUnmount(moduleName: string, viewName: string, vid: string) {
+//   if (MetaData.isServer) {
+//     return;
+//   }
+//   const currentViews = MetaData.clientStore._medux_.currentViews;
+//   if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
+//     const views = currentViews[moduleName][viewName];
+//     delete views[vid];
+//   }
+//   invalidview();
 // }
 
-function getActionData(action) {
+export function getActionData(action) {
   var arr = Object.keys(action).filter(function (key) {
     return key !== 'type' && key !== 'priority' && key !== 'time';
   });

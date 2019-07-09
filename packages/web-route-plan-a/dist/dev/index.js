@@ -17,7 +17,7 @@ import "core-js/modules/es.string.starts-with";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { ActionTypes, defaultRouteParams } from '@medux/core';
+import { ActionTypes, NSP, defaultRouteParams, getActionData } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend'; // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 
@@ -51,7 +51,7 @@ function mergeDefaultData(views, data, def) {
   var newData = _objectSpread({}, data);
 
   Object.keys(views).forEach(function (moduleName) {
-    if (!newData[moduleName]) {
+    if (!newData[moduleName] && def[moduleName]) {
       newData[moduleName] = {};
     }
   });
@@ -62,6 +62,43 @@ function mergeDefaultData(views, data, def) {
   });
   return newData;
 }
+
+export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware() {
+  return function (next) {
+    return function (action) {
+      if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+        var payload = getActionData(action);
+        var params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
+        action = _objectSpread({}, action, {
+          payload: _objectSpread({}, payload, {
+            data: _objectSpread({}, payload.data, {
+              params: params
+            })
+          })
+        });
+      } else {
+        var _action$type$endsWith = action.type.endsWith(NSP),
+            _moduleName = _action$type$endsWith[0],
+            actionName = _action$type$endsWith[1];
+
+        if (_moduleName && actionName === ActionTypes.M_INIT) {
+          var _mergeDefaultData;
+
+          var _payload = getActionData(action);
+
+          var routeParams = mergeDefaultData((_mergeDefaultData = {}, _mergeDefaultData[_moduleName] = true, _mergeDefaultData), _payload.routeParams, defaultRouteParams);
+          action = _objectSpread({}, action, {
+            payload: _objectSpread({}, _payload, {
+              routeParams: routeParams
+            })
+          });
+        }
+      }
+
+      return next(action);
+    };
+  };
+};
 
 function getSearch(searchOrHash, key) {
   if (searchOrHash.length < 4) {
@@ -121,7 +158,7 @@ function searchStringify(searchData, key) {
   return key + "=" + escape(str);
 }
 
-function pathnameParse(pathname, routeConfig, path, args) {
+function pathnameParse(pathname, routeConfig, paths, args) {
   for (var _rule in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule)) {
       var match = matchPath(pathname, {
@@ -136,18 +173,18 @@ function pathnameParse(pathname, routeConfig, path, args) {
             _viewName = _ref[0],
             pathConfig = _ref[1];
 
-        path.push(_viewName);
+        paths.push(_viewName);
 
-        var _moduleName = _viewName.split('.')[0];
+        var _moduleName2 = _viewName.split('.')[0];
 
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = _objectSpread({}, args[_moduleName], params);
+          args[_moduleName2] = _objectSpread({}, args[_moduleName2], params);
         }
 
         if (pathConfig) {
-          pathnameParse(pathname, pathConfig, path, args);
+          pathnameParse(pathname, pathConfig, paths, args);
         }
 
         return;
@@ -227,17 +264,17 @@ export function buildLocationToRoute(routeConfig) {
     }, {});
     var hashParams = searchParse(location.hash) || {};
 
-    var _loop = function _loop(_moduleName2) {
-      if (hashParams.hasOwnProperty(_moduleName2)) {
-        var moduleParams = hashParams[_moduleName2];
+    var _loop = function _loop(_moduleName3) {
+      if (hashParams.hasOwnProperty(_moduleName3)) {
+        var moduleParams = hashParams[_moduleName3];
         Object.keys(moduleParams).forEach(function (key) {
-          params[_moduleName2][key] = moduleParams[key];
+          params[_moduleName3][key] = moduleParams[key];
         });
       }
     };
 
-    for (var _moduleName2 in hashParams) {
-      _loop(_moduleName2);
+    for (var _moduleName3 in hashParams) {
+      _loop(_moduleName3);
     }
 
     return {
@@ -253,9 +290,9 @@ export function buildLocationToRoute(routeConfig) {
     var urls = [];
     var args = {};
 
-    for (var _moduleName3 in params) {
-      if (params.hasOwnProperty(_moduleName3)) {
-        args[_moduleName3] = _objectSpread({}, params[_moduleName3]);
+    for (var _moduleName4 in params) {
+      if (params.hasOwnProperty(_moduleName4)) {
+        args[_moduleName4] = _objectSpread({}, params[_moduleName4]);
       }
     }
 
@@ -292,33 +329,33 @@ export function buildLocationToRoute(routeConfig) {
     var searchData = {};
     var hashData = {};
 
-    var _loop2 = function _loop2(_moduleName4) {
-      if (args.hasOwnProperty(_moduleName4)) {
-        var data = args[_moduleName4];
+    var _loop2 = function _loop2(_moduleName5) {
+      if (args.hasOwnProperty(_moduleName5)) {
+        var data = args[_moduleName5];
         var keys = Object.keys(data);
 
         if (keys.length > 0) {
           keys.forEach(function (key) {
             if (key.startsWith('_')) {
-              if (!hashData[_moduleName4]) {
-                hashData[_moduleName4] = {};
+              if (!hashData[_moduleName5]) {
+                hashData[_moduleName5] = {};
               }
 
-              hashData[_moduleName4][key] = data[key];
+              hashData[_moduleName5][key] = data[key];
             } else {
-              if (!searchData[_moduleName4]) {
-                searchData[_moduleName4] = {};
+              if (!searchData[_moduleName5]) {
+                searchData[_moduleName5] = {};
               }
 
-              searchData[_moduleName4][key] = data[key];
+              searchData[_moduleName5][key] = data[key];
             }
           });
         }
       }
     };
 
-    for (var _moduleName4 in args) {
-      _loop2(_moduleName4);
+    for (var _moduleName5 in args) {
+      _loop2(_moduleName5);
     }
 
     return {
@@ -333,16 +370,4 @@ export function buildLocationToRoute(routeConfig) {
     routeToLocation: routeToLocation
   };
 }
-export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware() {
-  return function (next) {
-    return function (action) {
-      if (action.type === ActionTypes.F_ROUTE_CHANGE) {
-        var data = action.payload.data;
-        data.params = mergeDefaultData(data.views, data.params, defaultRouteParams);
-      }
-
-      return next(action);
-    };
-  };
-};
 //# sourceMappingURL=index.js.map

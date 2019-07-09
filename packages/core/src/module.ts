@@ -59,7 +59,8 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
       if (!moduleState) {
-        const initAction = actions.INIT((handlers as any).initState);
+        const params = (handlers.rootState.route as RouteState).data.params || {};
+        const initAction = actions.INIT({...initState, routeParams: params[moduleName]});
         const result = store.dispatch(initAction);
         if (isPromise(result)) {
           return result
@@ -111,19 +112,19 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
     initState.isModule = true;
   }
 
-  protected get state(): S {
+  public get state(): S {
     return this.store._medux_.prevState[this.moduleName];
   }
 
-  protected get rootState(): R {
+  public get rootState(): R {
     return this.store._medux_.prevState as R;
   }
 
-  protected get currentState(): S {
+  public get currentState(): S {
     return this.store._medux_.currentState[this.moduleName];
   }
 
-  protected get currentRootState(): R {
+  public get currentRootState(): R {
     return this.store._medux_.currentState as R;
   }
 
@@ -204,7 +205,7 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
             {},
             {
               get: (target: {}, key: string) => {
-                return (data: any) => ({type: moduleName + '/' + key, data});
+                return (payload: any) => ({type: moduleName + '/' + key, payload});
               },
               set: () => {
                 return true;

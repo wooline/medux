@@ -58,10 +58,10 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R> {
     protected readonly initState: S;
     protected readonly actions: Actions<this>;
     constructor(moduleName: string, store: ModelStore, initState: S, presetData?: any);
-    protected readonly state: S;
-    protected readonly rootState: R;
-    protected readonly currentState: S;
-    protected readonly currentRootState: R;
+    readonly state: S;
+    readonly rootState: R;
+    readonly currentState: S;
+    readonly currentRootState: R;
     protected dispatch(action: Action): Action | Promise<void>;
     protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {
         type: string;

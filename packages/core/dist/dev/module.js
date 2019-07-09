@@ -18,8 +18,8 @@ import "core-js/modules/es.promise";
 import "core-js/modules/es.string.iterator";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import _toArray from "@babel/runtime/helpers/esm/toArray";
+import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 
 function _decorate(decorators, factory, superClass, mixins) { var api = _getDecoratorsApi(); if (mixins) { for (var i = 0; i < mixins.length; i++) { api = mixins[i](api); } } var r = factory(function initialize(O) { api.initializeInstanceElements(O, decorated.elements); }, superClass); var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators); api.initializeClassElements(r.F, decorated.elements); return api.runClassFinishers(r.F, decorated.finishers); }
 
@@ -60,7 +60,11 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       handlers.actions = _actions;
 
       if (!moduleState) {
-        var initAction = _actions.INIT(handlers.initState);
+        var params = handlers.rootState.route.data.params || {};
+
+        var initAction = _actions.INIT(_objectSpread({}, initState, {
+          routeParams: params[moduleName]
+        }));
 
         var result = store.dispatch(initAction);
 
@@ -242,10 +246,10 @@ export function exportActions(moduleGetter) {
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
     maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
       get: function get(target, key) {
-        return function (data) {
+        return function (payload) {
           return {
             type: moduleName + '/' + key,
-            data: data
+            payload: payload
           };
         };
       },

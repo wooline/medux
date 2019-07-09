@@ -4,7 +4,6 @@ export declare const ActionTypes: {
     M_INIT: string;
     F_ERROR: string;
     F_ROUTE_CHANGE: string;
-    F_ROUTE_METHOD: string;
 };
 export declare function errorAction(error: any): {
     type: string;
