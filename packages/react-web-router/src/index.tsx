@@ -11,6 +11,8 @@ import ReactDOM from 'react-dom';
 
 export {loadView, exportModule} from '@medux/react';
 
+export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, reducer} from '@medux/core';
+
 export let historyActions: HistoryActions = null as any;
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
