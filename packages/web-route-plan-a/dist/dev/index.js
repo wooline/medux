@@ -17,7 +17,51 @@ import "core-js/modules/es.string.starts-with";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import { ActionTypes, defaultRouteParams } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
+import assignDeep from 'deep-extend'; // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
+
+function excludeDefaultData(data, def) {
+  var result = {};
+
+  for (var _key in data) {
+    if (data.hasOwnProperty(_key)) {
+      var value = data[_key];
+      var defaultValue = def[_key];
+
+      if (value !== defaultValue) {
+        if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+          result[_key] = excludeDefaultData(value, defaultValue);
+        } else {
+          result[_key] = value;
+        }
+      }
+    }
+  }
+
+  if (Object.keys(result).length === 0) {
+    return undefined;
+  }
+
+  return result;
+} // 合并默认路由参数，如果路由中某参数没传，将用默认值替代，与上面方法互逆
+
+
+function mergeDefaultData(views, data, def) {
+  var newData = _objectSpread({}, data);
+
+  Object.keys(views).forEach(function (moduleName) {
+    if (!newData[moduleName]) {
+      newData[moduleName] = {};
+    }
+  });
+  Object.keys(newData).forEach(function (moduleName) {
+    if (def[moduleName]) {
+      newData[moduleName] = assignDeep({}, def[moduleName], data[moduleName]);
+    }
+  });
+  return newData;
+}
 
 function getSearch(searchOrHash, key) {
   if (searchOrHash.length < 4) {
@@ -279,8 +323,8 @@ export function buildLocationToRoute(routeConfig) {
 
     return {
       pathname: urls.join(''),
-      search: searchStringify(searchData),
-      hash: searchStringify(hashData)
+      search: searchStringify(excludeDefaultData(searchData, defaultRouteParams)),
+      hash: searchStringify(excludeDefaultData(hashData, defaultRouteParams))
     };
   };
 
@@ -289,4 +333,16 @@ export function buildLocationToRoute(routeConfig) {
     routeToLocation: routeToLocation
   };
 }
+export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware() {
+  return function (next) {
+    return function (action) {
+      if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+        var data = action.payload.data;
+        data.params = mergeDefaultData(data.views, data.params, defaultRouteParams);
+      }
+
+      return next(action);
+    };
+  };
+};
 //# sourceMappingURL=index.js.map

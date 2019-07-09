@@ -34,6 +34,7 @@
   ],
   "dependencies": {
     "@medux/web": "^0.0.51",
+    "deep-extend": "^0.6.0",
     "path-to-regexp": "^3.0.0"
   },
   "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"

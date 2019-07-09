@@ -1,6 +1,48 @@
+import {ActionTypes, defaultRouteParams} from '@medux/core';
 import {BrowserLocation, TransformRoute} from '@medux/web';
-import {DisplayViews, RouteData} from '@medux/core/types/export';
+import {DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
 import {compilePath, compileToPath, matchPath} from './matchPath';
+
+import {Middleware} from 'redux';
+import assignDeep from 'deep-extend';
+
+// 排除默认路由参数，路由中如果参数值与默认参数相同可省去
+function excludeDefaultData(data: any, def: any) {
+  const result: any = {};
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const value = data[key];
+      const defaultValue = def[key];
+      if (value !== defaultValue) {
+        if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+          result[key] = excludeDefaultData(value, defaultValue);
+        } else {
+          result[key] = value;
+        }
+      }
+    }
+  }
+  if (Object.keys(result).length === 0) {
+    return undefined;
+  }
+  return result;
+}
+
+// 合并默认路由参数，如果路由中某参数没传，将用默认值替代，与上面方法互逆
+function mergeDefaultData(views: {[moduleName: string]: any}, data: any, def: any) {
+  const newData = {...data};
+  Object.keys(views).forEach(moduleName => {
+    if (!newData[moduleName]) {
+      newData[moduleName] = {};
+    }
+  });
+  Object.keys(newData).forEach(moduleName => {
+    if (def[moduleName]) {
+      newData[moduleName] = assignDeep({}, def[moduleName], data[moduleName]);
+    }
+  });
+  return newData;
+}
 
 export interface RouteConfig {
   [path: string]: string | [string, RouteConfig];
@@ -161,8 +203,8 @@ export function buildLocationToRoute(routeConfig: RouteConfig): TransformRoute {
     }
     return {
       pathname: urls.join(''),
-      search: searchStringify(searchData),
-      hash: searchStringify(hashData),
+      search: searchStringify(excludeDefaultData(searchData, defaultRouteParams)),
+      hash: searchStringify(excludeDefaultData(hashData, defaultRouteParams)),
     };
   };
   return {
@@ -170,3 +212,11 @@ export function buildLocationToRoute(routeConfig: RouteConfig): TransformRoute {
     routeToLocation,
   };
 }
+
+export const mergeDefaultParamsMiddleware: Middleware = () => (next: Function) => (action: {type: string; payload: RouteState}) => {
+  if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+    const {data} = action.payload;
+    data.params = mergeDefaultData(data.views, data.params, defaultRouteParams);
+  }
+  return next(action);
+};
