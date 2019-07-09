@@ -11,7 +11,7 @@ import ReactDOM from 'react-dom';
 
 export {loadView, exportModule} from '@medux/react';
 
-export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, reducer} from '@medux/core';
+export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 
 export let historyActions: HistoryActions = null as any;
 

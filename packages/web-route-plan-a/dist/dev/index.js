@@ -8,10 +8,12 @@ import "core-js/modules/es.object.keys";
 import "core-js/modules/es.object.to-string";
 import "core-js/modules/es.regexp.constructor";
 import "core-js/modules/es.regexp.to-string";
+import "core-js/modules/es.string.ends-with";
 import "core-js/modules/es.string.iterator";
 import "core-js/modules/es.string.replace";
 import "core-js/modules/es.string.search";
 import "core-js/modules/es.string.split";
+import "core-js/modules/es.string.starts-with";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
@@ -78,7 +80,10 @@ function searchStringify(searchData, key) {
 function pathnameParse(pathname, routeConfig, path, args) {
   for (var _rule in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule)) {
-      var match = matchPath(pathname, _rule);
+      var match = matchPath(pathname, {
+        path: _rule.replace(/\$$/, ''),
+        exact: _rule.endsWith('$')
+      });
 
       if (match) {
         var item = routeConfig[_rule];
@@ -91,15 +96,14 @@ function pathnameParse(pathname, routeConfig, path, args) {
 
         var _moduleName = _viewName.split('.')[0];
 
-        var url = match.url,
-            params = match.params;
+        var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
           args[_moduleName] = _objectSpread({}, args[_moduleName], params);
         }
 
         if (pathConfig) {
-          pathnameParse(pathname.replace(url, ''), pathConfig, path, args);
+          pathnameParse(pathname, pathConfig, path, args);
         }
 
         return;
@@ -120,7 +124,11 @@ function compileConfig(routeConfig, viewToRule, ruleToKeys) {
   for (var _rule2 in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule2)) {
       if (!ruleToKeys[_rule2]) {
-        var _compilePath = compilePath(_rule2),
+        var _compilePath = compilePath(_rule2.replace(/\$$/, ''), {
+          end: _rule2.endsWith('$'),
+          strict: false,
+          sensitive: false
+        }),
             keys = _compilePath.keys;
 
         ruleToKeys[_rule2] = keys.reduce(function (prev, cur) {
@@ -220,7 +228,7 @@ export function buildLocationToRoute(routeConfig) {
       var viewName = _ref3;
       var rule = viewToRule[viewName];
       var moduleName = viewName.split('.')[0];
-      var toPath = compileToPath(rule);
+      var toPath = compileToPath(rule.replace(/\$$/, ''));
       var url = toPath(params[moduleName]);
       urls.push(url);
       var keys = ruleToKeys[rule] || [];
@@ -247,7 +255,7 @@ export function buildLocationToRoute(routeConfig) {
 
         if (keys.length > 0) {
           keys.forEach(function (key) {
-            if (key.indexOf('_') === 0) {
+            if (key.startsWith('_')) {
               if (!hashData[_moduleName4]) {
                 hashData[_moduleName4] = {};
               }

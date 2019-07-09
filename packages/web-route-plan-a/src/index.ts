@@ -49,18 +49,18 @@ function searchStringify(searchData: any, key: string = 'q'): string {
 function pathnameParse(pathname: string, routeConfig: RouteConfig, path: string[], args: {[moduleName: string]: {[key: string]: any}}) {
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
-      const match = matchPath(pathname, rule);
+      const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
       if (match) {
         const item = routeConfig[rule];
         const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
         path.push(viewName);
         const moduleName = viewName.split('.')[0];
-        const {url, params} = match;
+        const {params} = match;
         if (params && Object.keys(params).length > 0) {
           args[moduleName] = {...args[moduleName], ...params};
         }
         if (pathConfig) {
-          pathnameParse(pathname.replace(url, ''), pathConfig, path, args);
+          pathnameParse(pathname, pathConfig, path, args);
         }
         return;
       }
@@ -72,7 +72,7 @@ function compileConfig(routeConfig: RouteConfig, viewToRule: {[viewName: string]
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
       if (!ruleToKeys[rule]) {
-        const {keys} = compilePath(rule);
+        const {keys} = compilePath(rule.replace(/\$$/, ''), {end: rule.endsWith('$'), strict: false, sensitive: false});
         ruleToKeys[rule] = keys.reduce((prev: (string | number)[], cur) => {
           prev.push(cur.name);
           return prev;
@@ -128,7 +128,7 @@ export function buildLocationToRoute(routeConfig: RouteConfig): TransformRoute {
     for (const viewName of paths) {
       const rule = viewToRule[viewName];
       const moduleName = viewName.split('.')[0];
-      const toPath = compileToPath(rule);
+      const toPath = compileToPath(rule.replace(/\$$/, ''));
       const url = toPath(params[moduleName]);
       urls.push(url);
       const keys = ruleToKeys[rule] || [];
@@ -144,7 +144,7 @@ export function buildLocationToRoute(routeConfig: RouteConfig): TransformRoute {
         const keys = Object.keys(data);
         if (keys.length > 0) {
           keys.forEach(key => {
-            if (key.indexOf('_') === 0) {
+            if (key.startsWith('_')) {
               if (!hashData[moduleName]) {
                 hashData[moduleName] = {};
               }

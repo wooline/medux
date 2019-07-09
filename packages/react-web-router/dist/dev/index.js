@@ -6,7 +6,7 @@ import { renderToNodeStream, renderToString } from 'react-dom/server';
 import ReactDOM from 'react-dom'; //TODO use StaticRouter
 
 export { loadView, exportModule } from '@medux/react';
-export { ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, reducer } from '@medux/core';
+export { ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export var historyActions = null;
 export function buildApp(moduleGetter, appModuleName, historyOptions, storeOptions, container) {
   if (storeOptions === void 0) {
