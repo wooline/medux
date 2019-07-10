@@ -45,7 +45,9 @@ import { MetaData, defaultRouteParams, injectActions, isPromise, reducer } from 
 import { ActionTypes, errorAction } from './actions';
 import { buildStore } from './store';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
-  defaultRouteParams[moduleName] = initState.routeParams;
+  if (!defaultRouteParams[moduleName]) {
+    defaultRouteParams[moduleName] = initState.routeParams;
+  }
 
   var model = function model(store) {
     var hasInjected = store._medux_.injectedModules[moduleName];
@@ -359,7 +361,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     initData = _objectSpread({}, window[ssrInitStoreKey], storeOptions.initData);
   }
 
-  var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
   var preModuleNames = [appModuleName];
 
   if (initData) {
@@ -382,7 +384,7 @@ export function renderSSR(render, moduleGetter, appModuleName, history, storeOpt
 
   MetaData.appModuleName = appModuleName;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  var store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  var store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
   var appModule = moduleGetter[appModuleName]();
   var initAppModel = appModule.default.model(store);
 

@@ -1,2 +1,2 @@
 export {BaseModelState, RouteData} from '@medux/core/types/export';
-export {RoutePayload} from '@medux/web';
+export {RoutePayload, HistoryActions} from '@medux/web';

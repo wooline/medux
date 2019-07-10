@@ -132,6 +132,7 @@ function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string
 }
 
 function compileConfig(routeConfig: RouteConfig, viewToRule: {[viewName: string]: string} = {}, ruleToKeys: {[rule: string]: (string | number)[]} = {}) {
+  // ruleToKeys将每条rule中的params key解析出来
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
       if (!ruleToKeys[rule]) {
@@ -182,12 +183,12 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   const routeToLocation: RouteToLocation = routeData => {
     const {paths, params} = routeData;
     let pathname = '';
-    let args: {[moduleName: string]: {[key: string]: any}};
+    let args: {[moduleName: string]: {[key: string]: any} | undefined};
     if (paths.length > 0) {
       args = {};
       // 将args二层克隆params，因为后面可能会删除path中使用到的变量
       for (const moduleName in params) {
-        if (params.hasOwnProperty(moduleName)) {
+        if (params[moduleName] && params.hasOwnProperty(moduleName)) {
           args[moduleName] = {...params[moduleName]};
         }
       }
@@ -203,7 +204,9 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         //pathname中传递的值可以不在params中重复传递
         const keys = ruleToKeys[rule] || [];
         keys.forEach(key => {
-          delete args[moduleName][key];
+          if (args[moduleName]) {
+            delete args[moduleName]![key];
+          }
         });
       });
     } else {
@@ -213,8 +216,8 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     const searchData = {};
     const hashData = {};
     for (const moduleName in args) {
-      if (args.hasOwnProperty(moduleName)) {
-        const data = args[moduleName];
+      if (args[moduleName] && args.hasOwnProperty(moduleName)) {
+        const data = args[moduleName]!;
         const keys = Object.keys(data);
         if (keys.length > 0) {
           keys.forEach(key => {

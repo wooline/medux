@@ -50,7 +50,9 @@ export type ExportModule<Component> = <S extends BaseModelState, V extends {[key
 ) => Module<Model<S>, V, Actions<T>, N>['default'];
 
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
-  defaultRouteParams[moduleName] = initState.routeParams;
+  if (!defaultRouteParams[moduleName]) {
+    defaultRouteParams[moduleName] = initState.routeParams;
+  }
   const model = (store: ModelStore) => {
     const hasInjected = store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
@@ -295,6 +297,7 @@ export interface StoreOptions {
   middlewares?: Middleware[];
   enhancers?: StoreEnhancer[];
   initData?: {[key: string]: any};
+  defaultRouteParams?: {[moduleName: string]: {[key: string]: any} | undefined};
 }
 
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
@@ -310,7 +313,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   if (storeOptions.initData || window[ssrInitStoreKey]) {
     initData = {...window[ssrInitStoreKey], ...storeOptions.initData};
   }
-  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
   const preModuleNames: string[] = [appModuleName];
   if (initData) {
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
@@ -330,7 +333,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
 ) {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
   const appModule = moduleGetter[appModuleName]() as Module;
   let initAppModel = appModule.default.model(store);
   if (!isPromise(initAppModel)) {

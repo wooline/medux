@@ -22,7 +22,7 @@ export var MetaData = {
   clientStore: null,
   appModuleName: null,
   moduleGetter: null,
-  defaultRouteParams: {}
+  defaultRouteParams: null
 };
 export var defaultRouteParams = MetaData.defaultRouteParams;
 export var client = MetaData.isServer ? undefined : window || global;

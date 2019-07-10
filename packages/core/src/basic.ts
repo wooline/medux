@@ -26,7 +26,7 @@ export const MetaData: {
   clientStore: null as any,
   appModuleName: null as any,
   moduleGetter: null as any,
-  defaultRouteParams: {},
+  defaultRouteParams: null as any,
 };
 export const defaultRouteParams = MetaData.defaultRouteParams;
 export const client = MetaData.isServer ? undefined : window || global;

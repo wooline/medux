@@ -211,6 +211,7 @@ function compileConfig(routeConfig, viewToRule, ruleToKeys) {
     ruleToKeys = {};
   }
 
+  // ruleToKeys将每条rule中的params key解析出来
   for (var _rule2 in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule2)) {
       if (!ruleToKeys[_rule2]) {
@@ -303,7 +304,7 @@ export function buildTransformRoute(routeConfig) {
       args = {}; // 将args二层克隆params，因为后面可能会删除path中使用到的变量
 
       for (var _moduleName4 in params) {
-        if (params.hasOwnProperty(_moduleName4)) {
+        if (params[_moduleName4] && params.hasOwnProperty(_moduleName4)) {
           args[_moduleName4] = _objectSpread({}, params[_moduleName4]);
         }
       }
@@ -321,7 +322,9 @@ export function buildTransformRoute(routeConfig) {
 
         var keys = ruleToKeys[rule] || [];
         keys.forEach(function (key) {
-          delete args[moduleName][key];
+          if (args[moduleName]) {
+            delete args[moduleName][key];
+          }
         });
       });
     } else {
@@ -333,7 +336,7 @@ export function buildTransformRoute(routeConfig) {
     var hashData = {};
 
     var _loop2 = function _loop2(_moduleName5) {
-      if (args.hasOwnProperty(_moduleName5)) {
+      if (args[_moduleName5] && args.hasOwnProperty(_moduleName5)) {
         var data = args[_moduleName5];
         var keys = Object.keys(data);
 

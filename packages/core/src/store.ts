@@ -130,7 +130,8 @@ export function buildStore(
   preloadedState: {[key: string]: any} = {},
   storeReducers: ReducersMapObject<any, any> = {},
   storeMiddlewares: Middleware[] = [],
-  storeEnhancers: StoreEnhancer[] = []
+  storeEnhancers: StoreEnhancer[] = [],
+  defaultRouteParams: {[moduleName: string]: {[key: string]: any} | undefined} = {}
 ): ModelStore {
   if (!isPlainObject(preloadedState)) {
     throw new Error('preloadedState must be plain objects!');
@@ -141,6 +142,7 @@ export function buildStore(
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
+  MetaData.defaultRouteParams = defaultRouteParams;
   storeReducers.route = (state: RouteState, action: Action) => {
     if (action.type === ActionTypes.F_ROUTE_CHANGE) {
       const payload: RouteState = getActionData(action);

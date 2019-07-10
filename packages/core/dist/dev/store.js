@@ -138,7 +138,7 @@ function bindHistory(store, history) {
   handleLocationChange(history.getLocation());
 }
 
-export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
+export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers, defaultRouteParams) {
   if (preloadedState === void 0) {
     preloadedState = {};
   }
@@ -155,6 +155,10 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     storeEnhancers = [];
   }
 
+  if (defaultRouteParams === void 0) {
+    defaultRouteParams = {};
+  }
+
   if (!isPlainObject(preloadedState)) {
     throw new Error('preloadedState must be plain objects!');
   }
@@ -166,6 +170,8 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
+
+  MetaData.defaultRouteParams = defaultRouteParams;
 
   storeReducers.route = function (state, action) {
     if (action.type === ActionTypes.F_ROUTE_CHANGE) {
