@@ -94,7 +94,7 @@ export interface HistoryProxy<L = any> {
   getLocation(): L;
   subscribe(listener: (location: L) => void): void;
   locationToRouteData(location: L): RouteData;
-  isTimeTravel(storeLocation: L): boolean;
+  equal(a: L, b: L): boolean;
   patch(location: L, routeData: RouteData): void;
 }
 
@@ -111,7 +111,7 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
   history.subscribe(handleLocationChange);
   store.subscribe(() => {
     const storeRouteState: RouteState<L> = store.getState().route;
-    if (history.isTimeTravel(storeRouteState.location)) {
+    if (!history.equal(storeRouteState.location, history.getLocation())) {
       inTimeTravelling = true;
       history.patch(storeRouteState.location, storeRouteState.data);
     }

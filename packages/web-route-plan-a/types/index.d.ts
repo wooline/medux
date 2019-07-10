@@ -4,4 +4,4 @@ export declare const mergeDefaultParamsMiddleware: Middleware;
 export interface RouteConfig {
     [path: string]: string | [string, RouteConfig];
 }
-export declare function buildLocationToRoute(routeConfig: RouteConfig): TransformRoute;
+export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;

@@ -5,7 +5,7 @@ export interface HistoryProxy<L = any> {
     getLocation(): L;
     subscribe(listener: (location: L) => void): void;
     locationToRouteData(location: L): RouteData;
-    isTimeTravel(storeLocation: L): boolean;
+    equal(a: L, b: L): boolean;
     patch(location: L, routeData: RouteData): void;
 }
 export declare function buildStore(history: HistoryProxy<any>, preloadedState?: {

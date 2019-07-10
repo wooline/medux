@@ -70,6 +70,20 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
     return function (action) {
       if (action.type === ActionTypes.F_ROUTE_CHANGE) {
         var payload = getActionData(action);
+
+        var _getState = getState(),
+            route = _getState.route;
+
+        if (route) {
+          var locationInStore = route.location || {};
+
+          var _location = payload.location || {};
+
+          if (locationInStore.pathname === _location.pathname && locationInStore.search === _location.search && locationInStore.hash === _location.hash) {
+            return;
+          }
+        }
+
         var params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
         action = _objectSpread({}, action, {
           payload: _objectSpread({}, payload, {
@@ -90,10 +104,10 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
         if (_moduleName && actionName === ActionTypes.M_INIT) {
           var _mergeDefaultData;
 
-          var _getState = getState(),
-              route = _getState.route;
+          var _getState2 = getState(),
+              _route = _getState2.route;
 
-          var _params = route.data.params || {};
+          var _params = _route.data.params || {};
 
           var moduleParams = _params[_moduleName];
 
@@ -255,7 +269,7 @@ function compileConfig(routeConfig, viewToRule, ruleToKeys) {
   };
 }
 
-export function buildLocationToRoute(routeConfig) {
+export function buildTransformRoute(routeConfig) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
       ruleToKeys = _compileConfig.ruleToKeys;

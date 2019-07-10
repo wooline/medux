@@ -30,15 +30,8 @@ function () {
     return location.state || this.locationToRoute(location);
   };
 
-  _proto.isTimeTravel = function isTimeTravel(storeLocation) {
-    var pathnameInStore = storeLocation.pathname,
-        searchInStore = storeLocation.search,
-        hashInStore = storeLocation.hash;
-    var _this$history$locatio = this.history.location,
-        pathname = _this$history$locatio.pathname,
-        search = _this$history$locatio.search,
-        hash = _this$history$locatio.hash;
-    return pathname !== pathnameInStore || search !== searchInStore || hash !== hashInStore;
+  _proto.equal = function equal(a, b) {
+    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
   };
 
   _proto.patch = function patch(location, routeData) {

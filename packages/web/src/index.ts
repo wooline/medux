@@ -8,14 +8,12 @@ interface Location {
   search: string;
   hash: string;
   state: RouteData;
-  key?: string;
 }
 
 export interface BrowserLocation {
   pathname: string;
   search: string;
   hash: string;
-  key?: string;
 }
 
 export interface TransformRoute {
@@ -47,10 +45,8 @@ class BrowserHistoryProxy implements HistoryProxy<Location> {
   public locationToRouteData(location: Location) {
     return location.state || this.locationToRoute(location);
   }
-  public isTimeTravel(storeLocation: Location) {
-    const {pathname: pathnameInStore, search: searchInStore, hash: hashInStore} = storeLocation;
-    const {pathname, search, hash} = this.history.location;
-    return pathname !== pathnameInStore || search !== searchInStore || hash !== hashInStore;
+  public equal(a: Location, b: Location) {
+    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
   }
   public patch(location: Location, routeData: RouteData): void {
     this.history.push({...location, state: routeData});

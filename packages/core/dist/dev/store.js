@@ -121,7 +121,7 @@ function bindHistory(store, history) {
   store.subscribe(function () {
     var storeRouteState = store.getState().route;
 
-    if (history.isTimeTravel(storeRouteState.location)) {
+    if (!history.equal(storeRouteState.location, history.getLocation())) {
       inTimeTravelling = true;
       history.patch(storeRouteState.location, storeRouteState.data);
     }

@@ -5,13 +5,11 @@ interface Location {
     search: string;
     hash: string;
     state: RouteData;
-    key?: string;
 }
 export interface BrowserLocation {
     pathname: string;
     search: string;
     hash: string;
-    key?: string;
 }
 export interface TransformRoute {
     locationToRoute: (location: BrowserLocation) => RouteData;

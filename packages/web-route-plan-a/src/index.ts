@@ -47,6 +47,14 @@ function mergeDefaultData(views: {[moduleName: string]: any}, data: any, def: an
 export const mergeDefaultParamsMiddleware: Middleware = ({dispatch, getState}) => (next: Function) => (action: any) => {
   if (action.type === ActionTypes.F_ROUTE_CHANGE) {
     const payload = getActionData<RouteState>(action);
+    const {route}: {route: RouteState} = getState();
+    if (route) {
+      const locationInStore = route.location || {};
+      const location = payload.location || {};
+      if (locationInStore.pathname === location.pathname && locationInStore.search === location.search && locationInStore.hash === location.hash) {
+        return;
+      }
+    }
     const params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
     action = {...action, payload: {...payload, data: {...payload.data, params}}};
     setTimeout(() => dispatch(routeCompleteAction()), 0);
@@ -153,7 +161,7 @@ function compileConfig(routeConfig: RouteConfig, viewToRule: {[viewName: string]
   return {viewToRule, ruleToKeys};
 }
 
-export function buildLocationToRoute(routeConfig: RouteConfig): TransformRoute {
+export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
   const locationToRoute: (location: BrowserLocation) => RouteData = location => {
     const paths: string[] = [];
