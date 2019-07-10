@@ -1,4 +1,4 @@
-import { Action, ActionCreatorList, BaseModelState, ModelStore, RouteState } from './basic';
+import { Action, ActionCreatorList, BaseModelState, ModelStore } from './basic';
 import { HistoryProxy } from './store';
 import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
@@ -58,22 +58,21 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R> {
     protected readonly initState: S;
     protected readonly actions: Actions<this>;
     constructor(moduleName: string, store: ModelStore, initState: S, presetData?: any);
-    readonly state: S;
-    readonly rootState: R;
-    readonly currentState: S;
-    readonly currentRootState: R;
+    protected readonly state: S;
+    protected readonly rootState: R;
+    protected readonly currentState: S;
+    protected readonly currentRootState: R;
     protected dispatch(action: Action): Action | Promise<void>;
     protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {
         type: string;
-        playload?: any;
+        payload?: any;
     };
-    protected mergeRouteState(state: S, routeData: RouteState): S;
+    protected updateState(payload: Partial<S>): void;
     protected INIT(payload: S): S;
     protected UPDATE(payload: S): S;
     protected LOADING(payload: {
         [group: string]: string;
     }): S;
-    protected updateState(payload: Partial<S>): void;
 }
 declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => {
     type: string;

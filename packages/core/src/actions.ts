@@ -5,6 +5,7 @@ export const ActionTypes = {
   M_INIT: 'INIT',
   F_ERROR: `@@framework${NSP}ERROR`,
   F_ROUTE_CHANGE: `@@framework${NSP}ROUTE_CHANGE`,
+  F_ROUTE_COMPLETE: `@@framework${NSP}ROUTE_COMPLETE`,
 };
 
 export function errorAction(error: any) {
@@ -20,7 +21,11 @@ export function routeChangeAction(route: RouteState) {
     payload: route,
   };
 }
-
+export function routeCompleteAction() {
+  return {
+    type: ActionTypes.F_ROUTE_COMPLETE,
+  };
+}
 // export function viewInvalidAction(currentViews: DisplayViews) {
 //   return {
 //     type: ActionTypes.F_VIEW_INVALID,

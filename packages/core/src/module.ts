@@ -59,8 +59,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
       if (!moduleState) {
-        const params = (handlers.rootState.route as RouteState).data.params || {};
-        const initAction = actions.INIT({...initState, routeParams: params[moduleName]});
+        const initAction = actions.INIT((handlers as any).initState);
         const result = store.dispatch(initAction);
         if (isPromise(result)) {
           return result
@@ -112,19 +111,19 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
     initState.isModule = true;
   }
 
-  public get state(): S {
+  protected get state(): S {
     return this.store._medux_.prevState[this.moduleName];
   }
 
-  public get rootState(): R {
+  protected get rootState(): R {
     return this.store._medux_.prevState as R;
   }
 
-  public get currentState(): S {
+  protected get currentState(): S {
     return this.store._medux_.currentState[this.moduleName];
   }
 
-  public get currentRootState(): R {
+  protected get currentRootState(): R {
     return this.store._medux_.currentState as R;
   }
 
@@ -132,23 +131,17 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
     return this.store.dispatch(action) as any;
   }
 
-  protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; playload?: any} {
+  protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; payload?: any} {
     const actions = MetaData.actionCreatorMap[this.moduleName];
     return actions[(handler as ActionHandler).__actionName__](rest[0]);
   }
-
-  protected mergeRouteState(state: S, routeData: RouteState): S {
-    if (routeData.data.views[this.moduleName]) {
-      const routeParams = routeData.data.params[this.moduleName];
-      if (!simpleEqual(routeParams, state.routeParams)) {
-        return {...state, routeParams: routeParams};
-      }
-    }
-    return state;
+  protected updateState(payload: Partial<S>) {
+    this.dispatch(this.callThisAction(this.UPDATE, {...this.state, ...payload}));
   }
+
   @reducer
   protected INIT(payload: S): S {
-    return this.mergeRouteState(payload, this.rootState['route']);
+    return payload;
   }
 
   @reducer
@@ -167,14 +160,15 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
       loading: {...state.loading, ...payload},
     };
   }
-
-  protected updateState(payload: Partial<S>) {
-    this.dispatch(this.callThisAction(this.UPDATE, {...this.state, ...payload}));
-  }
-
   @reducer
   protected [ActionTypes.F_ROUTE_CHANGE](routeData: RouteState): S {
-    return this.mergeRouteState(this.state, routeData);
+    if (routeData.data.views[this.moduleName]) {
+      const routeParams = routeData.data.params[this.moduleName];
+      if (!simpleEqual(routeParams, this.state.routeParams)) {
+        return {...this.state, routeParams};
+      }
+    }
+    return this.state;
   }
 }
 

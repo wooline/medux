@@ -17,7 +17,7 @@ import "core-js/modules/es.string.starts-with";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { ActionTypes, NSP, defaultRouteParams, getActionData } from '@medux/core';
+import { ActionTypes, NSP, defaultRouteParams, getActionData, routeCompleteAction } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend'; // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 
@@ -57,13 +57,15 @@ function mergeDefaultData(views, data, def) {
   });
   Object.keys(newData).forEach(function (moduleName) {
     if (def[moduleName]) {
-      newData[moduleName] = assignDeep({}, def[moduleName], data[moduleName]);
+      newData[moduleName] = assignDeep({}, def[moduleName], newData[moduleName]);
     }
   });
   return newData;
 }
 
-export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware() {
+export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(_ref) {
+  var dispatch = _ref.dispatch,
+      getState = _ref.getState;
   return function (next) {
     return function (action) {
       if (action.type === ActionTypes.F_ROUTE_CHANGE) {
@@ -76,22 +78,37 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
             })
           })
         });
+        setTimeout(function () {
+          return dispatch(routeCompleteAction());
+        }, 0);
+        return next(action);
       } else {
-        var _action$type$endsWith = action.type.endsWith(NSP),
-            _moduleName = _action$type$endsWith[0],
-            actionName = _action$type$endsWith[1];
+        var _action$type$split = action.type.split(NSP),
+            _moduleName = _action$type$split[0],
+            actionName = _action$type$split[1];
 
         if (_moduleName && actionName === ActionTypes.M_INIT) {
           var _mergeDefaultData;
 
+          var _getState = getState(),
+              route = _getState.route;
+
+          var _params = route.data.params || {};
+
+          var moduleParams = _params[_moduleName];
+
           var _payload = getActionData(action);
 
-          var routeParams = mergeDefaultData((_mergeDefaultData = {}, _mergeDefaultData[_moduleName] = true, _mergeDefaultData), _payload.routeParams, defaultRouteParams);
+          var routeParams = mergeDefaultData((_mergeDefaultData = {}, _mergeDefaultData[_moduleName] = true, _mergeDefaultData), moduleParams, defaultRouteParams)[_moduleName] || {};
           action = _objectSpread({}, action, {
             payload: _objectSpread({}, _payload, {
               routeParams: routeParams
             })
           });
+          setTimeout(function () {
+            return dispatch(routeCompleteAction());
+          }, 0);
+          return next(action);
         }
       }
 
@@ -169,9 +186,9 @@ function pathnameParse(pathname, routeConfig, paths, args) {
       if (match) {
         var item = routeConfig[_rule];
 
-        var _ref = typeof item === 'string' ? [item, null] : item,
-            _viewName = _ref[0],
-            pathConfig = _ref[1];
+        var _ref2 = typeof item === 'string' ? [item, null] : item,
+            _viewName = _ref2[0],
+            pathConfig = _ref2[1];
 
         paths.push(_viewName);
 
@@ -220,9 +237,9 @@ function compileConfig(routeConfig, viewToRule, ruleToKeys) {
 
       var item = routeConfig[_rule2];
 
-      var _ref2 = typeof item === 'string' ? [item, null] : item,
-          _viewName2 = _ref2[0],
-          pathConfig = _ref2[1];
+      var _ref3 = typeof item === 'string' ? [item, null] : item,
+          _viewName2 = _ref3[0],
+          pathConfig = _ref3[1];
 
       viewToRule[_viewName2] = _rule2;
 
@@ -299,14 +316,14 @@ export function buildLocationToRoute(routeConfig) {
     var _loop3 = function _loop3() {
       if (_isArray) {
         if (_i >= _iterator.length) return "break";
-        _ref3 = _iterator[_i++];
+        _ref4 = _iterator[_i++];
       } else {
         _i = _iterator.next();
         if (_i.done) return "break";
-        _ref3 = _i.value;
+        _ref4 = _i.value;
       }
 
-      var viewName = _ref3;
+      var viewName = _ref4;
       var rule = viewToRule[viewName];
       var moduleName = viewName.split('.')[0];
       var toPath = compileToPath(rule.replace(/\$$/, ''));
@@ -319,7 +336,7 @@ export function buildLocationToRoute(routeConfig) {
     };
 
     for (var _iterator = paths, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
-      var _ref3;
+      var _ref4;
 
       var _ret = _loop3();
 

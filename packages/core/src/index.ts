@@ -1,4 +1,4 @@
-export {ActionTypes, errorAction, routeChangeAction} from './actions';
+export {ActionTypes, errorAction, routeChangeAction, routeCompleteAction} from './actions';
 export {defaultRouteParams, reducer, NSP, effect, logger, isServer, getStore, delayPromise} from './basic';
 export {getActionData} from './store';
 export {setLoading, setLoadingDepthTime} from './loading';

@@ -18,8 +18,8 @@ import "core-js/modules/es.promise";
 import "core-js/modules/es.string.iterator";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
-import _toArray from "@babel/runtime/helpers/esm/toArray";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import _toArray from "@babel/runtime/helpers/esm/toArray";
 
 function _decorate(decorators, factory, superClass, mixins) { var api = _getDecoratorsApi(); if (mixins) { for (var i = 0; i < mixins.length; i++) { api = mixins[i](api); } } var r = factory(function initialize(O) { api.initializeInstanceElements(O, decorated.elements); }, superClass); var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators); api.initializeClassElements(r.F, decorated.elements); return api.runClassFinishers(r.F, decorated.finishers); }
 
@@ -60,11 +60,7 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       handlers.actions = _actions;
 
       if (!moduleState) {
-        var params = handlers.rootState.route.data.params || {};
-
-        var initAction = _actions.INIT(_objectSpread({}, initState, {
-          routeParams: params[moduleName]
-        }));
+        var initAction = _actions.INIT(handlers.initState);
 
         var result = store.dispatch(initAction);
 
@@ -176,26 +172,16 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "method",
-      key: "mergeRouteState",
-      value: function mergeRouteState(state, routeData) {
-        if (routeData.data.views[this.moduleName]) {
-          var routeParams = routeData.data.params[this.moduleName];
-
-          if (!simpleEqual(routeParams, state.routeParams)) {
-            return _objectSpread({}, state, {
-              routeParams: routeParams
-            });
-          }
-        }
-
-        return state;
+      key: "updateState",
+      value: function updateState(payload) {
+        this.dispatch(this.callThisAction(this.UPDATE, _objectSpread({}, this.state, payload)));
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "INIT",
       value: function INIT(payload) {
-        return this.mergeRouteState(payload, this.rootState['route']);
+        return payload;
       }
     }, {
       kind: "method",
@@ -221,16 +207,20 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "method",
-      key: "updateState",
-      value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.UPDATE, _objectSpread({}, this.state, payload)));
-      }
-    }, {
-      kind: "method",
       decorators: [reducer],
       key: ActionTypes.F_ROUTE_CHANGE,
       value: function value(routeData) {
-        return this.mergeRouteState(this.state, routeData);
+        if (routeData.data.views[this.moduleName]) {
+          var routeParams = routeData.data.params[this.moduleName];
+
+          if (!simpleEqual(routeParams, this.state.routeParams)) {
+            return _objectSpread({}, this.state, {
+              routeParams: routeParams
+            });
+          }
+        }
+
+        return this.state;
       }
     }]
   };
