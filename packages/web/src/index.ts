@@ -15,9 +15,9 @@ export interface BrowserLocation {
   search: string;
   hash: string;
 }
-
-export interface RoutePayload {
-  params: {[moduleName: string]: {[key: string]: any}};
+type Params = RouteData['params'];
+export interface RoutePayload<P extends Params = Params> {
+  params: P;
   paths: string[];
 }
 export type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
@@ -34,9 +34,9 @@ function isLocation(data: RoutePayload | BrowserLocation): data is Location {
   return !data['params'] && !data['paths'];
 }
 
-export interface HistoryActions {
-  push(data: RoutePayload | BrowserLocation | string): void;
-  replace(data: RoutePayload | BrowserLocation | string): void;
+export interface HistoryActions<P extends Params = Params> {
+  push(data: RoutePayload<P> | BrowserLocation | string): void;
+  replace(data: RoutePayload<P> | BrowserLocation | string): void;
   go(n: number): void;
   goBack(): void;
   goForward(): void;

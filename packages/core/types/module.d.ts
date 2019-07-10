@@ -30,6 +30,9 @@ declare type ModuleActions<M extends any> = M['default']['actions'];
 declare type MountViews<M extends any> = {
     [key in keyof M['default']['views']]?: boolean;
 };
+declare type DeepPartial<T> = {
+    [P in keyof T]?: DeepPartial<T[P]>;
+};
 export declare type RootState<G extends ModuleGetter, L> = {
     route: {
         location: L;
@@ -38,7 +41,7 @@ export declare type RootState<G extends ModuleGetter, L> = {
                 [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
             };
             params: {
-                [key in keyof G]?: ModuleParams<ReturnModule<G[key]>>;
+                [key in keyof G]?: DeepPartial<ModuleParams<ReturnModule<G[key]>>>;
             };
             paths: any;
         };
