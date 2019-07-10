@@ -76,10 +76,9 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
 
         if (route) {
           var locationInStore = route.location || {};
+          var location = payload.location || {};
 
-          var _location = payload.location || {};
-
-          if (locationInStore.pathname === _location.pathname && locationInStore.search === _location.search && locationInStore.hash === _location.hash) {
+          if (locationInStore.pathname === location.pathname && locationInStore.search === location.search && locationInStore.hash === location.hash) {
             return;
           }
         }

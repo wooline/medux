@@ -1,6 +1,6 @@
 import {ActionTypes, NSP, defaultRouteParams, getActionData, routeCompleteAction} from '@medux/core';
-import {BaseModelState, DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
-import {BrowserLocation, TransformRoute} from '@medux/web';
+import {BaseModelState, DisplayViews, RouteState} from '@medux/core/types/export';
+import {LocationToRoute, RouteToLocation, TransformRoute} from '@medux/web';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import {Middleware} from 'redux';
@@ -163,7 +163,7 @@ function compileConfig(routeConfig: RouteConfig, viewToRule: {[viewName: string]
 
 export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
-  const locationToRoute: (location: BrowserLocation) => RouteData = location => {
+  const locationToRoute: LocationToRoute = location => {
     const paths: string[] = [];
     const params: {[moduleName: string]: {[key: string]: any}} = searchParse(location.search) || {};
     pathnameParse(location.pathname, routeConfig, paths, params);
@@ -188,7 +188,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     }
     return {paths, params, views};
   };
-  const routeToLocation: (routeData: RouteData) => BrowserLocation = routeData => {
+  const routeToLocation: RouteToLocation = routeData => {
     const {paths, params} = routeData;
     const urls: string[] = [];
     const args: {[moduleName: string]: {[key: string]: any}} = {};

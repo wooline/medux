@@ -16,15 +16,19 @@ export interface BrowserLocation {
   hash: string;
 }
 
+type RoutePayload = Pick<RouteData, 'params' | 'paths'>;
+export type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
+export type LocationToRoute = (location: BrowserLocation) => RouteData;
+
 export interface TransformRoute {
-  locationToRoute: (location: BrowserLocation) => RouteData;
-  routeToLocation: (routeData: RouteData) => BrowserLocation;
+  locationToRoute: LocationToRoute;
+  routeToLocation: RouteToLocation;
 }
 
 export type BrowserHistoryOptions = BrowserHistoryBuildOptions & TransformRoute;
 export type MemoryHistoryOptions = MemoryHistoryBuildOptions & TransformRoute;
-function isLocation(data: RouteData | BrowserLocation): data is Location {
-  return !data['views'];
+function isLocation(data: RoutePayload | BrowserLocation): data is Location {
+  return !data['params'] && !data['paths'];
 }
 
 export interface HistoryActions {
@@ -35,7 +39,7 @@ export interface HistoryActions {
   goForward(): void;
 }
 class BrowserHistoryProxy implements HistoryProxy<Location> {
-  public constructor(protected history: History, protected locationToRoute: (location: BrowserLocation) => RouteData) {}
+  public constructor(protected history: History, protected locationToRoute: LocationToRoute) {}
   public getLocation() {
     return this.history.location;
   }
@@ -54,8 +58,8 @@ class BrowserHistoryProxy implements HistoryProxy<Location> {
 }
 
 class BrowserHistoryActions implements HistoryActions {
-  public constructor(protected history: History, protected routeToLocation: (data: RouteData) => BrowserLocation) {}
-  public push(data: RouteData | BrowserLocation | string): void {
+  public constructor(protected history: History, protected routeToLocation: RouteToLocation) {}
+  public push(data: RoutePayload | BrowserLocation | string): void {
     if (typeof data === 'string') {
       this.history.push(data);
     } else if (isLocation(data)) {
@@ -65,7 +69,7 @@ class BrowserHistoryActions implements HistoryActions {
       this.history.push({...location, state: data});
     }
   }
-  public replace(data: RouteData | BrowserLocation | string): void {
+  public replace(data: RoutePayload | BrowserLocation | string): void {
     if (typeof data === 'string') {
       this.history.replace(data);
     } else if (isLocation(data)) {

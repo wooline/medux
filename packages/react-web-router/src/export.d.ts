@@ -1,1 +1,1 @@
-export {BaseModelState} from '@medux/core/types/export';
+export {BaseModelState, RouteData} from '@medux/core/types/export';

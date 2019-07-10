@@ -5,7 +5,7 @@ import { createBrowserHistory, createMemoryHistory } from 'history';
 import { isServer } from '@medux/core';
 
 function isLocation(data) {
-  return !data['views'];
+  return !data['params'] && !data['paths'];
 }
 
 var BrowserHistoryProxy =
