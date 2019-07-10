@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-native-router",
-  "version": "0.0.53",
+  "version": "0.0.54",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-native-router",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/react-native-router/npm.md",
@@ -37,7 +37,7 @@
     "react-native": "^0.50.0"
   },
   "dependencies": {
-    "@medux/react": "^0.0.53"
+    "@medux/react": "^0.0.54"
   },
   "gitHead": "ea886e4118516642fb243fb569f5f754d97e18ba"
 }
