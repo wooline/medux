@@ -94,7 +94,8 @@ function simpleEqual(obj1: any, obj2: any): boolean {
     if (keys1.length !== keys2.length) {
       return false;
     } else {
-      for (const key of keys1) {
+      for (let i = 0, k = keys1.length; i < k; i++) {
+        const key = keys1[i];
         if (!simpleEqual(obj1[key], obj2[key])) {
           return false;
         }

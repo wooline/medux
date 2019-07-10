@@ -1,5 +1,5 @@
 import {BrowserHistoryBuildOptions, History, MemoryHistoryBuildOptions, createBrowserHistory, createMemoryHistory} from 'history';
-import {HistoryProxy, RouteData} from '@medux/core/types/export';
+import {DisplayViews, HistoryProxy, RouteData} from '@medux/core/types/export';
 
 import {isServer} from '@medux/core';
 
@@ -68,8 +68,19 @@ class BrowserHistoryActions implements HistoryActions {
     } else if (isLocation(data)) {
       this.history.push(data);
     } else {
-      const location = this.routeToLocation(data as RoutePayload);
-      this.history.push({...location, state: data});
+      const routeData = data as RoutePayload;
+      const location = this.routeToLocation(routeData);
+      const views: DisplayViews = routeData.paths.reduce((prev: DisplayViews, cur) => {
+        const [moduleName, viewName] = cur.split('.');
+        if (viewName) {
+          if (!prev[moduleName]) {
+            prev[moduleName] = {};
+          }
+          prev[moduleName][viewName] = true;
+        }
+        return prev;
+      }, {});
+      this.history.push({...location, state: {...routeData, views}});
     }
   }
   public replace(data: RoutePayload | BrowserLocation | string): void {

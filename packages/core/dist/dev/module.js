@@ -100,8 +100,8 @@ function simpleEqual(obj1, obj2) {
     if (keys1.length !== keys2.length) {
       return false;
     } else {
-      for (var _i = 0, _keys = keys1; _i < _keys.length; _i++) {
-        var _key = _keys[_i];
+      for (var i = 0, k = keys1.length; i < k; i++) {
+        var _key = keys1[i];
 
         if (!simpleEqual(obj1[_key], obj2[_key])) {
           return false;

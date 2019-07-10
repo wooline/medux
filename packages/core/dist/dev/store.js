@@ -107,6 +107,15 @@ function bindHistory(store, history) {
 
   var handleLocationChange = function handleLocationChange(location) {
     if (!inTimeTravelling) {
+      var _ref = store.getState(),
+          route = _ref.route;
+
+      if (route) {
+        if (history.equal(route.location, location)) {
+          return;
+        }
+      }
+
       var data = history.locationToRouteData(location);
       store.dispatch(routeChangeAction({
         location: location,

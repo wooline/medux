@@ -9,19 +9,18 @@ import assignDeep from 'deep-extend';
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 function excludeDefaultData(data: any, def: any) {
   const result: any = {};
-  for (const key in data) {
-    if (data.hasOwnProperty(key)) {
-      const value = data[key];
-      const defaultValue = def[key];
-      if (value !== defaultValue) {
-        if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-          result[key] = excludeDefaultData(value, defaultValue);
-        } else {
-          result[key] = value;
-        }
+  Object.keys(data).forEach(key => {
+    const value = data[key];
+    const defaultValue = def[key];
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+        result[key] = excludeDefaultData(value, defaultValue);
+      } else {
+        result[key] = value;
       }
     }
-  }
+  });
+
   if (Object.keys(result).length === 0) {
     return undefined;
   }
@@ -47,14 +46,6 @@ function mergeDefaultData(views: {[moduleName: string]: any}, data: any, def: an
 export const mergeDefaultParamsMiddleware: Middleware = ({dispatch, getState}) => (next: Function) => (action: any) => {
   if (action.type === ActionTypes.F_ROUTE_CHANGE) {
     const payload = getActionData<RouteState>(action);
-    const {route}: {route: RouteState} = getState();
-    if (route) {
-      const locationInStore = route.location || {};
-      const location = payload.location || {};
-      if (locationInStore.pathname === location.pathname && locationInStore.search === location.search && locationInStore.hash === location.hash) {
-        return;
-      }
-    }
     const params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
     action = {...action, payload: {...payload, data: {...payload.data, params}}};
     setTimeout(() => dispatch(routeCompleteAction()), 0);
@@ -201,7 +192,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         }
       }
       const lastViewName = paths[paths.length - 1];
-      for (const viewName of paths) {
+      paths.forEach(viewName => {
         const rule = viewToRule[viewName];
         const moduleName = viewName.split('.')[0];
         //最深的一个view可以决定pathname
@@ -214,7 +205,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         keys.forEach(key => {
           delete args[moduleName][key];
         });
-      }
+      });
     } else {
       args = params;
     }

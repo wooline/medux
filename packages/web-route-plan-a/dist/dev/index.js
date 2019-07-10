@@ -1,6 +1,3 @@
-import "core-js/modules/es.symbol";
-import "core-js/modules/es.symbol.description";
-import "core-js/modules/es.symbol.iterator";
 import "core-js/modules/es.array.iterator";
 import "core-js/modules/es.function.name";
 import "core-js/modules/es.object.keys";
@@ -8,7 +5,6 @@ import "core-js/modules/es.object.to-string";
 import "core-js/modules/es.regexp.constructor";
 import "core-js/modules/es.regexp.to-string";
 import "core-js/modules/es.string.ends-with";
-import "core-js/modules/es.string.iterator";
 import "core-js/modules/es.string.replace";
 import "core-js/modules/es.string.search";
 import "core-js/modules/es.string.split";
@@ -22,21 +18,18 @@ import assignDeep from 'deep-extend'; // 排除默认路由参数，路由中如
 
 function excludeDefaultData(data, def) {
   var result = {};
+  Object.keys(data).forEach(function (key) {
+    var value = data[key];
+    var defaultValue = def[key];
 
-  for (var _key in data) {
-    if (data.hasOwnProperty(_key)) {
-      var value = data[_key];
-      var defaultValue = def[_key];
-
-      if (value !== defaultValue) {
-        if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-          result[_key] = excludeDefaultData(value, defaultValue);
-        } else {
-          result[_key] = value;
-        }
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+        result[key] = excludeDefaultData(value, defaultValue);
+      } else {
+        result[key] = value;
       }
     }
-  }
+  });
 
   if (Object.keys(result).length === 0) {
     return undefined;
@@ -69,19 +62,6 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
     return function (action) {
       if (action.type === ActionTypes.F_ROUTE_CHANGE) {
         var payload = getActionData(action);
-
-        var _getState = getState(),
-            route = _getState.route;
-
-        if (route) {
-          var locationInStore = route.location || {};
-          var location = payload.location || {};
-
-          if (locationInStore.pathname === location.pathname && locationInStore.search === location.search && locationInStore.hash === location.hash) {
-            return;
-          }
-        }
-
         var params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
         action = _objectSpread({}, action, {
           payload: _objectSpread({}, payload, {
@@ -102,10 +82,10 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
         if (_moduleName && actionName === ActionTypes.M_INIT) {
           var _mergeDefaultData;
 
-          var _getState2 = getState(),
-              _route = _getState2.route;
+          var _getState = getState(),
+              route = _getState.route;
 
-          var _params = _route.data.params || {};
+          var _params = route.data.params || {};
 
           var moduleParams = _params[_moduleName];
 
@@ -329,18 +309,7 @@ export function buildTransformRoute(routeConfig) {
       }
 
       var lastViewName = paths[paths.length - 1];
-
-      var _loop2 = function _loop2() {
-        if (_isArray) {
-          if (_i >= _iterator.length) return "break";
-          _ref4 = _iterator[_i++];
-        } else {
-          _i = _iterator.next();
-          if (_i.done) return "break";
-          _ref4 = _i.value;
-        }
-
-        var viewName = _ref4;
+      paths.forEach(function (viewName) {
         var rule = viewToRule[viewName];
         var moduleName = viewName.split('.')[0]; //最深的一个view可以决定pathname
 
@@ -354,15 +323,7 @@ export function buildTransformRoute(routeConfig) {
         keys.forEach(function (key) {
           delete args[moduleName][key];
         });
-      };
-
-      for (var _iterator = paths, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
-        var _ref4;
-
-        var _ret = _loop2();
-
-        if (_ret === "break") break;
-      }
+      });
     } else {
       args = params;
     } //将带_前缀的变量放到hashData中
@@ -371,7 +332,7 @@ export function buildTransformRoute(routeConfig) {
     var searchData = {};
     var hashData = {};
 
-    var _loop3 = function _loop3(_moduleName5) {
+    var _loop2 = function _loop2(_moduleName5) {
       if (args.hasOwnProperty(_moduleName5)) {
         var data = args[_moduleName5];
         var keys = Object.keys(data);
@@ -397,7 +358,7 @@ export function buildTransformRoute(routeConfig) {
     };
 
     for (var _moduleName5 in args) {
-      _loop3(_moduleName5);
+      _loop2(_moduleName5);
     }
 
     return {

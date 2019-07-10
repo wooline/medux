@@ -102,6 +102,12 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
   let inTimeTravelling = false;
   const handleLocationChange = (location: L) => {
     if (!inTimeTravelling) {
+      const {route}: {route: RouteState} = store.getState() as any;
+      if (route) {
+        if (history.equal(route.location, location)) {
+          return;
+        }
+      }
       const data = history.locationToRouteData(location);
       store.dispatch(routeChangeAction({location, data}));
     } else {
