@@ -16,7 +16,7 @@ export interface BrowserLocation {
   hash: string;
 }
 
-type RoutePayload = Pick<RouteData, 'params' | 'paths'>;
+export type RoutePayload = Pick<RouteData, 'params' | 'paths'>;
 export type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
 export type LocationToRoute = (location: BrowserLocation) => RouteData;
 
@@ -32,8 +32,8 @@ function isLocation(data: RoutePayload | BrowserLocation): data is Location {
 }
 
 export interface HistoryActions {
-  push(data: RouteData | BrowserLocation | string): void;
-  replace(data: RouteData | BrowserLocation | string): void;
+  push(data: RoutePayload | BrowserLocation | string): void;
+  replace(data: RoutePayload | BrowserLocation | string): void;
   go(n: number): void;
   goBack(): void;
   goForward(): void;

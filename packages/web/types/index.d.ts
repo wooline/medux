@@ -11,7 +11,7 @@ export interface BrowserLocation {
     search: string;
     hash: string;
 }
-declare type RoutePayload = Pick<RouteData, 'params' | 'paths'>;
+export declare type RoutePayload = Pick<RouteData, 'params' | 'paths'>;
 export declare type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
 export declare type LocationToRoute = (location: BrowserLocation) => RouteData;
 export interface TransformRoute {
@@ -21,8 +21,8 @@ export interface TransformRoute {
 export declare type BrowserHistoryOptions = BrowserHistoryBuildOptions & TransformRoute;
 export declare type MemoryHistoryOptions = MemoryHistoryBuildOptions & TransformRoute;
 export interface HistoryActions {
-    push(data: RouteData | BrowserLocation | string): void;
-    replace(data: RouteData | BrowserLocation | string): void;
+    push(data: RoutePayload | BrowserLocation | string): void;
+    replace(data: RoutePayload | BrowserLocation | string): void;
     go(n: number): void;
     goBack(): void;
     goForward(): void;
