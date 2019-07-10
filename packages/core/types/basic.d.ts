@@ -55,7 +55,7 @@ export interface RouteData {
     params: {
         [moduleName: string]: {
             [key: string]: any;
-        } | undefined;
+        };
     };
     paths: string[];
 }

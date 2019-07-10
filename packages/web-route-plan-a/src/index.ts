@@ -190,24 +190,35 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   };
   const routeToLocation: RouteToLocation = routeData => {
     const {paths, params} = routeData;
-    const urls: string[] = [];
-    const args: {[moduleName: string]: {[key: string]: any}} = {};
-    for (const moduleName in params) {
-      if (params.hasOwnProperty(moduleName)) {
-        args[moduleName] = {...params[moduleName]};
+    let pathname = '';
+    let args: {[moduleName: string]: {[key: string]: any}};
+    if (paths.length > 0) {
+      args = {};
+      // 将args二层克隆params，因为后面可能会删除path中使用到的变量
+      for (const moduleName in params) {
+        if (params.hasOwnProperty(moduleName)) {
+          args[moduleName] = {...params[moduleName]};
+        }
       }
+      const lastViewName = paths[paths.length - 1];
+      for (const viewName of paths) {
+        const rule = viewToRule[viewName];
+        const moduleName = viewName.split('.')[0];
+        //最深的一个view可以决定pathname
+        if (viewName === lastViewName) {
+          const toPath = compileToPath(rule.replace(/\$$/, ''));
+          pathname = toPath(params[moduleName]);
+        }
+        //pathname中传递的值可以不在params中重复传递
+        const keys = ruleToKeys[rule] || [];
+        keys.forEach(key => {
+          delete args[moduleName][key];
+        });
+      }
+    } else {
+      args = params;
     }
-    for (const viewName of paths) {
-      const rule = viewToRule[viewName];
-      const moduleName = viewName.split('.')[0];
-      const toPath = compileToPath(rule.replace(/\$$/, ''));
-      const url = toPath(params[moduleName]);
-      urls.push(url);
-      const keys = ruleToKeys[rule] || [];
-      keys.forEach(key => {
-        delete args[moduleName][key];
-      });
-    }
+    //将带_前缀的变量放到hashData中
     const searchData = {};
     const hashData = {};
     for (const moduleName in args) {
@@ -232,7 +243,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
       }
     }
     return {
-      pathname: urls.join(''),
+      pathname,
       search: searchStringify(excludeDefaultData(searchData, defaultRouteParams)),
       hash: searchStringify(excludeDefaultData(hashData, defaultRouteParams)),
     };

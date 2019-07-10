@@ -2,7 +2,6 @@ import "core-js/modules/es.symbol";
 import "core-js/modules/es.symbol.description";
 import "core-js/modules/es.symbol.iterator";
 import "core-js/modules/es.array.iterator";
-import "core-js/modules/es.array.join";
 import "core-js/modules/es.function.name";
 import "core-js/modules/es.object.keys";
 import "core-js/modules/es.object.to-string";
@@ -317,49 +316,62 @@ export function buildTransformRoute(routeConfig) {
   var routeToLocation = function routeToLocation(routeData) {
     var paths = routeData.paths,
         params = routeData.params;
-    var urls = [];
-    var args = {};
+    var pathname = '';
+    var args;
 
-    for (var _moduleName4 in params) {
-      if (params.hasOwnProperty(_moduleName4)) {
-        args[_moduleName4] = _objectSpread({}, params[_moduleName4]);
-      }
-    }
+    if (paths.length > 0) {
+      args = {}; // 将args二层克隆params，因为后面可能会删除path中使用到的变量
 
-    var _loop3 = function _loop3() {
-      if (_isArray) {
-        if (_i >= _iterator.length) return "break";
-        _ref4 = _iterator[_i++];
-      } else {
-        _i = _iterator.next();
-        if (_i.done) return "break";
-        _ref4 = _i.value;
+      for (var _moduleName4 in params) {
+        if (params.hasOwnProperty(_moduleName4)) {
+          args[_moduleName4] = _objectSpread({}, params[_moduleName4]);
+        }
       }
 
-      var viewName = _ref4;
-      var rule = viewToRule[viewName];
-      var moduleName = viewName.split('.')[0];
-      var toPath = compileToPath(rule.replace(/\$$/, ''));
-      var url = toPath(params[moduleName]);
-      urls.push(url);
-      var keys = ruleToKeys[rule] || [];
-      keys.forEach(function (key) {
-        delete args[moduleName][key];
-      });
-    };
+      var lastViewName = paths[paths.length - 1];
 
-    for (var _iterator = paths, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
-      var _ref4;
+      var _loop2 = function _loop2() {
+        if (_isArray) {
+          if (_i >= _iterator.length) return "break";
+          _ref4 = _iterator[_i++];
+        } else {
+          _i = _iterator.next();
+          if (_i.done) return "break";
+          _ref4 = _i.value;
+        }
 
-      var _ret = _loop3();
+        var viewName = _ref4;
+        var rule = viewToRule[viewName];
+        var moduleName = viewName.split('.')[0]; //最深的一个view可以决定pathname
 
-      if (_ret === "break") break;
-    }
+        if (viewName === lastViewName) {
+          var toPath = compileToPath(rule.replace(/\$$/, ''));
+          pathname = toPath(params[moduleName]);
+        } //pathname中传递的值可以不在params中重复传递
+
+
+        var keys = ruleToKeys[rule] || [];
+        keys.forEach(function (key) {
+          delete args[moduleName][key];
+        });
+      };
+
+      for (var _iterator = paths, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+        var _ref4;
+
+        var _ret = _loop2();
+
+        if (_ret === "break") break;
+      }
+    } else {
+      args = params;
+    } //将带_前缀的变量放到hashData中
+
 
     var searchData = {};
     var hashData = {};
 
-    var _loop2 = function _loop2(_moduleName5) {
+    var _loop3 = function _loop3(_moduleName5) {
       if (args.hasOwnProperty(_moduleName5)) {
         var data = args[_moduleName5];
         var keys = Object.keys(data);
@@ -385,11 +397,11 @@ export function buildTransformRoute(routeConfig) {
     };
 
     for (var _moduleName5 in args) {
-      _loop2(_moduleName5);
+      _loop3(_moduleName5);
     }
 
     return {
-      pathname: urls.join(''),
+      pathname: pathname,
       search: searchStringify(excludeDefaultData(searchData, defaultRouteParams)),
       hash: searchStringify(excludeDefaultData(hashData, defaultRouteParams))
     };

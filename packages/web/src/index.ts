@@ -16,7 +16,10 @@ export interface BrowserLocation {
   hash: string;
 }
 
-export type RoutePayload = Pick<RouteData, 'params' | 'paths'>;
+export interface RoutePayload {
+  params: {[moduleName: string]: {[key: string]: any}};
+  paths: string[];
+}
 export type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
 export type LocationToRoute = (location: BrowserLocation) => RouteData;
 
@@ -65,7 +68,7 @@ class BrowserHistoryActions implements HistoryActions {
     } else if (isLocation(data)) {
       this.history.push(data);
     } else {
-      const location = this.routeToLocation(data as RouteData);
+      const location = this.routeToLocation(data as RoutePayload);
       this.history.push({...location, state: data});
     }
   }
@@ -75,7 +78,7 @@ class BrowserHistoryActions implements HistoryActions {
     } else if (isLocation(data)) {
       this.history.push(data);
     } else {
-      const location = this.routeToLocation(data as RouteData);
+      const location = this.routeToLocation(data as RoutePayload);
       this.history.replace({...location, state: data});
     }
   }

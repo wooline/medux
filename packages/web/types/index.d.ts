@@ -11,7 +11,14 @@ export interface BrowserLocation {
     search: string;
     hash: string;
 }
-export declare type RoutePayload = Pick<RouteData, 'params' | 'paths'>;
+export interface RoutePayload {
+    params: {
+        [moduleName: string]: {
+            [key: string]: any;
+        };
+    };
+    paths: string[];
+}
 export declare type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
 export declare type LocationToRoute = (location: BrowserLocation) => RouteData;
 export interface TransformRoute {
