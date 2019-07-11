@@ -13,7 +13,11 @@ export {loadView, exportModule} from '@medux/react';
 
 export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 
-export let historyActions: HistoryActions = null as any;
+let historyActions: HistoryActions | undefined = undefined;
+
+export function getHistoryActions() {
+  return historyActions;
+}
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,

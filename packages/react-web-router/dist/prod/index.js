@@ -1,5 +1,5 @@
 import{createHistory}from"@medux/web";import React from"react";import{Router,withRouter}from"react-router-dom";import{renderApp,renderSSR}from"@medux/react";import{renderToNodeStream,renderToString}from"react-dom/server";import ReactDOM from"react-dom";//TODO use StaticRouter
-export{loadView,exportModule}from"@medux/react";export{ActionTypes,LoadingState,exportActions,BaseModelHandlers,effect,errorAction,reducer}from"@medux/core";export var historyActions=null;export function buildApp(a,b,c,d,e){void 0===d&&(d={}),void 0===e&&(e="root");var f=createHistory(c),g=f.history,h=f.historyProxy;// // SSR需要数据是单向的，store->view，不能store->view->store->view，而view:ConnectedRouter初始化时会触发一次LOCATION_CHANGE
+export{loadView,exportModule}from"@medux/react";export{ActionTypes,LoadingState,exportActions,BaseModelHandlers,effect,errorAction,reducer}from"@medux/core";var historyActions;export function getHistoryActions(){return historyActions}export function buildApp(a,b,c,d,e){void 0===d&&(d={}),void 0===e&&(e="root");var f=createHistory(c),g=f.history,h=f.historyProxy;// // SSR需要数据是单向的，store->view，不能store->view->store->view，而view:ConnectedRouter初始化时会触发一次LOCATION_CHANGE
 // let routerInited = false;
 // const filterRouter = () => (next: Function) => (action: {type: string}) => {
 //   if (action.type === '@@router/LOCATION_CHANGE') {

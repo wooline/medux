@@ -7,7 +7,10 @@ import ReactDOM from 'react-dom'; //TODO use StaticRouter
 
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
-export var historyActions = null;
+var historyActions = undefined;
+export function getHistoryActions() {
+  return historyActions;
+}
 export function buildApp(moduleGetter, appModuleName, historyOptions, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};
