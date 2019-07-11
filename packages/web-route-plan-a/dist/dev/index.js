@@ -80,7 +80,7 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
             actionName = _action$type$split[1];
 
         if (_moduleName && actionName === ActionTypes.M_INIT) {
-          var _mergeDefaultData;
+          var _mergeDefaultData, _mergeDefaultData2;
 
           var _getState = getState(),
               route = _getState.route;
@@ -91,15 +91,12 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
 
           var _payload = getActionData(action);
 
-          var routeParams = mergeDefaultData((_mergeDefaultData = {}, _mergeDefaultData[_moduleName] = true, _mergeDefaultData), moduleParams, defaultRouteParams)[_moduleName] || {};
+          var routeParams = mergeDefaultData((_mergeDefaultData = {}, _mergeDefaultData[_moduleName] = true, _mergeDefaultData), (_mergeDefaultData2 = {}, _mergeDefaultData2[_moduleName] = moduleParams, _mergeDefaultData2), defaultRouteParams)[_moduleName] || {};
           action = _objectSpread({}, action, {
             payload: _objectSpread({}, _payload, {
               routeParams: routeParams
             })
           });
-          setTimeout(function () {
-            return dispatch(routeCompleteAction());
-          }, 0);
           return next(action);
         }
       }

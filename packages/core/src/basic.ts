@@ -218,20 +218,23 @@ function addModuleActionCreatorList(moduleName: string, actionName: string) {
   }
 }
 export function injectActions(store: ModelStore, moduleName: string, handlers: ActionHandlerList) {
-  for (const actionName in handlers) {
-    if (typeof handlers[actionName] === 'function') {
-      let handler = handlers[actionName];
+  for (const actionNames in handlers) {
+    if (typeof handlers[actionNames] === 'function') {
+      let handler = handlers[actionNames];
       if (handler.__isReducer__ || handler.__isEffect__) {
         handler = bindThis(handler, handlers);
-        const arr = actionName.split(NSP);
-        if (arr[1]) {
-          handler.__isHandler__ = true;
-          transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-        } else {
-          handler.__isHandler__ = false;
-          transformAction(moduleName + NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-          addModuleActionCreatorList(moduleName, actionName);
-        }
+        actionNames.split(',').forEach(actionName => {
+          actionName = actionName.trim();
+          const arr = actionName.split(NSP);
+          if (arr[1]) {
+            handler.__isHandler__ = true;
+            transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+          } else {
+            handler.__isHandler__ = false;
+            transformAction(moduleName + NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            addModuleActionCreatorList(moduleName, actionName);
+          }
+        });
       }
     }
   }

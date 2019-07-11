@@ -16,7 +16,7 @@ export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, err
 let historyActions: HistoryActions | undefined = undefined;
 
 export function getHistoryActions() {
-  return historyActions;
+  return historyActions!;
 }
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(

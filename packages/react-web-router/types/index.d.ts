@@ -7,7 +7,7 @@ export declare function getHistoryActions(): HistoryActions<{
     [moduleName: string]: {
         [key: string]: any;
     } | undefined;
-}> | undefined;
+}>;
 export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, historyOptions: BrowserHistoryOptions, storeOptions?: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void)): Promise<void>;
 export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, historyOptions: MemoryHistoryOptions, storeOptions?: StoreOptions, renderToStream?: boolean): Promise<{
     html: string | ReadableStream;

@@ -57,9 +57,8 @@ export const mergeDefaultParamsMiddleware: Middleware = ({dispatch, getState}) =
       const params = route.data.params || {};
       const moduleParams = params[moduleName];
       const payload = getActionData<BaseModelState>(action);
-      const routeParams = mergeDefaultData({[moduleName]: true}, moduleParams, defaultRouteParams)[moduleName] || {};
+      const routeParams = mergeDefaultData({[moduleName]: true}, {[moduleName]: moduleParams}, defaultRouteParams)[moduleName] || {};
       action = {...action, payload: {...payload, routeParams}};
-      setTimeout(() => dispatch(routeCompleteAction()), 0);
       return next(action);
     }
   }

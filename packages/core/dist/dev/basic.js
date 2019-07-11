@@ -4,6 +4,7 @@ import "core-js/modules/es.object.to-string";
 import "core-js/modules/es.promise";
 import "core-js/modules/es.string.iterator";
 import "core-js/modules/es.string.split";
+import "core-js/modules/es.string.trim";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 
@@ -162,24 +163,28 @@ function addModuleActionCreatorList(moduleName, actionName) {
 }
 
 export function injectActions(store, moduleName, handlers) {
-  for (var _actionName in handlers) {
-    if (typeof handlers[_actionName] === 'function') {
-      var handler = handlers[_actionName];
+  for (var actionNames in handlers) {
+    if (typeof handlers[actionNames] === 'function') {
+      (function () {
+        var handler = handlers[actionNames];
 
-      if (handler.__isReducer__ || handler.__isEffect__) {
-        handler = bindThis(handler, handlers);
+        if (handler.__isReducer__ || handler.__isEffect__) {
+          handler = bindThis(handler, handlers);
+          actionNames.split(',').forEach(function (actionName) {
+            actionName = actionName.trim();
+            var arr = actionName.split(NSP);
 
-        var arr = _actionName.split(NSP);
-
-        if (arr[1]) {
-          handler.__isHandler__ = true;
-          transformAction(_actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-        } else {
-          handler.__isHandler__ = false;
-          transformAction(moduleName + NSP + _actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-          addModuleActionCreatorList(moduleName, _actionName);
+            if (arr[1]) {
+              handler.__isHandler__ = true;
+              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            } else {
+              handler.__isHandler__ = false;
+              transformAction(moduleName + NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+              addModuleActionCreatorList(moduleName, actionName);
+            }
+          });
         }
-      }
+      })();
     }
   }
 
