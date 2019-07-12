@@ -130,7 +130,7 @@ function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string
   }
 }
 
-function compileConfig(routeConfig: RouteConfig, viewToRule: {[viewName: string]: string} = {}, ruleToKeys: {[rule: string]: (string | number)[]} = {}) {
+function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName: string = '', viewToRule: {[viewName: string]: string} = {}, ruleToKeys: {[rule: string]: (string | number)[]} = {}) {
   // ruleToKeys将每条rule中的params key解析出来
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
@@ -143,9 +143,10 @@ function compileConfig(routeConfig: RouteConfig, viewToRule: {[viewName: string]
       }
       const item = routeConfig[rule];
       const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-      viewToRule[viewName] = rule;
+      const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      viewToRule[absoluteViewName] = rule;
       if (pathConfig) {
-        compileConfig(pathConfig, viewToRule, ruleToKeys);
+        compileConfig(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
       }
     }
   }
@@ -164,7 +165,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         if (!prev[moduleName]) {
           prev[moduleName] = {};
         }
-        prev[moduleName][viewName] = true;
+        prev[moduleName]![viewName] = true;
       }
       return prev;
     }, {});
@@ -191,12 +192,12 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
           args[moduleName] = {...params[moduleName]};
         }
       }
-      const lastViewName = paths[paths.length - 1];
-      paths.forEach(viewName => {
-        const rule = viewToRule[viewName];
+      paths.reduce((parentAbsoluteViewName, viewName, index) => {
+        const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+        const rule = viewToRule[absoluteViewName];
         const moduleName = viewName.split('.')[0];
         //最深的一个view可以决定pathname
-        if (viewName === lastViewName) {
+        if (index === paths.length - 1) {
           const toPath = compileToPath(rule.replace(/\$$/, ''));
           pathname = toPath(params[moduleName]);
         }
@@ -207,7 +208,8 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
             delete args[moduleName]![key];
           }
         });
-      });
+        return absoluteViewName;
+      }, '');
     } else {
       args = params;
     }

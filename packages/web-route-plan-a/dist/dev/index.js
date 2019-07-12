@@ -199,7 +199,11 @@ function pathnameParse(pathname, routeConfig, paths, args) {
   }
 }
 
-function compileConfig(routeConfig, viewToRule, ruleToKeys) {
+function compileConfig(routeConfig, parentViewName, viewToRule, ruleToKeys) {
+  if (parentViewName === void 0) {
+    parentViewName = '';
+  }
+
   if (viewToRule === void 0) {
     viewToRule = {};
   }
@@ -231,10 +235,11 @@ function compileConfig(routeConfig, viewToRule, ruleToKeys) {
           _viewName2 = _ref3[0],
           pathConfig = _ref3[1];
 
-      viewToRule[_viewName2] = _rule2;
+      var viewNamePath = parentViewName + '/' + _viewName2;
+      viewToRule[viewNamePath] = _rule2;
 
       if (pathConfig) {
-        compileConfig(pathConfig, viewToRule, ruleToKeys);
+        compileConfig(pathConfig, viewNamePath, viewToRule, ruleToKeys);
       }
     }
   }

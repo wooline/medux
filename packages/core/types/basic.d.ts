@@ -66,7 +66,7 @@ export interface RouteState<L = any> {
 export interface DisplayViews {
     [moduleName: string]: {
         [viewName: string]: boolean;
-    };
+    } | undefined;
 }
 export interface CurrentViews {
     [moduleName: string]: {
