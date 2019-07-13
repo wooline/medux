@@ -1,5 +1,5 @@
 import {BrowserHistoryBuildOptions, History, MemoryHistoryBuildOptions, createBrowserHistory, createMemoryHistory} from 'history';
-import {DisplayViews, HistoryProxy, RouteData} from '@medux/core/types/export';
+import {HistoryProxy, RouteData} from '@medux/core/types/export';
 
 import {isServer} from '@medux/core';
 
@@ -15,12 +15,8 @@ export interface BrowserLocation {
   search: string;
   hash: string;
 }
-type Params = RouteData['params'];
-export interface RoutePayload<P extends Params = Params> {
-  params: P;
-  paths: string[];
-}
-export type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
+
+export type RouteToLocation = (routeData: RouteData) => BrowserLocation;
 export type LocationToRoute = (location: BrowserLocation) => RouteData;
 
 export interface TransformRoute {
@@ -30,13 +26,13 @@ export interface TransformRoute {
 
 export type BrowserHistoryOptions = BrowserHistoryBuildOptions & TransformRoute;
 export type MemoryHistoryOptions = MemoryHistoryBuildOptions & TransformRoute;
-function isLocation(data: RoutePayload | BrowserLocation): data is Location {
-  return !data['params'] && !data['paths'];
+function isLocation(data: RouteData | BrowserLocation): data is Location {
+  return data['views'] || !data['paths'] || !data['params'];
 }
 
-export interface HistoryActions<P extends Params = Params> {
-  push(data: RoutePayload<P> | BrowserLocation | string): void;
-  replace(data: RoutePayload<P> | BrowserLocation | string): void;
+export interface HistoryActions<P = RouteData> {
+  push(data: P | BrowserLocation | string): void;
+  replace(data: P | BrowserLocation | string): void;
   go(n: number): void;
   goBack(): void;
   goForward(): void;
@@ -62,34 +58,23 @@ class BrowserHistoryProxy implements HistoryProxy<Location> {
 
 class BrowserHistoryActions implements HistoryActions {
   public constructor(protected history: History, protected routeToLocation: RouteToLocation) {}
-  public push(data: RoutePayload | BrowserLocation | string): void {
+  public push(data: RouteData | BrowserLocation | string): void {
     if (typeof data === 'string') {
       this.history.push(data);
     } else if (isLocation(data)) {
       this.history.push(data);
     } else {
-      const routeData = data as RoutePayload;
-      const location = this.routeToLocation(routeData);
-      const views: DisplayViews = routeData.paths.reduce((prev: DisplayViews, cur) => {
-        const [moduleName, viewName] = cur.split('.');
-        if (viewName) {
-          if (!prev[moduleName]) {
-            prev[moduleName] = {};
-          }
-          prev[moduleName][viewName] = true;
-        }
-        return prev;
-      }, {});
-      this.history.push({...location, state: {...routeData, views}});
+      const location = this.routeToLocation(data as RouteData);
+      this.history.push({...location, state: data});
     }
   }
-  public replace(data: RoutePayload | BrowserLocation | string): void {
+  public replace(data: RouteData | BrowserLocation | string): void {
     if (typeof data === 'string') {
       this.history.replace(data);
     } else if (isLocation(data)) {
-      this.history.push(data);
+      this.history.replace(data);
     } else {
-      const location = this.routeToLocation(data as RoutePayload);
+      const location = this.routeToLocation(data as RouteData);
       this.history.replace({...location, state: data});
     }
   }

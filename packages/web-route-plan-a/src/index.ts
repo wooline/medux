@@ -1,5 +1,5 @@
 import {ActionTypes, NSP, defaultRouteParams, getActionData, routeCompleteAction} from '@medux/core';
-import {BaseModelState, DisplayViews, RouteState} from '@medux/core/types/export';
+import {BaseModelState, DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
 import {LocationToRoute, RouteToLocation, TransformRoute} from '@medux/web';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
@@ -151,6 +151,29 @@ function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName: string 
     }
   }
   return {viewToRule, ruleToKeys};
+}
+
+type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
+
+type Params = RouteData['params'];
+export interface RoutePayload<P extends Params = Params> {
+  params: DeepPartial<P>;
+  paths: string[];
+}
+export function fillRouteData(routePayload: RoutePayload): RouteData {
+  const {paths} = routePayload;
+  const views: DisplayViews = routePayload.paths.reduce((prev: DisplayViews, cur) => {
+    const [moduleName, viewName] = cur.split('.');
+    if (viewName) {
+      if (!prev[moduleName]) {
+        prev[moduleName] = {};
+      }
+      prev[moduleName]![viewName] = true;
+    }
+    return prev;
+  }, {});
+  const params = mergeDefaultData(views, routePayload.params, defaultRouteParams);
+  return {views, paths, params};
 }
 
 export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {

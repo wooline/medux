@@ -1,12 +1,11 @@
 import "core-js/modules/es.string.replace";
 import "core-js/modules/es.string.search";
-import "core-js/modules/es.string.split";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { createBrowserHistory, createMemoryHistory } from 'history';
 import { isServer } from '@medux/core';
 
 function isLocation(data) {
-  return !data['params'] && !data['paths'];
+  return data['views'] || !data['paths'] || !data['params'];
 }
 
 var BrowserHistoryProxy =
@@ -60,30 +59,10 @@ function () {
     } else if (isLocation(data)) {
       this.history.push(data);
     } else {
-      var _routeData = data;
-
-      var _location = this.routeToLocation(_routeData);
-
-      var views = _routeData.paths.reduce(function (prev, cur) {
-        var _cur$split = cur.split('.'),
-            moduleName = _cur$split[0],
-            viewName = _cur$split[1];
-
-        if (viewName) {
-          if (!prev[moduleName]) {
-            prev[moduleName] = {};
-          }
-
-          prev[moduleName][viewName] = true;
-        }
-
-        return prev;
-      }, {});
+      var _location = this.routeToLocation(data);
 
       this.history.push(_objectSpread({}, _location, {
-        state: _objectSpread({}, _routeData, {
-          views: views
-        })
+        state: data
       }));
     }
   };
@@ -92,7 +71,7 @@ function () {
     if (typeof data === 'string') {
       this.history.replace(data);
     } else if (isLocation(data)) {
-      this.history.push(data);
+      this.history.replace(data);
     } else {
       var _location2 = this.routeToLocation(data);
 

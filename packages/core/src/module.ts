@@ -30,7 +30,7 @@ type ModuleParams<M extends any> = M['default']['model']['initState']['routePara
 type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
 type MountViews<M extends any> = {[key in keyof M['default']['views']]?: boolean};
-// type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
+
 export type RootState<G extends ModuleGetter, L> = {
   route: {
     location: L;

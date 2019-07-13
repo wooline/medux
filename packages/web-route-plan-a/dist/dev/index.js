@@ -199,9 +199,9 @@ function pathnameParse(pathname, routeConfig, paths, args) {
   }
 }
 
-function compileConfig(routeConfig, parentViewName, viewToRule, ruleToKeys) {
-  if (parentViewName === void 0) {
-    parentViewName = '';
+function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKeys) {
+  if (parentAbsoluteViewName === void 0) {
+    parentAbsoluteViewName = '';
   }
 
   if (viewToRule === void 0) {
@@ -235,11 +235,11 @@ function compileConfig(routeConfig, parentViewName, viewToRule, ruleToKeys) {
           _viewName2 = _ref3[0],
           pathConfig = _ref3[1];
 
-      var viewNamePath = parentViewName + '/' + _viewName2;
-      viewToRule[viewNamePath] = _rule2;
+      var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
+      viewToRule[absoluteViewName] = _rule2;
 
       if (pathConfig) {
-        compileConfig(pathConfig, viewNamePath, viewToRule, ruleToKeys);
+        compileConfig(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
       }
     }
   }
@@ -250,6 +250,30 @@ function compileConfig(routeConfig, parentViewName, viewToRule, ruleToKeys) {
   };
 }
 
+export function fillRouteData(routePayload) {
+  var paths = routePayload.paths;
+  var views = routePayload.paths.reduce(function (prev, cur) {
+    var _cur$split = cur.split('.'),
+        moduleName = _cur$split[0],
+        viewName = _cur$split[1];
+
+    if (viewName) {
+      if (!prev[moduleName]) {
+        prev[moduleName] = {};
+      }
+
+      prev[moduleName][viewName] = true;
+    }
+
+    return prev;
+  }, {});
+  var params = mergeDefaultData(views, routePayload.params, defaultRouteParams);
+  return {
+    views: views,
+    paths: paths,
+    params: params
+  };
+}
 export function buildTransformRoute(routeConfig) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
@@ -260,9 +284,9 @@ export function buildTransformRoute(routeConfig) {
     var params = searchParse(location.search) || {};
     pathnameParse(location.pathname, routeConfig, paths, params);
     var views = paths.reduce(function (prev, cur) {
-      var _cur$split = cur.split('.'),
-          moduleName = _cur$split[0],
-          viewName = _cur$split[1];
+      var _cur$split2 = cur.split('.'),
+          moduleName = _cur$split2[0],
+          viewName = _cur$split2[1];
 
       if (viewName) {
         if (!prev[moduleName]) {
@@ -311,12 +335,12 @@ export function buildTransformRoute(routeConfig) {
         }
       }
 
-      var lastViewName = paths[paths.length - 1];
-      paths.forEach(function (viewName) {
-        var rule = viewToRule[viewName];
+      paths.reduce(function (parentAbsoluteViewName, viewName, index) {
+        var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+        var rule = viewToRule[absoluteViewName];
         var moduleName = viewName.split('.')[0]; //最深的一个view可以决定pathname
 
-        if (viewName === lastViewName) {
+        if (index === paths.length - 1) {
           var toPath = compileToPath(rule.replace(/\$$/, ''));
           pathname = toPath(params[moduleName]);
         } //pathname中传递的值可以不在params中重复传递
@@ -328,7 +352,8 @@ export function buildTransformRoute(routeConfig) {
             delete args[moduleName][key];
           }
         });
-      });
+        return absoluteViewName;
+      }, '');
     } else {
       args = params;
     } //将带_前缀的变量放到hashData中

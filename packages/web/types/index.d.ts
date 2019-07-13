@@ -11,12 +11,7 @@ export interface BrowserLocation {
     search: string;
     hash: string;
 }
-declare type Params = RouteData['params'];
-export interface RoutePayload<P extends Params = Params> {
-    params: P;
-    paths: string[];
-}
-export declare type RouteToLocation = (routeData: RoutePayload) => BrowserLocation;
+export declare type RouteToLocation = (routeData: RouteData) => BrowserLocation;
 export declare type LocationToRoute = (location: BrowserLocation) => RouteData;
 export interface TransformRoute {
     locationToRoute: LocationToRoute;
@@ -24,9 +19,9 @@ export interface TransformRoute {
 }
 export declare type BrowserHistoryOptions = BrowserHistoryBuildOptions & TransformRoute;
 export declare type MemoryHistoryOptions = MemoryHistoryBuildOptions & TransformRoute;
-export interface HistoryActions<P extends Params = Params> {
-    push(data: RoutePayload<P> | BrowserLocation | string): void;
-    replace(data: RoutePayload<P> | BrowserLocation | string): void;
+export interface HistoryActions<P = RouteData> {
+    push(data: P | BrowserLocation | string): void;
+    replace(data: P | BrowserLocation | string): void;
     go(n: number): void;
     goBack(): void;
     goForward(): void;
@@ -34,10 +29,6 @@ export interface HistoryActions<P extends Params = Params> {
 export declare function createHistory(options: BrowserHistoryOptions | MemoryHistoryOptions): {
     history: History<any>;
     historyProxy: HistoryProxy<Location>;
-    historyActions: HistoryActions<{
-        [moduleName: string]: {
-            [key: string]: any;
-        } | undefined;
-    }>;
+    historyActions: HistoryActions<RouteData>;
 };
 export {};
