@@ -12,7 +12,7 @@ import "core-js/modules/es.string.starts-with";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { ActionTypes, NSP, defaultRouteParams, getActionData, routeCompleteAction } from '@medux/core';
+import { ActionTypes, defaultRouteParams, getActionData } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend'; // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 
@@ -55,9 +55,7 @@ function mergeDefaultData(views, data, def) {
   return newData;
 }
 
-export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(_ref) {
-  var dispatch = _ref.dispatch,
-      getState = _ref.getState;
+export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware() {
   return function (next) {
     return function (action) {
       if (action.type === ActionTypes.F_ROUTE_CHANGE) {
@@ -70,35 +68,6 @@ export var mergeDefaultParamsMiddleware = function mergeDefaultParamsMiddleware(
             })
           })
         });
-        setTimeout(function () {
-          return dispatch(routeCompleteAction());
-        }, 0);
-        return next(action);
-      } else {
-        var _action$type$split = action.type.split(NSP),
-            _moduleName = _action$type$split[0],
-            actionName = _action$type$split[1];
-
-        if (_moduleName && actionName === ActionTypes.M_INIT) {
-          var _mergeDefaultData, _mergeDefaultData2;
-
-          var _getState = getState(),
-              route = _getState.route;
-
-          var _params = route.data.params || {};
-
-          var moduleParams = _params[_moduleName];
-
-          var _payload = getActionData(action);
-
-          var routeParams = mergeDefaultData((_mergeDefaultData = {}, _mergeDefaultData[_moduleName] = true, _mergeDefaultData), (_mergeDefaultData2 = {}, _mergeDefaultData2[_moduleName] = moduleParams, _mergeDefaultData2), defaultRouteParams)[_moduleName] || {};
-          action = _objectSpread({}, action, {
-            payload: _objectSpread({}, _payload, {
-              routeParams: routeParams
-            })
-          });
-          return next(action);
-        }
       }
 
       return next(action);
@@ -175,18 +144,18 @@ function pathnameParse(pathname, routeConfig, paths, args) {
       if (match) {
         var item = routeConfig[_rule];
 
-        var _ref2 = typeof item === 'string' ? [item, null] : item,
-            _viewName = _ref2[0],
-            pathConfig = _ref2[1];
+        var _ref = typeof item === 'string' ? [item, null] : item,
+            _viewName = _ref[0],
+            pathConfig = _ref[1];
 
         paths.push(_viewName);
 
-        var _moduleName2 = _viewName.split('.')[0];
+        var _moduleName = _viewName.split('.')[0];
 
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName2] = _objectSpread({}, args[_moduleName2], params);
+          args[_moduleName] = _objectSpread({}, args[_moduleName], params);
         }
 
         if (pathConfig) {
@@ -231,9 +200,9 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
 
       var item = routeConfig[_rule2];
 
-      var _ref3 = typeof item === 'string' ? [item, null] : item,
-          _viewName2 = _ref3[0],
-          pathConfig = _ref3[1];
+      var _ref2 = typeof item === 'string' ? [item, null] : item,
+          _viewName2 = _ref2[0],
+          pathConfig = _ref2[1];
 
       var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
       viewToRule[absoluteViewName] = _rule2;
@@ -274,7 +243,7 @@ export function fillRouteData(routePayload) {
     params: params
   };
 }
-export function getHistory(getHistoryActions) {
+export function getRouteActions(getHistoryActions) {
   return {
     push: function push(data) {
       var args = data;
@@ -331,17 +300,17 @@ export function buildTransformRoute(routeConfig) {
     }, {});
     var hashParams = searchParse(location.hash) || {};
 
-    var _loop = function _loop(_moduleName3) {
-      if (hashParams.hasOwnProperty(_moduleName3)) {
-        var moduleParams = hashParams[_moduleName3];
+    var _loop = function _loop(_moduleName2) {
+      if (hashParams.hasOwnProperty(_moduleName2)) {
+        var moduleParams = hashParams[_moduleName2];
         Object.keys(moduleParams).forEach(function (key) {
-          params[_moduleName3][key] = moduleParams[key];
+          params[_moduleName2][key] = moduleParams[key];
         });
       }
     };
 
-    for (var _moduleName3 in hashParams) {
-      _loop(_moduleName3);
+    for (var _moduleName2 in hashParams) {
+      _loop(_moduleName2);
     }
 
     return {
@@ -360,9 +329,9 @@ export function buildTransformRoute(routeConfig) {
     if (paths.length > 0) {
       args = {}; // 将args二层克隆params，因为后面可能会删除path中使用到的变量
 
-      for (var _moduleName4 in params) {
-        if (params[_moduleName4] && params.hasOwnProperty(_moduleName4)) {
-          args[_moduleName4] = _objectSpread({}, params[_moduleName4]);
+      for (var _moduleName3 in params) {
+        if (params[_moduleName3] && params.hasOwnProperty(_moduleName3)) {
+          args[_moduleName3] = _objectSpread({}, params[_moduleName3]);
         }
       }
 
@@ -393,33 +362,33 @@ export function buildTransformRoute(routeConfig) {
     var searchData = {};
     var hashData = {};
 
-    var _loop2 = function _loop2(_moduleName5) {
-      if (args[_moduleName5] && args.hasOwnProperty(_moduleName5)) {
-        var data = args[_moduleName5];
+    var _loop2 = function _loop2(_moduleName4) {
+      if (args[_moduleName4] && args.hasOwnProperty(_moduleName4)) {
+        var data = args[_moduleName4];
         var keys = Object.keys(data);
 
         if (keys.length > 0) {
           keys.forEach(function (key) {
             if (key.startsWith('_')) {
-              if (!hashData[_moduleName5]) {
-                hashData[_moduleName5] = {};
+              if (!hashData[_moduleName4]) {
+                hashData[_moduleName4] = {};
               }
 
-              hashData[_moduleName5][key] = data[key];
+              hashData[_moduleName4][key] = data[key];
             } else {
-              if (!searchData[_moduleName5]) {
-                searchData[_moduleName5] = {};
+              if (!searchData[_moduleName4]) {
+                searchData[_moduleName4] = {};
               }
 
-              searchData[_moduleName5][key] = data[key];
+              searchData[_moduleName4][key] = data[key];
             }
           });
         }
       }
     };
 
-    for (var _moduleName5 in args) {
-      _loop2(_moduleName5);
+    for (var _moduleName4 in args) {
+      _loop2(_moduleName4);
     }
 
     return {

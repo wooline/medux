@@ -14,6 +14,6 @@ export interface RoutePayload<P extends Params = Params> {
     paths: string[];
 }
 export declare function fillRouteData(routePayload: RoutePayload): RouteData;
-export declare function getHistory<T extends Params>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>>;
+export declare function getRouteActions<T extends Params>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>>;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
 export {};

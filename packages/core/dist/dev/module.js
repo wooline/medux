@@ -42,8 +42,8 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
 import { MetaData, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
-import { ActionTypes, errorAction } from './actions';
 import { buildStore } from './store';
+import { errorAction } from './actions';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   if (!defaultRouteParams[moduleName]) {
     defaultRouteParams[moduleName] = initState.routeParams;
@@ -89,32 +89,6 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
     actions: actions
   };
 };
-
-function simpleEqual(obj1, obj2) {
-  if (obj1 === obj2) {
-    return true;
-  } else if (typeof obj1 !== typeof obj2 || typeof obj1 !== 'object') {
-    return false;
-  } else {
-    var keys1 = Object.keys(obj1);
-    var keys2 = Object.keys(obj2);
-
-    if (keys1.length !== keys2.length) {
-      return false;
-    } else {
-      for (var i = 0, k = keys1.length; i < k; i++) {
-        var _key = keys1[i];
-
-        if (!simpleEqual(obj1[_key], obj2[_key])) {
-          return false;
-        }
-      }
-
-      return true;
-    }
-  }
-}
-
 export var BaseModelHandlers = _decorate(null, function (_initialize) {
   var BaseModelHandlers = // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function BaseModelHandlers(moduleName, store, initState, presetData) {
@@ -206,23 +180,6 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
         return _objectSpread({}, state, {
           loading: _objectSpread({}, state.loading, payload)
         });
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: ActionTypes.F_ROUTE_CHANGE,
-      value: function value(routeData) {
-        if (routeData.data.views[this.moduleName]) {
-          var routeParams = routeData.data.params[this.moduleName];
-
-          if (!simpleEqual(routeParams, this.state.routeParams)) {
-            return _objectSpread({}, this.state, {
-              routeParams: routeParams
-            });
-          }
-        }
-
-        return this.state;
       }
     }]
   };

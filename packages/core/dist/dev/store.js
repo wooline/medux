@@ -1,6 +1,7 @@
 import "core-js/modules/es.array.concat";
 import "core-js/modules/es.array.filter";
 import "core-js/modules/es.array.iterator";
+import "core-js/modules/es.object.assign";
 import "core-js/modules/es.object.keys";
 import "core-js/modules/es.object.to-string";
 import "core-js/modules/es.promise";
@@ -171,7 +172,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     throw new Error("the reducer name 'route' is not allowed");
   }
 
-  MetaData.defaultRouteParams = defaultRouteParams;
+  Object.assign(MetaData.defaultRouteParams, defaultRouteParams);
 
   storeReducers.route = function (state, action) {
     if (action.type === ActionTypes.F_ROUTE_CHANGE) {

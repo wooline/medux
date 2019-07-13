@@ -27,7 +27,7 @@ export interface TransformRoute {
 export type BrowserHistoryOptions = BrowserHistoryBuildOptions & TransformRoute;
 export type MemoryHistoryOptions = MemoryHistoryBuildOptions & TransformRoute;
 function isLocation(data: RouteData | BrowserLocation): data is Location {
-  return data['views'] || !data['paths'] || !data['params'];
+  return !!data['pathname'];
 }
 
 export interface HistoryActions<P = RouteData> {

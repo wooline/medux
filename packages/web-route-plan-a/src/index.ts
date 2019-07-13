@@ -1,5 +1,5 @@
-import {ActionTypes, NSP, defaultRouteParams, getActionData, routeCompleteAction} from '@medux/core';
-import {BaseModelState, DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
+import {ActionTypes, defaultRouteParams, getActionData} from '@medux/core';
+import {DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
 import {HistoryActions, LocationToRoute, RouteToLocation, TransformRoute} from '@medux/web';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
@@ -43,24 +43,11 @@ function mergeDefaultData(views: {[moduleName: string]: any}, data: any, def: an
   return newData;
 }
 
-export const mergeDefaultParamsMiddleware: Middleware = ({dispatch, getState}) => (next: Function) => (action: any) => {
+export const mergeDefaultParamsMiddleware: Middleware = () => (next: Function) => (action: any) => {
   if (action.type === ActionTypes.F_ROUTE_CHANGE) {
     const payload = getActionData<RouteState>(action);
     const params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
     action = {...action, payload: {...payload, data: {...payload.data, params}}};
-    setTimeout(() => dispatch(routeCompleteAction()), 0);
-    return next(action);
-  } else {
-    const [moduleName, actionName] = action.type.split(NSP);
-    if (moduleName && actionName === ActionTypes.M_INIT) {
-      const {route}: {route: RouteState} = getState();
-      const params = route.data.params || {};
-      const moduleParams = params[moduleName];
-      const payload = getActionData<BaseModelState>(action);
-      const routeParams = mergeDefaultData({[moduleName]: true}, {[moduleName]: moduleParams}, defaultRouteParams)[moduleName] || {};
-      action = {...action, payload: {...payload, routeParams}};
-      return next(action);
-    }
   }
   return next(action);
 };
@@ -176,7 +163,7 @@ export function fillRouteData(routePayload: RoutePayload): RouteData {
   return {views, paths, params};
 }
 
-export function getHistory<T extends Params>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>> {
+export function getRouteActions<T extends Params>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>> {
   return {
     push(data) {
       let args = data as any;

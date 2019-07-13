@@ -142,7 +142,7 @@ export function buildStore(
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
-  MetaData.defaultRouteParams = defaultRouteParams;
+  Object.assign(MetaData.defaultRouteParams, defaultRouteParams);
   storeReducers.route = (state: RouteState, action: Action) => {
     if (action.type === ActionTypes.F_ROUTE_CHANGE) {
       const payload: RouteState = getActionData(action);
