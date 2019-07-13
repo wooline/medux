@@ -1,6 +1,6 @@
 import {ActionTypes, NSP, defaultRouteParams, getActionData, routeCompleteAction} from '@medux/core';
 import {BaseModelState, DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
-import {LocationToRoute, RouteToLocation, TransformRoute} from '@medux/web';
+import {HistoryActions, LocationToRoute, RouteToLocation, TransformRoute} from '@medux/web';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import {Middleware} from 'redux';
@@ -174,6 +174,34 @@ export function fillRouteData(routePayload: RoutePayload): RouteData {
   }, {});
   const params = mergeDefaultData(views, routePayload.params, defaultRouteParams);
   return {views, paths, params};
+}
+
+export function getHistory<T extends Params>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>> {
+  return {
+    push(data) {
+      let args = data as any;
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data as RoutePayload);
+      }
+      getHistoryActions().push(args);
+    },
+    replace(data) {
+      let args = data as any;
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data as RoutePayload);
+      }
+      getHistoryActions().replace(args);
+    },
+    go(n) {
+      getHistoryActions().go(n);
+    },
+    goBack() {
+      getHistoryActions().goBack();
+    },
+    goForward() {
+      getHistoryActions().goForward();
+    },
+  };
 }
 
 export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {

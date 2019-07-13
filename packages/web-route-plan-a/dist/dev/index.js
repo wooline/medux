@@ -274,6 +274,37 @@ export function fillRouteData(routePayload) {
     params: params
   };
 }
+export function getHistory(getHistoryActions) {
+  return {
+    push: function push(data) {
+      var args = data;
+
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data);
+      }
+
+      getHistoryActions().push(args);
+    },
+    replace: function replace(data) {
+      var args = data;
+
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data);
+      }
+
+      getHistoryActions().replace(args);
+    },
+    go: function go(n) {
+      getHistoryActions().go(n);
+    },
+    goBack: function goBack() {
+      getHistoryActions().goBack();
+    },
+    goForward: function goForward() {
+      getHistoryActions().goForward();
+    }
+  };
+}
 export function buildTransformRoute(routeConfig) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,

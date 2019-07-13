@@ -1,5 +1,5 @@
 import { RouteData } from '@medux/core/types/export';
-import { TransformRoute } from '@medux/web';
+import { HistoryActions, TransformRoute } from '@medux/web';
 import { Middleware } from 'redux';
 export declare const mergeDefaultParamsMiddleware: Middleware;
 export interface RouteConfig {
@@ -14,5 +14,6 @@ export interface RoutePayload<P extends Params = Params> {
     paths: string[];
 }
 export declare function fillRouteData(routePayload: RoutePayload): RouteData;
+export declare function getHistory<T extends Params>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>>;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
 export {};

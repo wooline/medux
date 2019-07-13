@@ -1,4 +1,4 @@
-import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import {RootState as BaseRootState, ModuleGetter, RouteData, StoreOptions} from '@medux/core/types/export';
 import {BrowserHistoryOptions, BrowserLocation, HistoryActions, MemoryHistoryOptions, createHistory} from '@medux/web';
 import React, {ReactElement} from 'react';
 import {Router, withRouter} from 'react-router-dom';
@@ -13,7 +13,7 @@ export {loadView, exportModule} from '@medux/react';
 
 export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 
-let historyActions: HistoryActions | undefined = undefined;
+let historyActions: HistoryActions<RouteData> | undefined = undefined;
 
 export function getHistoryActions() {
   return historyActions!;
