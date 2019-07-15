@@ -10,8 +10,9 @@ declare type DeepPartial<T> = {
 };
 declare type Params = RouteData['params'];
 export interface RoutePayload<P extends Params = Params> {
-    params: DeepPartial<P>;
-    paths: string[];
+    extend?: RouteData;
+    params?: DeepPartial<P>;
+    paths?: string[];
 }
 export declare function fillRouteData(routePayload: RoutePayload): RouteData;
 export declare function getRouteActions<T extends Params>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>>;

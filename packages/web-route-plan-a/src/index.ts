@@ -146,12 +146,14 @@ type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 type Params = RouteData['params'];
 export interface RoutePayload<P extends Params = Params> {
-  params: DeepPartial<P>;
-  paths: string[];
+  extend?: RouteData;
+  params?: DeepPartial<P>;
+  paths?: string[];
 }
 export function fillRouteData(routePayload: RoutePayload): RouteData {
-  const {paths} = routePayload;
-  const views: DisplayViews = routePayload.paths.reduce((prev: DisplayViews, cur) => {
+  const extend: RouteData = routePayload.extend || {views: {}, paths: [], params: defaultRouteParams};
+  const paths = routePayload.paths || extend.paths;
+  const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
     const [moduleName, viewName] = cur.split('.');
     if (viewName) {
       if (!prev[moduleName]) {
@@ -161,7 +163,7 @@ export function fillRouteData(routePayload: RoutePayload): RouteData {
     }
     return prev;
   }, {});
-  const params = mergeDefaultData(views, routePayload.params, defaultRouteParams);
+  const params = mergeDefaultData(views, routePayload.params, extend.params);
   return {views, paths, params};
 }
 

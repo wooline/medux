@@ -221,8 +221,13 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
 }
 
 export function fillRouteData(routePayload) {
-  var paths = routePayload.paths;
-  var views = routePayload.paths.reduce(function (prev, cur) {
+  var extend = routePayload.extend || {
+    views: {},
+    paths: [],
+    params: defaultRouteParams
+  };
+  var paths = routePayload.paths || extend.paths;
+  var views = paths.reduce(function (prev, cur) {
     var _cur$split = cur.split('.'),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
@@ -237,7 +242,7 @@ export function fillRouteData(routePayload) {
 
     return prev;
   }, {});
-  var params = mergeDefaultData(views, routePayload.params, defaultRouteParams);
+  var params = mergeDefaultData(views, routePayload.params, extend.params);
   return {
     views: views,
     paths: paths,
