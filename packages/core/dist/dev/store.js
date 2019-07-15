@@ -18,71 +18,71 @@ import { ActionTypes, errorAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { injectModel } from './module';
 import { isPlainObject } from './sprite';
-/**
- * dispatch push action
- * middleware 拦截并调用history.push
- * history触发侦听器，dispatch change action
- * store侦听器，判断是否时光
- */
-// let invalidViewTimer: number;
-// function checkInvalidview() {
-//   invalidViewTimer = 0;
-//   const currentViews = MetaData.clientStore._medux_.currentViews;
-//   const views: DisplayViews = {};
-//   for (const moduleName in currentViews) {
-//     if (currentViews.hasOwnProperty(moduleName)) {
-//       const element = currentViews[moduleName];
-//       for (const viewname in element) {
-//         if (element[viewname]) {
-//           const n = Object.keys(element[viewname]).length;
-//           if (n) {
-//             if (!views[moduleName]) {
-//               views[moduleName] = {};
-//             }
-//             views[moduleName][viewname] = true;
-//           }
-//         }
-//       }
-//     }
-//   }
-//   // MetaData.clientStore.dispatch(viewInvalidAction(views));
-// }
-// export function invalidview() {
-//   if (MetaData.isServer) {
-//     return;
-//   }
-//   if (!invalidViewTimer) {
-//     invalidViewTimer = setTimeout(checkInvalidview, 300);
-//   }
-// }
-// export function viewWillMount(moduleName: string, viewName: string, vid: string) {
-//   if (MetaData.isServer) {
-//     return;
-//   }
-//   const currentViews = MetaData.clientStore._medux_.currentViews;
-//   if (!currentViews[moduleName]) {
-//     currentViews[moduleName] = {[viewName]: {[vid]: true}};
-//   } else {
-//     const views = currentViews[moduleName];
-//     if (!views[viewName]) {
-//       views[viewName] = {[vid]: true};
-//     } else {
-//       views[viewName][vid] = true;
-//     }
-//   }
-//   invalidview();
-// }
-// export function viewWillUnmount(moduleName: string, viewName: string, vid: string) {
-//   if (MetaData.isServer) {
-//     return;
-//   }
-//   const currentViews = MetaData.clientStore._medux_.currentViews;
-//   if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
-//     const views = currentViews[moduleName][viewName];
-//     delete views[vid];
-//   }
-//   invalidview();
-// }
+/*
+let invalidViewTimer: number;
+
+function checkInvalidview() {
+  invalidViewTimer = 0;
+  const currentViews = MetaData.clientStore._medux_.currentViews;
+  const views: DisplayViews = {};
+  for (const moduleName in currentViews) {
+    if (currentViews.hasOwnProperty(moduleName)) {
+      const element = currentViews[moduleName];
+      for (const viewname in element) {
+        if (element[viewname]) {
+          const n = Object.keys(element[viewname]).length;
+          if (n) {
+            if (!views[moduleName]) {
+              views[moduleName] = {};
+            }
+            views[moduleName][viewname] = true;
+          }
+        }
+      }
+    }
+  }
+  MetaData.clientStore.dispatch(viewInvalidAction(views));
+}
+
+export function invalidview() {
+  if (MetaData.isServer) {
+    return;
+  }
+  if (!invalidViewTimer) {
+    invalidViewTimer = setTimeout(checkInvalidview, 300);
+  }
+}
+
+export function viewWillMount(moduleName: string, viewName: string, vid: string) {
+  if (MetaData.isServer) {
+    return;
+  }
+  const currentViews = MetaData.clientStore._medux_.currentViews;
+  if (!currentViews[moduleName]) {
+    currentViews[moduleName] = {[viewName]: {[vid]: true}};
+  } else {
+    const views = currentViews[moduleName];
+    if (!views[viewName]) {
+      views[viewName] = {[vid]: true};
+    } else {
+      views[viewName][vid] = true;
+    }
+  }
+  invalidview();
+}
+
+export function viewWillUnmount(moduleName: string, viewName: string, vid: string) {
+  if (MetaData.isServer) {
+    return;
+  }
+  const currentViews = MetaData.clientStore._medux_.currentViews;
+  if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
+    const views = currentViews[moduleName][viewName];
+    delete views[vid];
+  }
+  invalidview();
+}
+*/
 
 export function getActionData(action) {
   var arr = Object.keys(action).filter(function (key) {

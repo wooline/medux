@@ -224,7 +224,7 @@ export function injectActions(store: ModelStore, moduleName: string, handlers: A
       if (handler.__isReducer__ || handler.__isEffect__) {
         handler = bindThis(handler, handlers);
         actionNames.split(',').forEach(actionName => {
-          actionName = actionName.trim();
+          actionName = actionName.trim().replace(new RegExp(`^this${NSP}`), `${moduleName}${NSP}`);
           const arr = actionName.split(NSP);
           if (arr[1]) {
             handler.__isHandler__ = true;
