@@ -10,12 +10,13 @@ import assignDeep from 'deep-extend';
 function excludeDefaultData(data: any, def: any) {
   const result: any = {};
   Object.keys(data).forEach(key => {
-    const value = data[key];
+    let value = data[key];
     const defaultValue = def[key];
     if (value !== defaultValue) {
       if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        result[key] = excludeDefaultData(value, defaultValue);
-      } else {
+        value = excludeDefaultData(value, defaultValue);
+      }
+      if (value !== undefined) {
         result[key] = value;
       }
     }
@@ -98,10 +99,11 @@ function searchStringify(searchData: any, key: string = 'q'): string {
 function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string[], args: {[moduleName: string]: {[key: string]: any}}) {
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
-      const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
+      const item = routeConfig[rule];
+      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
+      const match = matchPath(pathname, {path: rule, exact: !pathConfig});
+      // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
       if (match) {
-        const item = routeConfig[rule];
-        const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
         paths.push(viewName);
         const moduleName = viewName.split('.')[0];
         const {params} = match;
@@ -122,7 +124,7 @@ function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName: string 
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
       if (!ruleToKeys[rule]) {
-        const {keys} = compilePath(rule.replace(/\$$/, ''), {end: rule.endsWith('$'), strict: false, sensitive: false});
+        const {keys} = compilePath(rule, {end: true, strict: false, sensitive: false});
         ruleToKeys[rule] = keys.reduce((prev: (string | number)[], cur) => {
           prev.push(cur.name);
           return prev;
@@ -236,7 +238,8 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         const moduleName = viewName.split('.')[0];
         //最深的一个view可以决定pathname
         if (index === paths.length - 1) {
-          const toPath = compileToPath(rule.replace(/\$$/, ''));
+          // const toPath = compileToPath(rule.replace(/\$$/, ''));
+          const toPath = compileToPath(rule);
           pathname = toPath(params[moduleName]);
         }
         //pathname中传递的值可以不在params中重复传递

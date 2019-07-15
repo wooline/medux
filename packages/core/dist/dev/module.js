@@ -18,8 +18,8 @@ import "core-js/modules/es.promise";
 import "core-js/modules/es.string.iterator";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import _toArray from "@babel/runtime/helpers/esm/toArray";
+import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 
 function _decorate(decorators, factory, superClass, mixins) { var api = _getDecoratorsApi(); if (mixins) { for (var i = 0; i < mixins.length; i++) { api = mixins[i](api); } } var r = factory(function initialize(O) { api.initializeInstanceElements(O, decorated.elements); }, superClass); var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators); api.initializeClassElements(r.F, decorated.elements); return api.runClassFinishers(r.F, decorated.finishers); }
 
@@ -62,7 +62,11 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       handlers.actions = _actions;
 
       if (!moduleState) {
-        var initAction = _actions.INIT(handlers.initState);
+        var params = store._medux_.prevState.route.data.params || {};
+
+        var initAction = _actions.INIT(_objectSpread({}, initState, {
+          routeParams: params[moduleName] || defaultRouteParams[moduleName]
+        }));
 
         var result = store.dispatch(initAction);
 

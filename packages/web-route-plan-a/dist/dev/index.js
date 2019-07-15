@@ -4,7 +4,6 @@ import "core-js/modules/es.object.keys";
 import "core-js/modules/es.object.to-string";
 import "core-js/modules/es.regexp.constructor";
 import "core-js/modules/es.regexp.to-string";
-import "core-js/modules/es.string.ends-with";
 import "core-js/modules/es.string.replace";
 import "core-js/modules/es.string.search";
 import "core-js/modules/es.string.split";
@@ -24,8 +23,10 @@ function excludeDefaultData(data, def) {
 
     if (value !== defaultValue) {
       if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        result[key] = excludeDefaultData(value, defaultValue);
-      } else {
+        value = excludeDefaultData(value, defaultValue);
+      }
+
+      if (value !== undefined) {
         result[key] = value;
       }
     }
@@ -136,18 +137,18 @@ function searchStringify(searchData, key) {
 function pathnameParse(pathname, routeConfig, paths, args) {
   for (var _rule in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule)) {
+      var item = routeConfig[_rule];
+
+      var _ref = typeof item === 'string' ? [item, null] : item,
+          _viewName = _ref[0],
+          pathConfig = _ref[1];
+
       var match = matchPath(pathname, {
-        path: _rule.replace(/\$$/, ''),
-        exact: _rule.endsWith('$')
-      });
+        path: _rule,
+        exact: !pathConfig
+      }); // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
 
       if (match) {
-        var item = routeConfig[_rule];
-
-        var _ref = typeof item === 'string' ? [item, null] : item,
-            _viewName = _ref[0],
-            pathConfig = _ref[1];
-
         paths.push(_viewName);
 
         var _moduleName = _viewName.split('.')[0];
@@ -185,8 +186,8 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   for (var _rule2 in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule2)) {
       if (!ruleToKeys[_rule2]) {
-        var _compilePath = compilePath(_rule2.replace(/\$$/, ''), {
-          end: _rule2.endsWith('$'),
+        var _compilePath = compilePath(_rule2, {
+          end: true,
           strict: false,
           sensitive: false
         }),
@@ -341,7 +342,8 @@ export function buildTransformRoute(routeConfig) {
         var moduleName = viewName.split('.')[0]; //最深的一个view可以决定pathname
 
         if (index === paths.length - 1) {
-          var toPath = compileToPath(rule.replace(/\$$/, ''));
+          // const toPath = compileToPath(rule.replace(/\$$/, ''));
+          var toPath = compileToPath(rule);
           pathname = toPath(params[moduleName]);
         } //pathname中传递的值可以不在params中重复传递
 

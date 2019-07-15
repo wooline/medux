@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -63,7 +63,8 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
       if (!moduleState) {
-        const initAction = actions.INIT((handlers as any).initState);
+        const params = (store._medux_.prevState.route as RouteState).data.params || {};
+        const initAction = actions.INIT({...initState, routeParams: params[moduleName] || defaultRouteParams[moduleName]});
         const result = store.dispatch(initAction);
         if (isPromise(result)) {
           return result
