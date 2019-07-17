@@ -6,6 +6,9 @@
   "homepage": "https://github.com/wooline/medux/blob/master/packages/core/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
+  "keywords": [
+    "redux"
+  ],
   "publishConfig": {
     "access": "public"
   },
