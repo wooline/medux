@@ -88,7 +88,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
 };
 
-export abstract class BaseModelHandlers<S extends BaseModelState, R extends StoreState> {
+export abstract class BaseModelHandlers<S extends BaseModelState, R> {
   protected readonly actions: Actions<this> = null as any;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -101,7 +101,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends Stor
   }
 
   protected get rootState(): R {
-    return this.store._medux_.prevState as R;
+    return this.store._medux_.prevState as any;
   }
 
   protected get currentState(): S {
@@ -109,7 +109,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends Stor
   }
 
   protected get currentRootState(): R {
-    return this.store._medux_.currentState as R;
+    return this.store._medux_.currentState as any;
   }
 
   protected dispatch(action: Action): Action | Promise<void> {
@@ -311,12 +311,16 @@ export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof 
   const {paths} = storeState.route.data;
   paths.length === 0 && paths.push(appModuleName);
   let appModule: Module | undefined = undefined;
+  const inited: {[moduleName: string]: boolean} = {};
   for (let i = 0, k = paths.length; i < k; i++) {
     const [moduleName] = paths[i].split(VSP);
-    const module = moduleGetter[moduleName]() as Module;
-    await module.default.model(store);
-    if (i === 0) {
-      appModule = module;
+    if (!inited[moduleName]) {
+      inited[moduleName] = true;
+      const module = moduleGetter[moduleName]() as Module;
+      await module.default.model(store);
+      if (i === 0) {
+        appModule = module;
+      }
     }
   }
   return render(store as any, appModule!.default.model, appModule!.default.views, ssrInitStoreKey);

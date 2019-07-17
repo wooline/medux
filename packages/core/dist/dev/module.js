@@ -351,7 +351,7 @@ function _renderSSR() {
   _renderSSR = _asyncToGenerator(
   /*#__PURE__*/
   _regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
-    var ssrInitStoreKey, store, storeState, paths, appModule, i, k, _paths$i$split, _moduleName, module;
+    var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
     return _regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
@@ -368,33 +368,41 @@ function _renderSSR() {
             paths = storeState.route.data.paths;
             paths.length === 0 && paths.push(appModuleName);
             appModule = undefined;
+            inited = {};
             i = 0, k = paths.length;
 
-          case 9:
+          case 10:
             if (!(i < k)) {
-              _context.next = 18;
+              _context.next = 21;
               break;
             }
 
             _paths$i$split = paths[i].split(VSP), _moduleName = _paths$i$split[0];
+
+            if (inited[_moduleName]) {
+              _context.next = 18;
+              break;
+            }
+
+            inited[_moduleName] = true;
             module = moduleGetter[_moduleName]();
-            _context.next = 14;
+            _context.next = 17;
             return module.default.model(store);
 
-          case 14:
+          case 17:
             if (i === 0) {
               appModule = module;
             }
 
-          case 15:
+          case 18:
             i++;
-            _context.next = 9;
+            _context.next = 10;
             break;
 
-          case 18:
+          case 21:
             return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
 
-          case 19:
+          case 22:
           case "end":
             return _context.stop();
         }
