@@ -1,4 +1,4 @@
-import {ActionTypes, defaultRouteParams, getActionData} from '@medux/core';
+import {ActionTypes, VSP, defaultRouteParams, getActionData} from '@medux/core';
 import {DisplayViews, RouteData, RouteState} from '@medux/core/types/export';
 import {HistoryActions, LocationToRoute, RouteToLocation, TransformRoute} from '@medux/web';
 import {compilePath, compileToPath, matchPath} from './matchPath';
@@ -105,7 +105,7 @@ function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string
       // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
       if (match) {
         paths.push(viewName);
-        const moduleName = viewName.split('.')[0];
+        const moduleName = viewName.split(VSP)[0];
         const {params} = match;
         if (params && Object.keys(params).length > 0) {
           args[moduleName] = {...args[moduleName], ...params};
@@ -154,7 +154,7 @@ export function fillRouteData(routePayload: RoutePayload): RouteData {
   const extend: RouteData = routePayload.extend || {views: {}, paths: [], params: defaultRouteParams};
   const paths = routePayload.paths || extend.paths;
   const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
-    const [moduleName, viewName] = cur.split('.');
+    const [moduleName, viewName] = cur.split(VSP);
     if (viewName) {
       if (!prev[moduleName]) {
         prev[moduleName] = {};
@@ -202,7 +202,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     const params: {[moduleName: string]: {[key: string]: any}} = searchParse(location.search) || {};
     pathnameParse(location.pathname, routeConfig, paths, params);
     const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
-      const [moduleName, viewName] = cur.split('.');
+      const [moduleName, viewName] = cur.split(VSP);
       if (viewName) {
         if (!prev[moduleName]) {
           prev[moduleName] = {};
@@ -237,7 +237,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
       paths.reduce((parentAbsoluteViewName, viewName, index) => {
         const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
         const rule = viewToRule[absoluteViewName];
-        const moduleName = viewName.split('.')[0];
+        const moduleName = viewName.split(VSP)[0];
         //最深的一个view可以决定pathname
         if (index === paths.length - 1) {
           // const toPath = compileToPath(rule.replace(/\$$/, ''));

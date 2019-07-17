@@ -1,4 +1,4 @@
-import { Action, ActionCreatorList, BaseModelState, ModelStore } from './basic';
+import { Action, ActionCreatorList, BaseModelState, ModelStore, StoreState } from './basic';
 import { HistoryProxy } from './store';
 import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
@@ -52,7 +52,7 @@ export declare type ExportModule<Component> = <S extends BaseModelState, V exten
     new (moduleName: string, store: any, initState: any, presetData?: any): T;
 }, views: V) => Module<Model<S>, V, Actions<T>, N>['default'];
 export declare const exportModule: ExportModule<any>;
-export declare abstract class BaseModelHandlers<S extends BaseModelState, R> {
+export declare abstract class BaseModelHandlers<S extends BaseModelState, R extends StoreState> {
     protected readonly moduleName: string;
     protected readonly store: ModelStore;
     protected readonly initState: S;

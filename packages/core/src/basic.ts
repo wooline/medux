@@ -4,6 +4,7 @@ import {ModuleGetter} from './module';
 import {setLoading} from './loading';
 
 export const NSP = '/';
+export const VSP = '.';
 
 // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
 //   self.self === self &&
@@ -48,8 +49,8 @@ export interface ModelStore extends Store {
     effectMap: EffectMap;
     injectedModules: {[moduleName: string]: boolean};
     currentViews: CurrentViews;
-    prevState: {[key: string]: any};
-    currentState: {[key: string]: any};
+    prevState: StoreState;
+    currentState: StoreState;
   };
 }
 export interface RouteData {
@@ -61,6 +62,10 @@ export interface RouteState<L = any> {
   location: L;
   data: RouteData;
 }
+export type StoreState = {
+  [moduleName: string]: BaseModelState;
+} & {route: RouteState};
+
 export interface DisplayViews {
   [moduleName: string]: {[viewName: string]: boolean | undefined} | undefined;
 }

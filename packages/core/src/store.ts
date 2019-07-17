@@ -1,4 +1,4 @@
-import {Action, BaseModelState, MetaData, ModelStore, NSP, RouteData, RouteState, client, isPromise} from './basic';
+import {Action, MetaData, ModelStore, NSP, RouteData, RouteState, StoreState, client, isPromise} from './basic';
 import {ActionTypes, errorAction, routeChangeAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
@@ -97,7 +97,7 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
   let inTimeTravelling = false;
   const handleLocationChange = (location: L) => {
     if (!inTimeTravelling) {
-      const {route}: {route: RouteState} = store.getState() as any;
+      const {route} = store.getState() as StoreState;
       if (route) {
         if (history.equal(route.location, location)) {
           return;
@@ -111,7 +111,7 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
   };
   history.subscribe(handleLocationChange);
   store.subscribe(() => {
-    const storeRouteState: RouteState<L> = store.getState().route;
+    const storeRouteState = (store.getState() as StoreState).route;
     if (!history.equal(storeRouteState.location, history.getLocation())) {
       inTimeTravelling = true;
       history.patch(storeRouteState.location, storeRouteState.data);
@@ -149,7 +149,7 @@ export function buildStore(
     return state;
   };
   let store: ModelStore;
-  const combineReducers = (rootState: {[moduleName: string]: BaseModelState}, action: Action) => {
+  const combineReducers = (rootState: StoreState, action: Action) => {
     if (!store) {
       return rootState;
     }
@@ -286,8 +286,8 @@ export function buildStore(
       const newStore = newCreateStore(...args);
       const modelStore: ModelStore = newStore as any;
       modelStore._medux_ = {
-        prevState: {router: null},
-        currentState: {router: null},
+        prevState: {} as any,
+        currentState: {} as any,
         reducerMap: {},
         effectMap: {},
         injectedModules: {},

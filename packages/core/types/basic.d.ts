@@ -1,6 +1,7 @@
 import { LoadingState } from './sprite';
 import { ModuleGetter } from './module';
 export declare const NSP = "/";
+export declare const VSP = ".";
 export declare const MetaData: {
     isServer: boolean;
     isDev: boolean;
@@ -42,12 +43,8 @@ export interface ModelStore extends Store {
             [moduleName: string]: boolean;
         };
         currentViews: CurrentViews;
-        prevState: {
-            [key: string]: any;
-        };
-        currentState: {
-            [key: string]: any;
-        };
+        prevState: StoreState;
+        currentState: StoreState;
     };
 }
 export interface RouteData {
@@ -63,6 +60,11 @@ export interface RouteState<L = any> {
     location: L;
     data: RouteData;
 }
+export declare type StoreState = {
+    [moduleName: string]: BaseModelState;
+} & {
+    route: RouteState;
+};
 export interface DisplayViews {
     [moduleName: string]: {
         [viewName: string]: boolean | undefined;

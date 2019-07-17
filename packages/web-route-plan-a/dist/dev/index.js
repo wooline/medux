@@ -11,7 +11,7 @@ import "core-js/modules/es.string.starts-with";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { ActionTypes, defaultRouteParams, getActionData } from '@medux/core';
+import { ActionTypes, VSP, defaultRouteParams, getActionData } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend'; // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 
@@ -151,7 +151,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
       if (match) {
         paths.push(_viewName);
 
-        var _moduleName = _viewName.split('.')[0];
+        var _moduleName = _viewName.split(VSP)[0];
 
         var params = match.params;
 
@@ -228,7 +228,7 @@ export function fillRouteData(routePayload) {
   };
   var paths = routePayload.paths || extend.paths;
   var views = paths.reduce(function (prev, cur) {
-    var _cur$split = cur.split('.'),
+    var _cur$split = cur.split(VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
@@ -290,7 +290,7 @@ export function buildTransformRoute(routeConfig) {
     var params = searchParse(location.search) || {};
     pathnameParse(location.pathname, routeConfig, paths, params);
     var views = paths.reduce(function (prev, cur) {
-      var _cur$split2 = cur.split('.'),
+      var _cur$split2 = cur.split(VSP),
           moduleName = _cur$split2[0],
           viewName = _cur$split2[1];
 
@@ -344,7 +344,7 @@ export function buildTransformRoute(routeConfig) {
       paths.reduce(function (parentAbsoluteViewName, viewName, index) {
         var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
         var rule = viewToRule[absoluteViewName];
-        var moduleName = viewName.split('.')[0]; //最深的一个view可以决定pathname
+        var moduleName = viewName.split(VSP)[0]; //最深的一个view可以决定pathname
 
         if (index === paths.length - 1) {
           // const toPath = compileToPath(rule.replace(/\$$/, ''));

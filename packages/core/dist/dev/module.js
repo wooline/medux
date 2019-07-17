@@ -16,8 +16,12 @@ import "core-js/modules/es.object.keys";
 import "core-js/modules/es.object.to-string";
 import "core-js/modules/es.promise";
 import "core-js/modules/es.string.iterator";
+import "core-js/modules/es.string.split";
 import "core-js/modules/web.dom-collections.for-each";
 import "core-js/modules/web.dom-collections.iterator";
+import _regeneratorRuntime from "@babel/runtime/regenerator";
+import "regenerator-runtime/runtime";
+import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _toArray from "@babel/runtime/helpers/esm/toArray";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 
@@ -41,7 +45,7 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
-import { MetaData, client, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
+import { MetaData, VSP, client, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
@@ -329,7 +333,8 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) {
       return key !== appModuleName && initData[key].isModule;
     }));
-  }
+  } // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
+
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
@@ -338,23 +343,64 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     return initModel;
   });
 }
-export function renderSSR(render, moduleGetter, appModuleName, history, storeOptions) {
-  if (storeOptions === void 0) {
-    storeOptions = {};
-  }
+export function renderSSR(_x, _x2, _x3, _x4, _x5) {
+  return _renderSSR.apply(this, arguments);
+}
 
-  MetaData.appModuleName = appModuleName;
-  var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  var store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
-  var appModule = moduleGetter[appModuleName]();
-  var initAppModel = appModule.default.model(store);
+function _renderSSR() {
+  _renderSSR = _asyncToGenerator(
+  /*#__PURE__*/
+  _regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
+    var ssrInitStoreKey, store, storeState, paths, appModule, i, k, _paths$i$split, _moduleName, module;
 
-  if (!isPromise(initAppModel)) {
-    initAppModel = Promise.resolve();
-  }
+    return _regeneratorRuntime.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (storeOptions === void 0) {
+              storeOptions = {};
+            }
 
-  return initAppModel.then(function () {
-    return render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-  });
+            MetaData.appModuleName = appModuleName;
+            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
+            storeState = store.getState();
+            paths = storeState.route.data.paths;
+            paths.length === 0 && paths.push(appModuleName);
+            appModule = undefined;
+            i = 0, k = paths.length;
+
+          case 9:
+            if (!(i < k)) {
+              _context.next = 18;
+              break;
+            }
+
+            _paths$i$split = paths[i].split(VSP), _moduleName = _paths$i$split[0];
+            module = moduleGetter[_moduleName]();
+            _context.next = 14;
+            return module.default.model(store);
+
+          case 14:
+            if (i === 0) {
+              appModule = module;
+            }
+
+          case 15:
+            i++;
+            _context.next = 9;
+            break;
+
+          case 18:
+            return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+
+          case 19:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _renderSSR.apply(this, arguments);
 }
 //# sourceMappingURL=module.js.map

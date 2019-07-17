@@ -361,12 +361,8 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
       var newStore = newCreateStore.apply(void 0, arguments);
       var modelStore = newStore;
       modelStore._medux_ = {
-        prevState: {
-          router: null
-        },
-        currentState: {
-          router: null
-        },
+        prevState: {},
+        currentState: {},
         reducerMap: {},
         effectMap: {},
         injectedModules: {},

@@ -13,7 +13,8 @@ import "core-js/modules/web.dom-collections.iterator";
 
 /*global global:true process:true*/
 import { setLoading } from './loading';
-export var NSP = '/'; // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
+export var NSP = '/';
+export var VSP = '.'; // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
 //   self.self === self &&
 //   self) ||
 //   (typeof global == 'object' && global.global === global && global) ||

@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, client, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, StoreState, VSP, client, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -63,7 +63,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
       if (!moduleState) {
-        const params = (store._medux_.prevState.route as RouteState).data.params || {};
+        const params = store._medux_.prevState.route.data.params || {};
         const initAction = actions.INIT({...initState, routeParams: params[moduleName] || defaultRouteParams[moduleName]});
         const result = store.dispatch(initAction);
         if (isPromise(result)) {
@@ -88,7 +88,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
 };
 
-export abstract class BaseModelHandlers<S extends BaseModelState, R> {
+export abstract class BaseModelHandlers<S extends BaseModelState, R extends StoreState> {
   protected readonly actions: Actions<this> = null as any;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -97,7 +97,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
   }
 
   protected get state(): S {
-    return this.store._medux_.prevState[this.moduleName];
+    return this.store._medux_.prevState[this.moduleName] as S;
   }
 
   protected get rootState(): R {
@@ -105,7 +105,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
   }
 
   protected get currentState(): S {
-    return this.store._medux_.currentState[this.moduleName];
+    return this.store._medux_.currentState[this.moduleName] as S;
   }
 
   protected get currentRootState(): R {
@@ -289,13 +289,15 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   if (initData) {
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
   }
+  // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
     const initModel = appModule.default.model(store);
     render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
     return initModel;
   });
 }
-export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
+
+export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string},
   moduleGetter: M,
   appModuleName: A,
@@ -305,12 +307,17 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
-  const appModule = moduleGetter[appModuleName]() as Module;
-  let initAppModel = appModule.default.model(store);
-  if (!isPromise(initAppModel)) {
-    initAppModel = Promise.resolve();
+  const storeState = store.getState() as StoreState;
+  const {paths} = storeState.route.data;
+  paths.length === 0 && paths.push(appModuleName);
+  let appModule: Module | undefined = undefined;
+  for (let i = 0, k = paths.length; i < k; i++) {
+    const [moduleName] = paths[i].split(VSP);
+    const module = moduleGetter[moduleName]() as Module;
+    await module.default.model(store);
+    if (i === 0) {
+      appModule = module;
+    }
   }
-  return initAppModel.then(() => {
-    return render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-  });
+  return render(store as any, appModule!.default.model, appModule!.default.views, ssrInitStoreKey);
 }
