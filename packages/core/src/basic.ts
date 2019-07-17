@@ -29,7 +29,7 @@ export const MetaData: {
   defaultRouteParams: {},
 };
 export const defaultRouteParams = MetaData.defaultRouteParams;
-export const client = MetaData.isServer ? undefined : window || global;
+export const client: Window | undefined = MetaData.isServer ? undefined : typeof window === 'undefined' ? (global as any) : window;
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;
 }

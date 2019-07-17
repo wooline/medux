@@ -29,7 +29,7 @@ export var MetaData = {
   defaultRouteParams: {}
 };
 export var defaultRouteParams = MetaData.defaultRouteParams;
-export var client = MetaData.isServer ? undefined : window || global;
+export var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 export function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }

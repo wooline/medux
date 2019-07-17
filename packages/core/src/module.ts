@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, client, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -281,8 +281,8 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
-  if (storeOptions.initData || window[ssrInitStoreKey]) {
-    initData = {...window[ssrInitStoreKey], ...storeOptions.initData};
+  if (storeOptions.initData || client![ssrInitStoreKey]) {
+    initData = {...client![ssrInitStoreKey], ...storeOptions.initData};
   }
   const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
   const preModuleNames: string[] = [appModuleName];

@@ -41,7 +41,7 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
-import { MetaData, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
+import { MetaData, client, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 import { errorAction } from './actions';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
@@ -318,8 +318,8 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var initData = {};
 
-  if (storeOptions.initData || window[ssrInitStoreKey]) {
-    initData = _objectSpread({}, window[ssrInitStoreKey], storeOptions.initData);
+  if (storeOptions.initData || client[ssrInitStoreKey]) {
+    initData = _objectSpread({}, client[ssrInitStoreKey], storeOptions.initData);
   }
 
   var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
