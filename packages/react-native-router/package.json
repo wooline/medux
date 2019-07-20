@@ -1,7 +1,7 @@
 {
   "name": "@medux/react-native-router",
   "version": "0.0.75",
-  "description": "",
+  "description": "The practice of @medux/core in react-native",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-native-router",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/react-native-router/npm.md",
   "author": "wooline <wooline@qq.com>",

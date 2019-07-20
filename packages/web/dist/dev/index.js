@@ -1,5 +1,3 @@
-import "core-js/modules/es.string.replace";
-import "core-js/modules/es.string.search";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { createBrowserHistory, createMemoryHistory } from 'history';
 import { isServer } from '@medux/core';

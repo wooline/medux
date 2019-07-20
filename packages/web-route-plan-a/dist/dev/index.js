@@ -1,15 +1,3 @@
-import "core-js/modules/es.array.iterator";
-import "core-js/modules/es.function.name";
-import "core-js/modules/es.object.keys";
-import "core-js/modules/es.object.to-string";
-import "core-js/modules/es.regexp.constructor";
-import "core-js/modules/es.regexp.to-string";
-import "core-js/modules/es.string.replace";
-import "core-js/modules/es.string.search";
-import "core-js/modules/es.string.split";
-import "core-js/modules/es.string.starts-with";
-import "core-js/modules/web.dom-collections.for-each";
-import "core-js/modules/web.dom-collections.iterator";
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { ActionTypes, VSP, defaultRouteParams, getActionData } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';

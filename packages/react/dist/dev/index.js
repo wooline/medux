@@ -1,5 +1,3 @@
-import "core-js/modules/es.object.keys";
-import "core-js/modules/web.dom-collections.for-each";
 import React, { useState } from 'react';
 import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView } from '@medux/core';
 import { Provider } from 'react-redux';

@@ -1,9 +1,3 @@
-import "core-js/modules/es.array.find-index";
-import "core-js/modules/es.array.splice";
-import "core-js/modules/es.function.name";
-import "core-js/modules/es.object.get-prototype-of";
-import "core-js/modules/es.object.keys";
-import "core-js/modules/web.dom-collections.for-each";
 import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";

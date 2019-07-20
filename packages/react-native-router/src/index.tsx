@@ -1,4 +1,4 @@
-import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import {ModuleGetter, StoreOptions} from '@medux/core/types/export';
 
 import {AppRegistry} from 'react-native';
 import React from 'react';
@@ -18,8 +18,7 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
     },
     moduleGetter,
     appModuleName,
+    {},
     storeOptions
   );
 }
-
-export type RootState<G extends ModuleGetter> = BaseRootState<G>;

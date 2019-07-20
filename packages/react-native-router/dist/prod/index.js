@@ -1,2 +1,0 @@
-import{AppRegistry}from"react-native";import React from"react";import{renderApp}from"@medux/react";export{loadView,exportModule}from"@medux/react";export function buildApp(a,b,c,d){return void 0===d&&(d={}),renderApp(function(b,c){var d=function(){return React.createElement(b,null,React.createElement(c,null))};AppRegistry.registerComponent(a,function(){return d})},b,c,d)}
-//# sourceMappingURL=index.js.map

@@ -1,7 +1,7 @@
 {
   "name": "@medux/web",
   "version": "0.0.75",
-  "description": "",
+  "description": "The practice of @medux/core in web app",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/web/npm.md",
   "author": "wooline <wooline@qq.com>",

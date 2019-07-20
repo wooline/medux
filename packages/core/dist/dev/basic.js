@@ -1,16 +1,3 @@
-import "core-js/modules/es.array.iterator";
-import "core-js/modules/es.object.keys";
-import "core-js/modules/es.object.to-string";
-import "core-js/modules/es.promise";
-import "core-js/modules/es.regexp.constructor";
-import "core-js/modules/es.regexp.to-string";
-import "core-js/modules/es.string.iterator";
-import "core-js/modules/es.string.replace";
-import "core-js/modules/es.string.split";
-import "core-js/modules/es.string.trim";
-import "core-js/modules/web.dom-collections.for-each";
-import "core-js/modules/web.dom-collections.iterator";
-
 /*global global:true process:true*/
 import { setLoading } from './loading';
 export var NSP = '/';

@@ -1,13 +1,16 @@
 {
   "name": "@medux/core",
   "version": "0.0.75",
-  "description": "",
+  "description": "Modular state management, Suitable for various javascript frameworks",
   "repository": "https://github.com/wooline/medux/tree/master/packages/core",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/core/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "keywords": [
-    "redux"
+    "redux",
+    "typescript",
+    "javascript",
+    "state container"
   ],
   "publishConfig": {
     "access": "public"

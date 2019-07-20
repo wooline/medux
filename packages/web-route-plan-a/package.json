@@ -1,7 +1,7 @@
 {
   "name": "@medux/web-route-plan-a",
   "version": "0.0.75",
-  "description": "",
+  "description": "The practice of @medux/core in web route",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web-route-plan-a",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/web-route-plan-a/npm.md",
   "author": "wooline <wooline@qq.com>",
