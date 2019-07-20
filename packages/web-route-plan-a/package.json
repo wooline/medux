@@ -1,6 +1,6 @@
 {
   "name": "@medux/web-route-plan-a",
-  "version": "0.0.75",
+  "version": "0.1.0-alpha.0",
   "description": "The practice of @medux/core in web route",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web-route-plan-a",
   "homepage": "https://github.com/wooline/medux/blob/master/packages/web-route-plan-a/npm.md",
@@ -33,7 +33,7 @@
     "> 1%"
   ],
   "dependencies": {
-    "@medux/web": "^0.0.75",
+    "@medux/web": "^0.1.0-alpha.0",
     "deep-extend": "^0.6.0",
     "path-to-regexp": "^3.0.0"
   },
