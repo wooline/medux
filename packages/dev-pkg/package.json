@@ -3,7 +3,6 @@
   "version": "0.1.0-alpha.0",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/dev-pkg/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {

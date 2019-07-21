@@ -3,7 +3,6 @@
   "version": "0.1.0-alpha.0",
   "description": "The practice of @medux/core in react",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/react/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -29,9 +28,6 @@
     "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
     "build": "yarn build:dev & yarn build:prod"
   },
-  "browserslist": [
-    "> 1%"
-  ],
   "peerDependencies": {
     "@types/react": "^16.8.0",
     "react": "^16.8.0"

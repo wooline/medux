@@ -3,14 +3,13 @@
   "version": "0.1.0-alpha.0",
   "description": "Modular state management, Suitable for various javascript frameworks",
   "repository": "https://github.com/wooline/medux/tree/master/packages/core",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/core/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "keywords": [
     "redux",
     "typescript",
-    "javascript",
-    "state container"
+    "state container",
+    "state management"
   ],
   "publishConfig": {
     "access": "public"
@@ -35,9 +34,6 @@
     "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
     "build": "yarn build:dev & yarn build:prod"
   },
-  "browserslist": [
-    "> 1%"
-  ],
   "peerDependencies": {
     "@babel/runtime": "^7.0.0",
     "core-js": "^3.0.0"

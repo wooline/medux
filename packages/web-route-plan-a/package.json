@@ -3,7 +3,6 @@
   "version": "0.1.0-alpha.0",
   "description": "The practice of @medux/core in web route",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web-route-plan-a",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/web-route-plan-a/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -29,9 +28,6 @@
     "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
     "build": "yarn build:dev & yarn build:prod"
   },
-  "browserslist": [
-    "> 1%"
-  ],
   "dependencies": {
     "@medux/web": "^0.1.0-alpha.0",
     "deep-extend": "^0.6.0",

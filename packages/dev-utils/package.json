@@ -3,7 +3,6 @@
   "version": "0.0.75",
   "description": "",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
-  "homepage": "https://github.com/wooline/medux/blob/master/packages/dev-utils/npm.md",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -21,9 +20,6 @@
     "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
     "build": "tsc"
   },
-  "browserslist": [
-    "ie >= 11"
-  ],
   "peerDependencies": {
     "axios": "^0.18.0",
     "chalk": "^2.4.0",
