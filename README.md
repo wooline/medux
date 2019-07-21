@@ -7,10 +7,10 @@
 
 - **@medux/core**：基础包，顶层抽象的状态管理框架
 - **@medux/web**：基于`@medux/core`，是其在 web 环境下的解决方案，主要体现在浏览器特有的 History API
-- **@medux/web-route-plan-a**：基于`@medux/web`，是一套具体的路由解决方案，其主要特点是将路由当作状态管理的一部分
+- **@medux/web-route-plan-a**：基于`@medux/web`，是一套具体的路由解决方案，特点是将路由当作状态管理的一部分
 - **@medux/react**：基于`@medux/core`，是其与 React 框架的结合
-- **@medux/react-web-router**：基于`@medux/react`、`@medux/web`、`react-router`，是 React 开发 Web App 的最佳方案之一
-- **@medux/react-native-router**：基于`@medux/react`、`react-native`、`react-navigation`，是 React-Native 开发最佳方案之一
+- **@medux/react-web-router**：基于`@medux/react`、`@medux/web`、`react-router`，是 React 开发 WebApp 的方案
+- **@medux/react-native-router**：基于`@medux/react`、`react-native`、`react-navigation`，是 React-Native 的开发方案
 - **@medux/taro**：基于`@medux/core`，是其与 `@tarojs/taro`的结合（开发中...）
 - **@medux/vue**：基于`@medux/core`，是其与 Vue 框架的结合（未完成...）
 
