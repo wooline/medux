@@ -114,6 +114,17 @@ Typescript 类型反射：
 
 ![TS类型反射](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
 
+## 对比 react-coat
+
+- 本框架由 [**react-coat**](https://github.com/wooline/react-coat) 进化发展而来，去除其与 react 的捆绑，使其成为一个纯状态管理框架，更广泛的适应于各种 Javascript 运行环境和 UI 框架。
+- 进一步简化 API 调用：
+  - 无需再依赖 connected-react-router
+  - 去除 module/facade 概念及文件
+  - 无需再使用 exportView() 方法导出 view
+  - 无需再使用 exportModel()方法导出 model
+  - 如无特别需求，在 SSR 时，无需手动导入 model
+- 更多区别请查看 Demo
+
 ## 关于@medux/core
 
 参阅：[@medux/core](https://github.com/wooline/medux/tree/master/packages/core)

@@ -1,1 +1,1 @@
-[Click to view the latest documents](https://github.com/wooline/medux/tree/master/packages/dev-pkg)
+本包引用了常用的开发依赖，安装本包可省去逐条安装。
