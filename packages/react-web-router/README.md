@@ -8,4 +8,4 @@
 
 # 关于@medux/react-web-router
 
-基于`@medux/react`、`@medux/web`、`react-router`，是 React 开发 WebApp 的方案
+本包基于`@medux/react`、`@medux/web`、`react-router`，是 React 开发 WebApp 的方案
