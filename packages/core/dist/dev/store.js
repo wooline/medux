@@ -199,8 +199,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
-      var orderList = []; //
-
+      var orderList = [];
       var priority = action.priority ? [].concat(action.priority) : [];
       handlerModules.forEach(function (moduleName) {
         var fun = handlers[moduleName];
@@ -252,16 +251,22 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
-          var orderList = action.priority ? [].concat(action.priority) : [];
+          var orderList = [];
+          var priority = action.priority ? [].concat(action.priority) : [];
           handlerModules.forEach(function (moduleName) {
             var fun = handlers[moduleName];
 
-            if (fun.__isHandler__) {
-              orderList.push(moduleName);
-            } else {
+            if (moduleName === MetaData.appModuleName) {
               orderList.unshift(moduleName);
+            } else {
+              orderList.push(moduleName);
+            }
+
+            if (!fun.__isHandler__) {
+              priority.unshift(moduleName);
             }
           });
+          orderList.unshift.apply(orderList, priority);
           var moduleNameMap = {};
           var promiseResults = [];
           orderList.forEach(function (moduleName) {

@@ -69,8 +69,8 @@ function getSearch(searchOrHash, key) {
     return '';
   }
 
-  var reg = new RegExp("[&?]" + key + "=");
-  var str = ('#' + searchOrHash).split(reg)[1];
+  var reg = new RegExp("[&?#]" + key + "=");
+  var str = searchOrHash.split(reg)[1];
 
   if (!str) {
     return '';
@@ -298,6 +298,10 @@ export function buildTransformRoute(routeConfig) {
       if (hashParams.hasOwnProperty(_moduleName2)) {
         var moduleParams = hashParams[_moduleName2];
         Object.keys(moduleParams).forEach(function (key) {
+          if (!params[_moduleName2]) {
+            params[_moduleName2] = {};
+          }
+
           params[_moduleName2][key] = moduleParams[key];
         });
       }

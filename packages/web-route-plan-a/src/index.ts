@@ -60,8 +60,8 @@ function getSearch(searchOrHash: string, key: string): string {
   if (searchOrHash.length < 4) {
     return '';
   }
-  const reg = new RegExp(`[&?]${key}=`);
-  const str = ('#' + searchOrHash).split(reg)[1];
+  const reg = new RegExp(`[&?#]${key}=`);
+  const str = searchOrHash.split(reg)[1];
   if (!str) {
     return '';
   }
@@ -216,6 +216,9 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
       if (hashParams.hasOwnProperty(moduleName)) {
         const moduleParams = hashParams[moduleName];
         Object.keys(moduleParams).forEach(key => {
+          if (!params[moduleName]) {
+            params[moduleName] = {};
+          }
           params[moduleName][key] = moduleParams[key];
         });
       }
