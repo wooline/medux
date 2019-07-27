@@ -9,3 +9,7 @@
 # 关于@medux/react-web-router
 
 本包基于`@medux/react`、`@medux/web`、`react-router`，是 React 开发 WebApp 的方案
+
+## 查看 Demo
+
+- [medux-demo-spa](https://github.com/wooline/medux-demo-spa)

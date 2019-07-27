@@ -6,7 +6,7 @@
 ## @medux 包含以下 Packages
 
 - **@medux/core**：基础包，顶层抽象的状态管理框架
-- **@medux/web**：基于`@medux/core`，是其在 web 环境下的解决方案，主要体现在浏览器特有的 History API
+- **@medux/web**：基于`@medux/core`，是其在 web 环境下的解决方案，主要体现在实现了路由接口
 - **@medux/web-route-plan-a**：基于`@medux/web`，是一套具体的路由序列化与反序列化方案
 - **@medux/react**：基于`@medux/core`，是其与 React 框架的结合
 - **@medux/react-web-router**：基于`@medux/react`、`@medux/web`、`react-router`，是 React 开发 WebApp 的方案
