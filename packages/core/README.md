@@ -49,30 +49,43 @@
 
 ### Effect
 
-我们知道在 Redux 中，改变 State 必须通过 dispatch action 以触发 reducer，在 reducer 中返回一个新的 state， reducer 是一个 pure function 纯函数，无任何副作用，只要入参相同，其返回结果也是相同的，并且是同步执行的。而 effect 是相对于 reducer 而言的，与 reducer 一样，它也必须通过 dispatch action 来触发，不同的是：
+我们知道在 Redux 中，改变 State 必须通过 dispatch action 以触发 reducer。而 effect 是相对于 reducer 而言的，它也必须通过 dispatch action 来触发，不同的是：
 
-- 它是一个非纯函数，可以包含副作用，可以无返回，也可以是异步的。
+- 它是一个非纯函数，可以包含副作用，可以无返回，也可以是异步的
 - 它不能直接改变 State，要改变 State，它必须再次 dispatch action 来触发 reducer
 
 ### ActionHandler
 
-我们可以简单的认为：在 Redux 中 store.dispatch(action)，可以触发一个注册过的 reducer，看起来似乎是一种观察者模式。推广到以上的 effect 概念，effect 同样是一个观察者。一个 action 被 dispatch，可能触发多个观察者被执行，它们可能是 reducer，也可能是 effect。所以 reducer 和 effect 统称为：**ActionHandler**
+我们可以简单的认为：在 Redux 中 store.dispatch(action)，可以触发一个注册过的 reducer，看起来似乎是一种观察者模式。effect 同样是一个观察者，一个 action 被 dispatch，可能触发多个观察者被执行，它们可能是 reducer，也可能是 effect。所以 reducer 和 effect 统称为：**ActionHandler**
 
-- 如果有一组 actionHandler 在兼听某一个 action，那它们的执行顺序是什么呢？
+> 如果有一组 actionHandler 在监某一个 action，它们的执行优先顺序是：
 
-  答：当一个 action 被 dispatch 时，最先执行的是所有的 reducer，它们被依次同步执行。所有的 reducer 执行完毕之后，才开始所有 effect 执行。
+- 先执行所有 reducer
 
-- 我想等待这一组 actionHandler 全部执行完毕之后，再下一步操作，可是 effect 是异步执行的，我如何知道所有的 effect 都被处理完毕了？
-  答：本框架改良了 store.dispatch()方法，如果有 effect 兼听此 action，它会返回一个 Promise，所以你可以使用 await store.dispatch({type:"search"}); 来等待所有的 effect 处理完成。
+  1. 如果 action 本身有定义 priority，按 priority 顺序
+  2. 与 action 同模块的 reducer
+  3. 根模块的 reducer
+  4. 其它模块的 reducer
 
-### Module
+- 后执行所有 effect
+
+  1. 如果 action 本身有定义 priority，按 priority 顺序
+  2. 与 action 同模块的 effect
+  3. 根模块的 effect
+  4. 其它模块的 effect
+
+> 我想等待这一组 actionHandler 全部执行完毕之后，再下一步操作，可是 effect 是异步执行的，我如何知道所有的 effect 都被处理完毕了？
+
+答：本框架改良了 store.dispatch()方法，如果有 effect 监听此 action，它会返回一个 Promise，所以你可以使用 await store.dispatch({type:"search"}); 来等待所有的 effect 处理完成。
+
+### Module（模块）
 
 当我们接到一个复杂的前端项目时，首先要化繁为简，进行功能拆解。通常以**高内聚、低偶合**的原则对其进行模块划分，一个 Module 是相对独立的业务功能的集合，它通常包含一个 Model(用来处理业务逻辑)和一组 View(用来展示数据与交互)，需要注意的是：
 
 - SPA 应用已经没有了 Page 的边界，不要以 Page 的概念来划分模块
 - 一个 Module 可能包含一组 View，不要以 View 的概念来划分模块
 
-Module 虽然是逻辑上的划分，但我们习惯于用文件夹目录来组织与体现，例如：
+我们习惯于用文件夹目录来组织与体现，例如：
 
 ```
 src
@@ -91,13 +104,13 @@ src
 通过以上可以看出，此工程包含 7 大模块 app、userOverview、userTransaction、blacklist、agentOverview、agentBonus、agentSale，虽然 modules 目录下面还有子目录 user、angent，但它们仅属于归类，不属于模块。我们约定：
 
 - 每个 Module 是一个独立的文件夹
-- Module 本身只有一级，但是可以放在多级的目录中进行归类
-- 每个 Module 文件夹名即为该 Module 名，因为所有 Module 都是平级的，所以需要保证 Module 名不重复，实践中，我们可以通过 Typescript 的 enum 类型来保证，你也可以将所有 Module 都放在一级目录中。
+- 所有 Module 都是平级的，但是可以放在多级的目录中进行归类
+- 每个 Module 文件夹名即为该 Module 名
 - 每个 Module 保持一定的独立性，它们可以被同步、异步、按需、动态加载
 
 ### ModuleState、RootState
 
-系统被划分为多个相对独立且平级的 Module，不仅体现在文件夹目录，更体现在 Store 上。每个 Module 负责维护和管理 Store 下的一个节点，我们称之为 **ModuleState**，而整个 Store 我们习惯称之为**RootState**
+系统被划分为多个相对独立且平级的 Module，不仅体现在文件夹目录，更体现在 ReduxStore 数据结构中。每个 Module 负责维护和管理 Store 下的一个节点，我们称之为 **ModuleState**，而整个 ReduxStore 我们习惯称之为**RootState**
 
 例如：某个 Store 数据结构:
 
@@ -121,14 +134,14 @@ src
 - 每个 Module 修改自已的 ModuleState，必须通过 dispatch action 来触发
 - 每个 Module 可以观察者身份，监听其它 Module 发出的 action，来配合修改自已的 ModuleState
 
-你可能注意到上面 Store 的子节点中，第一个名为 router，它并不是一个 ModuleState，而是一个由第三方 Reducer 生成的节点。我们知道 Redux 中允许使用多个 Reducer 来共同维护 Stroe，并提供 combineReducers 方法来合并。由于 ModuleState 的 key 名即为 Module 名，所以：`Module名自然也不能与其它第三方Reducer生成节点重名`。
+你可能注意到上面 Store 的子节点中，第一个名为 router，它并不是一个 ModuleState，而是一个由第三方 Reducer 生成的节点。所以`Module名自然也不能与其它第三方Reducer生成节点重名`。
 
 ### Model
 
-在 Module 内部，我们可进一步划分为`一个model(维护数据)`和`一组view(展现交互)`，此处的 Model 实际上指的是 view model，它主要包含两大功能：
+在 Module 内部，我们可进一步划分为`一个model(维护数据)`和`一组view(展现交互)`，model 主要包含两大内容：
 
 - ModuleState 的定义
-- ModuleState 的维护，前面有介绍过 ActionHandler，实际上就是对 ActionHandler 的编写
+- ActionHandler 的定义
 
 > 数据流是从 Model 单向流入 View，所以 Model 是独立不依赖于 View 的。理论上即使没有 View，整个程序依然是可以通过数据来驱动。
 
@@ -213,20 +226,13 @@ protected async ["@@framework/ROUTE_CHANGE"](){
 }
 ```
 
-前面有强调过两点：
-
-- Module 可以兼听其它 Module 发出的 Action，并配合来完成自已 ModuleState 的更新。
-- Module 只能更新自已的 ModuleState 节点，但是可以读取整个 Store。
-
-另外注意到语句：await this.dispatch(this.action.searchList())：
-
-- dispatch 派发一个名为 searchList 的 action 可以理解，可是为什么前面还能 awiat？难道 dispatch action 也是异步的？
-
-  答：dispatch 派发 action 本身是同步的，我们前面讲过 ActionHandler 的概念，一个 action 被 dispatch 时，可能有一组 reducer 或 effect 在兼听它，reducer 是同步处理的，可是 effect 可能是异步处理的，如果你想等所有的兼听都执行完成之后，再做下一步操作，此处就可以使用 await，否则，你可以不使用 await。
+- Module 可以监听其它 Module 发出的 Action，并配合来完成自已 ModuleState 的更新。
+- Module 只能更新自已的 ModuleState 节点，但是可以读取整个 RootState。
+- await dispatch() 等待所有 ActionHandler 执行完(包括异步的 effect)。
 
 ### View、Component
 
-在 Module 内部，我们可进一步划分为`一个model(维护数据)`和`一组view(展现交互)`。所以一个 Module 中的 view 可能有多个，我们习惯在 Module 根目录下创建一个名为 views 的文件夹：
+在 Module 内部，我们可进一步划分为`一个model(维护数据)`和`一组view(展现交互)`。我们习惯在 Module 根目录下创建一个名为 views 的文件夹：
 
 例如，userOverview 模块中的 views:
 
@@ -249,8 +255,7 @@ src
 │       │     │
 ```
 
-- 每个 view 其实是一个 React Component 类，所以使用大写字母打头
-- 对于 css 和 img 等附属资源，如果是属于某个 view 私有的，跟随 view 放到一起，如果是多个 view 公有的，提出来放到公共目录中。
+- 如果使用 React，每个 view 其实是一个 React Component
 - 在 view 中通过 dispatch action 的方式触发 Model 中的 ActionHandler，除了可以 dispatch 本模块的 action，也能 dispatch 其它模块的 action
 
 例如，某个 LoginForm：
@@ -292,22 +297,24 @@ const mapStateToProps = (state: RootState) => {
 export default connect(mapStateToProps)(Component);
 ```
 
-从以上代码可看出，View 就是一个 Component，那 View 和 Component 有区别吗？编码上没有，逻辑上是有的：
+View 就是 Component，它们有逻辑上的区别：
 
-- view 体现的是 ModuleState 的视图展现，更偏重于表现特定的具体的业务逻辑，所以它的 props 一般是直接用 mapStateToProps connect 到 store。
+- view 是 ModuleState 的视图展现，更偏重于表现特定的具体的业务逻辑，所以它的 props 一般是直接用 mapStateToProps connect 到 store。
 - component 体现的是一个没有业务逻辑上下文的纯组件，它的 props 一般来源于父级传递。
-- component 通常是公共的，而 view 通常非公用
+- component 通常是公共的，而 view 通常不公用
 
 ## 动态按需加载模块
 
-能静能动是@medux 的最大特色，模块的加载方式集中在 modules/index.ts 中配置：
+能静能动是@medux 的最大特色，我们在开发过程中无需将模块的加载逻辑混入业务逻辑中，这样会让问题更复杂，@medux 中模块的加载方案作为一种优化策略可以被随时更改和配置。
+
+模块的加载方式集中在 modules/index.ts 中配置：
 
 ```JS
 // 定义模块的加载方案，同步或者异步均可
 export const moduleGetter = {
   app: () => {
     // 使用 import()方法导入的 module 是异步按需加载的
-    // 如果无需异步按需加载，只需要先import * as app from 'modules/app'
+    // 如果无需异步按需加载，只需先import * as app from 'modules/app'
     // 然后在此处直接return app;
     return import(/* webpackChunkName: "app" */ 'modules/app');
   },

@@ -167,7 +167,7 @@ export function buildStore(
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
-      const orderList: string[] = []; //
+      const orderList: string[] = [];
       const priority: string[] = action.priority ? [...action.priority] : [];
       handlerModules.forEach(moduleName => {
         const fun = handlers[moduleName];
@@ -209,15 +209,20 @@ export function buildStore(
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
-      const orderList: string[] = action.priority ? [...action.priority] : [];
+      const orderList: string[] = [];
+      const priority: string[] = action.priority ? [...action.priority] : [];
       handlerModules.forEach(moduleName => {
         const fun = handlers[moduleName];
-        if (fun.__isHandler__) {
-          orderList.push(moduleName);
-        } else {
+        if (moduleName === MetaData.appModuleName) {
           orderList.unshift(moduleName);
+        } else {
+          orderList.push(moduleName);
+        }
+        if (!fun.__isHandler__) {
+          priority.unshift(moduleName);
         }
       });
+      orderList.unshift(...priority);
       const moduleNameMap: {[key: string]: boolean} = {};
       const promiseResults: Promise<any>[] = [];
       orderList.forEach(moduleName => {
