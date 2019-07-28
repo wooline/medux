@@ -1,5 +1,5 @@
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { MetaData, NSP, client, isPromise } from './basic';
+import { MetaData, NSP, client, isProcessedError, isPromise, setProcessedError } from './basic';
 import { ActionTypes, errorAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { injectModel } from './module';
@@ -284,7 +284,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
                 fun.__decoratorResults__ = results;
               }
 
-              effectResult.then(function (reslove) {
+              var errorHandler = effectResult.then(function (reslove) {
                 if (decorators) {
                   var _results = fun.__decoratorResults__ || [];
 
@@ -297,19 +297,31 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
                 }
 
                 return reslove;
-              }, function (reject) {
+              }, function (error) {
                 if (decorators) {
                   var _results2 = fun.__decoratorResults__ || [];
 
                   decorators.forEach(function (decorator, index) {
                     if (decorator[1]) {
-                      decorator[1]('Rejected', _results2[index], reject);
+                      decorator[1]('Rejected', _results2[index], error);
                     }
                   });
                   fun.__decoratorResults__ = undefined;
                 }
+
+                if (action.type === ActionTypes.F_ERROR) {
+                  if (isProcessedError(error) === undefined) {
+                    error = setProcessedError(error, true);
+                  }
+
+                  throw error;
+                } else if (isProcessedError(error)) {
+                  throw error;
+                } else {
+                  return store.dispatch(errorAction(error));
+                }
               });
-              promiseResults.push(effectResult);
+              promiseResults.push(errorHandler);
             }
           });
 
@@ -372,21 +384,6 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
   store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
   bindHistory(store, history);
   MetaData.clientStore = store;
-
-  if (client) {
-    if ('onerror' in client) {
-      client.addEventListener('error', function (event) {
-        store.dispatch(errorAction(event));
-      }, true);
-    }
-
-    if ('onunhandledrejection' in client) {
-      client.addEventListener('unhandledrejection', function (event) {
-        store.dispatch(errorAction(event.reason));
-      }, true);
-    }
-  }
-
   return store;
 }
 //# sourceMappingURL=store.js.map

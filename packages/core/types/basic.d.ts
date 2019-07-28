@@ -131,5 +131,10 @@ export declare function reducer(target: any, key: string, descriptor: PropertyDe
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;
 export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function delayPromise(second: number): (target: any, key: string, descriptor: PropertyDescriptor) => void;
+export declare function isProcessedError(error: any): boolean | undefined;
+export declare function setProcessedError(error: any, meduxProcessed: boolean): {
+    meduxProcessed: boolean;
+    [key: string]: any;
+};
 export declare function injectActions(store: ModelStore, moduleName: string, handlers: ActionHandlerList): ActionCreatorList;
 export {};

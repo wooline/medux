@@ -119,6 +119,24 @@ export function delayPromise(second) {
     };
   };
 }
+export function isProcessedError(error) {
+  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
+    return undefined;
+  } else {
+    return !!error.meduxProcessed;
+  }
+}
+export function setProcessedError(error, meduxProcessed) {
+  if (typeof error === 'object') {
+    error.meduxProcessed = meduxProcessed;
+    return error;
+  } else {
+    return {
+      meduxProcessed: meduxProcessed,
+      error: error
+    };
+  }
+}
 
 function bindThis(fun, thisObj) {
   var newFun = fun.bind(thisObj);

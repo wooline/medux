@@ -1,4 +1,4 @@
-import {Action, MetaData, ModelStore, NSP, RouteData, RouteState, StoreState, client, isPromise} from './basic';
+import {Action, MetaData, ModelStore, NSP, RouteData, RouteState, StoreState, client, isProcessedError, isPromise, setProcessedError} from './basic';
 import {ActionTypes, errorAction, routeChangeAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
@@ -194,7 +194,6 @@ export function buildStore(
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
   };
-
   const middleware = () => (next: Function) => (originalAction: Action) => {
     if (MetaData.isServer) {
       if (originalAction.type.split(NSP)[1] === ActionTypes.M_LOADING) {
@@ -239,7 +238,7 @@ export function buildStore(
             fun.__decoratorResults__ = results;
           }
 
-          effectResult.then(
+          const errorHandler = effectResult.then(
             (reslove: any) => {
               if (decorators) {
                 const results = fun.__decoratorResults__ || [];
@@ -252,19 +251,30 @@ export function buildStore(
               }
               return reslove;
             },
-            (reject: any) => {
+            (error: any) => {
               if (decorators) {
                 const results = fun.__decoratorResults__ || [];
                 decorators.forEach((decorator, index) => {
                   if (decorator[1]) {
-                    decorator[1]('Rejected', results[index], reject);
+                    decorator[1]('Rejected', results[index], error);
                   }
                 });
                 fun.__decoratorResults__ = undefined;
               }
+              if (action.type === ActionTypes.F_ERROR) {
+                if (isProcessedError(error) === undefined) {
+                  error = setProcessedError(error, true);
+                }
+                throw error;
+              } else if (isProcessedError(error)) {
+                throw error;
+              } else {
+                return store.dispatch(errorAction(error)) as any;
+              }
             }
           );
-          promiseResults.push(effectResult);
+
+          promiseResults.push(errorHandler);
         }
       });
       if (promiseResults.length) {
@@ -308,25 +318,5 @@ export function buildStore(
   store = createStore(combineReducers as any, preloadedState, compose(...enhancers));
   bindHistory(store, history);
   MetaData.clientStore = store;
-  if (client) {
-    if ('onerror' in client) {
-      client.addEventListener(
-        'error',
-        event => {
-          store.dispatch(errorAction(event));
-        },
-        true
-      );
-    }
-    if ('onunhandledrejection' in client) {
-      client.addEventListener(
-        'unhandledrejection',
-        event => {
-          store.dispatch(errorAction(event.reason));
-        },
-        true
-      );
-    }
-  }
   return store;
 }

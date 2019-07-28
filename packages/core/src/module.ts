@@ -2,8 +2,6 @@ import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, Mode
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
-import {errorAction} from './actions';
-
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
   moduleName: string;
   initState: ModelState;
@@ -65,14 +63,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       if (!moduleState) {
         const params = store._medux_.prevState.route.data.params || {};
         const initAction = actions.INIT({...initState, routeParams: params[moduleName] || defaultRouteParams[moduleName]});
-        const result = store.dispatch(initAction);
-        if (isPromise(result)) {
-          return result
-            .catch(err => {
-              return store.dispatch(errorAction(err)) as any;
-            })
-            .then(() => void 0);
-        }
+        return store.dispatch(initAction) as any;
       }
     }
     return void 0;

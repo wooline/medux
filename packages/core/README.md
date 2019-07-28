@@ -340,6 +340,29 @@ export const moduleGetter = {
 - **module/INIT**：模块初次载入时会触发此 action
 - **module/LOADING**：触发加载进度时会触发此 action，比如 @effect(login)
 
+## 关于错误处理
+
+model 内 effect 执行发生错误时，框架会自动 dispatch 一个 名为 **@@framework/ERROR** 的 errorAction，你可以监听此 action 来处理错误，例如：
+
+```JS
+  @effect(null)
+  protected async [ActionTypes.F_ERROR](error: CustomError) {
+    if (error.code === '401') {
+      this.dispatch(this.actions.putShowLoginPop(true));
+    } else if (error.code === '404') {
+      this.dispatch(this.actions.putShowNotFoundPop(true));
+    } else {
+      error.message && Toast.fail(error.message);
+      throw error;
+    }
+  }
+```
+
+如果在此错误处理的 effect 中再次重新 throw error，表明此 errorHandler 处理不了该错误，此时：
+
+- 如果设置`error.meduxProcessed=false`，则该 error 会重新引起新的 dispatch **@@framework/ERROR**，从而让别的 errorHandler 处理。
+- 如果设置`error.meduxProcessed=true`或者默认不作 meduxProcessed 设置，则后续不再 dispatch **@@framework/ERROR**，该错误将往上传递成为 uncatched 错误
+
 ## 抽象的路由机制
 
 不同平台，不同 UI 框架有着各种不同的路由方案，我们用发散的思维描述一下路由：

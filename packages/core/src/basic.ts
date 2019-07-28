@@ -198,6 +198,24 @@ export function delayPromise(second: number) {
     };
   };
 }
+export function isProcessedError(error: any): boolean | undefined {
+  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
+    return undefined;
+  } else {
+    return !!error.meduxProcessed;
+  }
+}
+export function setProcessedError(error: any, meduxProcessed: boolean): {meduxProcessed: boolean; [key: string]: any} {
+  if (typeof error === 'object') {
+    error.meduxProcessed = meduxProcessed;
+    return error;
+  } else {
+    return {
+      meduxProcessed,
+      error,
+    };
+  }
+}
 function bindThis(fun: ActionHandler, thisObj: any) {
   const newFun = fun.bind(thisObj);
   Object.keys(fun).forEach(key => {

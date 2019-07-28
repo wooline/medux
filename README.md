@@ -79,7 +79,7 @@ export class ModelHandlers extends BaseModelHandlers<State, RootState> {
       Toast.fail(loginResult.error.message);
     }
   }
-  // uncatched错误会触发@@framework/ERROR，监听并发送给后台
+  // model内错误会触发@@framework/ERROR，监听并发送给后台
   @effect(null) // 不需要loading，设置为null
   protected async ["@@framework/ERROR"](error: CustomError) {
     if (error.code === "401") {

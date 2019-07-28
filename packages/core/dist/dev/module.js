@@ -25,7 +25,6 @@ function _toPrimitive(input, hint) { if (typeof input !== "object" || input === 
 
 import { MetaData, VSP, client, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
-import { errorAction } from './actions';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   if (!defaultRouteParams[moduleName]) {
     defaultRouteParams[moduleName] = initState.routeParams;
@@ -50,15 +49,7 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
           routeParams: params[moduleName] || defaultRouteParams[moduleName]
         }));
 
-        var result = store.dispatch(initAction);
-
-        if (isPromise(result)) {
-          return result.catch(function (err) {
-            return store.dispatch(errorAction(err));
-          }).then(function () {
-            return void 0;
-          });
-        }
+        return store.dispatch(initAction);
       }
     }
 
