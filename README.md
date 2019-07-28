@@ -127,4 +127,13 @@ Typescript 类型反射：
 
 ## 关于@medux/core
 
-参阅：[@medux/core](https://github.com/wooline/medux/tree/master/packages/core)
+请先阅读：[@medux/core](https://github.com/wooline/medux/tree/master/packages/core)
+
+## 学习交流
+
+- Email：[wooline@qq.com](wooline@qq.com)
+- reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我
+
+  ![QQ群二维码](https://github.com/wooline/react-coat/blob/master/docs/imgs/qr.jpg)
+
+- 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
