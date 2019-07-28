@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-native-router",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "The practice of @medux/core in react-native",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-native-router",
   "author": "wooline <wooline@qq.com>",
@@ -33,7 +33,7 @@
     "react-native": "^0.50.0"
   },
   "dependencies": {
-    "@medux/react": "^0.1.0-alpha.1"
+    "@medux/react": "^0.1.0-alpha.2"
   },
   "gitHead": "d72a594493f4a076297491bcc925e9b7fcfbbe37"
 }
