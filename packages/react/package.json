@@ -29,12 +29,12 @@
     "build": "yarn build:dev & yarn build:prod"
   },
   "peerDependencies": {
-    "@types/react": "^16.8.0",
-    "react": "^16.8.0"
+    "@types/react": "^0.14.9",
+    "react": "^0.14.9"
   },
   "dependencies": {
     "@medux/core": "^0.1.0-alpha.2",
-    "@types/react-redux": "~7.1.0",
+    "@types/react-redux": "~7.1.1",
     "react-redux": "~7.1.0"
   },
   "gitHead": "d72a594493f4a076297491bcc925e9b7fcfbbe37"

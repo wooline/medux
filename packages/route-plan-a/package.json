@@ -1,8 +1,8 @@
 {
-  "name": "@medux/react-native-router",
+  "name": "@medux/route-plan-a",
   "version": "0.1.0-alpha.2",
-  "description": "The practice of @medux/core in react-native",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/react-native-router",
+  "description": "The practice of @medux/core in web route",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/route-plan-a",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -28,16 +28,10 @@
     "build:dev": "cross-env NODE_ENV=development babel ./src --out-dir ./dist/dev  --extensions \".ts,.tsx\" --source-maps",
     "build": "yarn build:dev & yarn build:prod"
   },
-  "peerDependencies": {
-    "react-native": "^0.50.0",
-    "react-navigation": "^3.0.0"
-  },
   "dependencies": {
-    "@medux/react": "^0.1.0-alpha.2"
-  },
-  "devDependencies": {
-    "@types/react-native": "^0.57.65",
-    "react-navigation": "^3.11.1"
+    "@medux/web": "^0.1.0-alpha.2",
+    "deep-extend": "^0.6.0",
+    "path-to-regexp": "^3.0.0"
   },
   "gitHead": "d72a594493f4a076297491bcc925e9b7fcfbbe37"
 }

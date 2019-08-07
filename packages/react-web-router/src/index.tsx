@@ -29,21 +29,6 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   const historyData = createHistory(historyOptions);
   const {history, historyProxy} = historyData;
   historyActions = historyData.historyActions;
-  // // SSR需要数据是单向的，store->view，不能store->view->store->view，而view:ConnectedRouter初始化时会触发一次LOCATION_CHANGE
-  // let routerInited = false;
-  // const filterRouter = () => (next: Function) => (action: {type: string}) => {
-  //   if (action.type === '@@router/LOCATION_CHANGE') {
-  //     if (!routerInited) {
-  //       routerInited = true;
-  //       return action;
-  //     } else {
-  //       invalidview();
-  //     }
-  //   }
-  //   return next(action);
-  // };
-  // storeOptions.middlewares = storeOptions.middlewares || [];
-  // storeOptions.middlewares.unshift(filterRouter, routerMiddleware(history));
 
   return renderApp(
     (Provider, AppMainView, ssrInitStoreKey) => {
@@ -79,33 +64,7 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
   const historyData = createHistory(historyOptions);
   const {history, historyProxy} = historyData;
   historyActions = historyData.historyActions;
-  // storeOptions.reducers = storeOptions.reducers || {};
-  // if (storeOptions.reducers && storeOptions.reducers.router) {
-  //   throw new Error("the reducer name 'router' is not allowed");
-  // }
-  // const router = connectRouter(history);
-  // storeOptions.reducers.router = (state, action) => {
-  //   const routerData = router(state.router, action as any);
-  //   if (storeOptions.routerParser && state.router !== routerData) {
-  //     state.router = storeOptions.routerParser(routerData, state.router);
-  //   } else {
-  //     state.router = routerData;
-  //   }
-  // };
-  // let routerInited = false;
-  // const filterRouter = () => (next: Function) => (action: {type: string}) => {
-  //   if (action.type === '@@router/LOCATION_CHANGE') {
-  //     if (!routerInited) {
-  //       routerInited = true;
-  //       return action;
-  //     } else {
-  //       invalidview();
-  //     }
-  //   }
-  //   return next(action);
-  // };
-  // storeOptions.middlewares = storeOptions.middlewares || [];
-  // storeOptions.middlewares.unshift(filterRouter, routerMiddleware(history));
+
   const render = renderToStream ? renderToNodeStream : renderToString;
   return renderSSR(
     (Provider, AppMainView) => {

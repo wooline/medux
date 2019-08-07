@@ -23,7 +23,7 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
-import { MetaData, VSP, client, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
+import { MetaData, client, config, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   if (!defaultRouteParams[moduleName]) {
@@ -45,7 +45,7 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       if (!moduleState) {
         var params = store._medux_.prevState.route.data.params || {};
 
-        var initAction = _actions.INIT(_objectSpread({}, initState, {
+        var initAction = _actions.Init(_objectSpread({}, initState, {
           routeParams: params[moduleName] || defaultRouteParams[moduleName]
         }));
 
@@ -90,24 +90,52 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
+        return this.getState();
+      } //ie8不支持getter
+
+    }, {
+      kind: "method",
+      key: "getState",
+      value: function getState() {
         return this.store._medux_.prevState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
+        return this.getRootState();
+      } //ie8不支持getter
+
+    }, {
+      kind: "method",
+      key: "getRootState",
+      value: function getRootState() {
         return this.store._medux_.prevState;
       }
     }, {
       kind: "get",
       key: "currentState",
       value: function currentState() {
+        return this.getCurrentState();
+      } //ie8不支持getter
+
+    }, {
+      kind: "method",
+      key: "getCurrentState",
+      value: function getCurrentState() {
         return this.store._medux_.currentState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "currentRootState",
       value: function currentRootState() {
+        return this.getCurrentRootState();
+      } //ie8不支持getter
+
+    }, {
+      kind: "method",
+      key: "getCurrentRootState",
+      value: function getCurrentRootState() {
         return this.store._medux_.currentState;
       }
     }, {
@@ -127,28 +155,28 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.UPDATE, _objectSpread({}, this.state, payload)));
+        this.dispatch(this.callThisAction(this.Update, _objectSpread({}, this.getState(), payload)));
       }
     }, {
       kind: "method",
       decorators: [reducer],
-      key: "INIT",
-      value: function INIT(payload) {
+      key: "Init",
+      value: function Init(payload) {
         return payload;
       }
     }, {
       kind: "method",
       decorators: [reducer],
-      key: "UPDATE",
-      value: function UPDATE(payload) {
+      key: "Update",
+      value: function Update(payload) {
         return payload;
       }
     }, {
       kind: "method",
       decorators: [reducer],
-      key: "LOADING",
-      value: function LOADING(payload) {
-        var state = this.state;
+      key: "Loading",
+      value: function Loading(payload) {
+        var state = this.getState();
 
         if (!state) {
           return state;
@@ -174,7 +202,7 @@ export function exportActions(moduleGetter) {
       get: function get(target, key) {
         return function (payload) {
           return {
-            type: moduleName + '/' + key,
+            type: moduleName + config.NSP + key,
             payload: payload
           };
         };
@@ -346,7 +374,7 @@ function _renderSSR() {
               break;
             }
 
-            _paths$i$split = paths[i].split(VSP), _moduleName = _paths$i$split[0];
+            _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
 
             if (inited[_moduleName]) {
               _context.next = 18;

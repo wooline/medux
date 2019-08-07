@@ -3,15 +3,25 @@ import {LoadingState} from './sprite';
 import {ModuleGetter} from './module';
 import {setLoading} from './loading';
 
-export const NSP = '/';
-export const VSP = '.';
-
 // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
 //   self.self === self &&
 //   self) ||
 //   (typeof global == 'object' && global.global === global && global) ||
 //   this) as any;
-
+export const config: {
+  NSP: string;
+  VSP: string;
+  MSP: string;
+} = {
+  NSP: '/',
+  VSP: '.',
+  MSP: ',',
+};
+export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
+  _config.NSP && (config.NSP = _config.NSP);
+  _config.VSP && (config.VSP = _config.VSP);
+  _config.MSP && (config.MSP = _config.MSP);
+}
 export const MetaData: {
   isServer: boolean;
   isDev: boolean;
@@ -29,6 +39,7 @@ export const MetaData: {
   moduleGetter: null as any,
   defaultRouteParams: {},
 };
+
 export const defaultRouteParams = MetaData.defaultRouteParams;
 export const client: Window | undefined = MetaData.isServer ? undefined : typeof window === 'undefined' ? (global as any) : window;
 export interface ActionCreatorMap {
@@ -57,6 +68,7 @@ export interface RouteData {
   views: DisplayViews;
   params: {[moduleName: string]: {[key: string]: any} | undefined};
   paths: string[];
+  stackParams: {[moduleName: string]: {[key: string]: any} | undefined}[];
 }
 export interface RouteState<L = any> {
   location: L;
@@ -237,7 +249,7 @@ function transformAction(actionName: string, action: ActionHandler, listenerModu
 function addModuleActionCreatorList(moduleName: string, actionName: string) {
   const actions = MetaData.actionCreatorMap[moduleName];
   if (!actions[actionName]) {
-    actions[actionName] = payload => ({type: moduleName + NSP + actionName, payload});
+    actions[actionName] = payload => ({type: moduleName + config.NSP + actionName, payload});
   }
 }
 export function injectActions(store: ModelStore, moduleName: string, handlers: ActionHandlerList) {
@@ -246,15 +258,15 @@ export function injectActions(store: ModelStore, moduleName: string, handlers: A
       let handler = handlers[actionNames];
       if (handler.__isReducer__ || handler.__isEffect__) {
         handler = bindThis(handler, handlers);
-        actionNames.split(',').forEach(actionName => {
-          actionName = actionName.trim().replace(new RegExp(`^this${NSP}`), `${moduleName}${NSP}`);
-          const arr = actionName.split(NSP);
+        actionNames.split(config.MSP).forEach(actionName => {
+          actionName = actionName.trim().replace(new RegExp(`^this[${config.NSP}]`), `${moduleName}${config.NSP}`);
+          const arr = actionName.split(config.NSP);
           if (arr[1]) {
             handler.__isHandler__ = true;
             transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
           } else {
             handler.__isHandler__ = false;
-            transformAction(moduleName + NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
             addModuleActionCreatorList(moduleName, actionName);
           }
         });

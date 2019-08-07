@@ -1,75 +1,8 @@
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { MetaData, NSP, client, isProcessedError, isPromise, setProcessedError } from './basic';
+import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { ActionTypes, errorAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { injectModel } from './module';
-import { isPlainObject } from './sprite';
-/*
-let invalidViewTimer: number;
-
-function checkInvalidview() {
-  invalidViewTimer = 0;
-  const currentViews = MetaData.clientStore._medux_.currentViews;
-  const views: DisplayViews = {};
-  for (const moduleName in currentViews) {
-    if (currentViews.hasOwnProperty(moduleName)) {
-      const element = currentViews[moduleName];
-      for (const viewname in element) {
-        if (element[viewname]) {
-          const n = Object.keys(element[viewname]).length;
-          if (n) {
-            if (!views[moduleName]) {
-              views[moduleName] = {};
-            }
-            views[moduleName][viewname] = true;
-          }
-        }
-      }
-    }
-  }
-  MetaData.clientStore.dispatch(viewInvalidAction(views));
-}
-
-export function invalidview() {
-  if (MetaData.isServer) {
-    return;
-  }
-  if (!invalidViewTimer) {
-    invalidViewTimer = setTimeout(checkInvalidview, 300);
-  }
-}
-
-export function viewWillMount(moduleName: string, viewName: string, vid: string) {
-  if (MetaData.isServer) {
-    return;
-  }
-  const currentViews = MetaData.clientStore._medux_.currentViews;
-  if (!currentViews[moduleName]) {
-    currentViews[moduleName] = {[viewName]: {[vid]: true}};
-  } else {
-    const views = currentViews[moduleName];
-    if (!views[viewName]) {
-      views[viewName] = {[vid]: true};
-    } else {
-      views[viewName][vid] = true;
-    }
-  }
-  invalidview();
-}
-
-export function viewWillUnmount(moduleName: string, viewName: string, vid: string) {
-  if (MetaData.isServer) {
-    return;
-  }
-  const currentViews = MetaData.clientStore._medux_.currentViews;
-  if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
-    const views = currentViews[moduleName][viewName];
-    delete views[vid];
-  }
-  invalidview();
-}
-*/
-
 export function getActionData(action) {
   var arr = Object.keys(action).filter(function (key) {
     return key !== 'type' && key !== 'priority' && key !== 'time';
@@ -115,14 +48,16 @@ function bindHistory(store, history) {
 
   history.subscribe(handleLocationChange);
   store.subscribe(function () {
-    var storeRouteState = store.getState().route;
+    if (history.initialized) {
+      var storeRouteState = store.getState().route;
 
-    if (!history.equal(storeRouteState.location, history.getLocation())) {
-      inTimeTravelling = true;
-      history.patch(storeRouteState.location, storeRouteState.data);
+      if (!history.equal(storeRouteState.location, history.getLocation())) {
+        inTimeTravelling = true;
+        history.patch(storeRouteState.location, storeRouteState.data);
+      }
     }
   });
-  handleLocationChange(history.getLocation());
+  history.initialized && handleLocationChange(history.getLocation());
 }
 
 export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers, defaultRouteParams) {
@@ -146,14 +81,6 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     defaultRouteParams = {};
   }
 
-  if (!isPlainObject(preloadedState)) {
-    throw new Error('preloadedState must be plain objects!');
-  }
-
-  if (!isPlainObject(storeReducers)) {
-    throw new Error('storeReducers must be plain objects!');
-  }
-
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
@@ -161,7 +88,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
   Object.assign(MetaData.defaultRouteParams, defaultRouteParams);
 
   storeReducers.route = function (state, action) {
-    if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+    if (action.type === ActionTypes.RouteChange) {
       var payload = getActionData(action);
 
       if (!state) {
@@ -192,7 +119,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     });
     var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
+    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
     var handlers = _objectSpread({}, handlersCommon, handlersEvery);
 
@@ -236,7 +163,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     return function (next) {
       return function (originalAction) {
         if (MetaData.isServer) {
-          if (originalAction.type.split(NSP)[1] === ActionTypes.M_LOADING) {
+          if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
             return originalAction;
           }
         }
@@ -244,7 +171,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         var action = next(originalAction);
         var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-        var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + NSP + "]+"), '*')] || {};
+        var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
         var handlers = _objectSpread({}, handlersCommon, handlersEvery);
 
@@ -309,7 +236,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
                   fun.__decoratorResults__ = undefined;
                 }
 
-                if (action.type === ActionTypes.F_ERROR) {
+                if (action.type === ActionTypes.Error) {
                   if (isProcessedError(error) === undefined) {
                     error = setProcessedError(error, true);
                   }
@@ -338,7 +265,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
   var preLoadMiddleware = function preLoadMiddleware() {
     return function (next) {
       return function (action) {
-        var _action$type$split = action.type.split(NSP),
+        var _action$type$split = action.type.split(config.NSP),
             moduleName = _action$type$split[0],
             actionName = _action$type$split[1];
 

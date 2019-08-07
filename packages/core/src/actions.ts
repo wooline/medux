@@ -1,22 +1,22 @@
-import {NSP, RouteState} from './basic';
+import {RouteState, config} from './basic';
 
 export const ActionTypes = {
-  M_LOADING: 'LOADING',
-  M_INIT: 'INIT',
-  F_ERROR: `@@framework${NSP}ERROR`,
-  F_ROUTE_CHANGE: `@@framework${NSP}ROUTE_CHANGE`,
+  MLoading: 'Loading',
+  MInit: 'Init',
+  Error: `medux${config.NSP}Error`,
+  RouteChange: `medux${config.NSP}RouteChange`,
 };
 
 export function errorAction(error: any) {
   return {
-    type: ActionTypes.F_ERROR,
+    type: ActionTypes.Error,
     payload: error,
   };
 }
 
 export function routeChangeAction(route: RouteState) {
   return {
-    type: ActionTypes.F_ROUTE_CHANGE,
+    type: ActionTypes.RouteChange,
     payload: route,
   };
 }

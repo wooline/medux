@@ -8,6 +8,31 @@
 
 本包是@medux 系列的核心基础包，它体现了本框架通用和抽象的状态管理机制。
 
+## 兼容性
+
+支持 IE8 及以上现代浏览器。IE11 及以下浏览器请自行加入`polyfill`，并使用 src 目录的 TS 源码重新编译。
+
+- 对于不支持 proxy 对象的浏览器，需要手动加载 model
+- 对于 IE8 不支持 getter，请在 ModelHandlers 中请使用 this.getState()来获取 moduleState，而不是使用 this.state。
+- 对于不能同时支持转码 decorators 和 count property 的环境时，可以将 ActionType 的 module 分隔符由 "`/`" 改为 "`_`"、将多 ActionType 分隔符由 "`,`" 改为 "`$`"，从而避免使用特殊字符命名类的方法，例如：
+
+```JS
+  //同时监听本模块的Init和RouteChange，默认使用count property写法：
+  @effect(null)
+  protected async [`this/${ActionTypes.MInit},${ActionTypes.RouteChange}`]() {
+    ...
+  }
+
+  //可以改为普通写法：
+  import {setConfig} from "@medux/core";
+  setConfig({ NSP: "_", MSP: "$" });
+  ...
+  @effect(null)
+  protected async this_Init$medux_RouteChange() {
+    ...
+  }
+```
+
 ## 查看 Demo
 
 - [medux-demo-spa](https://github.com/wooline/medux-demo-spa)：基于`@medux/react-web-router`开发的 WebApp 项目
@@ -206,7 +231,7 @@ class ModuleHandlers extends BaseModuleHandlers<State, RootState> {
   // 因为是监听其它Module发出的Action，所以它不需要主动触发，使用非public权限对外隐藏
   // @effect(null)表示不需要跟踪此effect的执行状态
   @effect(null)
-  protected async ["@@framework/ROUTE_CHANGE"]() {
+  protected async ["medux/RouteChange"]() {
       // this.rootState指向整个Store
       if(this.rootState.route.location.pathname === "/list"){
           // 使用await 来等待所有的actionHandler处理完成之后再返回
@@ -219,7 +244,7 @@ class ModuleHandlers extends BaseModuleHandlers<State, RootState> {
 需要特别说明的是以上代码的最后一个 ActionHandler：
 
 ```JS
-protected async ["@@framework/ROUTE_CHANGE"](){
+protected async ["medux/RouteChange"](){
     // this.rootState指向整个Store
     if(this.rootState.router.location.pathname === "/list"){
         await this.dispatch(this.action.searchList());
@@ -336,18 +361,18 @@ export const moduleGetter = {
 
 ## 几个特殊的 Action，你可以监听它们
 
-- **@@framework/ROUTE_CHANGE**：路由发生变化时将触发此 action
-- **@@framework/ERROR**：发生 error 时将自动派发此 action
-- **module/INIT**：模块初次载入时会触发此 action
-- **module/LOADING**：触发加载进度时会触发此 action，比如 @effect(login)
+- **medux/RouteChange**：路由发生变化时将触发此 action
+- **medux/Error**：发生 error 时将自动派发此 action
+- **module/Init**：模块初次载入时会触发此 action
+- **module/Loading**：触发加载进度时会触发此 action，比如 @effect(login)
 
 ## 关于错误处理
 
-model 内 effect 执行发生错误时，框架会自动 dispatch 一个 名为 **@@framework/ERROR** 的 errorAction，你可以监听此 action 来处理错误，例如：
+model 内 effect 执行发生错误时，框架会自动 dispatch 一个 名为 **medux/Error** 的 errorAction，你可以监听此 action 来处理错误，例如：
 
 ```JS
   @effect(null)
-  protected async [ActionTypes.F_ERROR](error: CustomError) {
+  protected async [ActionTypes.Error](error: CustomError) {
     if (error.code === '401') {
       this.dispatch(this.actions.putShowLoginPop(true));
     } else if (error.code === '404') {
@@ -361,8 +386,8 @@ model 内 effect 执行发生错误时，框架会自动 dispatch 一个 名为 
 
 如果在此错误处理的 effect 中再次重新 throw error，表明此 errorHandler 处理不了该错误，此时：
 
-- 如果设置`error.meduxProcessed=false`，则该 error 会重新引起新的 dispatch **@@framework/ERROR**，从而让别的 errorHandler 处理。
-- 如果设置`error.meduxProcessed=true`或者默认不作 meduxProcessed 设置，则后续不再 dispatch **@@framework/ERROR**，该错误将往上传递成为 uncatched 错误
+- 如果设置`error.meduxProcessed=false`，则该 error 会重新引起新的 dispatch **medux/Error**，从而让别的 errorHandler 处理。
+- 如果设置`error.meduxProcessed=true`或者默认不作 meduxProcessed 设置，则后续不再 dispatch **medux/Error**，该错误将往上传递成为 uncatched 错误
 
 ## 抽象的路由机制
 

@@ -1,7 +1,15 @@
 import { LoadingState } from './sprite';
 import { ModuleGetter } from './module';
-export declare const NSP = "/";
-export declare const VSP = ".";
+export declare const config: {
+    NSP: string;
+    VSP: string;
+    MSP: string;
+};
+export declare function setConfig(_config: {
+    NSP?: string;
+    VSP?: string;
+    MSP?: string;
+}): void;
 export declare const MetaData: {
     isServer: boolean;
     isDev: boolean;
@@ -55,6 +63,11 @@ export interface RouteData {
         } | undefined;
     };
     paths: string[];
+    stackParams: {
+        [moduleName: string]: {
+            [key: string]: any;
+        } | undefined;
+    }[];
 }
 export interface RouteState<L = any> {
     location: L;

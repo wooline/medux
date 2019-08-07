@@ -38,6 +38,7 @@ export interface HistoryActions<P = RouteData> {
   goForward(): void;
 }
 class BrowserHistoryProxy implements HistoryProxy<Location> {
+  public initialized = true;
   public constructor(protected history: History, protected locationToRoute: LocationToRoute) {}
   public getLocation() {
     return this.history.location;

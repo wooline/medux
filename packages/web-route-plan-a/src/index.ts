@@ -147,7 +147,7 @@ type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 type Params = RouteData['params'];
 export interface RoutePayload<P extends Params = Params> {
   extend?: RouteData;
-  params?: DeepPartial<P>;
+  params?: DeepPartial<P> | DeepPartial<P>[];
   paths?: string[];
 }
 export function fillRouteData(routePayload: RoutePayload): RouteData {

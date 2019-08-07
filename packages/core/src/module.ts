@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, StoreState, VSP, client, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, StoreState, client, config, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -36,6 +36,7 @@ export type RootState<G extends ModuleGetter, L> = {
     data: {
       views: {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
       params: {[key in keyof G]?: ModuleParams<ReturnModule<G[key]>>};
+      stackParams: ({[moduleName: string]: {[key: string]: any} | undefined} | undefined)[];
       paths: any;
     };
   };
@@ -62,7 +63,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       (handlers as any).actions = actions;
       if (!moduleState) {
         const params = store._medux_.prevState.route.data.params || {};
-        const initAction = actions.INIT({...initState, routeParams: params[moduleName] || defaultRouteParams[moduleName]});
+        const initAction = actions.Init({...initState, routeParams: params[moduleName] || defaultRouteParams[moduleName]});
         return store.dispatch(initAction) as any;
       }
     }
@@ -88,21 +89,33 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
   }
 
   protected get state(): S {
+    return this.getState();
+  }
+  //ie8不支持getter
+  protected getState(): S {
     return this.store._medux_.prevState[this.moduleName] as S;
   }
-
   protected get rootState(): R {
+    return this.getRootState();
+  }
+  //ie8不支持getter
+  protected getRootState(): R {
     return this.store._medux_.prevState as any;
   }
-
   protected get currentState(): S {
+    return this.getCurrentState();
+  }
+  //ie8不支持getter
+  protected getCurrentState(): S {
     return this.store._medux_.currentState[this.moduleName] as S;
   }
-
   protected get currentRootState(): R {
+    return this.getCurrentRootState();
+  }
+  //ie8不支持getter
+  protected getCurrentRootState(): R {
     return this.store._medux_.currentState as any;
   }
-
   protected dispatch(action: Action): Action | Promise<void> {
     return this.store.dispatch(action) as any;
   }
@@ -112,22 +125,22 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
     return actions[(handler as ActionHandler).__actionName__](rest[0]);
   }
   protected updateState(payload: Partial<S>) {
-    this.dispatch(this.callThisAction(this.UPDATE, {...this.state, ...payload}));
+    this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}));
   }
 
   @reducer
-  protected INIT(payload: S): S {
+  protected Init(payload: S): S {
     return payload;
   }
 
   @reducer
-  protected UPDATE(payload: S): S {
+  protected Update(payload: S): S {
     return payload;
   }
 
   @reducer
-  protected LOADING(payload: {[group: string]: string}): S {
-    const state = this.state;
+  protected Loading(payload: {[group: string]: string}): S {
+    const state = this.getState();
     if (!state) {
       return state;
     }
@@ -165,7 +178,7 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
             {},
             {
               get: (target: {}, key: string) => {
-                return (payload: any) => ({type: moduleName + '/' + key, payload});
+                return (payload: any) => ({type: moduleName + config.NSP + key, payload});
               },
               set: () => {
                 return true;
@@ -304,7 +317,7 @@ export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof 
   let appModule: Module | undefined = undefined;
   const inited: {[moduleName: string]: boolean} = {};
   for (let i = 0, k = paths.length; i < k; i++) {
-    const [moduleName] = paths[i].split(VSP);
+    const [moduleName] = paths[i].split(config.VSP);
     if (!inited[moduleName]) {
       inited[moduleName] = true;
       const module = moduleGetter[moduleName]() as Module;

@@ -1,4 +1,5 @@
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { createBrowserHistory, createMemoryHistory } from 'history';
 import { isServer } from '@medux/core';
 
@@ -12,6 +13,8 @@ function () {
   function BrowserHistoryProxy(history, locationToRoute) {
     this.history = history;
     this.locationToRoute = locationToRoute;
+
+    _defineProperty(this, "initialized", true);
   }
 
   var _proto = BrowserHistoryProxy.prototype;

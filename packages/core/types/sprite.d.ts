@@ -1,4 +1,3 @@
-export declare function isPlainObject(obj: any): boolean;
 export declare const TaskCountEvent = "TaskCountEvent";
 export declare enum LoadingState {
     Start = "Start",

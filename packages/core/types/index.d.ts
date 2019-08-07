@@ -1,5 +1,5 @@
 export { ActionTypes, errorAction, routeChangeAction } from './actions';
-export { defaultRouteParams, reducer, NSP, effect, logger, isServer, getStore, delayPromise, VSP } from './basic';
+export { defaultRouteParams, reducer, config, effect, logger, isServer, setConfig, getStore, delayPromise } from './basic';
 export { getActionData } from './store';
 export { setLoading, setLoadingDepthTime } from './loading';
 export { LoadingState } from './sprite';

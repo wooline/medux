@@ -2,7 +2,7 @@ import { ExportModule, HistoryProxy, LoadView, ModuleGetter, StoreOptions } from
 import { ComponentType, ReactNode } from 'react';
 export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (Provider: ComponentType<{
     children: ReactNode;
-}>, AppMainView: ComponentType<any>, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, historyProxy: HistoryProxy, storeOptions: StoreOptions): Promise<void>;
+}>, AppMainView: any, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, historyProxy: HistoryProxy, storeOptions: StoreOptions): Promise<void>;
 export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (Provider: ComponentType<{
     children: ReactNode;
 }>, AppMainView: ComponentType<any>) => any, moduleGetter: M, appModuleName: A, historyProxy: HistoryProxy, storeOptions?: StoreOptions): Promise<{

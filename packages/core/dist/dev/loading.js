@@ -1,4 +1,4 @@
-import { MetaData, NSP } from './basic';
+import { MetaData, config } from './basic';
 import { TaskCountEvent, TaskCounter } from './sprite';
 import { ActionTypes } from './actions';
 var loadings = {};
@@ -19,7 +19,7 @@ export function setLoading(item, moduleName, group) {
     return item;
   }
 
-  var key = moduleName + NSP + group;
+  var key = moduleName + config.NSP + group;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
@@ -29,7 +29,7 @@ export function setLoading(item, moduleName, group) {
       if (store) {
         var _actions;
 
-        var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.M_LOADING];
+        var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
         var action = actions((_actions = {}, _actions[group] = e.data, _actions));
         store.dispatch(action);
       }

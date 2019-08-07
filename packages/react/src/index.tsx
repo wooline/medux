@@ -1,11 +1,11 @@
 import {ExportModule, HistoryProxy, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
-import React, {ComponentType, FunctionComponent, ReactNode, useState} from 'react';
+import React, {ComponentType, ReactNode} from 'react';
 import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView} from '@medux/core';
 
 import {Provider} from 'react-redux';
 
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (Provider: ComponentType<{children: ReactNode}>, AppMainView: ComponentType<any>, ssrInitStoreKey: string) => void,
+  render: (Provider: ComponentType<{children: ReactNode}>, AppMainView: any, ssrInitStoreKey: string) => void,
   moduleGetter: M,
   appModuleName: A,
   historyProxy: HistoryProxy,
@@ -66,28 +66,37 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
     storeOptions
   );
 }
-
+interface LoadViewState {
+  Component: ComponentType<any> | null;
+}
 export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
-  const loader: FunctionComponent<any> = function Loader(props: any) {
-    const [view, setView] = useState<{Component: ComponentType} | null>(() => {
+  return class Loader extends React.Component {
+    public state: LoadViewState = {
+      Component: null,
+    };
+    public componentDidMount() {
       const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(Component => {
-          Object.keys(loader).forEach(key => (Component[key] = loader[key]));
-          Object.keys(Component).forEach(key => (loader[key] = Component[key]));
-          setView({Component});
+          Object.keys(Loader).forEach(key => (Component[key] = Loader[key]));
+          Object.keys(Component).forEach(key => (Loader[key] = Component[key]));
+          this.setState({
+            Component,
+          });
         });
-        return null;
       } else {
-        Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
-        Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
-        return {Component: moduleViewResult};
+        Object.keys(Loader).forEach(key => (moduleViewResult[key] = Loader[key]));
+        Object.keys(moduleViewResult).forEach(key => (Loader[key] = moduleViewResult[key]));
+        this.setState({
+          Component: moduleViewResult,
+        });
       }
-    });
-    return view ? <view.Component {...props} /> : Loading ? <Loading {...props} /> : null;
-  };
-
-  return loader as any;
+    }
+    public render() {
+      const {Component} = this.state;
+      return Component ? <Component {...this.props} /> : Loading ? <Loading {...this.props} /> : null;
+    }
+  } as any;
 };
 
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;

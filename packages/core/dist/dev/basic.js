@@ -1,12 +1,20 @@
 /*global global:true process:true*/
-import { setLoading } from './loading';
-export var NSP = '/';
-export var VSP = '.'; // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
+import { setLoading } from './loading'; // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
 //   self.self === self &&
 //   self) ||
 //   (typeof global == 'object' && global.global === global && global) ||
 //   this) as any;
 
+export var config = {
+  NSP: '/',
+  VSP: '.',
+  MSP: ','
+};
+export function setConfig(_config) {
+  _config.NSP && (config.NSP = _config.NSP);
+  _config.VSP && (config.VSP = _config.VSP);
+  _config.MSP && (config.MSP = _config.MSP);
+}
 export var MetaData = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
@@ -164,7 +172,7 @@ function addModuleActionCreatorList(moduleName, actionName) {
   if (!actions[actionName]) {
     actions[actionName] = function (payload) {
       return {
-        type: moduleName + NSP + actionName,
+        type: moduleName + config.NSP + actionName,
         payload: payload
       };
     };
@@ -179,16 +187,16 @@ export function injectActions(store, moduleName, handlers) {
 
         if (handler.__isReducer__ || handler.__isEffect__) {
           handler = bindThis(handler, handlers);
-          actionNames.split(',').forEach(function (actionName) {
-            actionName = actionName.trim().replace(new RegExp("^this" + NSP), "" + moduleName + NSP);
-            var arr = actionName.split(NSP);
+          actionNames.split(config.MSP).forEach(function (actionName) {
+            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
+            var arr = actionName.split(config.NSP);
 
             if (arr[1]) {
               handler.__isHandler__ = true;
               transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
             } else {
               handler.__isHandler__ = false;
-              transformAction(moduleName + NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
               addModuleActionCreatorList(moduleName, actionName);
             }
           });

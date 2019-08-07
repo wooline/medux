@@ -1,75 +1,8 @@
-import {Action, MetaData, ModelStore, NSP, RouteData, RouteState, StoreState, client, isProcessedError, isPromise, setProcessedError} from './basic';
+import {Action, MetaData, ModelStore, RouteData, RouteState, StoreState, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
 import {ActionTypes, errorAction, routeChangeAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
 import {injectModel} from './module';
-import {isPlainObject} from './sprite';
-
-/*
-let invalidViewTimer: number;
-
-function checkInvalidview() {
-  invalidViewTimer = 0;
-  const currentViews = MetaData.clientStore._medux_.currentViews;
-  const views: DisplayViews = {};
-  for (const moduleName in currentViews) {
-    if (currentViews.hasOwnProperty(moduleName)) {
-      const element = currentViews[moduleName];
-      for (const viewname in element) {
-        if (element[viewname]) {
-          const n = Object.keys(element[viewname]).length;
-          if (n) {
-            if (!views[moduleName]) {
-              views[moduleName] = {};
-            }
-            views[moduleName][viewname] = true;
-          }
-        }
-      }
-    }
-  }
-  MetaData.clientStore.dispatch(viewInvalidAction(views));
-}
-
-export function invalidview() {
-  if (MetaData.isServer) {
-    return;
-  }
-  if (!invalidViewTimer) {
-    invalidViewTimer = setTimeout(checkInvalidview, 300);
-  }
-}
-
-export function viewWillMount(moduleName: string, viewName: string, vid: string) {
-  if (MetaData.isServer) {
-    return;
-  }
-  const currentViews = MetaData.clientStore._medux_.currentViews;
-  if (!currentViews[moduleName]) {
-    currentViews[moduleName] = {[viewName]: {[vid]: true}};
-  } else {
-    const views = currentViews[moduleName];
-    if (!views[viewName]) {
-      views[viewName] = {[vid]: true};
-    } else {
-      views[viewName][vid] = true;
-    }
-  }
-  invalidview();
-}
-
-export function viewWillUnmount(moduleName: string, viewName: string, vid: string) {
-  if (MetaData.isServer) {
-    return;
-  }
-  const currentViews = MetaData.clientStore._medux_.currentViews;
-  if (currentViews[moduleName] && currentViews[moduleName][viewName]) {
-    const views = currentViews[moduleName][viewName];
-    delete views[vid];
-  }
-  invalidview();
-}
-*/
 
 export function getActionData<T>(action: Action): T {
   const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
@@ -86,6 +19,7 @@ export function getActionData<T>(action: Action): T {
   }
 }
 export interface HistoryProxy<L = any> {
+  initialized: boolean;
   getLocation(): L;
   subscribe(listener: (location: L) => void): void;
   locationToRouteData(location: L): RouteData;
@@ -111,13 +45,15 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
   };
   history.subscribe(handleLocationChange);
   store.subscribe(() => {
-    const storeRouteState = (store.getState() as StoreState).route;
-    if (!history.equal(storeRouteState.location, history.getLocation())) {
-      inTimeTravelling = true;
-      history.patch(storeRouteState.location, storeRouteState.data);
+    if (history.initialized) {
+      const storeRouteState = (store.getState() as StoreState).route;
+      if (!history.equal(storeRouteState.location, history.getLocation())) {
+        inTimeTravelling = true;
+        history.patch(storeRouteState.location, storeRouteState.data);
+      }
     }
   });
-  handleLocationChange(history.getLocation());
+  history.initialized && handleLocationChange(history.getLocation());
 }
 
 export function buildStore(
@@ -128,18 +64,12 @@ export function buildStore(
   storeEnhancers: StoreEnhancer[] = [],
   defaultRouteParams: {[moduleName: string]: {[key: string]: any} | undefined} = {}
 ): ModelStore {
-  if (!isPlainObject(preloadedState)) {
-    throw new Error('preloadedState must be plain objects!');
-  }
-  if (!isPlainObject(storeReducers)) {
-    throw new Error('storeReducers must be plain objects!');
-  }
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
   Object.assign(MetaData.defaultRouteParams, defaultRouteParams);
   storeReducers.route = (state: RouteState, action: Action) => {
-    if (action.type === ActionTypes.F_ROUTE_CHANGE) {
+    if (action.type === ActionTypes.RouteChange) {
       const payload: RouteState = getActionData(action);
       if (!state) {
         return payload;
@@ -162,7 +92,7 @@ export function buildStore(
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     // 支持泛监听，形如 */loading
-    const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${NSP}]+`), '*')] || {};
+    const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
     const handlers = {...handlersCommon, ...handlersEvery};
     const handlerModules = Object.keys(handlers);
 
@@ -196,14 +126,14 @@ export function buildStore(
   };
   const middleware = () => (next: Function) => (originalAction: Action) => {
     if (MetaData.isServer) {
-      if (originalAction.type.split(NSP)[1] === ActionTypes.M_LOADING) {
+      if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
         return originalAction;
       }
     }
     const action: Action = next(originalAction);
     const handlersCommon = store._medux_.effectMap[action.type] || {};
     // 支持泛监听，形如 */loading
-    const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp(`[^${NSP}]+`), '*')] || {};
+    const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
     const handlers = {...handlersCommon, ...handlersEvery};
     const handlerModules = Object.keys(handlers);
 
@@ -261,7 +191,7 @@ export function buildStore(
                 });
                 fun.__decoratorResults__ = undefined;
               }
-              if (action.type === ActionTypes.F_ERROR) {
+              if (action.type === ActionTypes.Error) {
                 if (isProcessedError(error) === undefined) {
                   error = setProcessedError(error, true);
                 }
@@ -285,7 +215,7 @@ export function buildStore(
   };
 
   const preLoadMiddleware = () => (next: Function) => (action: Action) => {
-    const [moduleName, actionName] = action.type.split(NSP);
+    const [moduleName, actionName] = action.type.split(config.NSP);
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
       const initModel = injectModel(MetaData.moduleGetter, moduleName, store);
       if (isPromise(initModel)) {
