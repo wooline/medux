@@ -2,10 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./types",
-    "isolatedModules": false,
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true
   },
-  "exclude": ["__test__/**/*"]
+  "exclude": ["**/__tests__/**/*"]
 }
