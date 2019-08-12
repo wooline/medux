@@ -1,35 +1,46 @@
-import { MetaData, config } from './basic';
-import { TaskCountEvent, TaskCounter } from './sprite';
-import { ActionTypes } from './actions';
+"use strict";
+
+exports.__esModule = true;
+exports.setLoadingDepthTime = setLoadingDepthTime;
+exports.setLoading = setLoading;
+
+var _basic = require("./basic");
+
+var _sprite = require("./sprite");
+
+var _actions2 = require("./actions");
+
 var loadings = {};
 var depthTime = 2;
-export function setLoadingDepthTime(second) {
+
+function setLoadingDepthTime(second) {
   depthTime = second;
 }
-export function setLoading(item, moduleName, group) {
+
+function setLoading(item, moduleName, group) {
   if (moduleName === void 0) {
-    moduleName = MetaData.appModuleName;
+    moduleName = _basic.MetaData.appModuleName;
   }
 
   if (group === void 0) {
     group = 'global';
   }
 
-  if (MetaData.isServer) {
+  if (_basic.MetaData.isServer) {
     return item;
   }
 
-  var key = moduleName + config.NSP + group;
+  var key = moduleName + _basic.config.NSP + group;
 
   if (!loadings[key]) {
-    loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, function (e) {
-      var store = MetaData.clientStore;
+    loadings[key] = new _sprite.TaskCounter(depthTime);
+    loadings[key].addListener(_sprite.TaskCountEvent, function (e) {
+      var store = _basic.MetaData.clientStore;
 
       if (store) {
         var _actions;
 
-        var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+        var actions = _basic.MetaData.actionCreatorMap[moduleName][_actions2.ActionTypes.MLoading];
         var action = actions((_actions = {}, _actions[group] = e.data, _actions));
         store.dispatch(action);
       }

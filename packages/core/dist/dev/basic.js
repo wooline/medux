@@ -1,21 +1,41 @@
+"use strict";
+
+exports.__esModule = true;
+exports.setConfig = setConfig;
+exports.isPromise = isPromise;
+exports.getStore = getStore;
+exports.isServer = isServer;
+exports.reducer = reducer;
+exports.effect = effect;
+exports.logger = logger;
+exports.delayPromise = delayPromise;
+exports.isProcessedError = isProcessedError;
+exports.setProcessedError = setProcessedError;
+exports.injectActions = injectActions;
+exports.client = exports.defaultRouteParams = exports.MetaData = exports.config = void 0;
+
+var _loading = require("./loading");
+
 /*global global:true process:true*/
-import { setLoading } from './loading'; // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
+// export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
 //   self.self === self &&
 //   self) ||
 //   (typeof global == 'object' && global.global === global && global) ||
 //   this) as any;
-
-export var config = {
+var config = {
   NSP: '/',
   VSP: '.',
   MSP: ','
 };
-export function setConfig(_config) {
+exports.config = config;
+
+function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
-export var MetaData = {
+
+var MetaData = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: null,
@@ -24,18 +44,25 @@ export var MetaData = {
   moduleGetter: null,
   defaultRouteParams: {}
 };
-export var defaultRouteParams = MetaData.defaultRouteParams;
-export var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
-export function isPromise(data) {
+exports.MetaData = MetaData;
+var defaultRouteParams = MetaData.defaultRouteParams;
+exports.defaultRouteParams = defaultRouteParams;
+var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
+exports.client = client;
+
+function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
-export function getStore() {
+
+function getStore() {
   return MetaData.clientStore;
 }
-export function isServer() {
+
+function isServer() {
   return MetaData.isServer;
 }
-export function reducer(target, key, descriptor) {
+
+function reducer(target, key, descriptor) {
   if (!key && !descriptor) {
     key = target.key;
     descriptor = target.descriptor;
@@ -47,7 +74,8 @@ export function reducer(target, key, descriptor) {
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
 }
-export function effect(loadingForGroupName, loadingForModuleName) {
+
+function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
     loadingForModuleName = MetaData.appModuleName;
@@ -71,7 +99,7 @@ export function effect(loadingForGroupName, loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+          (0, _loading.setLoading)(promiseResult, loadingForModuleName, loadingForGroupName);
         }
       };
 
@@ -85,7 +113,8 @@ export function effect(loadingForGroupName, loadingForModuleName) {
     return target.descriptor === descriptor ? target : descriptor;
   };
 }
-export function logger(before, after) {
+
+function logger(before, after) {
   return function (target, key, descriptor) {
     if (!key && !descriptor) {
       key = target.key;
@@ -101,7 +130,8 @@ export function logger(before, after) {
     fun.__decorators__.push([before, after]);
   };
 }
-export function delayPromise(second) {
+
+function delayPromise(second) {
   return function (target, key, descriptor) {
     if (!key && !descriptor) {
       key = target.key;
@@ -127,14 +157,16 @@ export function delayPromise(second) {
     };
   };
 }
-export function isProcessedError(error) {
+
+function isProcessedError(error) {
   if (typeof error !== 'object' || error.meduxProcessed === undefined) {
     return undefined;
   } else {
     return !!error.meduxProcessed;
   }
 }
-export function setProcessedError(error, meduxProcessed) {
+
+function setProcessedError(error, meduxProcessed) {
   if (typeof error === 'object') {
     error.meduxProcessed = meduxProcessed;
     return error;
@@ -179,7 +211,7 @@ function addModuleActionCreatorList(moduleName, actionName) {
   }
 }
 
-export function injectActions(store, moduleName, handlers) {
+function injectActions(store, moduleName, handlers) {
   for (var actionNames in handlers) {
     if (typeof handlers[actionNames] === 'function') {
       (function () {

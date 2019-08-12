@@ -1,16 +1,28 @@
-import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
-import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-export var TaskCountEvent = 'TaskCountEvent';
-export var LoadingState;
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+exports.__esModule = true;
+exports.TaskCounter = exports.PDispatcher = exports.PEvent = exports.LoadingState = exports.TaskCountEvent = void 0;
+
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
+
+var _inheritsLoose2 = _interopRequireDefault(require("@babel/runtime/helpers/inheritsLoose"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+var TaskCountEvent = 'TaskCountEvent';
+exports.TaskCountEvent = TaskCountEvent;
+var LoadingState;
+exports.LoadingState = LoadingState;
 
 (function (LoadingState) {
   LoadingState["Start"] = "Start";
   LoadingState["Stop"] = "Stop";
   LoadingState["Depth"] = "Depth";
-})(LoadingState || (LoadingState = {}));
+})(LoadingState || (exports.LoadingState = LoadingState = {}));
 
-export var PEvent =
+var PEvent =
 /*#__PURE__*/
 function () {
   function PEvent(name, data, bubbling) {
@@ -21,10 +33,8 @@ function () {
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
-
-    _defineProperty(this, "target", null);
-
-    _defineProperty(this, "currentTarget", null);
+    (0, _defineProperty2.default)(this, "target", null);
+    (0, _defineProperty2.default)(this, "currentTarget", null);
   }
 
   var _proto = PEvent.prototype;
@@ -39,13 +49,15 @@ function () {
 
   return PEvent;
 }();
-export var PDispatcher =
+
+exports.PEvent = PEvent;
+
+var PDispatcher =
 /*#__PURE__*/
 function () {
   function PDispatcher(parent) {
     this.parent = parent;
-
-    _defineProperty(this, "storeHandlers", {});
+    (0, _defineProperty2.default)(this, "storeHandlers", {});
   }
 
   var _proto2 = PDispatcher.prototype;
@@ -121,21 +133,21 @@ function () {
 
   return PDispatcher;
 }();
-export var TaskCounter =
+
+exports.PDispatcher = PDispatcher;
+
+var TaskCounter =
 /*#__PURE__*/
 function (_PDispatcher) {
-  _inheritsLoose(TaskCounter, _PDispatcher);
+  (0, _inheritsLoose2.default)(TaskCounter, _PDispatcher);
 
   function TaskCounter(deferSecond) {
     var _this2;
 
     _this2 = _PDispatcher.call(this) || this;
     _this2.deferSecond = deferSecond;
-
-    _defineProperty(_assertThisInitialized(_this2), "list", []);
-
-    _defineProperty(_assertThisInitialized(_this2), "ctimer", 0);
-
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "list", []);
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "ctimer", 0);
     return _this2;
   }
 
@@ -199,4 +211,6 @@ function (_PDispatcher) {
 
   return TaskCounter;
 }(PDispatcher);
+
+exports.TaskCounter = TaskCounter;
 //# sourceMappingURL=sprite.js.map

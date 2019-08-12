@@ -1,9 +1,22 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
-import { ActionTypes, errorAction, routeChangeAction } from './actions';
-import { applyMiddleware, compose, createStore } from 'redux';
-import { injectModel } from './module';
-export function getActionData(action) {
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+exports.__esModule = true;
+exports.getActionData = getActionData;
+exports.buildStore = buildStore;
+
+var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
+
+var _basic = require("./basic");
+
+var _actions = require("./actions");
+
+var _redux = require("redux");
+
+var _module = require("./module");
+
+function getActionData(action) {
   var arr = Object.keys(action).filter(function (key) {
     return key !== 'type' && key !== 'priority' && key !== 'time';
   });
@@ -13,8 +26,7 @@ export function getActionData(action) {
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
-    var data = _objectSpread({}, action);
-
+    var data = (0, _objectSpread2.default)({}, action);
     delete data['type'];
     delete data['priority'];
     delete data['time'];
@@ -37,7 +49,7 @@ function bindHistory(store, history) {
       }
 
       var data = history.locationToRouteData(location);
-      store.dispatch(routeChangeAction({
+      store.dispatch((0, _actions.routeChangeAction)({
         location: location,
         data: data
       }));
@@ -60,7 +72,7 @@ function bindHistory(store, history) {
   history.initialized && handleLocationChange(history.getLocation());
 }
 
-export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers, defaultRouteParams) {
+function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers, defaultRouteParams) {
   if (preloadedState === void 0) {
     preloadedState = {};
   }
@@ -85,17 +97,17 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     throw new Error("the reducer name 'route' is not allowed");
   }
 
-  Object.assign(MetaData.defaultRouteParams, defaultRouteParams);
+  Object.assign(_basic.MetaData.defaultRouteParams, defaultRouteParams);
 
   storeReducers.route = function (state, action) {
-    if (action.type === ActionTypes.RouteChange) {
+    if (action.type === _actions.ActionTypes.RouteChange) {
       var payload = getActionData(action);
 
       if (!state) {
         return payload;
       }
 
-      return _objectSpread({}, state, payload);
+      return (0, _objectSpread2.default)({}, state, payload);
     }
 
     return state;
@@ -110,19 +122,15 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
     var meta = store._medux_;
     meta.prevState = rootState;
-
-    var currentState = _objectSpread({}, rootState);
-
+    var currentState = (0, _objectSpread2.default)({}, rootState);
     meta.currentState = currentState;
     Object.keys(storeReducers).forEach(function (moduleName) {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
     var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-
-    var handlers = _objectSpread({}, handlersCommon, handlersEvery);
-
+    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
+    var handlers = (0, _objectSpread2.default)({}, handlersCommon, handlersEvery);
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -131,7 +139,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
       handlerModules.forEach(function (moduleName) {
         var fun = handlers[moduleName];
 
-        if (moduleName === MetaData.appModuleName) {
+        if (moduleName === _basic.MetaData.appModuleName) {
           orderList.unshift(moduleName);
         } else {
           orderList.push(moduleName);
@@ -162,8 +170,8 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
   var middleware = function middleware() {
     return function (next) {
       return function (originalAction) {
-        if (MetaData.isServer) {
-          if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
+        if (_basic.MetaData.isServer) {
+          if (originalAction.type.split(_basic.config.NSP)[1] === _actions.ActionTypes.MLoading) {
             return originalAction;
           }
         }
@@ -171,10 +179,8 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         var action = next(originalAction);
         var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-        var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-
-        var handlers = _objectSpread({}, handlersCommon, handlersEvery);
-
+        var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
+        var handlers = (0, _objectSpread2.default)({}, handlersCommon, handlersEvery);
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
@@ -183,7 +189,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
           handlerModules.forEach(function (moduleName) {
             var fun = handlers[moduleName];
 
-            if (moduleName === MetaData.appModuleName) {
+            if (moduleName === _basic.MetaData.appModuleName) {
               orderList.unshift(moduleName);
             } else {
               orderList.push(moduleName);
@@ -236,16 +242,16 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
                   fun.__decoratorResults__ = undefined;
                 }
 
-                if (action.type === ActionTypes.Error) {
-                  if (isProcessedError(error) === undefined) {
-                    error = setProcessedError(error, true);
+                if (action.type === _actions.ActionTypes.Error) {
+                  if ((0, _basic.isProcessedError)(error) === undefined) {
+                    error = (0, _basic.setProcessedError)(error, true);
                   }
 
                   throw error;
-                } else if (isProcessedError(error)) {
+                } else if ((0, _basic.isProcessedError)(error)) {
                   throw error;
                 } else {
-                  return store.dispatch(errorAction(error));
+                  return store.dispatch((0, _actions.errorAction)(error));
                 }
               });
               promiseResults.push(errorHandler);
@@ -265,14 +271,14 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
   var preLoadMiddleware = function preLoadMiddleware() {
     return function (next) {
       return function (action) {
-        var _action$type$split = action.type.split(config.NSP),
+        var _action$type$split = action.type.split(_basic.config.NSP),
             moduleName = _action$type$split[0],
             actionName = _action$type$split[1];
 
-        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-          var initModel = injectModel(MetaData.moduleGetter, moduleName, store);
+        if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
+          var initModel = (0, _module.injectModel)(_basic.MetaData.moduleGetter, moduleName, store);
 
-          if (isPromise(initModel)) {
+          if ((0, _basic.isPromise)(initModel)) {
             return initModel.then(function () {
               return next(action);
             });
@@ -284,7 +290,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     };
   };
 
-  var middlewareEnhancer = applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
+  var middlewareEnhancer = _redux.applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
 
   var enhancer = function enhancer(newCreateStore) {
     return function () {
@@ -304,13 +310,13 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
   var enhancers = [].concat(storeEnhancers, [middlewareEnhancer, enhancer]);
 
-  if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  if (_basic.MetaData.isDev && _basic.client && _basic.client.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(_basic.client.__REDUX_DEVTOOLS_EXTENSION__(_basic.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
+  store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
   bindHistory(store, history);
-  MetaData.clientStore = store;
+  _basic.MetaData.clientStore = store;
   return store;
 }
 //# sourceMappingURL=store.js.map
