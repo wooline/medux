@@ -1,9 +1,7 @@
 {
   "extends": "../../.tsconfig.json",
   "compilerOptions": {
-    "isolatedModules": false,
-    "lib": ["es2017", "dom"],
-    "types": ["jest"]
+    "isolatedModules": false
   },
   "include": ["./src"]
 }

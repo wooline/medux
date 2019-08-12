@@ -6,5 +6,5 @@
     "declaration": true,
     "emitDeclarationOnly": true
   },
-  "exclude": ["**/__tests__/**/*"]
+  "exclude": ["**/__tests__/**/*", "**/*.test.{ts,tsx}"]
 }
