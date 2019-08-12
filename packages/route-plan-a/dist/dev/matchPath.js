@@ -1,13 +1,25 @@
-import pathToRegexp from 'path-to-regexp';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+exports.__esModule = true;
+exports.compileToPath = compileToPath;
+exports.compilePath = compilePath;
+exports.matchPath = matchPath;
+exports.default = void 0;
+
+var _pathToRegexp = _interopRequireDefault(require("path-to-regexp"));
+
 var cache = {};
 var cacheLimit = 10000;
 var cacheCount = 0;
-export function compileToPath(rule) {
+
+function compileToPath(rule) {
   if (cache[rule]) {
     return cache[rule];
   }
 
-  var result = pathToRegexp.compile(rule);
+  var result = _pathToRegexp.default.compile(rule);
 
   if (cacheCount < cacheLimit) {
     cache[rule] = result;
@@ -16,7 +28,8 @@ export function compileToPath(rule) {
 
   return result;
 }
-export function compilePath(path, options) {
+
+function compilePath(path, options) {
   if (options === void 0) {
     options = {
       end: false,
@@ -33,7 +46,7 @@ export function compilePath(path, options) {
   }
 
   var keys = [];
-  var regexp = pathToRegexp(path, keys, options);
+  var regexp = (0, _pathToRegexp.default)(path, keys, options);
   var result = {
     regexp: regexp,
     keys: keys
@@ -46,7 +59,8 @@ export function compilePath(path, options) {
 
   return result;
 }
-export function matchPath(pathname, options) {
+
+function matchPath(pathname, options) {
   if (options === void 0) {
     options = {};
   }
@@ -107,5 +121,7 @@ export function matchPath(pathname, options) {
     };
   }, null);
 }
-export default matchPath;
+
+var _default = matchPath;
+exports.default = _default;
 //# sourceMappingURL=matchPath.js.map

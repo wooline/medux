@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/__tests__/route.ts"],"names":["test","expect","toBe"],"mappings":";;AAAA;AAEAA,IAAI,CAAC,4CAAD,EAA+C,YAAM;AACvDC,EAAAA,MAAM,CAAC,CAAD,CAAN,CAAUC,IAAV,CAAe,CAAf;AACD,CAFG,CAAJ","sourcesContent":["// console.log(global);\n\ntest('spa success:/videos?search={title:success}', () => {\n  expect(1).toBe(1);\n});\n"],"file":"route.js"}

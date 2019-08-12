@@ -1,14 +1,28 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import { compilePath, compileToPath, matchPath } from './matchPath';
-import assignDeep from 'deep-extend';
-import { config as coreConfig } from '@medux/core';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+exports.__esModule = true;
+exports.setConfig = setConfig;
+exports.fillRouteData = fillRouteData;
+exports.buildTransformRoute = buildTransformRoute;
+
+var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
+
+var _matchPath = require("./matchPath");
+
+var _deepExtend = _interopRequireDefault(require("deep-extend"));
+
+var _core = require("@medux/core");
+
 var config = {
   escape: true,
   dateParse: true,
   splitKey: 'q',
   defaultRouteParams: {}
 };
-export function setConfig(conf) {
+
+function setConfig(conf) {
   conf.escape !== undefined && (config.escape = conf.escape);
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
   conf.splitKey && (config.splitKey = conf.splitKey);
@@ -19,6 +33,7 @@ export function setConfig(conf) {
 //   hash: string;
 //   state: RouteData;
 // }
+
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 function excludeDefaultData(data, def) {
@@ -156,7 +171,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
           _viewName = _ref[0],
           pathConfig = _ref[1];
 
-      var match = matchPath(pathname, {
+      var match = (0, _matchPath.matchPath)(pathname, {
         path: _rule,
         exact: !pathConfig
       }); // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
@@ -164,12 +179,12 @@ function pathnameParse(pathname, routeConfig, paths, args) {
       if (match) {
         paths.push(_viewName);
 
-        var _moduleName = _viewName.split(coreConfig.VSP)[0];
+        var _moduleName = _viewName.split(_core.config.VSP)[0];
 
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = _objectSpread({}, args[_moduleName], params);
+          args[_moduleName] = (0, _objectSpread2.default)({}, args[_moduleName], params);
         }
 
         if (pathConfig) {
@@ -199,7 +214,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   for (var _rule2 in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule2)) {
       if (!ruleToKeys[_rule2]) {
-        var _compilePath = compilePath(_rule2, {
+        var _compilePath = (0, _matchPath.compilePath)(_rule2, {
           end: true,
           strict: false,
           sensitive: false
@@ -239,9 +254,9 @@ function assignRouteData(paths, stackParams, args) {
   }
 
   var firstStackParams = stackParams[0];
-  args && assignDeep(firstStackParams, args);
+  args && (0, _deepExtend.default)(firstStackParams, args);
   var views = paths.reduce(function (prev, cur) {
-    var _cur$split = cur.split(coreConfig.VSP),
+    var _cur$split = cur.split(_core.config.VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
@@ -260,12 +275,14 @@ function assignRouteData(paths, stackParams, args) {
     return prev;
   }, {});
   Object.keys(firstStackParams).forEach(function (moduleName) {
-    firstStackParams[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], firstStackParams[moduleName]);
+    firstStackParams[moduleName] = (0, _deepExtend.default)({}, config.defaultRouteParams[moduleName], firstStackParams[moduleName]);
   });
-  var params = assignDeep.apply(void 0, [{}].concat(stackParams));
+
+  var params = _deepExtend.default.apply(void 0, [{}].concat(stackParams));
+
   Object.keys(params).forEach(function (moduleName) {
     if (!firstStackParams[moduleName]) {
-      params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
+      params[moduleName] = (0, _deepExtend.default)({}, config.defaultRouteParams[moduleName], params[moduleName]);
     }
   });
   return {
@@ -276,7 +293,7 @@ function assignRouteData(paths, stackParams, args) {
   };
 }
 
-export function fillRouteData(routePayload) {
+function fillRouteData(routePayload) {
   var extend = routePayload.extend || {
     views: {},
     paths: [],
@@ -288,7 +305,7 @@ export function fillRouteData(routePayload) {
   if (routePayload.stackParams) {
     routePayload.stackParams.forEach(function (item, index) {
       if (item) {
-        stackParams[index] = assignDeep({}, stackParams[index], item);
+        stackParams[index] = (0, _deepExtend.default)({}, stackParams[index], item);
       }
     });
   }
@@ -335,7 +352,7 @@ function extractHashData(params) {
   };
 }
 
-export function buildTransformRoute(routeConfig) {
+function buildTransformRoute(routeConfig) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
       ruleToKeys = _compileConfig.ruleToKeys;
@@ -347,7 +364,7 @@ export function buildTransformRoute(routeConfig) {
     var stackParams = splitSearch(location.search);
     var hashStackParams = splitSearch(location.hash);
     hashStackParams.forEach(function (item, index) {
-      item && assignDeep(stackParams[index], item);
+      item && (0, _deepExtend.default)(stackParams[index], item);
     });
     return assignRouteData(paths, stackParams, pathsArgs);
   };
@@ -365,18 +382,18 @@ export function buildTransformRoute(routeConfig) {
 
       for (var _moduleName3 in firstStackParams) {
         if (firstStackParams[_moduleName3] && firstStackParams.hasOwnProperty(_moduleName3)) {
-          firstStackParamsFilter[_moduleName3] = _objectSpread({}, firstStackParams[_moduleName3]);
+          firstStackParamsFilter[_moduleName3] = (0, _objectSpread2.default)({}, firstStackParams[_moduleName3]);
         }
       }
 
       paths.reduce(function (parentAbsoluteViewName, viewName, index) {
         var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
         var rule = viewToRule[absoluteViewName];
-        var moduleName = viewName.split(coreConfig.VSP)[0]; //最深的一个view可以决定pathname
+        var moduleName = viewName.split(_core.config.VSP)[0]; //最深的一个view可以决定pathname
 
         if (index === paths.length - 1) {
           // const toPath = compileToPath(rule.replace(/\$$/, ''));
-          var toPath = compileToPath(rule);
+          var toPath = (0, _matchPath.compileToPath)(rule);
           pathname = toPath(params[moduleName]);
         } //pathname中传递的值可以不在params中重复传递
 

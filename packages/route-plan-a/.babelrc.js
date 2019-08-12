@@ -6,7 +6,7 @@ module.exports = {
       '@babel/preset-env',
       {
         loose: true,
-        modules: false,
+        modules: "commonjs",
         targets: {
           ie: '11',
         },
@@ -22,7 +22,7 @@ module.exports = {
     [
       '@babel/plugin-transform-runtime',
       {
-        useESModules: true,
+        useESModules: false,
       },
     ],
   ].filter(Boolean),

@@ -1,7 +1,5 @@
 module.exports = {
-  transform: {
-    '^.+\\.(js|ts|tsx)$': 'babel-jest',
-  },
+  transformIgnorePatterns: ['^.+\\.d\\.ts$'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   // setupFiles: ['./test/setup.ts'],
   testURL: 'http://localhost/',
