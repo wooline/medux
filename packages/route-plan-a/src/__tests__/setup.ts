@@ -82,6 +82,6 @@ const defaultRouteParams = {
   comments: commentsDefaultParams,
 };
 
-setConfig({defaultRouteParams});
+setConfig({escape: false, defaultRouteParams});
 
-buildTransformRoute(routeConfig);
+global['transformRoute'] = buildTransformRoute(routeConfig);

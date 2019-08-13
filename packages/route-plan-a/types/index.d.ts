@@ -24,12 +24,11 @@ export interface RouteConfig {
 declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
-declare type Params = RouteData['params'];
-export interface RoutePayload<P extends Params = Params> {
+export interface RoutePayload<P> {
     extend?: RouteData;
     stackParams?: DeepPartial<P>[];
     paths?: string[];
 }
-export declare function fillRouteData(routePayload: RoutePayload): RouteData;
+export declare function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
 export {};

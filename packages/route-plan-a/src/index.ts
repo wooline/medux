@@ -38,14 +38,14 @@ export interface TransformRoute {
 }
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
-function excludeDefaultData(data: {[moduleName: string]: any}, def: {[moduleName: string]: any}) {
+function excludeDefaultData(data: {[moduleName: string]: any}, def: {[moduleName: string]: any}, holde: boolean, views?: {[moduleName: string]: any}) {
   const result: any = {};
   Object.keys(data).forEach(moduleName => {
     let value = data[moduleName];
     const defaultValue = def[moduleName];
     if (value !== defaultValue) {
       if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        value = excludeDefaultData(value, defaultValue);
+        value = excludeDefaultData(value, defaultValue, !!views && !views[moduleName]);
       }
       if (value !== undefined) {
         result[moduleName] = value;
@@ -53,7 +53,7 @@ function excludeDefaultData(data: {[moduleName: string]: any}, def: {[moduleName
     }
   });
 
-  if (Object.keys(result).length === 0) {
+  if (Object.keys(result).length === 0 && !holde) {
     return undefined;
   }
   return result;
@@ -121,11 +121,11 @@ function searchParse(search: string): {[moduleName: string]: {[key: string]: any
   }
 }
 function joinSearchString(arr: string[]): string {
-  const strs = [];
+  const strs = [''];
   for (let i = 0, k = arr.length; i < k; i++) {
     strs.push(arr[i] || '');
   }
-  return strs.join(`${config.splitKey}=`);
+  return strs.join(`&${config.splitKey}=`);
 }
 function searchStringify(searchData: any): string {
   if (typeof searchData !== 'object') {
@@ -143,7 +143,7 @@ function searchStringify(searchData: any): string {
 }
 
 function splitSearch(search: string) {
-  const reg = new RegExp(`[&?#]${config.splitKey}=`, 'g');
+  const reg = new RegExp(`[&?#]${config.splitKey}=[^&]*`, 'g');
   const arr = search.match(reg);
   let stackParams: {[moduleName: string]: {[key: string]: any} | undefined}[] = [];
   if (arr) {
@@ -201,9 +201,9 @@ function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName: string 
 }
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
-type Params = RouteData['params'];
+// type Params = RouteData['params'];
 
-export interface RoutePayload<P extends Params = Params> {
+export interface RoutePayload<P> {
   extend?: RouteData;
   stackParams?: DeepPartial<P>[];
   paths?: string[];
@@ -238,7 +238,7 @@ function assignRouteData(paths: string[], stackParams: {[moduleName: string]: an
   });
   return {views, paths, params, stackParams};
 }
-export function fillRouteData(routePayload: RoutePayload): RouteData {
+export function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData {
   const extend: RouteData = routePayload.extend || {views: {}, paths: [], stackParams: [], params: {}};
   const stackParams = [...extend.stackParams];
   if (routePayload.stackParams) {
@@ -271,6 +271,8 @@ function extractHashData(params: {[moduleName: string]: any}) {
             searchParams[moduleName][key] = data[key];
           }
         });
+      } else {
+        searchParams[moduleName] = {};
       }
     }
   }
@@ -294,7 +296,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     return assignRouteData(paths, stackParams, pathsArgs);
   };
   const routeToLocation: RouteToLocation = routeData => {
-    const {paths, params, stackParams} = routeData;
+    const {views, paths, params, stackParams} = routeData;
     const firstStackParams = stackParams[0];
     let pathname = '';
     let firstStackParamsFilter: {[moduleName: string]: {[key: string]: any} | undefined};
@@ -330,7 +332,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     }
     //将带_前缀的变量放到hashData中
     const arr = [...stackParams];
-    arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams);
+    arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams, false, views);
     const searchStrings: string[] = [];
     const hashStrings: string[] = [];
     arr.forEach((params, index) => {
@@ -341,8 +343,8 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
 
     return {
       pathname,
-      search: '?' + joinSearchString(searchStrings),
-      hash: '#' + joinSearchString(hashStrings),
+      search: '?' + joinSearchString(searchStrings).substr(1),
+      hash: '#' + joinSearchString(hashStrings).substr(1),
     };
   };
   return {

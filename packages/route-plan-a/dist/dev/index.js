@@ -36,7 +36,7 @@ function setConfig(conf) {
 
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
-function excludeDefaultData(data, def) {
+function excludeDefaultData(data, def, holde, views) {
   var result = {};
   Object.keys(data).forEach(function (moduleName) {
     var value = data[moduleName];
@@ -44,7 +44,7 @@ function excludeDefaultData(data, def) {
 
     if (value !== defaultValue) {
       if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        value = excludeDefaultData(value, defaultValue);
+        value = excludeDefaultData(value, defaultValue, !!views && !views[moduleName]);
       }
 
       if (value !== undefined) {
@@ -53,7 +53,7 @@ function excludeDefaultData(data, def) {
     }
   });
 
-  if (Object.keys(result).length === 0) {
+  if (Object.keys(result).length === 0 && !holde) {
     return undefined;
   }
 
@@ -121,13 +121,13 @@ function searchParse(search) {
 }
 
 function joinSearchString(arr) {
-  var strs = [];
+  var strs = [''];
 
   for (var i = 0, k = arr.length; i < k; i++) {
     strs.push(arr[i] || '');
   }
 
-  return strs.join(config.splitKey + "=");
+  return strs.join("&" + config.splitKey + "=");
 }
 
 function searchStringify(searchData) {
@@ -149,7 +149,7 @@ function searchStringify(searchData) {
 }
 
 function splitSearch(search) {
-  var reg = new RegExp("[&?#]" + config.splitKey + "=", 'g');
+  var reg = new RegExp("[&?#]" + config.splitKey + "=[^&]*", 'g');
   var arr = search.match(reg);
   var stackParams = [];
 
@@ -338,6 +338,8 @@ function extractHashData(params) {
             searchParams[_moduleName2][key] = data[key];
           }
         });
+      } else {
+        searchParams[_moduleName2] = {};
       }
     }
   };
@@ -370,7 +372,8 @@ function buildTransformRoute(routeConfig) {
   };
 
   var routeToLocation = function routeToLocation(routeData) {
-    var paths = routeData.paths,
+    var views = routeData.views,
+        paths = routeData.paths,
         params = routeData.params,
         stackParams = routeData.stackParams;
     var firstStackParams = stackParams[0];
@@ -412,7 +415,7 @@ function buildTransformRoute(routeConfig) {
 
 
     var arr = [].concat(stackParams);
-    arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams);
+    arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams, false, views);
     var searchStrings = [];
     var hashStrings = [];
     arr.forEach(function (params, index) {
@@ -425,8 +428,8 @@ function buildTransformRoute(routeConfig) {
     });
     return {
       pathname: pathname,
-      search: '?' + joinSearchString(searchStrings),
-      hash: '#' + joinSearchString(hashStrings)
+      search: '?' + joinSearchString(searchStrings).substr(1),
+      hash: '#' + joinSearchString(hashStrings).substr(1)
     };
   };
 
