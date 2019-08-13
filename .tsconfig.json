@@ -13,7 +13,7 @@
     "strict": true,
     "newLine": "LF",
     "lib": ["es2017", "dom"],
-    "types": ["jest", "node"],
+    "types": ["jest"],
     "removeComments": true,
     "jsx": "react",
     "noImplicitReturns": true,
