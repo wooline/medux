@@ -59,7 +59,7 @@ function bindHistory(store, history) {
   history.initialized && handleLocationChange(history.getLocation());
 }
 
-export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers, defaultRouteParams) {
+export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
   if (preloadedState === void 0) {
     preloadedState = {};
   }
@@ -76,15 +76,9 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     storeEnhancers = [];
   }
 
-  if (defaultRouteParams === void 0) {
-    defaultRouteParams = {};
-  }
-
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
-
-  Object.assign(MetaData.defaultRouteParams, defaultRouteParams);
 
   storeReducers.route = (state, action) => {
     if (action.type === ActionTypes.RouteChange) {

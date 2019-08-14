@@ -29,7 +29,6 @@ export const MetaData: {
   clientStore: ModelStore;
   appModuleName: string;
   moduleGetter: ModuleGetter;
-  defaultRouteParams: {[moduleName: string]: {[key: string]: any} | undefined};
 } = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
@@ -37,10 +36,8 @@ export const MetaData: {
   clientStore: null as any,
   appModuleName: null as any,
   moduleGetter: null as any,
-  defaultRouteParams: {},
 };
 
-export const defaultRouteParams = MetaData.defaultRouteParams;
 export const client: Window | undefined = MetaData.isServer ? undefined : typeof window === 'undefined' ? (global as any) : window;
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;

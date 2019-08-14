@@ -107,11 +107,6 @@ export interface StoreOptions {
     initData?: {
         [key: string]: any;
     };
-    defaultRouteParams?: {
-        [moduleName: string]: {
-            [key: string]: any;
-        } | undefined;
-    };
 }
 export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
     [key: string]: any;

@@ -17,16 +17,6 @@ export declare const MetaData: {
     clientStore: ModelStore;
     appModuleName: string;
     moduleGetter: ModuleGetter;
-    defaultRouteParams: {
-        [moduleName: string]: {
-            [key: string]: any;
-        } | undefined;
-    };
-};
-export declare const defaultRouteParams: {
-    [moduleName: string]: {
-        [key: string]: any;
-    } | undefined;
 };
 export declare const client: Window | undefined;
 export interface ActionCreatorMap {

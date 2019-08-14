@@ -1,10 +1,11 @@
 import {RootState as BaseRootState, ModuleGetter, RouteData, StoreOptions} from '@medux/core/types/export';
-import {BrowserHistoryOptions, BrowserLocation, HistoryActions, MemoryHistoryOptions, createHistory} from '@medux/web';
+import {HistoryActions, Location, TransformRoute, createHistory} from '@medux/web';
 import React, {ReactElement} from 'react';
-import {Router, withRouter} from 'react-router-dom';
+import {Router, StaticRouter, withRouter} from 'react-router-dom';
 import {renderApp, renderSSR} from '@medux/react';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 
+import {History} from 'history';
 import ReactDOM from 'react-dom';
 
 //TODO use StaticRouter
@@ -22,12 +23,13 @@ export function getHistoryActions() {
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
   appModuleName: A,
-  historyOptions: BrowserHistoryOptions,
+  history: History,
+  transformRoute: TransformRoute,
   storeOptions: StoreOptions = {},
   container: string | Element | ((component: ReactElement<any>) => void) = 'root'
 ): Promise<void> {
-  const historyData = createHistory(historyOptions);
-  const {history, historyProxy} = historyData;
+  const historyData = createHistory(history, transformRoute);
+  const {historyProxy} = historyData;
   historyActions = historyData.historyActions;
 
   return renderApp(
@@ -57,12 +59,14 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
 export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
   appModuleName: A,
-  historyOptions: MemoryHistoryOptions,
+  location: Location,
+  transformRoute: TransformRoute,
   storeOptions: StoreOptions = {},
   renderToStream: boolean = false
 ): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
-  const historyData = createHistory(historyOptions);
-  const {history, historyProxy} = historyData;
+  const historyData = createHistory({} as any, transformRoute);
+  const {historyProxy} = historyData;
+  historyProxy.initialized = false;
   historyActions = historyData.historyActions;
 
   const render = renderToStream ? renderToNodeStream : renderToString;
@@ -70,9 +74,9 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
     (Provider, AppMainView) => {
       return render(
         <Provider>
-          <Router history={history}>
+          <StaticRouter location={location}>
             <AppMainView />
-          </Router>
+          </StaticRouter>
         </Provider>
       );
     },
@@ -83,4 +87,4 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
   );
 }
 
-export type RootState<G extends ModuleGetter> = BaseRootState<G, BrowserLocation>;
+export type RootState<G extends ModuleGetter> = BaseRootState<G, Location>;

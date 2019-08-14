@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, StoreState, client, config, defaultRouteParams, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, StoreState, client, config, injectActions, isPromise, reducer} from './basic';
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -50,9 +50,6 @@ export type ExportModule<Component> = <S extends BaseModelState, V extends {[key
 ) => Module<Model<S>, V, Actions<T>, N>['default'];
 
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
-  if (!defaultRouteParams[moduleName]) {
-    defaultRouteParams[moduleName] = initState.routeParams;
-  }
   const model = (store: ModelStore) => {
     const hasInjected = store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
@@ -63,7 +60,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       (handlers as any).actions = actions;
       if (!moduleState) {
         const params = store._medux_.prevState.route.data.params || {};
-        const initAction = actions.Init({...initState, routeParams: params[moduleName] || defaultRouteParams[moduleName]});
+        const initAction = actions.Init({...initState, routeParams: params[moduleName] || initState.routeParams});
         return store.dispatch(initAction) as any;
       }
     }
@@ -272,7 +269,6 @@ export interface StoreOptions {
   middlewares?: Middleware[];
   enhancers?: StoreEnhancer[];
   initData?: {[key: string]: any};
-  defaultRouteParams?: {[moduleName: string]: {[key: string]: any} | undefined};
 }
 
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
@@ -288,7 +284,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   if (storeOptions.initData || client![ssrInitStoreKey]) {
     initData = {...client![ssrInitStoreKey], ...storeOptions.initData};
   }
-  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
+  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames: string[] = [appModuleName];
   if (initData) {
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
@@ -310,7 +306,7 @@ export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof 
 ) {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
+  const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const storeState = store.getState() as StoreState;
   const {paths} = storeState.route.data;
   paths.length === 0 && paths.push(appModuleName);

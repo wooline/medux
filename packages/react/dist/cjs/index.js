@@ -1,14 +1,29 @@
-import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
-import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import React from 'react';
-import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView } from '@medux/core';
-import { Provider } from 'react-redux';
-export function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
-  return baseRenderApp(function (store, appModel, appViews, ssrInitStoreKey) {
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+exports.__esModule = true;
+exports.renderApp = renderApp;
+exports.renderSSR = renderSSR;
+exports.exportModule = exports.loadView = void 0;
+
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
+
+var _inheritsLoose2 = _interopRequireDefault(require("@babel/runtime/helpers/inheritsLoose"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+var _react = _interopRequireDefault(require("react"));
+
+var _core = require("@medux/core");
+
+var _reactRedux = require("react-redux");
+
+function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
+  return (0, _core.renderApp)(function (store, appModel, appViews, ssrInitStoreKey) {
     var ReduxProvider = function ReduxProvider(props) {
       // eslint-disable-next-line react/prop-types
-      return React.createElement(Provider, {
+      return _react.default.createElement(_reactRedux.Provider, {
         store: store
       }, props.children);
     };
@@ -16,17 +31,18 @@ export function renderApp(render, moduleGetter, appModuleName, historyProxy, sto
     render(ReduxProvider, appViews.Main, ssrInitStoreKey);
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
+
+function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  return baseRenderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
+  return (0, _core.renderSSR)(function (store, appModel, appViews, ssrInitStoreKey) {
     var data = store.getState();
 
     var ReduxProvider = function ReduxProvider(props) {
       // eslint-disable-next-line react/prop-types
-      return React.createElement(Provider, {
+      return _react.default.createElement(_reactRedux.Provider, {
         store: store
       }, props.children);
     };
@@ -38,13 +54,14 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
+
+var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
   var _temp;
 
   return _temp =
   /*#__PURE__*/
   function (_React$Component) {
-    _inheritsLoose(Loader, _React$Component);
+    (0, _inheritsLoose2.default)(Loader, _React$Component);
 
     function Loader() {
       var _this;
@@ -54,11 +71,9 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
       }
 
       _this = _React$Component.call.apply(_React$Component, [this].concat(args)) || this;
-
-      _defineProperty(_assertThisInitialized(_this), "state", {
+      (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "state", {
         Component: null
       });
-
       return _this;
     }
 
@@ -67,9 +82,9 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
     _proto.componentDidMount = function componentDidMount() {
       var _this2 = this;
 
-      var moduleViewResult = getView(moduleGetter, moduleName, viewName);
+      var moduleViewResult = (0, _core.getView)(moduleGetter, moduleName, viewName);
 
-      if (isPromiseView(moduleViewResult)) {
+      if ((0, _core.isPromiseView)(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
           Object.keys(Loader).forEach(function (key) {
             return Component[key] = Loader[key];
@@ -97,11 +112,14 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
 
     _proto.render = function render() {
       var Component = this.state.Component;
-      return Component ? React.createElement(Component, this.props) : Loading ? React.createElement(Loading, this.props) : null;
+      return Component ? _react.default.createElement(Component, this.props) : Loading ? _react.default.createElement(Loading, this.props) : null;
     };
 
     return Loader;
-  }(React.Component), _temp;
+  }(_react.default.Component), _temp;
 };
-export var exportModule = baseExportModule;
+
+exports.loadView = loadView;
+var exportModule = _core.exportModule;
+exports.exportModule = exportModule;
 //# sourceMappingURL=index.js.map

@@ -61,13 +61,11 @@ export function buildStore(
   preloadedState: {[key: string]: any} = {},
   storeReducers: ReducersMapObject<any, any> = {},
   storeMiddlewares: Middleware[] = [],
-  storeEnhancers: StoreEnhancer[] = [],
-  defaultRouteParams: {[moduleName: string]: {[key: string]: any} | undefined} = {}
+  storeEnhancers: StoreEnhancer[] = []
 ): ModelStore {
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
-  Object.assign(MetaData.defaultRouteParams, defaultRouteParams);
   storeReducers.route = (state: RouteState, action: Action) => {
     if (action.type === ActionTypes.RouteChange) {
       const payload: RouteState = getActionData(action);

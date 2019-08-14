@@ -12,7 +12,7 @@ exports.delayPromise = delayPromise;
 exports.isProcessedError = isProcessedError;
 exports.setProcessedError = setProcessedError;
 exports.injectActions = injectActions;
-exports.client = exports.defaultRouteParams = exports.MetaData = exports.config = void 0;
+exports.client = exports.MetaData = exports.config = void 0;
 
 var _loading = require("./loading");
 
@@ -41,12 +41,9 @@ var MetaData = {
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,
-  moduleGetter: null,
-  defaultRouteParams: {}
+  moduleGetter: null
 };
 exports.MetaData = MetaData;
-var defaultRouteParams = MetaData.defaultRouteParams;
-exports.defaultRouteParams = defaultRouteParams;
 var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 exports.client = client;
 

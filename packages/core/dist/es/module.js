@@ -22,13 +22,9 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
-import { MetaData, client, config, defaultRouteParams, injectActions, isPromise, reducer } from './basic';
+import { MetaData, client, config, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 export const exportModule = (moduleName, initState, ActionHandles, views) => {
-  if (!defaultRouteParams[moduleName]) {
-    defaultRouteParams[moduleName] = initState.routeParams;
-  }
-
   const model = store => {
     const hasInjected = store._medux_.injectedModules[moduleName];
 
@@ -42,7 +38,7 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
       if (!moduleState) {
         const params = store._medux_.prevState.route.data.params || {};
         const initAction = actions.Init(_objectSpread({}, initState, {
-          routeParams: params[moduleName] || defaultRouteParams[moduleName]
+          routeParams: params[moduleName] || initState.routeParams
         }));
         return store.dispatch(initAction);
       }
@@ -311,7 +307,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     initData = _objectSpread({}, client[ssrInitStoreKey], storeOptions.initData);
   }
 
-  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
+  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = [appModuleName];
 
   if (initData) {
@@ -338,7 +334,7 @@ function _renderSSR() {
 
     MetaData.appModuleName = appModuleName;
     const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-    const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
+    const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
     const storeState = store.getState();
     const {
       paths

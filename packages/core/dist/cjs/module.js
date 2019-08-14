@@ -45,10 +45,6 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
 var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
-  if (!_basic.defaultRouteParams[moduleName]) {
-    _basic.defaultRouteParams[moduleName] = initState.routeParams;
-  }
-
   var model = function model(store) {
     var hasInjected = store._medux_.injectedModules[moduleName];
 
@@ -65,7 +61,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
         var params = store._medux_.prevState.route.data.params || {};
 
         var initAction = _actions.Init((0, _objectSpread2.default)({}, initState, {
-          routeParams: params[moduleName] || _basic.defaultRouteParams[moduleName]
+          routeParams: params[moduleName] || initState.routeParams
         }));
 
         return store.dispatch(initAction);
@@ -352,7 +348,7 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
     initData = (0, _objectSpread2.default)({}, _basic.client[ssrInitStoreKey], storeOptions.initData);
   }
 
-  var store = (0, _store.buildStore)(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
+  var store = (0, _store.buildStore)(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   var preModuleNames = [appModuleName];
 
   if (initData) {
@@ -390,7 +386,7 @@ function _renderSSR() {
 
             _basic.MetaData.appModuleName = appModuleName;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-            store = (0, _store.buildStore)(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers, storeOptions.defaultRouteParams);
+            store = (0, _store.buildStore)(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             storeState = store.getState();
             paths = storeState.route.data.paths;
             paths.length === 0 && paths.push(appModuleName);

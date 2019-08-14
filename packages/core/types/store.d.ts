@@ -11,8 +11,4 @@ export interface HistoryProxy<L = any> {
 }
 export declare function buildStore(history: HistoryProxy<any>, preloadedState?: {
     [key: string]: any;
-}, storeReducers?: ReducersMapObject<any, any>, storeMiddlewares?: Middleware[], storeEnhancers?: StoreEnhancer[], defaultRouteParams?: {
-    [moduleName: string]: {
-        [key: string]: any;
-    } | undefined;
-}): ModelStore;
+}, storeReducers?: ReducersMapObject<any, any>, storeMiddlewares?: Middleware[], storeEnhancers?: StoreEnhancer[]): ModelStore;

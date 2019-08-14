@@ -1,7 +1,20 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { createBrowserHistory, createMemoryHistory } from 'history';
-import { isServer } from '@medux/core';
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+exports.__esModule = true;
+exports.createHistory = createHistory;
+exports.createHashHistory = exports.createMemoryHistory = exports.createBrowserHistory = void 0;
+
+var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+var _history = require("history");
+
+exports.createBrowserHistory = _history.createBrowserHistory;
+exports.createMemoryHistory = _history.createMemoryHistory;
+exports.createHashHistory = _history.createHashHistory;
 
 function isLocation(data) {
   return !!data['pathname'];
@@ -13,8 +26,7 @@ function () {
   function BrowserHistoryProxy(history, locationToRoute) {
     this.history = history;
     this.locationToRoute = locationToRoute;
-
-    _defineProperty(this, "initialized", true);
+    (0, _defineProperty2.default)(this, "initialized", true);
   }
 
   var _proto = BrowserHistoryProxy.prototype;
@@ -36,7 +48,7 @@ function () {
   };
 
   _proto.patch = function patch(location, routeData) {
-    this.history.push(_objectSpread({}, location, {
+    this.history.push((0, _objectSpread2.default)({}, location, {
       state: routeData
     }));
   };
@@ -62,7 +74,7 @@ function () {
     } else {
       var _location = this.routeToLocation(data);
 
-      this.history.push(_objectSpread({}, _location, {
+      this.history.push((0, _objectSpread2.default)({}, _location, {
         state: data
       }));
     }
@@ -76,7 +88,7 @@ function () {
     } else {
       var _location2 = this.routeToLocation(data);
 
-      this.history.replace(_objectSpread({}, _location2, {
+      this.history.replace((0, _objectSpread2.default)({}, _location2, {
         state: data
       }));
     }
@@ -97,12 +109,10 @@ function () {
   return BrowserHistoryActions;
 }();
 
-export function createHistory(options) {
-  var history = isServer() ? createMemoryHistory(options) : createBrowserHistory(options);
-  var historyProxy = new BrowserHistoryProxy(history, options.locationToRoute);
-  var historyActions = new BrowserHistoryActions(history, options.routeToLocation);
+function createHistory(history, transformRoute) {
+  var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
+  var historyActions = new BrowserHistoryActions(history, transformRoute.routeToLocation);
   return {
-    history: history,
     historyProxy: historyProxy,
     historyActions: historyActions
   };
