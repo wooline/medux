@@ -65,5 +65,5 @@
     "webpack-manifest-plugin": "~2.0.4",
     "yargs": "~13.2.4"
   },
-  "gitHead": "8706b4bef5daa6656de8dc26c0a5422b33ae8403"
+  "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
