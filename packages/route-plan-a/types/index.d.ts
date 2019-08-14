@@ -31,4 +31,12 @@ export interface RoutePayload<P> {
 }
 export declare function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
+export interface HistoryActions<P = RouteData> {
+    push(data: P | Location | string): void;
+    replace(data: P | Location | string): void;
+    go(n: number): void;
+    goBack(): void;
+    goForward(): void;
+}
+export declare function getRouteActions<T>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>>;
 export {};

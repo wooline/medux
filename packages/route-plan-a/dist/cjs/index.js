@@ -6,6 +6,7 @@ exports.__esModule = true;
 exports.setConfig = setConfig;
 exports.fillRouteData = fillRouteData;
 exports.buildTransformRoute = buildTransformRoute;
+exports.getRouteActions = getRouteActions;
 
 var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
 
@@ -319,8 +320,8 @@ function extractHashData(params) {
 
   var _loop = function _loop(_moduleName2) {
     if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-      var data = params[_moduleName2];
-      var keys = Object.keys(data);
+      var _data = params[_moduleName2];
+      var keys = Object.keys(_data);
 
       if (keys.length > 0) {
         keys.forEach(function (key) {
@@ -329,13 +330,13 @@ function extractHashData(params) {
               hashParams[_moduleName2] = {};
             }
 
-            hashParams[_moduleName2][key] = data[key];
+            hashParams[_moduleName2][key] = _data[key];
           } else {
             if (!searchParams[_moduleName2]) {
               searchParams[_moduleName2] = {};
             }
 
-            searchParams[_moduleName2][key] = data[key];
+            searchParams[_moduleName2][key] = _data[key];
           }
         });
       } else {
@@ -436,6 +437,38 @@ function buildTransformRoute(routeConfig) {
   return {
     locationToRoute: locationToRoute,
     routeToLocation: routeToLocation
+  };
+}
+
+function getRouteActions(getHistoryActions) {
+  return {
+    push: function push(data) {
+      var args = data;
+
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data);
+      }
+
+      getHistoryActions().push(args);
+    },
+    replace: function replace(data) {
+      var args = data;
+
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data);
+      }
+
+      getHistoryActions().replace(args);
+    },
+    go: function go(n) {
+      getHistoryActions().go(n);
+    },
+    goBack: function goBack() {
+      getHistoryActions().goBack();
+    },
+    goForward: function goForward() {
+      getHistoryActions().goForward();
+    }
   };
 } // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
 //   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);

@@ -409,6 +409,42 @@ export function buildTransformRoute(routeConfig) {
     locationToRoute,
     routeToLocation
   };
+}
+export function getRouteActions(getHistoryActions) {
+  return {
+    push(data) {
+      let args = data;
+
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data);
+      }
+
+      getHistoryActions().push(args);
+    },
+
+    replace(data) {
+      let args = data;
+
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data);
+      }
+
+      getHistoryActions().replace(args);
+    },
+
+    go(n) {
+      getHistoryActions().go(n);
+    },
+
+    goBack() {
+      getHistoryActions().goBack();
+    },
+
+    goForward() {
+      getHistoryActions().goForward();
+    }
+
+  };
 } // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
 //   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 //   const locationToRoute: LocationToRoute = location => {

@@ -352,7 +352,40 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     routeToLocation,
   };
 }
-
+export interface HistoryActions<P = RouteData> {
+  push(data: P | Location | string): void;
+  replace(data: P | Location | string): void;
+  go(n: number): void;
+  goBack(): void;
+  goForward(): void;
+}
+export function getRouteActions<T>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>> {
+  return {
+    push(data) {
+      let args = data as any;
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data as RoutePayload<{}>);
+      }
+      getHistoryActions().push(args);
+    },
+    replace(data) {
+      let args = data as any;
+      if (typeof data !== 'string' && !data['pathname']) {
+        args = fillRouteData(data as RoutePayload<{}>);
+      }
+      getHistoryActions().replace(args);
+    },
+    go(n) {
+      getHistoryActions().go(n);
+    },
+    goBack() {
+      getHistoryActions().goBack();
+    },
+    goForward() {
+      getHistoryActions().goForward();
+    },
+  };
+}
 // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
 //   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 //   const locationToRoute: LocationToRoute = location => {
