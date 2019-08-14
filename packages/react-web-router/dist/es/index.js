@@ -48,7 +48,9 @@ export function buildSSR(moduleGetter, appModuleName, location, transformRoute, 
     renderToStream = false;
   }
 
-  const historyData = createHistory({}, transformRoute);
+  const historyData = createHistory({
+    listen: () => void 0
+  }, transformRoute);
   const {
     historyProxy
   } = historyData;

@@ -36,7 +36,7 @@ export type RootState<G extends ModuleGetter, L> = {
     data: {
       views: {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
       params: {[key in keyof G]?: ModuleParams<ReturnModule<G[key]>>};
-      stackParams: ({[moduleName: string]: {[key: string]: any} | undefined} | undefined)[];
+      stackParams: ({[moduleName: string]: {[key: string]: any} | undefined})[];
       paths: any;
     };
   };
@@ -277,7 +277,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   appModuleName: A,
   history: HistoryProxy,
   storeOptions: StoreOptions = {}
-): Promise<void> {
+): Promise<Store> {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
@@ -285,6 +285,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
     initData = {...client![ssrInitStoreKey], ...storeOptions.initData};
   }
   const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const reduxStore: Store = store as any;
   const preModuleNames: string[] = [appModuleName];
   if (initData) {
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
@@ -292,13 +293,17 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
     const initModel = appModule.default.model(store);
-    render(store as any, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-    return initModel;
+    render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+    if (isPromise(initModel)) {
+      return initModel.then(() => reduxStore);
+    } else {
+      return reduxStore;
+    }
   });
 }
 
 export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string},
+  render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
   moduleGetter: M,
   appModuleName: A,
   history: HistoryProxy,

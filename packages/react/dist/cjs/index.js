@@ -48,6 +48,7 @@ function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptio
     };
 
     return {
+      store: store,
       ssrInitStoreKey: ssrInitStoreKey,
       data: data,
       html: render(ReduxProvider, appViews.Main)

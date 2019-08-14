@@ -349,6 +349,7 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
   }
 
   var store = (0, _store.buildStore)(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  var reduxStore = store;
   var preModuleNames = [appModuleName];
 
   if (initData) {
@@ -361,8 +362,15 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
     var initModel = appModule.default.model(store);
-    render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-    return initModel;
+    render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+
+    if ((0, _basic.isPromise)(initModel)) {
+      return initModel.then(function () {
+        return reduxStore;
+      });
+    } else {
+      return reduxStore;
+    }
   });
 }
 

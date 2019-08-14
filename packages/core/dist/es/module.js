@@ -308,6 +308,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   }
 
   const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const reduxStore = store;
   const preModuleNames = [appModuleName];
 
   if (initData) {
@@ -318,8 +319,13 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   return getModuleListByNames(preModuleNames, moduleGetter).then((_ref) => {
     let [appModule] = _ref;
     const initModel = appModule.default.model(store);
-    render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-    return initModel;
+    render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+
+    if (isPromise(initModel)) {
+      return initModel.then(() => reduxStore);
+    } else {
+      return reduxStore;
+    }
   });
 }
 export function renderSSR(_x, _x2, _x3, _x4, _x5) {

@@ -76,7 +76,11 @@ function buildSSR(moduleGetter, appModuleName, location, transformRoute, storeOp
     renderToStream = false;
   }
 
-  var historyData = (0, _web.createHistory)({}, transformRoute);
+  var historyData = (0, _web.createHistory)({
+    listen: function listen() {
+      return void 0;
+    }
+  }, transformRoute);
   var historyProxy = historyData.historyProxy;
   historyProxy.initialized = false;
   historyActions = historyData.historyActions;

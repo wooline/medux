@@ -10,7 +10,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   appModuleName: A,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions
-): Promise<void> {
+) {
   return baseRenderApp(
     (
       store,
@@ -55,6 +55,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
         return <Provider store={store}>{props.children}</Provider>;
       };
       return {
+        store,
         ssrInitStoreKey,
         data,
         html: render(ReduxProvider, appViews.Main),

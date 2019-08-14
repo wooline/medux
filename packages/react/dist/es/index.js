@@ -30,6 +30,7 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
 
     return {
+      store,
       ssrInitStoreKey,
       data,
       html: render(ReduxProvider, appViews.Main)

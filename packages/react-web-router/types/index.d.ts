@@ -5,8 +5,8 @@ import { History } from 'history';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export declare function getHistoryActions(): HistoryActions<RouteData>;
-export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, history: History, transformRoute: TransformRoute, storeOptions?: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void)): Promise<void>;
-export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, location: Location, transformRoute: TransformRoute, storeOptions?: StoreOptions, renderToStream?: boolean): Promise<{
+export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, history: History, transformRoute: TransformRoute, storeOptions?: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void)): Promise<import("redux").Store<any, import("redux").AnyAction>>;
+export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, location: string, transformRoute: TransformRoute, storeOptions?: StoreOptions, renderToStream?: boolean): Promise<{
     html: string | ReadableStream;
     data: any;
     ssrInitStoreKey: string;

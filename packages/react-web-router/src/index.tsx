@@ -27,7 +27,7 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   transformRoute: TransformRoute,
   storeOptions: StoreOptions = {},
   container: string | Element | ((component: ReactElement<any>) => void) = 'root'
-): Promise<void> {
+) {
   const historyData = createHistory(history, transformRoute);
   const {historyProxy} = historyData;
   historyActions = historyData.historyActions;
@@ -59,12 +59,12 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
 export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
   appModuleName: A,
-  location: Location,
+  location: string,
   transformRoute: TransformRoute,
   storeOptions: StoreOptions = {},
   renderToStream: boolean = false
 ): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
-  const historyData = createHistory({} as any, transformRoute);
+  const historyData = createHistory({listen: () => void 0} as any, transformRoute);
   const {historyProxy} = historyData;
   historyProxy.initialized = false;
   historyActions = historyData.historyActions;

@@ -44,7 +44,7 @@ export declare type RootState<G extends ModuleGetter, L> = {
                 [moduleName: string]: {
                     [key: string]: any;
                 } | undefined;
-            } | undefined)[];
+            })[];
             paths: any;
         };
     };
@@ -110,16 +110,18 @@ export interface StoreOptions {
 }
 export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
     [key: string]: any;
-}, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions): Promise<void>;
+}, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions): Promise<Store>;
 export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
     [key: string]: any;
 }, ssrInitStoreKey: string) => {
     html: any;
     data: any;
     ssrInitStoreKey: string;
+    store: Store;
 }, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions): Promise<{
     html: any;
     data: any;
     ssrInitStoreKey: string;
+    store: Store<any, import("redux").AnyAction>;
 }>;
 export {};
