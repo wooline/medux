@@ -1,12 +1,12 @@
 import { RootState as BaseRootState, ModuleGetter, StoreOptions } from '@medux/core/types/export';
-import { BrowserRoutePayload, RouteConfig } from '@medux/route-plan-a';
+import { BrowserHistoryActions, BrowserRoutePayload, RouteConfig } from '@medux/route-plan-a';
 import { History } from 'history';
 import { Location, TransformRoute } from '@medux/web';
 import { ReactElement } from 'react';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
-export declare function getHistoryActions<T>(): import("../../route-plan-a/types").BrowserHistoryActions<BrowserRoutePayload<T>>;
+export declare function getHistoryActions<T>(): BrowserHistoryActions<BrowserRoutePayload<T>>;
 export interface ToUrl<T> {
     (routeOptions: BrowserRoutePayload<T>): string;
     (pathname: string, search: string, hash: string): string;
