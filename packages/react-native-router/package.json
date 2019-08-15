@@ -34,7 +34,8 @@
     "react-navigation": "^3.0.0"
   },
   "dependencies": {
-    "@medux/react": "^0.1.5"
+    "@medux/react": "^0.1.5",
+    "@medux/route-plan-a": "^0.1.6"
   },
   "devDependencies": {
     "@types/react-native": "^0.57.65",

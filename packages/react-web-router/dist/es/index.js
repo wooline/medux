@@ -1,4 +1,4 @@
-import { buildTransformRoute, fillRouteData, getBrowserRouteActions } from '@medux/route-plan-a';
+import { buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions } from '@medux/route-plan-a';
 import { createLocation } from 'history';
 import { createHistory } from '@medux/web';
 import React from 'react';
@@ -14,29 +14,7 @@ let transformRoute = undefined;
 export function getHistoryActions() {
   return getBrowserRouteActions(() => historyActions);
 }
-export function toUrl() {
-  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-    args[_key] = arguments[_key];
-  }
-
-  if (args.length === 1) {
-    const location = transformRoute.routeToLocation(fillRouteData(args[0]));
-    args = [location.pathname, location.search, location.hash];
-  }
-
-  const [pathname, search, hash] = args;
-  let url = pathname;
-
-  if (search) {
-    url += search;
-  }
-
-  if (hash) {
-    url += hash;
-  }
-
-  return url;
-}
+export const toBrowserUrl = buildToBrowserUrl(() => transformRoute);
 export function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};

@@ -7,6 +7,8 @@ import {renderApp} from '@medux/react';
 
 export {loadView, exportModule} from '@medux/react';
 
+export const toBrowserUrl = buildToBrowserUrl(() => transformRoute!);
+
 interface Location {
   data: any;
   etag: number;

@@ -400,6 +400,31 @@ export function getBrowserRouteActions<T>(getBrowserHistoryActions: () => Browse
     },
   };
 }
+export interface ToBrowserUrl<T> {
+  (routeOptions: BrowserRoutePayload<T>): string;
+  (pathname: string, search: string, hash: string): string;
+}
+export function buildToBrowserUrl(getTransformRoute: () => TransformRoute): ToBrowserUrl<any> {
+  function toUrl(routeOptions: BrowserRoutePayload<any>): string;
+  function toUrl(pathname: string, search: string, hash: string): string;
+  function toUrl(...args: any[]): string {
+    if (args.length === 1) {
+      const location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
+      args = [location.pathname, location.search, location.hash];
+    }
+    const [pathname, search, hash] = args as [string, string, string];
+    let url = pathname;
+    if (search) {
+      url += search;
+    }
+    if (hash) {
+      url += hash;
+    }
+    return url;
+  }
+  return toUrl;
+}
+
 // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
 //   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 //   const locationToRoute: LocationToRoute = location => {

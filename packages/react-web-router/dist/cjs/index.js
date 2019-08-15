@@ -4,10 +4,9 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 exports.__esModule = true;
 exports.getHistoryActions = getHistoryActions;
-exports.toUrl = toUrl;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
-exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
+exports.toBrowserUrl = exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
 
 var _routePlanA = require("@medux/route-plan-a");
 
@@ -48,32 +47,10 @@ function getHistoryActions() {
   });
 }
 
-function toUrl() {
-  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-    args[_key] = arguments[_key];
-  }
-
-  if (args.length === 1) {
-    var location = transformRoute.routeToLocation((0, _routePlanA.fillRouteData)(args[0]));
-    args = [location.pathname, location.search, location.hash];
-  }
-
-  var _ref = args,
-      pathname = _ref[0],
-      search = _ref[1],
-      hash = _ref[2];
-  var url = pathname;
-
-  if (search) {
-    url += search;
-  }
-
-  if (hash) {
-    url += hash;
-  }
-
-  return url;
-}
+var toBrowserUrl = (0, _routePlanA.buildToBrowserUrl)(function () {
+  return transformRoute;
+});
+exports.toBrowserUrl = toBrowserUrl;
 
 function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
   if (storeOptions === void 0) {

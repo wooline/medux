@@ -8,6 +8,7 @@ exports.fillRouteData = fillRouteData;
 exports.buildTransformRoute = buildTransformRoute;
 exports.fillBrowserRouteData = fillBrowserRouteData;
 exports.getBrowserRouteActions = getBrowserRouteActions;
+exports.buildToBrowserUrl = buildToBrowserUrl;
 
 var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
 
@@ -485,6 +486,38 @@ function getBrowserRouteActions(getBrowserHistoryActions) {
       getBrowserHistoryActions().goForward();
     }
   };
+}
+
+function buildToBrowserUrl(getTransformRoute) {
+  function toUrl() {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    if (args.length === 1) {
+      var _location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
+
+      args = [_location.pathname, _location.search, _location.hash];
+    }
+
+    var _ref3 = args,
+        pathname = _ref3[0],
+        search = _ref3[1],
+        hash = _ref3[2];
+    var url = pathname;
+
+    if (search) {
+      url += search;
+    }
+
+    if (hash) {
+      url += hash;
+    }
+
+    return url;
+  }
+
+  return toUrl;
 } // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
 //   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 //   const locationToRoute: LocationToRoute = location => {

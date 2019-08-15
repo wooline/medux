@@ -45,4 +45,9 @@ export interface BrowserHistoryActions<P = RouteData> {
     goForward(): void;
 }
 export declare function getBrowserRouteActions<T>(getBrowserHistoryActions: () => BrowserHistoryActions<RouteData>): BrowserHistoryActions<BrowserRoutePayload<T>>;
+export interface ToBrowserUrl<T> {
+    (routeOptions: BrowserRoutePayload<T>): string;
+    (pathname: string, search: string, hash: string): string;
+}
+export declare function buildToBrowserUrl(getTransformRoute: () => TransformRoute): ToBrowserUrl<any>;
 export {};

@@ -1,5 +1,5 @@
 import {RootState as BaseRootState, ModuleGetter, RouteData, StoreOptions} from '@medux/core/types/export';
-import {BrowserHistoryActions, BrowserRoutePayload, RouteConfig, RoutePayload, buildTransformRoute, fillRouteData, getBrowserRouteActions} from '@medux/route-plan-a';
+import {BrowserHistoryActions, BrowserRoutePayload, RouteConfig, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import {History, createLocation} from 'history';
 import {HistoryActions, Location, TransformRoute, createHistory} from '@medux/web';
 import React, {ReactElement} from 'react';
@@ -19,27 +19,8 @@ let transformRoute: TransformRoute | undefined = undefined;
 export function getHistoryActions<T>(): BrowserHistoryActions<BrowserRoutePayload<T>> {
   return getBrowserRouteActions<T>(() => historyActions!);
 }
-export interface ToUrl<T> {
-  (routeOptions: BrowserRoutePayload<T>): string;
-  (pathname: string, search: string, hash: string): string;
-}
-export function toUrl(routeOptions: BrowserRoutePayload<any>): string;
-export function toUrl(pathname: string, search: string, hash: string): string;
-export function toUrl(...args: any[]): string {
-  if (args.length === 1) {
-    const location = transformRoute!.routeToLocation(fillRouteData(args[0] as RoutePayload<any>));
-    args = [location.pathname, location.search, location.hash];
-  }
-  const [pathname, search, hash] = args as [string, string, string];
-  let url = pathname;
-  if (search) {
-    url += search;
-  }
-  if (hash) {
-    url += hash;
-  }
-  return url;
-}
+export const toBrowserUrl = buildToBrowserUrl(() => transformRoute!);
+
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
   appModuleName: A,
