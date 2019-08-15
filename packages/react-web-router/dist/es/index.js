@@ -46,7 +46,10 @@ export function buildApp(moduleGetter, appModuleName, history, routeConfig, stor
     container = 'root';
   }
 
-  transformRoute = buildTransformRoute(routeConfig);
+  if (!transformRoute) {
+    transformRoute = buildTransformRoute(routeConfig);
+  }
+
   const historyData = createHistory(history, transformRoute);
   const {
     historyProxy
@@ -66,13 +69,17 @@ export function buildApp(moduleGetter, appModuleName, history, routeConfig, stor
     }
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export function buildSSR(moduleGetter, appModuleName, location, transformRoute, storeOptions, renderToStream) {
+export function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
   if (renderToStream === void 0) {
     renderToStream = false;
+  }
+
+  if (!transformRoute) {
+    transformRoute = buildTransformRoute(routeConfig);
   }
 
   const historyData = createHistory({

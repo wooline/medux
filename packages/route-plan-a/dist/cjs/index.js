@@ -29,13 +29,7 @@ function setRouteConfig(conf) {
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
   conf.splitKey && (config.splitKey = conf.splitKey);
   conf.defaultRouteParams && (config.defaultRouteParams = conf.defaultRouteParams);
-} // interface Location {
-//   pathname: string;
-//   search: string;
-//   hash: string;
-//   state: RouteData;
-// }
-
+}
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 function excludeDefaultData(data, def, holde, views) {

@@ -84,7 +84,10 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
     container = 'root';
   }
 
-  transformRoute = (0, _routePlanA.buildTransformRoute)(routeConfig);
+  if (!transformRoute) {
+    transformRoute = (0, _routePlanA.buildTransformRoute)(routeConfig);
+  }
+
   var historyData = (0, _web.createHistory)(history, transformRoute);
   var historyProxy = historyData.historyProxy;
   historyActions = historyData.historyActions;
@@ -104,13 +107,17 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
 
-function buildSSR(moduleGetter, appModuleName, location, transformRoute, storeOptions, renderToStream) {
+function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
   if (renderToStream === void 0) {
     renderToStream = false;
+  }
+
+  if (!transformRoute) {
+    transformRoute = (0, _routePlanA.buildTransformRoute)(routeConfig);
   }
 
   var historyData = (0, _web.createHistory)({
