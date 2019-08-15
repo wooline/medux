@@ -1,17 +1,17 @@
 import { buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions } from '@medux/route-plan-a';
 import { createLocation } from 'history';
-import { createHistory } from '@medux/web';
 import React from 'react';
 import { Router, StaticRouter, withRouter } from 'react-router-dom';
 import { renderApp, renderSSR } from '@medux/react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import ReactDOM from 'react-dom';
+import { createHistory } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 let historyActions = undefined;
 let transformRoute = undefined;
-export function getHistoryActions() {
+export function getBrowserHistoryActions() {
   return getBrowserRouteActions(() => historyActions);
 }
 export const toBrowserUrl = buildToBrowserUrl(() => transformRoute);

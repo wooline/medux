@@ -1,22 +1,22 @@
 import {RootState as BaseRootState, ModuleGetter, RouteData, StoreOptions} from '@medux/core/types/export';
-import {BrowserHistoryActions, BrowserRoutePayload, RouteConfig, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
+import {BrowserHistoryActions, BrowserRoutePayload, Location, RouteConfig, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import {History, createLocation} from 'history';
-import {HistoryActions, Location, TransformRoute, createHistory} from '@medux/web';
 import React, {ReactElement} from 'react';
 import {Router, StaticRouter, withRouter} from 'react-router-dom';
 import {renderApp, renderSSR} from '@medux/react';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 
 import ReactDOM from 'react-dom';
+import {createHistory} from '@medux/web';
 
 export {loadView, exportModule} from '@medux/react';
 export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
 
-let historyActions: HistoryActions<RouteData> | undefined = undefined;
+let historyActions: BrowserHistoryActions<RouteData> | undefined = undefined;
 let transformRoute: TransformRoute | undefined = undefined;
 
-export function getHistoryActions<T>(): BrowserHistoryActions<BrowserRoutePayload<T>> {
+export function getBrowserHistoryActions<T>(): BrowserHistoryActions<BrowserRoutePayload<T>> {
   return getBrowserRouteActions<T>(() => historyActions!);
 }
 export const toBrowserUrl = buildToBrowserUrl(() => transformRoute!);

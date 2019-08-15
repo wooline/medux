@@ -3,7 +3,7 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
-exports.getHistoryActions = getHistoryActions;
+exports.getBrowserHistoryActions = getBrowserHistoryActions;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
 exports.toBrowserUrl = exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
@@ -13,8 +13,6 @@ var _routePlanA = require("@medux/route-plan-a");
 exports.setRouteConfig = _routePlanA.setRouteConfig;
 
 var _history = require("history");
-
-var _web = require("@medux/web");
 
 var _react = _interopRequireDefault(require("react"));
 
@@ -29,6 +27,8 @@ var _server = require("react-dom/server");
 
 var _reactDom = _interopRequireDefault(require("react-dom"));
 
+var _web = require("@medux/web");
+
 var _core = require("@medux/core");
 
 exports.ActionTypes = _core.ActionTypes;
@@ -41,7 +41,7 @@ exports.reducer = _core.reducer;
 var historyActions = undefined;
 var transformRoute = undefined;
 
-function getHistoryActions() {
+function getBrowserHistoryActions() {
   return (0, _routePlanA.getBrowserRouteActions)(function () {
     return historyActions;
   });
