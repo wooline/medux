@@ -1,4 +1,4 @@
-import {RouteConfig, buildTransformRoute, setConfig} from '../index';
+import {RouteConfig, buildTransformRoute, setRouteConfig} from '../index';
 
 enum ViewNames {
   'appMain' = 'app.Main',
@@ -82,6 +82,6 @@ const defaultRouteParams = {
   comments: commentsDefaultParams,
 };
 
-setConfig({escape: false, defaultRouteParams});
+setRouteConfig({escape: false, defaultRouteParams});
 
 global['transformRoute'] = buildTransformRoute(routeConfig);

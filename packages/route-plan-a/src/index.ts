@@ -10,18 +10,12 @@ const config = {
   splitKey: 'q',
   defaultRouteParams: {},
 };
-export function setConfig(conf: {escape?: boolean; dateParse?: boolean; splitKey?: string; defaultRouteParams?: {[moduleName: string]: any}}) {
+export function setRouteConfig(conf: {escape?: boolean; dateParse?: boolean; splitKey?: string; defaultRouteParams?: {[moduleName: string]: any}}) {
   conf.escape !== undefined && (config.escape = conf.escape);
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
   conf.splitKey && (config.splitKey = conf.splitKey);
   conf.defaultRouteParams && (config.defaultRouteParams = conf.defaultRouteParams);
 }
-// interface Location {
-//   pathname: string;
-//   search: string;
-//   hash: string;
-//   state: RouteData;
-// }
 
 export interface Location {
   pathname: string;
@@ -208,6 +202,7 @@ export interface RoutePayload<P> {
   stackParams?: DeepPartial<P>[];
   paths?: string[];
 }
+
 function assignRouteData(paths: string[], stackParams: {[moduleName: string]: any}[], args?: {[moduleName: string]: any}): RouteData {
   if (!stackParams[0]) {
     stackParams[0] = {};
@@ -238,6 +233,7 @@ function assignRouteData(paths: string[], stackParams: {[moduleName: string]: an
   });
   return {views, paths, params, stackParams};
 }
+
 export function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData {
   const extend: RouteData = routePayload.extend || {views: {}, paths: [], stackParams: [], params: {}};
   const stackParams = [...extend.stackParams];
@@ -352,37 +348,55 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     routeToLocation,
   };
 }
-export interface HistoryActions<P = RouteData> {
+
+export interface BrowserRoutePayload<P> {
+  extend?: RouteData;
+  params?: DeepPartial<P>;
+  paths?: string[];
+}
+export function fillBrowserRouteData<R>(routePayload: BrowserRoutePayload<R>): RouteData {
+  const extend: RouteData = routePayload.extend || {views: {}, paths: [], stackParams: [], params: {}};
+  const stackParams = [...extend.stackParams];
+  if (routePayload.params) {
+    stackParams[0] = assignDeep({}, stackParams[0], routePayload.params);
+  }
+  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+}
+
+export interface BrowserHistoryActions<P = RouteData> {
   push(data: P | Location | string): void;
   replace(data: P | Location | string): void;
   go(n: number): void;
   goBack(): void;
   goForward(): void;
 }
-export function getRouteActions<T>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>> {
+function isBrowserRoutePayload(data: string | Location | BrowserRoutePayload<any>): data is BrowserRoutePayload<any> {
+  return typeof data !== 'string' && !data['pathname'];
+}
+export function getBrowserRouteActions<T>(getBrowserHistoryActions: () => BrowserHistoryActions<RouteData>): BrowserHistoryActions<BrowserRoutePayload<T>> {
   return {
     push(data) {
       let args = data as any;
-      if (typeof data !== 'string' && !data['pathname']) {
-        args = fillRouteData(data as RoutePayload<{}>);
+      if (isBrowserRoutePayload(data)) {
+        args = fillBrowserRouteData(data);
       }
-      getHistoryActions().push(args);
+      getBrowserHistoryActions().push(args);
     },
     replace(data) {
       let args = data as any;
-      if (typeof data !== 'string' && !data['pathname']) {
-        args = fillRouteData(data as RoutePayload<{}>);
+      if (isBrowserRoutePayload(data)) {
+        args = fillBrowserRouteData(data);
       }
-      getHistoryActions().replace(args);
+      getBrowserHistoryActions().replace(args);
     },
     go(n) {
-      getHistoryActions().go(n);
+      getBrowserHistoryActions().go(n);
     },
     goBack() {
-      getHistoryActions().goBack();
+      getBrowserHistoryActions().goBack();
     },
     goForward() {
-      getHistoryActions().goForward();
+      getBrowserHistoryActions().goForward();
     },
   };
 }

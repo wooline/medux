@@ -8,7 +8,7 @@ const config = {
   splitKey: 'q',
   defaultRouteParams: {}
 };
-export function setConfig(conf) {
+export function setRouteConfig(conf) {
   conf.escape !== undefined && (config.escape = conf.escape);
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
   conf.splitKey && (config.splitKey = conf.splitKey);
@@ -410,38 +410,58 @@ export function buildTransformRoute(routeConfig) {
     routeToLocation
   };
 }
-export function getRouteActions(getHistoryActions) {
+export function fillBrowserRouteData(routePayload) {
+  const extend = routePayload.extend || {
+    views: {},
+    paths: [],
+    stackParams: [],
+    params: {}
+  };
+  const stackParams = [...extend.stackParams];
+
+  if (routePayload.params) {
+    stackParams[0] = assignDeep({}, stackParams[0], routePayload.params);
+  }
+
+  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+}
+
+function isBrowserRoutePayload(data) {
+  return typeof data !== 'string' && !data['pathname'];
+}
+
+export function getBrowserRouteActions(getBrowserHistoryActions) {
   return {
     push(data) {
       let args = data;
 
-      if (typeof data !== 'string' && !data['pathname']) {
-        args = fillRouteData(data);
+      if (isBrowserRoutePayload(data)) {
+        args = fillBrowserRouteData(data);
       }
 
-      getHistoryActions().push(args);
+      getBrowserHistoryActions().push(args);
     },
 
     replace(data) {
       let args = data;
 
-      if (typeof data !== 'string' && !data['pathname']) {
-        args = fillRouteData(data);
+      if (isBrowserRoutePayload(data)) {
+        args = fillBrowserRouteData(data);
       }
 
-      getHistoryActions().replace(args);
+      getBrowserHistoryActions().replace(args);
     },
 
     go(n) {
-      getHistoryActions().go(n);
+      getBrowserHistoryActions().go(n);
     },
 
     goBack() {
-      getHistoryActions().goBack();
+      getBrowserHistoryActions().goBack();
     },
 
     goForward() {
-      getHistoryActions().goForward();
+      getBrowserHistoryActions().goForward();
     }
 
   };

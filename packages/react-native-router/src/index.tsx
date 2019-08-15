@@ -47,7 +47,7 @@ function initNavigator(navigator: NavigationContainerComponent) {
   historyProxy.dispatchChanges();
   console.log(navigator.state);
 }
-export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(appName: string, moduleGetter: M, appModuleName: A, storeOptions: StoreOptions = {}): Promise<void> {
+export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(appName: string, moduleGetter: M, appModuleName: A, storeOptions: StoreOptions = {}) {
   return renderApp(
     (Provider, AppMainView: NavigationContainer) => {
       const App = () => (

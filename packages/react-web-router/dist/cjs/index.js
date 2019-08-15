@@ -4,9 +4,16 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 exports.__esModule = true;
 exports.getHistoryActions = getHistoryActions;
+exports.toUrl = toUrl;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
-exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
+exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
+
+var _routePlanA = require("@medux/route-plan-a");
+
+exports.setRouteConfig = _routePlanA.setRouteConfig;
+
+var _history = require("history");
 
 var _web = require("@medux/web");
 
@@ -32,14 +39,43 @@ exports.BaseModelHandlers = _core.BaseModelHandlers;
 exports.effect = _core.effect;
 exports.errorAction = _core.errorAction;
 exports.reducer = _core.reducer;
-//TODO use StaticRouter
 var historyActions = undefined;
+var transformRoute = undefined;
 
 function getHistoryActions() {
-  return historyActions;
+  return (0, _routePlanA.getBrowserRouteActions)(function () {
+    return historyActions;
+  });
 }
 
-function buildApp(moduleGetter, appModuleName, history, transformRoute, storeOptions, container) {
+function toUrl() {
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  if (args.length === 1) {
+    var location = transformRoute.routeToLocation((0, _routePlanA.fillRouteData)(args[0]));
+    args = [location.pathname, location.search, location.hash];
+  }
+
+  var _ref = args,
+      pathname = _ref[0],
+      search = _ref[1],
+      hash = _ref[2];
+  var url = pathname;
+
+  if (search) {
+    url += search;
+  }
+
+  if (hash) {
+    url += hash;
+  }
+
+  return url;
+}
+
+function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -48,6 +84,7 @@ function buildApp(moduleGetter, appModuleName, history, transformRoute, storeOpt
     container = 'root';
   }
 
+  transformRoute = (0, _routePlanA.buildTransformRoute)(routeConfig);
   var historyData = (0, _web.createHistory)(history, transformRoute);
   var historyProxy = historyData.historyProxy;
   historyActions = historyData.historyActions;
@@ -79,10 +116,10 @@ function buildSSR(moduleGetter, appModuleName, location, transformRoute, storeOp
   var historyData = (0, _web.createHistory)({
     listen: function listen() {
       return void 0;
-    }
+    },
+    location: (0, _history.createLocation)(location)
   }, transformRoute);
   var historyProxy = historyData.historyProxy;
-  historyProxy.initialized = false;
   historyActions = historyData.historyActions;
   var render = renderToStream ? _server.renderToNodeStream : _server.renderToString;
   return (0, _react2.renderSSR)(function (Provider, AppMainView) {

@@ -1,15 +1,12 @@
 const env = process.env.NODE_ENV;
 module.exports = {
   presets: [
-    env === 'production' && 'minify',
     [
       '@babel/preset-env',
       {
         loose: true,
-        modules: false,
-        targets: {
-          esmodules:true,
-        },
+        modules: env === 'cjs' ? 'cjs' : false,
+        targets: env === 'cjs' ? {android: '6'} : {esmodules: true},
       },
     ],
     '@babel/preset-react',
@@ -22,7 +19,7 @@ module.exports = {
     [
       '@babel/plugin-transform-runtime',
       {
-        useESModules: true,
+        useESModules: env === 'cjs' ? false : true,
       },
     ],
   ].filter(Boolean),

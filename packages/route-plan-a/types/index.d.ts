@@ -1,5 +1,5 @@
 import { RouteData } from '@medux/core/types/export';
-export declare function setConfig(conf: {
+export declare function setRouteConfig(conf: {
     escape?: boolean;
     dateParse?: boolean;
     splitKey?: string;
@@ -31,12 +31,18 @@ export interface RoutePayload<P> {
 }
 export declare function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
-export interface HistoryActions<P = RouteData> {
+export interface BrowserRoutePayload<P> {
+    extend?: RouteData;
+    params?: DeepPartial<P>;
+    paths?: string[];
+}
+export declare function fillBrowserRouteData<R>(routePayload: BrowserRoutePayload<R>): RouteData;
+export interface BrowserHistoryActions<P = RouteData> {
     push(data: P | Location | string): void;
     replace(data: P | Location | string): void;
     go(n: number): void;
     goBack(): void;
     goForward(): void;
 }
-export declare function getRouteActions<T>(getHistoryActions: () => HistoryActions<RouteData>): HistoryActions<RoutePayload<T>>;
+export declare function getBrowserRouteActions<T>(getBrowserHistoryActions: () => BrowserHistoryActions<RouteData>): BrowserHistoryActions<BrowserRoutePayload<T>>;
 export {};

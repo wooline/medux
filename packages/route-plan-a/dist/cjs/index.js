@@ -3,10 +3,11 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
-exports.setConfig = setConfig;
+exports.setRouteConfig = setRouteConfig;
 exports.fillRouteData = fillRouteData;
 exports.buildTransformRoute = buildTransformRoute;
-exports.getRouteActions = getRouteActions;
+exports.fillBrowserRouteData = fillBrowserRouteData;
+exports.getBrowserRouteActions = getBrowserRouteActions;
 
 var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
 
@@ -23,7 +24,7 @@ var config = {
   defaultRouteParams: {}
 };
 
-function setConfig(conf) {
+function setRouteConfig(conf) {
   conf.escape !== undefined && (config.escape = conf.escape);
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
   conf.splitKey && (config.splitKey = conf.splitKey);
@@ -440,34 +441,54 @@ function buildTransformRoute(routeConfig) {
   };
 }
 
-function getRouteActions(getHistoryActions) {
+function fillBrowserRouteData(routePayload) {
+  var extend = routePayload.extend || {
+    views: {},
+    paths: [],
+    stackParams: [],
+    params: {}
+  };
+  var stackParams = [].concat(extend.stackParams);
+
+  if (routePayload.params) {
+    stackParams[0] = (0, _deepExtend.default)({}, stackParams[0], routePayload.params);
+  }
+
+  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+}
+
+function isBrowserRoutePayload(data) {
+  return typeof data !== 'string' && !data['pathname'];
+}
+
+function getBrowserRouteActions(getBrowserHistoryActions) {
   return {
     push: function push(data) {
       var args = data;
 
-      if (typeof data !== 'string' && !data['pathname']) {
-        args = fillRouteData(data);
+      if (isBrowserRoutePayload(data)) {
+        args = fillBrowserRouteData(data);
       }
 
-      getHistoryActions().push(args);
+      getBrowserHistoryActions().push(args);
     },
     replace: function replace(data) {
       var args = data;
 
-      if (typeof data !== 'string' && !data['pathname']) {
-        args = fillRouteData(data);
+      if (isBrowserRoutePayload(data)) {
+        args = fillBrowserRouteData(data);
       }
 
-      getHistoryActions().replace(args);
+      getBrowserHistoryActions().replace(args);
     },
     go: function go(n) {
-      getHistoryActions().go(n);
+      getBrowserHistoryActions().go(n);
     },
     goBack: function goBack() {
-      getHistoryActions().goBack();
+      getBrowserHistoryActions().goBack();
     },
     goForward: function goForward() {
-      getHistoryActions().goForward();
+      getBrowserHistoryActions().goForward();
     }
   };
 } // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
