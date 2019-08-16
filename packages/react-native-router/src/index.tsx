@@ -1,4 +1,4 @@
-import {BrowserHistoryActions, BrowserRoutePayload, RouteConfig, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
+import {BrowserHistoryActions, BrowserRoutePayload, RouteConfig, ToBrowserUrl, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import {HistoryProxy, ModuleGetter, RouteData, StoreOptions} from '@medux/core/types/export';
 import {NavigationContainer, NavigationContainerComponent} from 'react-navigation';
 
@@ -14,7 +14,7 @@ let transformRoute: TransformRoute | undefined = undefined;
 export function getBrowserHistoryActions<T>(): BrowserHistoryActions<BrowserRoutePayload<T>> {
   return getBrowserRouteActions<T>(() => browserHistoryActions!);
 }
-export const toBrowserUrl = buildToBrowserUrl(() => transformRoute!);
+export const toBrowserUrl: ToBrowserUrl<any> = buildToBrowserUrl(() => transformRoute!);
 
 interface Location {
   data: any;

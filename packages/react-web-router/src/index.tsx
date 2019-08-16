@@ -1,5 +1,5 @@
 import {RootState as BaseRootState, ModuleGetter, RouteData, StoreOptions} from '@medux/core/types/export';
-import {BrowserHistoryActions, BrowserRoutePayload, Location, RouteConfig, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
+import {BrowserHistoryActions, BrowserRoutePayload, Location, RouteConfig, ToBrowserUrl, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import {History, createLocation} from 'history';
 import React, {ReactElement} from 'react';
 import {Router, StaticRouter, withRouter} from 'react-router-dom';
@@ -19,7 +19,7 @@ let transformRoute: TransformRoute | undefined = undefined;
 export function getBrowserHistoryActions<T>(): BrowserHistoryActions<BrowserRoutePayload<T>> {
   return getBrowserRouteActions<T>(() => historyActions!);
 }
-export const toBrowserUrl = buildToBrowserUrl(() => transformRoute!);
+export const toBrowserUrl: ToBrowserUrl<any> = buildToBrowserUrl(() => transformRoute!);
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
