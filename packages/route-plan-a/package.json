@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-plan-a",
-  "version": "0.1.6",
+  "version": "0.1.1",
   "description": "The practice of @medux/core in web route",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-plan-a",
   "author": "wooline <wooline@qq.com>",
@@ -31,7 +31,7 @@
     "test": "cross-env NODE_ENV=cjs jest"
   },
   "dependencies": {
-    "@medux/web": "^0.1.5",
+    "@medux/web": "^0.1.1",
     "deep-extend": "^0.6.0",
     "path-to-regexp": "^3.0.0"
   },
