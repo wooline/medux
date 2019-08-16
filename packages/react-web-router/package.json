@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@medux/react": "^0.2.0",
-    "@medux/route-plan-a": "^0.1.9",
+    "@medux/route-plan-a": "^0.2.0",
     "@medux/web": "^0.2.0",
     "@types/react-router-dom": "~4.3.4",
     "react-router-dom": "~5.0.1"
