@@ -1,4 +1,4 @@
-import {RootState as BaseRootState, ModuleGetter, RouteData, StoreOptions} from '@medux/core/types/export';
+import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core/types/export';
 import {BrowserHistoryActions, BrowserRoutePayload, Location, RouteConfig, ToBrowserUrl, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import {History, createLocation} from 'history';
 import React, {ReactElement} from 'react';
@@ -12,6 +12,12 @@ import {createHistory} from '@medux/web';
 export {loadView, exportModule} from '@medux/react';
 export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
+
+export type RouteData = import('@medux/core/types/export').RouteData;
+export type BaseModelState<R = {[key: string]: any}> = import('@medux/core/types/export').BaseModelState<R>;
+export type BrowserRoutePayloadd<P> = import('@medux/route-plan-a').BrowserRoutePayload<P>;
+export type RouteConfig = import('@medux/route-plan-a').RouteConfig;
+export type ToBrowserUrl<T> = import('@medux/route-plan-a').ToBrowserUrl<T>;
 
 let historyActions: BrowserHistoryActions<RouteData> | undefined = undefined;
 let transformRoute: TransformRoute | undefined = undefined;

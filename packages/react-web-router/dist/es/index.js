@@ -1,4 +1,4 @@
-import { buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions } from '@medux/route-plan-a';
+import { BrowserRoutePayload, RouteConfig, ToBrowserUrl, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions } from '@medux/route-plan-a';
 import { createLocation } from 'history';
 import React from 'react';
 import { Router, StaticRouter, withRouter } from 'react-router-dom';
