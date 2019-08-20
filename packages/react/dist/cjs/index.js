@@ -64,25 +64,13 @@ var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
   function (_React$Component) {
     (0, _inheritsLoose2.default)(Loader, _React$Component);
 
-    function Loader() {
+    function Loader(props, context) {
       var _this;
 
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      _this = _React$Component.call.apply(_React$Component, [this].concat(args)) || this;
+      _this = _React$Component.call(this, props, context) || this;
       (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "state", {
         Component: null
       });
-      return _this;
-    }
-
-    var _proto = Loader.prototype;
-
-    _proto.componentDidMount = function componentDidMount() {
-      var _this2 = this;
-
       var moduleViewResult = (0, _core.getView)(moduleGetter, moduleName, viewName);
 
       if ((0, _core.isPromiseView)(moduleViewResult)) {
@@ -94,7 +82,7 @@ var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
             return Loader[key] = Component[key];
           });
 
-          _this2.setState({
+          _this.setState({
             Component: Component
           });
         });
@@ -105,11 +93,15 @@ var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
         Object.keys(moduleViewResult).forEach(function (key) {
           return Loader[key] = moduleViewResult[key];
         });
-        this.setState({
+        _this.state = {
           Component: moduleViewResult
-        });
+        };
       }
-    };
+
+      return _this;
+    }
+
+    var _proto = Loader.prototype;
 
     _proto.render = function render() {
       var Component = this.state.Component;

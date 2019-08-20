@@ -75,7 +75,8 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?:
     public state: LoadViewState = {
       Component: null,
     };
-    public componentDidMount() {
+    public constructor(props: any, context?: any) {
+      super(props, context);
       const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(Component => {
@@ -88,9 +89,9 @@ export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?:
       } else {
         Object.keys(Loader).forEach(key => (moduleViewResult[key] = Loader[key]));
         Object.keys(moduleViewResult).forEach(key => (Loader[key] = moduleViewResult[key]));
-        this.setState({
+        this.state = {
           Component: moduleViewResult,
-        });
+        };
       }
     }
     public render() {

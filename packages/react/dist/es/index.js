@@ -41,15 +41,13 @@ export const loadView = (moduleGetter, moduleName, viewName, Loading) => {
   var _temp;
 
   return _temp = class Loader extends React.Component {
-    constructor() {
-      super(...arguments);
+    constructor(props, context) {
+      super(props, context);
 
       _defineProperty(this, "state", {
         Component: null
       });
-    }
 
-    componentDidMount() {
       const moduleViewResult = getView(moduleGetter, moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
@@ -63,9 +61,9 @@ export const loadView = (moduleGetter, moduleName, viewName, Loading) => {
       } else {
         Object.keys(Loader).forEach(key => moduleViewResult[key] = Loader[key]);
         Object.keys(moduleViewResult).forEach(key => Loader[key] = moduleViewResult[key]);
-        this.setState({
+        this.state = {
           Component: moduleViewResult
-        });
+        };
       }
     }
 
