@@ -6,7 +6,7 @@ module.exports = {
       {
         loose: true,
         modules: env === 'cjs' ? 'cjs' : false,
-        targets: env === 'cjs' ? {ie: '11'} : {esmodules: true},
+        targets: env === 'cjs' || env === 'esm' ? {ie: '11'} : {esmodules: true},
       },
     ],
     '@babel/preset-react',
