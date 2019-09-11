@@ -56,7 +56,7 @@ function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptio
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
 
-var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
+var loadView = function loadView(moduleName, viewName, Loading) {
   var _temp;
 
   return _temp =
@@ -71,7 +71,7 @@ var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
       (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "state", {
         Component: null
       });
-      var moduleViewResult = (0, _core.getView)(moduleGetter, moduleName, viewName);
+      var moduleViewResult = (0, _core.getView)(moduleName, viewName);
 
       if ((0, _core.isPromiseView)(moduleViewResult)) {
         moduleViewResult.then(function (Component) {

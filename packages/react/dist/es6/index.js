@@ -37,7 +37,7 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export const loadView = (moduleGetter, moduleName, viewName, Loading) => {
+export const loadView = (moduleName, viewName, Loading) => {
   var _temp;
 
   return _temp = class Loader extends React.Component {
@@ -48,7 +48,7 @@ export const loadView = (moduleGetter, moduleName, viewName, Loading) => {
         Component: null
       });
 
-      const moduleViewResult = getView(moduleGetter, moduleName, viewName);
+      const moduleViewResult = getView(moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(Component => {

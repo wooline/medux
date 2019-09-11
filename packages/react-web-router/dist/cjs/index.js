@@ -3,10 +3,10 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
-exports.getBrowserHistoryActions = getBrowserHistoryActions;
+exports.getBrowserHistory = getBrowserHistory;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
-exports.toBrowserUrl = exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
+exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
 
 var _routePlanA = require("@medux/route-plan-a");
 
@@ -41,16 +41,16 @@ exports.reducer = _core.reducer;
 var historyActions = undefined;
 var transformRoute = undefined;
 
-function getBrowserHistoryActions() {
-  return (0, _routePlanA.getBrowserRouteActions)(function () {
-    return historyActions;
-  });
+function getBrowserHistory() {
+  return {
+    historyActions: (0, _routePlanA.getBrowserRouteActions)(function () {
+      return historyActions;
+    }),
+    toUrl: (0, _routePlanA.buildToBrowserUrl)(function () {
+      return transformRoute;
+    })
+  };
 }
-
-var toBrowserUrl = (0, _routePlanA.buildToBrowserUrl)(function () {
-  return transformRoute;
-});
-exports.toBrowserUrl = toBrowserUrl;
 
 function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
   if (storeOptions === void 0) {

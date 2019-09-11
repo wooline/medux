@@ -227,8 +227,8 @@ export function injectModel(moduleGetter, moduleName, store) {
     }
   }
 }
-export function getView(moduleGetter, moduleName, viewName) {
-  moduleGetter = MetaData.moduleGetter;
+export function getView(moduleName, viewName) {
+  const moduleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
 
   if (isPromiseModule(result)) {

@@ -70,14 +70,14 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
 interface LoadViewState {
   Component: ComponentType<any> | null;
 }
-export const loadView: LoadView = (moduleGetter, moduleName, viewName, Loading?: ComponentType<any>) => {
+export const loadView: LoadView<any> = (moduleName, viewName, Loading?: ComponentType<any>) => {
   return class Loader extends React.Component {
     public state: LoadViewState = {
       Component: null,
     };
     public constructor(props: any, context?: any) {
       super(props, context);
-      const moduleViewResult = getView<ComponentType>(moduleGetter, moduleName, viewName);
+      const moduleViewResult = getView<ComponentType>(moduleName, viewName);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(Component => {
           Object.keys(Loader).forEach(key => (Component[key] = Loader[key]));

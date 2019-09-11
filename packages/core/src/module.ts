@@ -203,8 +203,8 @@ export function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG,
   }
 }
 
-export function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewName: string): T | Promise<T> {
-  moduleGetter = MetaData.moduleGetter;
+export function getView<T>(moduleName: string, viewName: string): T | Promise<T> {
+  const moduleGetter: ModuleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
     return result.then(module => {
@@ -234,8 +234,7 @@ export function getView<T>(moduleGetter: ModuleGetter, moduleName: string, viewN
   }
 }
 
-export type LoadView = <MG extends ModuleGetter, M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
-  moduleGetter: MG,
+export type LoadView<MG extends ModuleGetter> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
   moduleName: M,
   viewName: N
 ) => V[N];

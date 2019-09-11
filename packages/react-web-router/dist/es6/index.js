@@ -11,10 +11,12 @@ export { ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, er
 export { setRouteConfig } from '@medux/route-plan-a';
 let historyActions = undefined;
 let transformRoute = undefined;
-export function getBrowserHistoryActions() {
-  return getBrowserRouteActions(() => historyActions);
+export function getBrowserHistory() {
+  return {
+    historyActions: getBrowserRouteActions(() => historyActions),
+    toUrl: buildToBrowserUrl(() => transformRoute)
+  };
 }
-export const toBrowserUrl = buildToBrowserUrl(() => transformRoute);
 export function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
   if (storeOptions === void 0) {
     storeOptions = {};

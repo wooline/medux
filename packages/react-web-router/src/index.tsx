@@ -1,5 +1,5 @@
 import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core/types/export';
-import {BrowserHistoryActions, BrowserRoutePayload, Location, RouteConfig, ToBrowserUrl, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
+import {BrowserRoutePayload, Location, RouteConfig, ToBrowserUrl, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import {History, createLocation} from 'history';
 import React, {ReactElement} from 'react';
 import {Router, StaticRouter, withRouter} from 'react-router-dom';
@@ -14,18 +14,19 @@ export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, err
 export {setRouteConfig} from '@medux/route-plan-a';
 
 export type RouteData = import('@medux/core/types/export').RouteData;
+export type LoadView<MG extends ModuleGetter> = import('@medux/core/types/export').LoadView<MG>;
 export type BaseModelState<R = {[key: string]: any}> = import('@medux/core/types/export').BaseModelState<R>;
 export type BrowserRoutePayloadd<P> = import('@medux/route-plan-a').BrowserRoutePayload<P>;
 export type RouteConfig = import('@medux/route-plan-a').RouteConfig;
-export type ToBrowserUrl<T> = import('@medux/route-plan-a').ToBrowserUrl<T>;
+export type ToBrowserUrl<Params> = import('@medux/route-plan-a').ToBrowserUrl<Params>;
+export type BrowserHistoryActions<Params> = import('@medux/route-plan-a').BrowserHistoryActions<BrowserRoutePayload<Params>>;
 
 let historyActions: BrowserHistoryActions<RouteData> | undefined = undefined;
 let transformRoute: TransformRoute | undefined = undefined;
 
-export function getBrowserHistoryActions<T>(): BrowserHistoryActions<BrowserRoutePayload<T>> {
-  return getBrowserRouteActions<T>(() => historyActions!);
+export function getBrowserHistory<Params>(): {historyActions: BrowserHistoryActions<Params>; toUrl: ToBrowserUrl<Params>} {
+  return {historyActions: getBrowserRouteActions<Params>(() => historyActions!), toUrl: buildToBrowserUrl(() => transformRoute!)};
 }
-export const toBrowserUrl: ToBrowserUrl<any> = buildToBrowserUrl(() => transformRoute!);
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,

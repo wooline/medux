@@ -260,8 +260,8 @@ function injectModel(moduleGetter, moduleName, store) {
   }
 }
 
-function getView(moduleGetter, moduleName, viewName) {
-  moduleGetter = _basic.MetaData.moduleGetter;
+function getView(moduleName, viewName) {
+  var moduleGetter = _basic.MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();
 
   if (isPromiseModule(result)) {

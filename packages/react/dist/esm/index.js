@@ -39,7 +39,7 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export var loadView = function loadView(moduleGetter, moduleName, viewName, Loading) {
+export var loadView = function loadView(moduleName, viewName, Loading) {
   var _temp;
 
   return _temp =
@@ -56,7 +56,7 @@ export var loadView = function loadView(moduleGetter, moduleName, viewName, Load
         Component: null
       });
 
-      var moduleViewResult = getView(moduleGetter, moduleName, viewName);
+      var moduleViewResult = getView(moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
