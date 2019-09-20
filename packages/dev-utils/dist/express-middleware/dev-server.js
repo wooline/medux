@@ -1,8 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const tslib_1 = require("tslib");
-const axios_1 = tslib_1.__importDefault(require("axios"));
-const mm = tslib_1.__importStar(require("micromatch"));
+const axios_1 = __importDefault(require("axios"));
+const mm = __importStar(require("micromatch"));
 const Module = module.constructor;
 function getProxys(proxyMap) {
     if (typeof proxyMap === 'function') {

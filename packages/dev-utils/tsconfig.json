@@ -1,6 +1,7 @@
 {
   "extends": "../../.tsconfig.json",
   "compilerOptions": {
+    "importHelpers": false,
     "noEmit": false,
     "declaration": false,
     "baseUrl": "./src",

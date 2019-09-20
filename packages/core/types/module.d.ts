@@ -98,7 +98,7 @@ export declare function exportActions<G extends {
 };
 export declare function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void>;
 export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
-export declare type LoadView<MG extends ModuleGetter> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N) => V[N];
+export declare type LoadView<MG extends ModuleGetter, OPTS = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, options?: OPTS) => V[N];
 export interface StoreOptions {
     ssrInitStoreKey?: string;
     reducers?: ReducersMapObject;

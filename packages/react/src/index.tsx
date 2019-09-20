@@ -70,7 +70,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
 interface LoadViewState {
   Component: ComponentType<any> | null;
 }
-export const loadView: LoadView<any> = (moduleName, viewName, Loading?: ComponentType<any>) => {
+export const loadView: LoadView<any, ComponentType<any>> = (moduleName, viewName, Loading) => {
   return class Loader extends React.Component {
     public state: LoadViewState = {
       Component: null,

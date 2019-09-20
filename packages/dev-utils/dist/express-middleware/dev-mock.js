@@ -1,13 +1,22 @@
 "use strict";
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const tslib_1 = require("tslib");
-const path = tslib_1.__importStar(require("path"));
-const fs = tslib_1.__importStar(require("fs"));
-const zlib = tslib_1.__importStar(require("zlib"));
-const jsonFormat = tslib_1.__importStar(require("json-format"));
-const crypto = tslib_1.__importStar(require("crypto"));
-const mm = tslib_1.__importStar(require("micromatch"));
-const chalk_1 = tslib_1.__importDefault(require("chalk"));
+const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
+const zlib = __importStar(require("zlib"));
+const jsonFormat = __importStar(require("json-format"));
+const crypto = __importStar(require("crypto"));
+const mm = __importStar(require("micromatch"));
+const chalk_1 = __importDefault(require("chalk"));
 function checkDir(maxNum) {
     const dir = path.resolve('./mock');
     const tempDir = path.join(dir, 'temp/');

@@ -234,9 +234,10 @@ export function getView<T>(moduleName: string, viewName: string): T | Promise<T>
   }
 }
 
-export type LoadView<MG extends ModuleGetter> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
+export type LoadView<MG extends ModuleGetter, OPTS = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
   moduleName: M,
-  viewName: N
+  viewName: N,
+  options?: OPTS
 ) => V[N];
 
 function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module {

@@ -1,5 +1,6 @@
-import {Request, Response, NextFunction} from 'express';
 import * as mm from 'micromatch';
+
+import {NextFunction, Request, Response} from 'express';
 
 function getProxys(proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function) {
   if (typeof proxyMap === 'function') {
@@ -24,13 +25,16 @@ function getProxys(proxyMap: {[key: string]: any} | {context: string[] | string}
 export default function middleware(
   htmlTpl: string,
   mainModule: {default: (path: string) => Promise<{ssrInitStoreKey: string; data: any; html: string}>},
-  proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function = {}
+  proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function = {},
+  replaceTpl?: (req: Request, htmlTpl: string) => string
 ) {
   const passUrls = getProxys(proxyMap);
-  const arr = htmlTpl.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>\s*function\s+(\w+)\s*\(([^)]+)\)[^{]+{([\s\S]+)}\s*<\/script>/m);
-  global[arr![1]] = new Function(arr![2], arr![3]);
-  const htmlChunks = htmlTpl.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
+  const arr = htmlTpl.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>([\s\S]+)<\/script>/m);
+  const scripts = arr ? arr[1].trim() : '';
+  scripts && eval(scripts);
   return (req: Request, res: Response, next: NextFunction) => {
+    const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
+    const htmlChunks = htmlStr.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
     if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
       next();
     } else {

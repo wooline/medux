@@ -1,7 +1,13 @@
 "use strict";
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const tslib_1 = require("tslib");
-const mm = tslib_1.__importStar(require("micromatch"));
+const mm = __importStar(require("micromatch"));
 function getProxys(proxyMap) {
     if (typeof proxyMap === 'function') {
         proxyMap = proxyMap();
@@ -22,12 +28,14 @@ function getProxys(proxyMap) {
     }
     return Object.keys(proxyMap);
 }
-function middleware(htmlTpl, mainModule, proxyMap = {}) {
+function middleware(htmlTpl, mainModule, proxyMap = {}, replaceTpl) {
     const passUrls = getProxys(proxyMap);
-    const arr = htmlTpl.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>\s*function\s+(\w+)\s*\(([^)]+)\)[^{]+{([\s\S]+)}\s*<\/script>/m);
-    global[arr[1]] = new Function(arr[2], arr[3]);
-    const htmlChunks = htmlTpl.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
+    const arr = htmlTpl.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>([\s\S]+)<\/script>/m);
+    const scripts = arr ? arr[1].trim() : '';
+    scripts && eval(scripts);
     return (req, res, next) => {
+        const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
+        const htmlChunks = htmlStr.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
         if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
             next();
         }
