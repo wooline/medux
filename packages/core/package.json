@@ -30,7 +30,7 @@
   "scripts": {
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
     "lint": "eslint \"./src/**/*.ts\"",
-    "types": "tsc && tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
+    "types": "tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
     "build:es6": "cross-env NODE_ENV=es6 babel ./src --out-dir ./dist/es6  --extensions \".ts,.tsx\" --source-maps",
     "build:cjs": "cross-env NODE_ENV=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\" --source-maps",
     "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\" --source-maps",

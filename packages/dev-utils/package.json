@@ -21,10 +21,12 @@
     "build": "tsc"
   },
   "peerDependencies": {
+    "express": "^4.0.0",
     "axios": "^0.18.0",
     "chalk": "^2.4.0",
     "json-format": "^1.0.0",
-    "micromatch": "^4.0.0"
+    "micromatch": "^4.0.0",
+    "http-proxy-middleware": "^0.20.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
