@@ -9,13 +9,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
-const zlib = __importStar(require("zlib"));
-const jsonFormat = __importStar(require("json-format"));
 const crypto = __importStar(require("crypto"));
+const fs = __importStar(require("fs"));
+const jsonFormat = __importStar(require("json-format"));
 const mm = __importStar(require("micromatch"));
+const path = __importStar(require("path"));
+const zlib = __importStar(require("zlib"));
 const chalk_1 = __importDefault(require("chalk"));
 function checkDir(maxNum) {
     const dir = path.resolve('./mock');
@@ -182,7 +181,7 @@ function hitMockFile(fileName) {
     }
     return '';
 }
-function middleware(enable, proxyMap, enableRecord = false, maxNum = 1000, cacheTimeout = 3000) {
+module.exports = function middleware(enable, proxyMap, enableRecord = false, maxNum = 1000, cacheTimeout = 3000) {
     if (!enable || !proxyMap) {
         return function (req, res, next) {
             next();
@@ -260,5 +259,4 @@ function middleware(enable, proxyMap, enableRecord = false, maxNum = 1000, cache
             }
         }
     };
-}
-exports.default = middleware;
+};

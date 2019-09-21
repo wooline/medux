@@ -22,19 +22,22 @@ function getProxys(proxyMap: {[key: string]: any} | {context: string[] | string}
   return Object.keys(proxyMap);
 }
 
-export default function middleware(
+export = function middleware(
   htmlTpl: string,
   mainModule: {default: (path: string) => Promise<{ssrInitStoreKey: string; data: any; html: string}>},
   proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function = {},
   replaceTpl?: (req: Request, htmlTpl: string) => string
 ) {
   const passUrls = getProxys(proxyMap);
-  const arr = htmlTpl.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>([\s\S]+)<\/script>/m);
-  const scripts = arr ? arr[1].trim() : '';
-  scripts && eval(scripts);
+  const arr = htmlTpl.match(/<!--\s*{server-script}\s*-->\s*<script[^>]*>([\s\S]+?)<\/script>/m);
+  if (arr) {
+    htmlTpl = htmlTpl.replace(arr[0], '');
+    const scripts = arr[1].trim();
+    scripts && eval(scripts);
+  }
   return (req: Request, res: Response, next: NextFunction) => {
     const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
-    const htmlChunks = htmlStr.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
+    const htmlChunks = htmlStr.split(/<!--\s*{response-chunk}\s*-->/);
     if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
       next();
     } else {
@@ -65,18 +68,10 @@ export default function middleware(
           .then(result => {
             const {ssrInitStoreKey, data, html} = result;
             if (res.headersSent) {
-              res.write(
-                htmlChunks[1]
-                  .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                  .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`)
-              );
+              res.write(htmlChunks[1].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
               res.end();
             } else {
-              res.send(
-                htmlChunks[0]
-                  .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                  .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`)
-              );
+              res.send(htmlChunks[0].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
             }
           })
           .catch(errorHandler);
@@ -85,4 +80,4 @@ export default function middleware(
       }
     }
   };
-}
+};

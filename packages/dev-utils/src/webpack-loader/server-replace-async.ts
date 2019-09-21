@@ -1,3 +1,3 @@
-export default function loader(source: string) {
+export = function loader(source: string) {
   return source.replace(/import\s*\(/gm, 'require(');
-}
+};

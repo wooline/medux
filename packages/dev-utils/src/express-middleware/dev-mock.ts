@@ -1,12 +1,13 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import * as zlib from 'zlib';
-import * as jsonFormat from 'json-format';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as jsonFormat from 'json-format';
 import * as mm from 'micromatch';
-import chalk from 'chalk';
+import * as path from 'path';
+import * as zlib from 'zlib';
 
-import {Request, Response, NextFunction} from 'express';
+import {NextFunction, Request, Response} from 'express';
+
+import chalk from 'chalk';
 
 function checkDir(maxNum: number) {
   const dir = path.resolve('./mock');
@@ -178,7 +179,7 @@ function hitMockFile(fileName: string): string | RegExpMatchArray {
   return '';
 }
 
-export default function middleware(
+export = function middleware(
   enable: boolean,
   proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function,
   enableRecord: boolean = false,
@@ -262,4 +263,4 @@ export default function middleware(
       }
     }
   };
-}
+};

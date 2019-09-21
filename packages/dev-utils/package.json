@@ -15,9 +15,8 @@
     "dist/"
   ],
   "scripts": {
-    "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
+    "prebuild": "yarn lint && rimraf ./dist",
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
-    "types": "tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
     "build": "tsc"
   },
   "peerDependencies": {

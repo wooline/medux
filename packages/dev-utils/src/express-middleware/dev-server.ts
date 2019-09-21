@@ -1,6 +1,8 @@
-import axios from 'axios';
-import {Request, Response, NextFunction} from 'express';
 import * as mm from 'micromatch';
+
+import {NextFunction, Request, Response} from 'express';
+
+import axios from 'axios';
 
 const Module: {new (): any} = module.constructor as any;
 
@@ -24,7 +26,7 @@ function getProxys(proxyMap: {[key: string]: any} | {context: string[] | string}
   return Object.keys(proxyMap);
 }
 
-export default function middleware(enable: boolean, proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function = {}) {
+export = function middleware(enable: boolean, proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function = {}) {
   if (!enable) {
     return function(req: Request, res: Response, next: NextFunction) {
       next();
@@ -56,9 +58,13 @@ export default function middleware(enable: boolean, proxyMap: {[key: string]: an
       try {
         Promise.all([axios.get(`${req.protocol}://${req.headers.host}/server/main.js`), axios.get(`${req.protocol}://${req.headers.host}/index.html`)])
           .then(([main, tpl]) => {
-            const arr = tpl.data.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>\s*function\s+(\w+)\s*\(([^)]+)\)[^{]+{([\s\S]+)}\s*<\/script>/m);
-            global[arr[1]] = new Function(arr[2], arr[3]);
-            const htmlChunks = tpl.data.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
+            const arr = tpl.data.match(/<!--\s*{server-script}\s*-->\s*<script[^>]*>([\s\S]+?)<\/script>/m);
+            if (arr) {
+              tpl.data = tpl.data.replace(arr[0], '');
+              const scripts = arr[1].trim();
+              scripts && eval(scripts);
+            }
+            const htmlChunks = tpl.data.split(/<!--\s*{response-chunk}\s*-->/);
             if (htmlChunks[1]) {
               res.write(htmlChunks[0]);
             }
@@ -67,18 +73,10 @@ export default function middleware(enable: boolean, proxyMap: {[key: string]: an
             return mainModule.exports.default(req.url).then((result: {ssrInitStoreKey: string; data: any; html: string}) => {
               const {ssrInitStoreKey, data, html} = result;
               if (res.headersSent) {
-                res.write(
-                  htmlChunks[1]
-                    .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                    .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`)
-                );
+                res.write(htmlChunks[1].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
                 res.end();
               } else {
-                res.send(
-                  htmlChunks[0]
-                    .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                    .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`)
-                );
+                res.send(htmlChunks[0].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
               }
             });
           })
@@ -88,4 +86,4 @@ export default function middleware(enable: boolean, proxyMap: {[key: string]: an
       }
     }
   };
-}
+};

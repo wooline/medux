@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -9,9 +6,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 const mm = __importStar(require("micromatch"));
+const axios_1 = __importDefault(require("axios"));
 const Module = module.constructor;
 function getProxys(proxyMap) {
     if (typeof proxyMap === 'function') {
@@ -33,7 +32,7 @@ function getProxys(proxyMap) {
     }
     return Object.keys(proxyMap);
 }
-function middleware(enable, proxyMap = {}) {
+module.exports = function middleware(enable, proxyMap = {}) {
     if (!enable) {
         return function (req, res, next) {
             next();
@@ -69,9 +68,13 @@ function middleware(enable, proxyMap = {}) {
             try {
                 Promise.all([axios_1.default.get(`${req.protocol}://${req.headers.host}/server/main.js`), axios_1.default.get(`${req.protocol}://${req.headers.host}/index.html`)])
                     .then(([main, tpl]) => {
-                    const arr = tpl.data.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>\s*function\s+(\w+)\s*\(([^)]+)\)[^{]+{([\s\S]+)}\s*<\/script>/m);
-                    global[arr[1]] = new Function(arr[2], arr[3]);
-                    const htmlChunks = tpl.data.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
+                    const arr = tpl.data.match(/<!--\s*{server-script}\s*-->\s*<script[^>]*>([\s\S]+?)<\/script>/m);
+                    if (arr) {
+                        tpl.data = tpl.data.replace(arr[0], '');
+                        const scripts = arr[1].trim();
+                        scripts && eval(scripts);
+                    }
+                    const htmlChunks = tpl.data.split(/<!--\s*{response-chunk}\s*-->/);
                     if (htmlChunks[1]) {
                         res.write(htmlChunks[0]);
                     }
@@ -80,15 +83,11 @@ function middleware(enable, proxyMap = {}) {
                     return mainModule.exports.default(req.url).then((result) => {
                         const { ssrInitStoreKey, data, html } = result;
                         if (res.headersSent) {
-                            res.write(htmlChunks[1]
-                                .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                                .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
+                            res.write(htmlChunks[1].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
                             res.end();
                         }
                         else {
-                            res.send(htmlChunks[0]
-                                .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                                .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
+                            res.send(htmlChunks[0].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
                         }
                     });
                 })
@@ -99,5 +98,4 @@ function middleware(enable, proxyMap = {}) {
             }
         }
     };
-}
-exports.default = middleware;
+};

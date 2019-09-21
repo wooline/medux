@@ -6,7 +6,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-Object.defineProperty(exports, "__esModule", { value: true });
 const mm = __importStar(require("micromatch"));
 function getProxys(proxyMap) {
     if (typeof proxyMap === 'function') {
@@ -28,14 +27,17 @@ function getProxys(proxyMap) {
     }
     return Object.keys(proxyMap);
 }
-function middleware(htmlTpl, mainModule, proxyMap = {}, replaceTpl) {
+module.exports = function middleware(htmlTpl, mainModule, proxyMap = {}, replaceTpl) {
     const passUrls = getProxys(proxyMap);
-    const arr = htmlTpl.match(/<!--\s*{react-coat-init-env}\s*-->\s*<script>([\s\S]+)<\/script>/m);
-    const scripts = arr ? arr[1].trim() : '';
-    scripts && eval(scripts);
+    const arr = htmlTpl.match(/<!--\s*{server-script}\s*-->\s*<script[^>]*>([\s\S]+?)<\/script>/m);
+    if (arr) {
+        htmlTpl = htmlTpl.replace(arr[0], '');
+        const scripts = arr[1].trim();
+        scripts && eval(scripts);
+    }
     return (req, res, next) => {
         const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
-        const htmlChunks = htmlStr.split(/<!--\s*{react-coat-response-chunk}\s*-->/);
+        const htmlChunks = htmlStr.split(/<!--\s*{response-chunk}\s*-->/);
         if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
             next();
         }
@@ -70,15 +72,11 @@ function middleware(htmlTpl, mainModule, proxyMap = {}, replaceTpl) {
                     .then(result => {
                     const { ssrInitStoreKey, data, html } = result;
                     if (res.headersSent) {
-                        res.write(htmlChunks[1]
-                            .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                            .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
+                        res.write(htmlChunks[1].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
                         res.end();
                     }
                     else {
-                        res.send(htmlChunks[0]
-                            .replace(/[^>]*<!--\s*{react-coat-html}\s*-->[^<]*/m, `${html}`)
-                            .replace(/<!--\s*{react-coat-script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
+                        res.send(htmlChunks[0].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));
                     }
                 })
                     .catch(errorHandler);
@@ -88,5 +86,4 @@ function middleware(htmlTpl, mainModule, proxyMap = {}, replaceTpl) {
             }
         }
     };
-}
-exports.default = middleware;
+};
