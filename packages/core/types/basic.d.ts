@@ -81,10 +81,10 @@ export interface CurrentViews {
     };
 }
 export interface ReducerHandler extends ActionHandler {
-    (payload?: any): BaseModelState;
+    (payload: any): BaseModelState;
 }
 export interface EffectHandler extends ActionHandler {
-    (payload?: any): Promise<any>;
+    (payload: any, prevRootState: StoreState): Promise<any>;
 }
 export interface ActionHandlerList {
     [actionName: string]: ActionHandler;

@@ -36,8 +36,6 @@ module.exports = function middleware(htmlTpl, mainModule, proxyMap = {}, replace
         scripts && eval(scripts);
     }
     return (req, res, next) => {
-        const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
-        const htmlChunks = htmlStr.split(/<!--\s*{response-chunk}\s*-->/);
         if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
             next();
         }
@@ -63,9 +61,6 @@ module.exports = function middleware(htmlTpl, mainModule, proxyMap = {}, replace
                     }
                 }
             };
-            if (htmlChunks[1]) {
-                res.write(htmlChunks[0]);
-            }
             try {
                 mainModule
                     .default(req.url)
@@ -82,7 +77,12 @@ module.exports = function middleware(htmlTpl, mainModule, proxyMap = {}, replace
                     .catch(errorHandler);
             }
             catch (err) {
-                errorHandler(err);
+                return errorHandler(err);
+            }
+            const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
+            const htmlChunks = htmlStr.split(/<!--\s*{response-chunk}\s*-->/);
+            if (htmlChunks[1]) {
+                res.write(htmlChunks[0]);
             }
         }
     };

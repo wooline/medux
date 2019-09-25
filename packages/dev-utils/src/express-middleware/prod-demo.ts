@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import * as mm from 'micromatch';
 
 import {NextFunction, Request, Response} from 'express';
@@ -36,8 +37,6 @@ export = function middleware(
     scripts && eval(scripts);
   }
   return (req: Request, res: Response, next: NextFunction) => {
-    const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
-    const htmlChunks = htmlStr.split(/<!--\s*{response-chunk}\s*-->/);
     if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
       next();
     } else {
@@ -59,9 +58,7 @@ export = function middleware(
           }
         }
       };
-      if (htmlChunks[1]) {
-        res.write(htmlChunks[0]);
-      }
+
       try {
         mainModule
           .default(req.url)
@@ -76,7 +73,12 @@ export = function middleware(
           })
           .catch(errorHandler);
       } catch (err) {
-        errorHandler(err);
+        return errorHandler(err);
+      }
+      const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
+      const htmlChunks = htmlStr.split(/<!--\s*{response-chunk}\s*-->/);
+      if (htmlChunks[1]) {
+        res.write(htmlChunks[0]);
       }
     }
   };

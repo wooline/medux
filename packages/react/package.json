@@ -1,6 +1,6 @@
 {
   "name": "@medux/react",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "The practice of @medux/core in react",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react",
   "author": "wooline <wooline@qq.com>",

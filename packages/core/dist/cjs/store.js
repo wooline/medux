@@ -170,6 +170,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
           }
         }
 
+        var prevState = store._medux_.prevState;
         var action = next(originalAction);
         var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
@@ -200,7 +201,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun(getActionData(action));
+              var effectResult = fun(getActionData(action), prevState);
               var decorators = fun.__decorators__;
 
               if (decorators) {

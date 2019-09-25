@@ -157,6 +157,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
       }
     }
 
+    const prevState = store._medux_.prevState;
     const action = next(originalAction);
     const handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
@@ -189,7 +190,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(getActionData(action));
+          const effectResult = fun(getActionData(action), prevState);
           const decorators = fun.__decorators__;
 
           if (decorators) {
