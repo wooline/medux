@@ -1,44 +1,37 @@
 "use strict";
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-const crypto = __importStar(require("crypto"));
-const fs = __importStar(require("fs"));
-const jsonFormat = __importStar(require("json-format"));
-const mm = __importStar(require("micromatch"));
-const path = __importStar(require("path"));
-const zlib = __importStar(require("zlib"));
 const chalk_1 = __importDefault(require("chalk"));
+const crypto_1 = __importDefault(require("crypto"));
+const fs_1 = __importDefault(require("fs"));
+const json_format_1 = __importDefault(require("json-format"));
+const micromatch_1 = __importDefault(require("micromatch"));
+const path_1 = __importDefault(require("path"));
+const zlib_1 = __importDefault(require("zlib"));
 function checkDir(maxNum) {
-    const dir = path.resolve('./mock');
-    const tempDir = path.join(dir, 'temp/');
+    const dir = path_1.default.resolve('./mock');
+    const tempDir = path_1.default.join(dir, 'temp/');
     const sourceDir = dir;
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
+    if (!fs_1.default.existsSync(dir)) {
+        fs_1.default.mkdirSync(dir);
     }
-    if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir);
+    if (!fs_1.default.existsSync(tempDir)) {
+        fs_1.default.mkdirSync(tempDir);
     }
-    if (!fs.existsSync(sourceDir)) {
-        fs.mkdirSync(sourceDir);
+    if (!fs_1.default.existsSync(sourceDir)) {
+        fs_1.default.mkdirSync(sourceDir);
     }
-    fs.readdir(tempDir, (err, files) => {
+    fs_1.default.readdir(tempDir, (err, files) => {
         if (!err) {
             if (files.length > maxNum) {
                 const arr = files.map(file => {
-                    file = path.join(tempDir, file);
-                    return { file, time: fs.statSync(file).atimeMs };
+                    file = path_1.default.join(tempDir, file);
+                    return { file, time: fs_1.default.statSync(file).atimeMs };
                 });
                 arr.sort((a, b) => b.time - a.time);
                 arr.slice(Math.round(maxNum - maxNum / 3)).forEach(item => {
-                    fs.unlinkSync(item.file);
+                    fs_1.default.unlinkSync(item.file);
                 });
             }
         }
@@ -52,7 +45,7 @@ function getResult(url, buffer, res) {
     if (buffer.length) {
         const encoding = contentType.split('charset=')[1] || 'utf8';
         if (res.getHeader('content-encoding') === 'gzip') {
-            body = zlib.gunzipSync(buffer).toString(encoding);
+            body = zlib_1.default.gunzipSync(buffer).toString(encoding);
         }
         else {
             body = buffer.toString(encoding);
@@ -93,12 +86,12 @@ function serializeUrl(method, url) {
 function urlToFileName(method, url, sourceDir, tempDir) {
     const name = serializeUrl(method, url);
     const fileName = name + '.json';
-    let sourceFileName = path.join(sourceDir, fileName);
-    let tempFileName = path.join(tempDir, fileName);
+    let sourceFileName = path_1.default.join(sourceDir, fileName);
+    let tempFileName = path_1.default.join(tempDir, fileName);
     if (tempFileName.length > 240) {
-        const md5 = crypto.createHash('md5');
-        sourceFileName = path.join(sourceDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.json';
-        tempFileName = path.join(tempDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.json';
+        const md5 = crypto_1.default.createHash('md5');
+        sourceFileName = path_1.default.join(sourceDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.json';
+        tempFileName = path_1.default.join(tempDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.json';
     }
     return { sourceFileName, tempFileName, fileName };
 }
@@ -127,7 +120,7 @@ const fileNamesLatest = { date: 0, files: {}, regExpFiles: {} };
 function cacheFileNames(sourceDir, timeout) {
     const now = new Date().getTime();
     if (now - fileNamesLatest.date > timeout) {
-        const fileList = fs.readdirSync(sourceDir);
+        const fileList = fs_1.default.readdirSync(sourceDir);
         fileNamesLatest.date = now;
         fileNamesLatest.files = {};
         fileNamesLatest.regExpFiles = {};
@@ -190,7 +183,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
     const proxyUrls = getProxys(proxyMap);
     const { tempDir, sourceDir } = checkDir(maxNum);
     return function (req, res, next) {
-        if (!proxyUrls.some(reg => mm.isMatch(req.url, reg))) {
+        if (!proxyUrls.some(reg => micromatch_1.default.isMatch(req.url, reg))) {
             next();
         }
         else {
@@ -204,7 +197,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
                     file = mockFile.input;
                     regData = mockFile;
                 }
-                fs.readFile(path.join(sourceDir, file), 'utf-8', function (err, content) {
+                fs_1.default.readFile(path_1.default.join(sourceDir, file), 'utf-8', function (err, content) {
                     if (err) {
                         console.error(err);
                         res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
@@ -235,7 +228,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
                     const contentType = res.get('content-type') || '';
                     if ((statusCode === 200 || statusCode === 201 || statusCode === 204) && args.length === 0 && (!contentType || /\bjson\b|\bhtml\b|\btext\b/.test(contentType))) {
                         const data = getResult(req.url, buffer, res);
-                        fs.writeFile(tempFileName, jsonFormat(data, { type: 'space' }), err => {
+                        fs_1.default.writeFile(tempFileName, json_format_1.default(data, { type: 'space' }), err => {
                             if (err) {
                                 console.error(err);
                             }

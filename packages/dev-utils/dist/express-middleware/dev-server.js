@@ -1,47 +1,20 @@
 "use strict";
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-const mm = __importStar(require("micromatch"));
 const axios_1 = __importDefault(require("axios"));
+const micromatch_1 = __importDefault(require("micromatch"));
 const Module = module.constructor;
 const ajax = axios_1.default.create();
-function getProxys(proxyMap) {
-    if (typeof proxyMap === 'function') {
-        proxyMap = proxyMap();
-    }
-    if (Array.isArray(proxyMap)) {
-        proxyMap = proxyMap.reduce((pre, cur) => {
-            const url = cur.context;
-            if (typeof url === 'string') {
-                pre[url] = true;
-            }
-            else {
-                for (const key of url) {
-                    pre[key] = true;
-                }
-            }
-            return pre;
-        }, {});
-    }
-    return Object.keys(proxyMap);
-}
-module.exports = function middleware(enable, proxyMap = {}, replaceTpl) {
-    if (!enable) {
+module.exports = function middleware(enableSSR, replaceTpl) {
+    if (!enableSSR) {
         return function (req, res, next) {
             next();
         };
     }
-    const passUrls = [...getProxys(proxyMap), '/index.html', '/server/**', '/client/**', '/sockjs-node/**', '**/*.hot-update.*'];
+    const passUrls = ['/index.html', '/server/**', '/client/**', '/sockjs-node/**', '**/*.hot-update.*'];
     return (req, res, next) => {
-        if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
+        if (passUrls.some(reg => micromatch_1.default.isMatch(req.url, reg))) {
             next();
         }
         else {

@@ -1,13 +1,12 @@
-import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as jsonFormat from 'json-format';
-import * as mm from 'micromatch';
-import * as path from 'path';
-import * as zlib from 'zlib';
-
 import {NextFunction, Request, Response} from 'express';
 
 import chalk from 'chalk';
+import crypto from 'crypto';
+import fs from 'fs';
+import jsonFormat from 'json-format';
+import mm from 'micromatch';
+import path from 'path';
+import zlib from 'zlib';
 
 function checkDir(maxNum: number) {
   const dir = path.resolve('./mock');
