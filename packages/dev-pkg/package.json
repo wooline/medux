@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-pkg",
-  "version": "0.2.8",
+  "version": "0.2.10",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
   "author": "wooline <wooline@qq.com>",
@@ -18,7 +18,6 @@
     "@babel/plugin-proposal-object-rest-spread": "~7.4.4",
     "@babel/plugin-syntax-dynamic-import": "~7.2.0",
     "@babel/plugin-transform-runtime": "~7.4.4",
-    "babel-plugin-module-resolver": "~3.2.0",
     "@babel/preset-env": "~7.4.5",
     "@babel/preset-react": "~7.0.0",
     "@babel/preset-typescript": "~7.3.3",
@@ -31,6 +30,7 @@
     "asset-require-hook": "~1.2.0",
     "axios": "~0.19.0",
     "babel-loader": "~8.0.6",
+    "babel-plugin-module-resolver": "~3.2.0",
     "chalk": "~2.4.2",
     "cross-env": "~5.2.0",
     "css-loader": "~3.2.0",
