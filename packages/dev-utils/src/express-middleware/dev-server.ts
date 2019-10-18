@@ -7,13 +7,33 @@ import mm from 'micromatch';
 const Module: {new (): any} = module.constructor as any;
 const ajax = axios.create();
 
-export = function middleware(enableSSR: boolean, replaceTpl?: (req: Request, htmlTpl: string) => string) {
+function getProxys(proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function) {
+  if (typeof proxyMap === 'function') {
+    proxyMap = proxyMap();
+  }
+  if (Array.isArray(proxyMap)) {
+    proxyMap = proxyMap.reduce((pre, cur) => {
+      const url = cur.context;
+      if (typeof url === 'string') {
+        pre[url] = true;
+      } else {
+        for (const key of url) {
+          pre[key] = true;
+        }
+      }
+      return pre;
+    }, {});
+  }
+  return Object.keys(proxyMap);
+}
+
+export = function middleware(enableSSR: boolean, proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function, replaceTpl?: (req: Request, htmlTpl: string) => string) {
   if (!enableSSR) {
     return function(req: Request, res: Response, next: NextFunction) {
       next();
     };
   }
-  const passUrls = ['/index.html', '/server/**', '/client/**', '/sockjs-node/**', '**/*.hot-update.*'];
+  const passUrls = [...getProxys(proxyMap), '/index.html', '/server/**', '/client/**', '/sockjs-node/**', '**/*.hot-update.*'];
   return (req: Request, res: Response, next: NextFunction) => {
     if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
       next();

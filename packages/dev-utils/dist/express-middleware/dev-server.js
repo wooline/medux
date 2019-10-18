@@ -6,7 +6,7 @@ const axios_1 = __importDefault(require("axios"));
 const micromatch_1 = __importDefault(require("micromatch"));
 const Module = module.constructor;
 const ajax = axios_1.default.create();
-module.exports = function middleware(enableSSR, replaceTpl) {
+module.exports = function middleware(enableSSR, proxy, replaceTpl) {
     if (!enableSSR) {
         return function (req, res, next) {
             next();
