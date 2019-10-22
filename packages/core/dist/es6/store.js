@@ -1,6 +1,6 @@
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
-import { ActionTypes, errorAction, routeChangeAction } from './actions';
+import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { injectModel } from './module';
 export function getActionData(action) {
@@ -145,118 +145,124 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
       });
     }
 
-    if (action.type === ActionTypes.RouteChange) {
-      const routeParams = currentState.route.data.params;
-      Object.keys(routeParams).forEach(moduleName => {
-        if (currentState[moduleName]) {
-          currentState[moduleName] = _objectSpread({}, currentState[moduleName], {
-            preRouteParams: routeParams[moduleName]
-          });
-        }
-      });
-    }
-
     const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
   };
 
-  const middleware = () => next => originalAction => {
-    if (MetaData.isServer) {
-      if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
-        return originalAction;
+  const middleware = (_ref) => {
+    let {
+      dispatch
+    } = _ref;
+    return next => originalAction => {
+      if (MetaData.isServer) {
+        if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
+          return originalAction;
+        }
       }
-    }
 
-    const prevState = store._medux_.prevState;
-    const action = next(originalAction);
-    const handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
+      const prevState = store._medux_.prevState;
+      const action = next(originalAction);
 
-    const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+      if (action.type === ActionTypes.RouteChange) {
+        const rootRouteParams = store._medux_.prevState.route.data.params;
+        Object.keys(rootRouteParams).forEach(moduleName => {
+          var preRouteParams = rootRouteParams[moduleName];
 
-    const handlers = _objectSpread({}, handlersCommon, handlersEvery);
+          if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
+            dispatch(preRouteParamsAction(moduleName, preRouteParams));
+          }
+        });
+      }
 
-    const handlerModules = Object.keys(handlers);
+      const handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-    if (handlerModules.length > 0) {
-      const orderList = [];
-      const priority = action.priority ? [...action.priority] : [];
-      handlerModules.forEach(moduleName => {
-        const fun = handlers[moduleName];
+      const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
-        if (moduleName === MetaData.appModuleName) {
-          orderList.unshift(moduleName);
-        } else {
-          orderList.push(moduleName);
-        }
+      const handlers = _objectSpread({}, handlersCommon, handlersEvery);
 
-        if (!fun.__isHandler__) {
-          priority.unshift(moduleName);
-        }
-      });
-      orderList.unshift(...priority);
-      const moduleNameMap = {};
-      const promiseResults = [];
-      orderList.forEach(moduleName => {
-        if (!moduleNameMap[moduleName]) {
-          moduleNameMap[moduleName] = true;
+      const handlerModules = Object.keys(handlers);
+
+      if (handlerModules.length > 0) {
+        const orderList = [];
+        const priority = action.priority ? [...action.priority] : [];
+        handlerModules.forEach(moduleName => {
           const fun = handlers[moduleName];
-          const effectResult = fun(getActionData(action), prevState);
-          const decorators = fun.__decorators__;
 
-          if (decorators) {
-            const results = [];
-            decorators.forEach((decorator, index) => {
-              results[index] = decorator[0](action, moduleName, effectResult);
-            });
-            fun.__decoratorResults__ = results;
+          if (moduleName === MetaData.appModuleName) {
+            orderList.unshift(moduleName);
+          } else {
+            orderList.push(moduleName);
           }
 
-          const errorHandler = effectResult.then(reslove => {
+          if (!fun.__isHandler__) {
+            priority.unshift(moduleName);
+          }
+        });
+        orderList.unshift(...priority);
+        const moduleNameMap = {};
+        const promiseResults = [];
+        orderList.forEach(moduleName => {
+          if (!moduleNameMap[moduleName]) {
+            moduleNameMap[moduleName] = true;
+            const fun = handlers[moduleName];
+            const effectResult = fun(getActionData(action), prevState);
+            const decorators = fun.__decorators__;
+
             if (decorators) {
-              const results = fun.__decoratorResults__ || [];
+              const results = [];
               decorators.forEach((decorator, index) => {
-                if (decorator[1]) {
-                  decorator[1]('Resolved', results[index], reslove);
-                }
+                results[index] = decorator[0](action, moduleName, effectResult);
               });
-              fun.__decoratorResults__ = undefined;
+              fun.__decoratorResults__ = results;
             }
 
-            return reslove;
-          }, error => {
-            if (decorators) {
-              const results = fun.__decoratorResults__ || [];
-              decorators.forEach((decorator, index) => {
-                if (decorator[1]) {
-                  decorator[1]('Rejected', results[index], error);
-                }
-              });
-              fun.__decoratorResults__ = undefined;
-            }
-
-            if (action.type === ActionTypes.Error) {
-              if (isProcessedError(error) === undefined) {
-                error = setProcessedError(error, true);
+            const errorHandler = effectResult.then(reslove => {
+              if (decorators) {
+                const results = fun.__decoratorResults__ || [];
+                decorators.forEach((decorator, index) => {
+                  if (decorator[1]) {
+                    decorator[1]('Resolved', results[index], reslove);
+                  }
+                });
+                fun.__decoratorResults__ = undefined;
               }
 
-              throw error;
-            } else if (isProcessedError(error)) {
-              throw error;
-            } else {
-              return store.dispatch(errorAction(error));
-            }
-          });
-          promiseResults.push(errorHandler);
+              return reslove;
+            }, error => {
+              if (decorators) {
+                const results = fun.__decoratorResults__ || [];
+                decorators.forEach((decorator, index) => {
+                  if (decorator[1]) {
+                    decorator[1]('Rejected', results[index], error);
+                  }
+                });
+                fun.__decoratorResults__ = undefined;
+              }
+
+              if (action.type === ActionTypes.Error) {
+                if (isProcessedError(error) === undefined) {
+                  error = setProcessedError(error, true);
+                }
+
+                throw error;
+              } else if (isProcessedError(error)) {
+                throw error;
+              } else {
+                return dispatch(errorAction(error));
+              }
+            });
+            promiseResults.push(errorHandler);
+          }
+        });
+
+        if (promiseResults.length) {
+          return Promise.all(promiseResults);
         }
-      });
-
-      if (promiseResults.length) {
-        return Promise.all(promiseResults);
       }
-    }
 
-    return action;
+      return action;
+    };
   };
 
   const preLoadMiddleware = () => next => action => {

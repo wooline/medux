@@ -1,6 +1,6 @@
 import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
-import { ActionTypes, errorAction, routeChangeAction } from './actions';
+import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { injectModel } from './module';
 export function getActionData(action) {
@@ -146,17 +146,6 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
       });
     }
 
-    if (action.type === ActionTypes.RouteChange) {
-      var routeParams = currentState.route.data.params;
-      Object.keys(routeParams).forEach(function (moduleName) {
-        if (currentState[moduleName]) {
-          currentState[moduleName] = _objectSpread({}, currentState[moduleName], {
-            preRouteParams: routeParams[moduleName]
-          });
-        }
-      });
-    }
-
     var changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(function (moduleName) {
       return rootState[moduleName] !== currentState[moduleName];
     });
@@ -164,7 +153,8 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     return meta.prevState;
   };
 
-  var middleware = function middleware() {
+  var middleware = function middleware(_ref2) {
+    var dispatch = _ref2.dispatch;
     return function (next) {
       return function (originalAction) {
         if (MetaData.isServer) {
@@ -175,6 +165,18 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
         var prevState = store._medux_.prevState;
         var action = next(originalAction);
+
+        if (action.type === ActionTypes.RouteChange) {
+          var rootRouteParams = store._medux_.prevState.route.data.params;
+          Object.keys(rootRouteParams).forEach(function (moduleName) {
+            var preRouteParams = rootRouteParams[moduleName];
+
+            if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
+              dispatch(preRouteParamsAction(moduleName, preRouteParams));
+            }
+          });
+        }
+
         var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
         var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
@@ -251,7 +253,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
                 } else if (isProcessedError(error)) {
                   throw error;
                 } else {
-                  return store.dispatch(errorAction(error));
+                  return dispatch(errorAction(error));
                 }
               });
               promiseResults.push(errorHandler);

@@ -154,17 +154,6 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
       });
     }
 
-    if (action.type === _actions.ActionTypes.RouteChange) {
-      var routeParams = currentState.route.data.params;
-      Object.keys(routeParams).forEach(function (moduleName) {
-        if (currentState[moduleName]) {
-          currentState[moduleName] = (0, _objectSpread2.default)({}, currentState[moduleName], {
-            preRouteParams: routeParams[moduleName]
-          });
-        }
-      });
-    }
-
     var changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(function (moduleName) {
       return rootState[moduleName] !== currentState[moduleName];
     });
@@ -172,7 +161,8 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     return meta.prevState;
   };
 
-  var middleware = function middleware() {
+  var middleware = function middleware(_ref2) {
+    var dispatch = _ref2.dispatch;
     return function (next) {
       return function (originalAction) {
         if (_basic.MetaData.isServer) {
@@ -183,6 +173,18 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
         var prevState = store._medux_.prevState;
         var action = next(originalAction);
+
+        if (action.type === _actions.ActionTypes.RouteChange) {
+          var rootRouteParams = store._medux_.prevState.route.data.params;
+          Object.keys(rootRouteParams).forEach(function (moduleName) {
+            var preRouteParams = rootRouteParams[moduleName];
+
+            if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
+              dispatch((0, _actions.preRouteParamsAction)(moduleName, preRouteParams));
+            }
+          });
+        }
+
         var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
         var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
@@ -257,7 +259,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
                 } else if ((0, _basic.isProcessedError)(error)) {
                   throw error;
                 } else {
-                  return store.dispatch((0, _actions.errorAction)(error));
+                  return dispatch((0, _actions.errorAction)(error));
                 }
               });
               promiseResults.push(errorHandler);

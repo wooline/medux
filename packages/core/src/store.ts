@@ -1,5 +1,5 @@
 import {Action, MetaData, ModelStore, RouteData, RouteState, StoreState, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
-import {ActionTypes, errorAction, routeChangeAction} from './actions';
+import {ActionTypes, errorAction, preRouteParamsAction, routeChangeAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
 import {injectModel} from './module';
@@ -119,19 +119,12 @@ export function buildStore(
         }
       });
     }
-    if (action.type === ActionTypes.RouteChange) {
-      const routeParams = currentState.route.data.params;
-      Object.keys(routeParams).forEach(moduleName => {
-        if (currentState[moduleName]) {
-          currentState[moduleName] = {...currentState[moduleName], preRouteParams: routeParams[moduleName]};
-        }
-      });
-    }
+
     const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
   };
-  const middleware = () => (next: Function) => (originalAction: Action) => {
+  const middleware = ({dispatch}: {dispatch: Function}) => (next: Function) => (originalAction: Action) => {
     if (MetaData.isServer) {
       if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
         return originalAction;
@@ -139,6 +132,15 @@ export function buildStore(
     }
     const prevState = store._medux_.prevState;
     const action: Action = next(originalAction);
+    if (action.type === ActionTypes.RouteChange) {
+      const rootRouteParams = store._medux_.prevState.route.data.params;
+      Object.keys(rootRouteParams).forEach(moduleName => {
+        var preRouteParams = rootRouteParams[moduleName];
+        if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
+          dispatch(preRouteParamsAction(moduleName, preRouteParams));
+        }
+      });
+    }
     const handlersCommon = store._medux_.effectMap[action.type] || {};
     // 支持泛监听，形如 */loading
     const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -207,7 +209,7 @@ export function buildStore(
               } else if (isProcessedError(error)) {
                 throw error;
               } else {
-                return store.dispatch(errorAction(error)) as any;
+                return dispatch(errorAction(error)) as any;
               }
             }
           );

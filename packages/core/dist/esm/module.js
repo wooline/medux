@@ -39,11 +39,14 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       handlers.actions = _actions;
 
       if (!moduleState) {
-        var params = store._medux_.prevState.route.data.params || {};
+        var params = store._medux_.prevState.route.data.params;
+        var preRouteParams = params[moduleName];
+        initState = _objectSpread({}, initState, {
+          preRouteParams: initState.preRouteParams || preRouteParams,
+          routeParams: initState.routeParams || {}
+        });
 
-        var initAction = _actions.Init(_objectSpread({}, initState, {
-          routeParams: params[moduleName] || initState.routeParams
-        }));
+        var initAction = _actions.Init(initState);
 
         return store.dispatch(initAction);
       }
@@ -170,14 +173,19 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       decorators: [reducer],
+      key: "PreRouteParams",
+      value: function PreRouteParams(payload) {
+        var state = this.getState();
+        return _objectSpread({}, state, {
+          preRouteParams: payload
+        });
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
         var state = this.getState();
-
-        if (!state) {
-          return state;
-        }
-
         return _objectSpread({}, state, {
           loading: _objectSpread({}, state.loading, payload)
         });

@@ -1,13 +1,14 @@
 "use strict";
 
 exports.__esModule = true;
-exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.injectModel = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.setLoadingDepthTime = exports.setLoading = exports.getActionData = exports.delayPromise = exports.getStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.routeChangeAction = exports.errorAction = exports.ActionTypes = void 0;
+exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.injectModel = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.setLoadingDepthTime = exports.setLoading = exports.getActionData = exports.delayPromise = exports.getStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.preRouteParamsAction = exports.routeChangeAction = exports.errorAction = exports.ActionTypes = void 0;
 
 var _actions = require("./actions");
 
 exports.ActionTypes = _actions.ActionTypes;
 exports.errorAction = _actions.errorAction;
 exports.routeChangeAction = _actions.routeChangeAction;
+exports.preRouteParamsAction = _actions.preRouteParamsAction;
 
 var _basic = require("./basic");
 

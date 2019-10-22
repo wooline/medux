@@ -36,10 +36,13 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
       handlers.actions = actions;
 
       if (!moduleState) {
-        const params = store._medux_.prevState.route.data.params || {};
-        const initAction = actions.Init(_objectSpread({}, initState, {
-          routeParams: params[moduleName] || initState.routeParams
-        }));
+        const params = store._medux_.prevState.route.data.params;
+        const preRouteParams = params[moduleName];
+        initState = _objectSpread({}, initState, {
+          preRouteParams: initState.preRouteParams || preRouteParams,
+          routeParams: initState.routeParams || {}
+        });
+        const initAction = actions.Init(initState);
         return store.dispatch(initAction);
       }
     }
@@ -170,14 +173,19 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       decorators: [reducer],
+      key: "PreRouteParams",
+      value: function PreRouteParams(payload) {
+        const state = this.getState();
+        return _objectSpread({}, state, {
+          preRouteParams: payload
+        });
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
         const state = this.getState();
-
-        if (!state) {
-          return state;
-        }
-
         return _objectSpread({}, state, {
           loading: _objectSpread({}, state.loading, payload)
         });

@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, StoreState, client, config, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, StoreState, client, config, injectActions, isPromise, reducer} from './basic';
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -59,8 +59,10 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
       if (!moduleState) {
-        const params = store._medux_.prevState.route.data.params || {};
-        const initAction = actions.Init({...initState, routeParams: params[moduleName] || initState.routeParams});
+        const params = store._medux_.prevState.route.data.params;
+        const preRouteParams = params[moduleName];
+        initState = {...initState, preRouteParams: initState.preRouteParams || preRouteParams, routeParams: initState.routeParams || {}};
+        const initAction = actions.Init(initState);
         return store.dispatch(initAction) as any;
       }
     }
@@ -77,7 +79,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
 };
 
-export abstract class BaseModelHandlers<S extends BaseModelState, R> {
+export abstract class BaseModelHandlers<S extends BaseModelState, R extends {route: RouteState}> {
   protected readonly actions: Actions<this> = null as any;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -136,11 +138,17 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R> {
   }
 
   @reducer
+  public PreRouteParams(payload: {[key: string]: any}): S {
+    const state = this.getState();
+    return {
+      ...state,
+      preRouteParams: payload,
+    };
+  }
+
+  @reducer
   protected Loading(payload: {[group: string]: string}): S {
     const state = this.getState();
-    if (!state) {
-      return state;
-    }
     return {
       ...state,
       loading: {...state.loading, ...payload},
