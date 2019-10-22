@@ -154,6 +154,17 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
       });
     }
 
+    if (action.type === _actions.ActionTypes.RouteChange) {
+      var routeParams = currentState.route.data.params;
+      Object.keys(routeParams).forEach(function (moduleName) {
+        if (currentState[moduleName]) {
+          currentState[moduleName] = (0, _objectSpread2.default)({}, currentState[moduleName], {
+            preRouteParams: routeParams[moduleName]
+          });
+        }
+      });
+    }
+
     var changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(function (moduleName) {
       return rootState[moduleName] !== currentState[moduleName];
     });

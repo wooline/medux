@@ -88,6 +88,7 @@ export function buildStore(
     Object.keys(storeReducers).forEach(moduleName => {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
+
     const handlersCommon = meta.reducerMap[action.type] || {};
     // 支持泛监听，形如 */loading
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -115,6 +116,14 @@ export function buildStore(
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
           currentState[moduleName] = fun(getActionData(action));
+        }
+      });
+    }
+    if (action.type === ActionTypes.RouteChange) {
+      const routeParams = currentState.route.data.params;
+      Object.keys(routeParams).forEach(moduleName => {
+        if (currentState[moduleName]) {
+          currentState[moduleName] = {...currentState[moduleName], preRouteParams: routeParams[moduleName]};
         }
       });
     }

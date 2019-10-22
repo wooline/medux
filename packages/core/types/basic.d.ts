@@ -123,6 +123,7 @@ export interface BaseModelState<R = {
 }> {
     isModule?: boolean;
     routeParams?: R;
+    preRouteParams?: R;
     loading?: {
         [key: string]: LoadingState;
     };

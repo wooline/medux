@@ -145,6 +145,17 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
       });
     }
 
+    if (action.type === ActionTypes.RouteChange) {
+      const routeParams = currentState.route.data.params;
+      Object.keys(routeParams).forEach(moduleName => {
+        if (currentState[moduleName]) {
+          currentState[moduleName] = _objectSpread({}, currentState[moduleName], {
+            preRouteParams: routeParams[moduleName]
+          });
+        }
+      });
+    }
+
     const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;

@@ -116,6 +116,7 @@ export interface ActionHandler {
 export interface BaseModelState<R = {[key: string]: any}> {
   isModule?: boolean;
   routeParams?: R;
+  preRouteParams?: R;
   loading?: {
     [key: string]: LoadingState;
   };
