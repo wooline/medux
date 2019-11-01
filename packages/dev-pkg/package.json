@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-pkg",
-  "version": "0.2.11",
+  "version": "0.2.14",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
   "author": "wooline <wooline@qq.com>",
@@ -61,8 +61,8 @@
     "stylelint": "~11.1.1",
     "stylelint-config-prettier": "~6.0.0",
     "stylelint-config-standard": "~19.0.0",
-    "stylelint-prettier": "~1.1.1",
     "stylelint-declaration-block-no-ignored-properties": "~2.1.0",
+    "stylelint-prettier": "~1.1.1",
     "url-loader": "~1.1.2",
     "webpack": "~4.39.3",
     "webpack-dev-server": "~3.8.0",
