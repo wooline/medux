@@ -27,7 +27,7 @@ export var client = MetaData.isServer ? undefined : typeof window === 'undefined
 export function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
-export function getStore() {
+export function getClientStore() {
   return MetaData.clientStore;
 }
 export function isServer() {

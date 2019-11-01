@@ -6,7 +6,7 @@ exports.__esModule = true;
 exports.isPromiseModule = isPromiseModule;
 exports.isPromiseView = isPromiseView;
 exports.exportActions = exportActions;
-exports.injectModel = injectModel;
+exports.loadModel = _loadModel;
 exports.getView = getView;
 exports.renderApp = renderApp;
 exports.renderSSR = renderSSR;
@@ -180,6 +180,12 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "method",
+      key: "loadModel",
+      value: function loadModel(moduleName) {
+        return _loadModel(moduleName, this.store);
+      }
+    }, {
+      kind: "method",
       decorators: [_basic.reducer],
       key: "Init",
       value: function Init(payload) {
@@ -247,11 +253,11 @@ function exportActions(moduleGetter) {
   return _basic.MetaData.actionCreatorMap;
 }
 
-function injectModel(moduleGetter, moduleName, store) {
+function _loadModel(moduleName, store) {
   var hasInjected = store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
-    moduleGetter = _basic.MetaData.moduleGetter;
+    var moduleGetter = _basic.MetaData.moduleGetter;
     var result = moduleGetter[moduleName]();
 
     if (isPromiseModule(result)) {

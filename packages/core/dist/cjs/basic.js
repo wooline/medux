@@ -3,7 +3,7 @@
 exports.__esModule = true;
 exports.setConfig = setConfig;
 exports.isPromise = isPromise;
-exports.getStore = getStore;
+exports.getClientStore = getClientStore;
 exports.isServer = isServer;
 exports.reducer = reducer;
 exports.effect = effect;
@@ -51,7 +51,7 @@ function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
 
-function getStore() {
+function getClientStore() {
   return MetaData.clientStore;
 }
 

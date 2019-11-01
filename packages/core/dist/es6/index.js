@@ -1,7 +1,7 @@
 export { ActionTypes, errorAction, routeChangeAction, preRouteParamsAction } from './actions';
-export { reducer, config, effect, logger, isServer, setConfig, getStore, delayPromise } from './basic';
+export { reducer, config, effect, logger, isServer, setConfig, getClientStore, delayPromise } from './basic';
 export { getActionData } from './store';
 export { setLoading, setLoadingDepthTime } from './loading';
 export { LoadingState } from './sprite';
-export { exportActions, renderApp, renderSSR, BaseModelHandlers, exportModule, injectModel, isPromiseModule, isPromiseView, getView } from './module';
+export { exportActions, renderApp, renderSSR, BaseModelHandlers, exportModule, loadModel, isPromiseModule, isPromiseView, getView } from './module';
 //# sourceMappingURL=index.js.map

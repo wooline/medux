@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.injectModel = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.setLoadingDepthTime = exports.setLoading = exports.getActionData = exports.delayPromise = exports.getStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.preRouteParamsAction = exports.routeChangeAction = exports.errorAction = exports.ActionTypes = void 0;
+exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.loadModel = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.setLoadingDepthTime = exports.setLoading = exports.getActionData = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.preRouteParamsAction = exports.routeChangeAction = exports.errorAction = exports.ActionTypes = void 0;
 
 var _actions = require("./actions");
 
@@ -18,7 +18,7 @@ exports.effect = _basic.effect;
 exports.logger = _basic.logger;
 exports.isServer = _basic.isServer;
 exports.setConfig = _basic.setConfig;
-exports.getStore = _basic.getStore;
+exports.getClientStore = _basic.getClientStore;
 exports.delayPromise = _basic.delayPromise;
 
 var _store = require("./store");
@@ -41,7 +41,7 @@ exports.renderApp = _module.renderApp;
 exports.renderSSR = _module.renderSSR;
 exports.BaseModelHandlers = _module.BaseModelHandlers;
 exports.exportModule = _module.exportModule;
-exports.injectModel = _module.injectModel;
+exports.loadModel = _module.loadModel;
 exports.isPromiseModule = _module.isPromiseModule;
 exports.isPromiseView = _module.isPromiseView;
 exports.getView = _module.getView;

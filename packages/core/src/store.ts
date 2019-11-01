@@ -2,7 +2,7 @@ import {Action, MetaData, ModelStore, RouteData, RouteState, StoreState, client,
 import {ActionTypes, errorAction, preRouteParamsAction, routeChangeAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
-import {injectModel} from './module';
+import {loadModel} from './module';
 
 export function getActionData<T>(action: Action): T {
   const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
@@ -227,7 +227,7 @@ export function buildStore(
   const preLoadMiddleware = () => (next: Function) => (action: Action) => {
     const [moduleName, actionName] = action.type.split(config.NSP);
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const initModel = injectModel(MetaData.moduleGetter, moduleName, store);
+      const initModel = loadModel(moduleName, store);
       if (isPromise(initModel)) {
         return initModel.then(() => next(action));
       }

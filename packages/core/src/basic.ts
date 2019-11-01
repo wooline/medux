@@ -125,7 +125,7 @@ export interface BaseModelState<R = {[key: string]: any}> {
 export function isPromise(data: any): data is Promise<any> {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
-export function getStore() {
+export function getClientStore() {
   return MetaData.clientStore;
 }
 export function isServer(): boolean {

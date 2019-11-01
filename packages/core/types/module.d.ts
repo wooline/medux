@@ -79,6 +79,7 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
         payload?: any;
     };
     protected updateState(payload: Partial<S>): void;
+    protected loadModel(moduleName: Extract<keyof R, string>): void | Promise<void>;
     protected Init(payload: S): S;
     protected Update(payload: S): S;
     PreRouteParams(payload: {
@@ -101,7 +102,7 @@ export declare function exportActions<G extends {
 }>(moduleGetter: G): {
     [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
 };
-export declare function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void>;
+export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore): void | Promise<void>;
 export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
 export declare type LoadView<MG extends ModuleGetter, OPTS = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, options?: OPTS) => V[N];
 export interface StoreOptions {

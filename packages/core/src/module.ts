@@ -126,7 +126,9 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected updateState(payload: Partial<S>) {
     this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}));
   }
-
+  protected loadModel(moduleName: Extract<keyof R, string>) {
+    return loadModel(moduleName, this.store);
+  }
   @reducer
   protected Init(payload: S): S {
     return payload;
@@ -195,10 +197,10 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
   return MetaData.actionCreatorMap as any;
 }
 
-export function injectModel<MG extends ModuleGetter, N extends Extract<keyof MG, string>>(moduleGetter: MG, moduleName: N, store: ModelStore): void | Promise<void> {
+export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore): void | Promise<void> {
   const hasInjected = store._medux_.injectedModules[moduleName];
   if (!hasInjected) {
-    moduleGetter = MetaData.moduleGetter as any;
+    const moduleGetter = MetaData.moduleGetter as any;
     const result = moduleGetter[moduleName]();
     if (isPromiseModule(result)) {
       return result.then(module => {

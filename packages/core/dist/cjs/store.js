@@ -284,7 +284,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
             actionName = _action$type$split[1];
 
         if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
-          var initModel = (0, _module.injectModel)(_basic.MetaData.moduleGetter, moduleName, store);
+          var initModel = (0, _module.loadModel)(moduleName, store);
 
           if ((0, _basic.isPromise)(initModel)) {
             return initModel.then(function () {

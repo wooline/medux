@@ -158,6 +158,12 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "method",
+      key: "loadModel",
+      value: function loadModel(moduleName) {
+        return _loadModel(moduleName, this.store);
+      }
+    }, {
+      kind: "method",
       decorators: [reducer],
       key: "Init",
       value: function Init(payload) {
@@ -219,11 +225,12 @@ export function exportActions(moduleGetter) {
   }, {});
   return MetaData.actionCreatorMap;
 }
-export function injectModel(moduleGetter, moduleName, store) {
+
+function _loadModel(moduleName, store) {
   var hasInjected = store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
-    moduleGetter = MetaData.moduleGetter;
+    var moduleGetter = MetaData.moduleGetter;
     var result = moduleGetter[moduleName]();
 
     if (isPromiseModule(result)) {
@@ -239,6 +246,8 @@ export function injectModel(moduleGetter, moduleName, store) {
     }
   }
 }
+
+export { _loadModel as loadModel };
 export function getView(moduleName, viewName) {
   var moduleGetter = MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();

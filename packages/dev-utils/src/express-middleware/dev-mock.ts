@@ -45,7 +45,12 @@ function getResult(url: string, buffer: Buffer, res: Response) {
   if (buffer.length) {
     const encoding = contentType.split('charset=')[1] || 'utf8';
     if (res.getHeader('content-encoding') === 'gzip') {
-      body = zlib.gunzipSync(buffer).toString(encoding);
+      try {
+        body = zlib.gunzipSync(buffer).toString(encoding);
+      } catch (e) {
+        console.log('error', url);
+        body = '{}';
+      }
     } else {
       body = buffer.toString(encoding);
     }

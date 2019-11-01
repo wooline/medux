@@ -2,7 +2,7 @@ import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
-import { injectModel } from './module';
+import { loadModel } from './module';
 export function getActionData(action) {
   const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
 
@@ -269,7 +269,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     const [moduleName, actionName] = action.type.split(config.NSP);
 
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const initModel = injectModel(MetaData.moduleGetter, moduleName, store);
+      const initModel = loadModel(moduleName, store);
 
       if (isPromise(initModel)) {
         return initModel.then(() => next(action));
