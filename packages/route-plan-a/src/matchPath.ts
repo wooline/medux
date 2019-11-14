@@ -1,4 +1,4 @@
-import pathToRegexp, {Key, PathFunction} from 'path-to-regexp';
+import pathToRegexp, {Key, PathFunction} from './path-to-regexp.js';
 
 const cache = {};
 const cacheLimit = 10000;

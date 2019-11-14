@@ -737,6 +737,80 @@ describe('locationToRoute：', () => {
       }]
     });
   });
+  test('/photos/2/comments/8/99', () => {
+    const transformRoute = global['transformRoute'];
+    const location = {
+      pathname: '/photos/2/comments/8/99',
+      search: '',
+      hash: ''
+    };
+    const route = transformRoute.locationToRoute(location);
+    expect(route).toEqual({
+      views: {
+        app: {
+          Main: true
+        },
+        photos: {
+          Details: true
+        },
+        comments: {
+          Main: true,
+          DetailsList: true
+        }
+      },
+      paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.DetailsList'],
+      params: {
+        photos: {
+          _detailKey: '',
+          _listKey: '',
+          itemId: '2',
+          listSearch: {
+            title: '',
+            page: 1,
+            pageSize: 10
+          }
+        },
+        comments: {
+          _detailKey: '',
+          _listKey: '',
+          itemId: '8',
+          articleType: 'photos',
+          articleId: '2',
+          listSearch: {
+            isNewest: false,
+            page: '99',
+            pageSize: 10
+          }
+        },
+        app: {}
+      },
+      stackParams: [{
+        photos: {
+          _detailKey: '',
+          _listKey: '',
+          itemId: '2',
+          listSearch: {
+            title: '',
+            page: 1,
+            pageSize: 10
+          }
+        },
+        comments: {
+          _detailKey: '',
+          _listKey: '',
+          itemId: '8',
+          articleType: 'photos',
+          articleId: '2',
+          listSearch: {
+            isNewest: false,
+            page: '99',
+            pageSize: 10
+          }
+        },
+        app: {}
+      }]
+    });
+  });
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}}}&b=swf', () => {
     const transformRoute = global['transformRoute'];
     const location = {

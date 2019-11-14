@@ -142,6 +142,36 @@ function splitSearch(search) {
   return stackParams;
 }
 
+function checkPathArgs(params) {
+  var obj = {};
+
+  for (var _key in params) {
+    if (params.hasOwnProperty(_key)) {
+      (function () {
+        var val = params[_key];
+
+        var props = _key.split('.');
+
+        if (props.length > 1) {
+          props.reduce(function (prev, cur, index, arr) {
+            if (index === arr.length - 1) {
+              prev[cur] = val;
+            } else {
+              prev[cur] = {};
+            }
+
+            return prev[cur];
+          }, obj);
+        } else {
+          obj[_key] = val;
+        }
+      })();
+    }
+  }
+
+  return obj;
+}
+
 function pathnameParse(pathname, routeConfig, paths, args) {
   for (var _rule in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule)) {
@@ -164,7 +194,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = _objectSpread({}, args[_moduleName], params);
+          args[_moduleName] = _objectSpread({}, args[_moduleName], checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -469,8 +499,8 @@ export function getBrowserRouteActions(getBrowserHistoryActions) {
 }
 export function buildToBrowserUrl(getTransformRoute) {
   function toUrl() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
+    for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
+      args[_key2] = arguments[_key2];
     }
 
     if (args.length === 1) {

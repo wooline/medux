@@ -1,4 +1,4 @@
-import { Key, PathFunction } from 'path-to-regexp';
+import { Key, PathFunction } from './path-to-regexp.js';
 export declare function compileToPath(rule: string): PathFunction;
 export declare function compilePath(path: string, options?: {
     end: boolean;

@@ -147,7 +147,28 @@ function splitSearch(search: string) {
   }
   return stackParams;
 }
-
+function checkPathArgs(params: {[key: string]: string}): {[key: string]: any} {
+  const obj = {};
+  for (const key in params) {
+    if (params.hasOwnProperty(key)) {
+      const val = params[key];
+      const props = key.split('.');
+      if (props.length > 1) {
+        props.reduce((prev, cur, index, arr) => {
+          if (index === arr.length - 1) {
+            prev[cur] = val;
+          } else {
+            prev[cur] = {};
+          }
+          return prev[cur];
+        }, obj);
+      } else {
+        obj[key] = val;
+      }
+    }
+  }
+  return obj;
+}
 function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string[], args: {[moduleName: string]: {[key: string]: any} | undefined}) {
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
@@ -160,7 +181,7 @@ function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string
         const moduleName = viewName.split(coreConfig.VSP)[0];
         const {params} = match;
         if (params && Object.keys(params).length > 0) {
-          args[moduleName] = {...args[moduleName], ...params};
+          args[moduleName] = {...args[moduleName], ...checkPathArgs(params)};
         }
         if (pathConfig) {
           pathnameParse(pathname, pathConfig, paths, args);

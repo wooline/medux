@@ -7,6 +7,7 @@ enum ViewNames {
   'commentsMain' = 'comments.Main',
   'commentsList' = 'comments.List',
   'commentsDetails' = 'comments.Details',
+  'commentsDetailsList' = 'comments.DetailsList',
 }
 
 const routeConfig: RouteConfig = {
@@ -22,6 +23,7 @@ const routeConfig: RouteConfig = {
             {
               '/:articleType/:articleId/comments': ViewNames.commentsList,
               '/:articleType/:articleId/comments/:itemId': ViewNames.commentsDetails,
+              '/:articleType/:articleId/comments/:itemId/:listSearch.page': ViewNames.commentsDetailsList,
             },
           ],
         },

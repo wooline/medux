@@ -8,6 +8,7 @@ var ViewNames;
   ViewNames["commentsMain"] = "comments.Main";
   ViewNames["commentsList"] = "comments.List";
   ViewNames["commentsDetails"] = "comments.Details";
+  ViewNames["commentsDetailsList"] = "comments.DetailsList";
 })(ViewNames || (ViewNames = {}));
 
 const routeConfig = {
@@ -16,7 +17,8 @@ const routeConfig = {
     '/photos/:itemId': [ViewNames.photosDetails, {
       '/:articleType/:articleId/comments': [ViewNames.commentsMain, {
         '/:articleType/:articleId/comments': ViewNames.commentsList,
-        '/:articleType/:articleId/comments/:itemId': ViewNames.commentsDetails
+        '/:articleType/:articleId/comments/:itemId': ViewNames.commentsDetails,
+        '/:articleType/:articleId/comments/:itemId/:listSearch.page': ViewNames.commentsDetailsList
       }]
     }]
   }]

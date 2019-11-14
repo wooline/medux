@@ -10,7 +10,7 @@ import ReactDOM from 'react-dom';
 import {createHistory} from '@medux/web';
 
 export {loadView, exportModule} from '@medux/react';
-export {ActionTypes, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
+export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
 
 export type RouteData = import('@medux/core/types/export').RouteData;

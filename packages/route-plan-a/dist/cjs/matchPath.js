@@ -8,7 +8,7 @@ exports.compilePath = compilePath;
 exports.matchPath = matchPath;
 exports.default = void 0;
 
-var _pathToRegexp = _interopRequireDefault(require("path-to-regexp"));
+var _pathToRegexp = _interopRequireDefault(require("./path-to-regexp.js"));
 
 var cache = {};
 var cacheLimit = 10000;

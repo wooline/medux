@@ -1,4 +1,4 @@
-import pathToRegexp from 'path-to-regexp';
+import pathToRegexp from './path-to-regexp.js';
 const cache = {};
 const cacheLimit = 10000;
 let cacheCount = 0;

@@ -142,6 +142,33 @@ function splitSearch(search) {
   return stackParams;
 }
 
+function checkPathArgs(params) {
+  const obj = {};
+
+  for (const key in params) {
+    if (params.hasOwnProperty(key)) {
+      const val = params[key];
+      const props = key.split('.');
+
+      if (props.length > 1) {
+        props.reduce((prev, cur, index, arr) => {
+          if (index === arr.length - 1) {
+            prev[cur] = val;
+          } else {
+            prev[cur] = {};
+          }
+
+          return prev[cur];
+        }, obj);
+      } else {
+        obj[key] = val;
+      }
+    }
+  }
+
+  return obj;
+}
+
 function pathnameParse(pathname, routeConfig, paths, args) {
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
@@ -160,7 +187,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
         } = match;
 
         if (params && Object.keys(params).length > 0) {
-          args[moduleName] = _objectSpread({}, args[moduleName], params);
+          args[moduleName] = _objectSpread({}, args[moduleName], checkPathArgs(params));
         }
 
         if (pathConfig) {

@@ -1,32 +1,35 @@
 {
-    "files.eol": "\n",
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "editor.formatOnSave": true,
-    "typescript.updateImportsOnFileMove.enabled": "never",
-    "[javascript]": {
-      "editor.formatOnSave": false
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true
+  },
+  "files.eol": "\n",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnSave": true,
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "[javascript]": {
+    "editor.formatOnSave": false
+  },
+  "[javascriptreact]": {
+    "editor.formatOnSave": false
+  },
+  "[typescript]": {
+    "editor.formatOnSave": false
+  },
+  "[typescriptreact]": {
+    "editor.formatOnSave": false
+  },
+  "eslint.autoFixOnSave": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    {
+      "language": "typescript",
+      "autoFix": true
     },
-    "[javascriptreact]": {
-      "editor.formatOnSave": false
-    },
-    "[typescript]": {
-      "editor.formatOnSave": false
-    },
-    "[typescriptreact]": {
-      "editor.formatOnSave": false
-    },
-    "eslint.autoFixOnSave": true,
-    "eslint.validate": [
-      "javascript",
-      "javascriptreact",
-      {
-        "language": "typescript",
-        "autoFix": true
-      },
-      {
-        "language": "typescriptreact",
-        "autoFix": true
-      }
-    ]
-  }
-  
+    {
+      "language": "typescriptreact",
+      "autoFix": true
+    }
+  ]
+}
