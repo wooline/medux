@@ -1,6 +1,6 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-export const TaskCountEvent = 'TaskCountEvent';
-export let LoadingState;
+export var TaskCountEvent = 'TaskCountEvent';
+export var LoadingState;
 
 (function (LoadingState) {
   LoadingState["Start"] = "Start";
@@ -40,7 +40,7 @@ export class PDispatcher {
   }
 
   addListener(ename, handler) {
-    let dictionary = this.storeHandlers[ename];
+    var dictionary = this.storeHandlers[ename];
 
     if (!dictionary) {
       this.storeHandlers[ename] = dictionary = [];
@@ -56,15 +56,15 @@ export class PDispatcher {
         delete this.storeHandlers[key];
       });
     } else {
-      const handlers = this.storeHandlers;
+      var handlers = this.storeHandlers;
 
       if (handlers.propertyIsEnumerable(ename)) {
-        const dictionary = handlers[ename];
+        var dictionary = handlers[ename];
 
         if (!handler) {
           delete handlers[ename];
         } else {
-          const n = dictionary.indexOf(handler);
+          var n = dictionary.indexOf(handler);
 
           if (n > -1) {
             dictionary.splice(n, 1);
@@ -86,10 +86,10 @@ export class PDispatcher {
     }
 
     evt.setCurrentTarget(this);
-    const dictionary = this.storeHandlers[evt.name];
+    var dictionary = this.storeHandlers[evt.name];
 
     if (dictionary) {
-      for (let i = 0, k = dictionary.length; i < k; i++) {
+      for (var i = 0, k = dictionary.length; i < k; i++) {
         dictionary[i](evt);
       }
     }
@@ -114,7 +114,7 @@ export class TaskCounter extends PDispatcher {
 
     _defineProperty(this, "list", []);
 
-    _defineProperty(this, "ctimer", 0);
+    _defineProperty(this, "ctimer", null);
   }
 
   addItem(promise, note) {
@@ -132,7 +132,7 @@ export class TaskCounter extends PDispatcher {
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
         this.ctimer = setTimeout(() => {
-          this.ctimer = 0;
+          this.ctimer = null;
 
           if (this.list.length > 0) {
             this.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
@@ -145,7 +145,7 @@ export class TaskCounter extends PDispatcher {
   }
 
   completeItem(promise) {
-    const i = this.list.findIndex(item => item.promise === promise);
+    var i = this.list.findIndex(item => item.promise === promise);
 
     if (i > -1) {
       this.list.splice(i, 1);
@@ -153,7 +153,7 @@ export class TaskCounter extends PDispatcher {
       if (this.list.length === 0) {
         if (this.ctimer) {
           clearTimeout(this.ctimer);
-          this.ctimer = 0;
+          this.ctimer = null;
         }
 
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));

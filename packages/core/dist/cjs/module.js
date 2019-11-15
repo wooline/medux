@@ -14,11 +14,9 @@ exports.BaseModelHandlers = exports.exportModule = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
-var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
-
 var _toArray2 = _interopRequireDefault(require("@babel/runtime/helpers/toArray"));
 
-var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _basic = require("./basic");
 
@@ -44,6 +42,10 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store) {
     var hasInjected = store._medux_.injectedModules[moduleName];
@@ -60,7 +62,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
       if (!moduleState) {
         var params = store._medux_.prevState.route.data.params;
         var preRouteParams = params[moduleName];
-        initState = (0, _objectSpread2.default)({}, initState, {
+        initState = _objectSpread({}, initState, {
           preRouteParams: initState.preRouteParams || preRouteParams,
           routeParams: initState.routeParams || {}
         });
@@ -176,7 +178,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.Update, (0, _objectSpread2.default)({}, this.getState(), payload)));
+        this.dispatch(this.callThisAction(this.Update, _objectSpread({}, this.getState(), {}, payload)));
       }
     }, {
       kind: "method",
@@ -204,7 +206,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "PreRouteParams",
       value: function PreRouteParams(payload) {
         var state = this.getState();
-        return (0, _objectSpread2.default)({}, state, {
+        return _objectSpread({}, state, {
           preRouteParams: payload
         });
       }
@@ -214,8 +216,8 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "Loading",
       value: function Loading(payload) {
         var state = this.getState();
-        return (0, _objectSpread2.default)({}, state, {
-          loading: (0, _objectSpread2.default)({}, state.loading, payload)
+        return _objectSpread({}, state, {
+          loading: _objectSpread({}, state.loading, {}, payload)
         });
       }
     }]
@@ -359,7 +361,7 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
   var initData = {};
 
   if (storeOptions.initData || _basic.client[ssrInitStoreKey]) {
-    initData = (0, _objectSpread2.default)({}, _basic.client[ssrInitStoreKey], storeOptions.initData);
+    initData = _objectSpread({}, _basic.client[ssrInitStoreKey], {}, storeOptions.initData);
   }
 
   var store = (0, _store.buildStore)(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
@@ -388,72 +390,63 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
   });
 }
 
-function renderSSR(_x, _x2, _x3, _x4, _x5) {
-  return _renderSSR.apply(this, arguments);
-}
+function renderSSR(render, moduleGetter, appModuleName, history, storeOptions) {
+  var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
-function _renderSSR() {
-  _renderSSR = (0, _asyncToGenerator2.default)(
-  /*#__PURE__*/
-  _regenerator.default.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
-    var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+  return _regenerator.default.async(function renderSSR$(_context) {
+    while (1) {
+      switch (_context.prev = _context.next) {
+        case 0:
+          if (storeOptions === void 0) {
+            storeOptions = {};
+          }
 
-    return _regenerator.default.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            if (storeOptions === void 0) {
-              storeOptions = {};
-            }
+          _basic.MetaData.appModuleName = appModuleName;
+          ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+          store = (0, _store.buildStore)(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+          storeState = store.getState();
+          paths = storeState.route.data.paths;
+          paths.length === 0 && paths.push(appModuleName);
+          appModule = undefined;
+          inited = {};
+          i = 0, k = paths.length;
 
-            _basic.MetaData.appModuleName = appModuleName;
-            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-            store = (0, _store.buildStore)(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            storeState = store.getState();
-            paths = storeState.route.data.paths;
-            paths.length === 0 && paths.push(appModuleName);
-            appModule = undefined;
-            inited = {};
-            i = 0, k = paths.length;
-
-          case 10:
-            if (!(i < k)) {
-              _context.next = 21;
-              break;
-            }
-
-            _paths$i$split = paths[i].split(_basic.config.VSP), _moduleName = _paths$i$split[0];
-
-            if (inited[_moduleName]) {
-              _context.next = 18;
-              break;
-            }
-
-            inited[_moduleName] = true;
-            module = moduleGetter[_moduleName]();
-            _context.next = 17;
-            return module.default.model(store);
-
-          case 17:
-            if (i === 0) {
-              appModule = module;
-            }
-
-          case 18:
-            i++;
-            _context.next = 10;
+        case 10:
+          if (!(i < k)) {
+            _context.next = 21;
             break;
+          }
 
-          case 21:
-            return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+          _paths$i$split = paths[i].split(_basic.config.VSP), _moduleName = _paths$i$split[0];
 
-          case 22:
-          case "end":
-            return _context.stop();
-        }
+          if (inited[_moduleName]) {
+            _context.next = 18;
+            break;
+          }
+
+          inited[_moduleName] = true;
+          module = moduleGetter[_moduleName]();
+          _context.next = 17;
+          return _regenerator.default.awrap(module.default.model(store));
+
+        case 17:
+          if (i === 0) {
+            appModule = module;
+          }
+
+        case 18:
+          i++;
+          _context.next = 10;
+          break;
+
+        case 21:
+          return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+
+        case 22:
+        case "end":
+          return _context.stop();
       }
-    }, _callee);
-  }));
-  return _renderSSR.apply(this, arguments);
+    }
+  });
 }
 //# sourceMappingURL=module.js.map

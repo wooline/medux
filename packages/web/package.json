@@ -33,7 +33,7 @@
   "dependencies": {
     "@medux/core": "^0.2.14",
     "@types/history": "~4.7.2",
-    "history": "~4.9.0"
+    "history": "~4.10.1"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

@@ -134,7 +134,7 @@ function (_PDispatcher) {
 
     _defineProperty(_assertThisInitialized(_this2), "list", []);
 
-    _defineProperty(_assertThisInitialized(_this2), "ctimer", 0);
+    _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
 
     return _this2;
   }
@@ -164,7 +164,7 @@ function (_PDispatcher) {
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
         this.ctimer = setTimeout(function () {
-          _this3.ctimer = 0;
+          _this3.ctimer = null;
 
           if (_this3.list.length > 0) {
             _this3.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
@@ -187,7 +187,7 @@ function (_PDispatcher) {
       if (this.list.length === 0) {
         if (this.ctimer) {
           clearTimeout(this.ctimer);
-          this.ctimer = 0;
+          this.ctimer = null;
         }
 
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));

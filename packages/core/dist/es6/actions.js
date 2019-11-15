@@ -1,5 +1,5 @@
 import { config } from './basic';
-export const ActionTypes = {
+export var ActionTypes = {
   MLoading: 'Loading',
   MInit: 'Init',
   MPreRouteParams: 'PreRouteParams',

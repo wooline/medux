@@ -76,7 +76,7 @@ export function buildStore(
     }
     return state;
   };
-  let store: ModelStore;
+
   const combineReducers = (rootState: StoreState, action: Action) => {
     if (!store) {
       return rootState;
@@ -135,7 +135,7 @@ export function buildStore(
     if (action.type === ActionTypes.RouteChange) {
       const rootRouteParams = store._medux_.prevState.route.data.params;
       Object.keys(rootRouteParams).forEach(moduleName => {
-        var preRouteParams = rootRouteParams[moduleName];
+        const preRouteParams = rootRouteParams[moduleName];
         if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
           dispatch(preRouteParamsAction(moduleName, preRouteParams));
         }
@@ -255,7 +255,7 @@ export function buildStore(
   if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
-  store = createStore(combineReducers as any, preloadedState, compose(...enhancers));
+  const store: ModelStore = createStore(combineReducers as any, preloadedState, compose(...enhancers));
   bindHistory(store, history);
   MetaData.clientStore = store;
   return store;

@@ -40,11 +40,11 @@ export declare type RootState<G extends ModuleGetter, L> = {
             params: {
                 [key in keyof G]?: ModuleParams<ReturnModule<G[key]>>;
             };
-            stackParams: ({
+            stackParams: {
                 [moduleName: string]: {
                     [key: string]: any;
                 } | undefined;
-            })[];
+            }[];
             paths: any;
         };
     };
@@ -65,13 +65,13 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
     protected readonly initState: S;
     protected readonly actions: Actions<this>;
     constructor(moduleName: string, store: ModelStore, initState: S, presetData?: any);
-    protected readonly state: S;
+    protected get state(): S;
     protected getState(): S;
-    protected readonly rootState: R;
+    protected get rootState(): R;
     protected getRootState(): R;
-    protected readonly currentState: S;
+    protected get currentState(): S;
     protected getCurrentState(): S;
-    protected readonly currentRootState: R;
+    protected get currentRootState(): R;
     protected getCurrentRootState(): R;
     protected dispatch(action: Action): Action | Promise<void>;
     protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {

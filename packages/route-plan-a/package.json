@@ -32,8 +32,8 @@
     "test": "cross-env NODE_ENV=cjs jest"
   },
   "dependencies": {
-    "@medux/web": "^0.2.14",
-    "deep-extend": "^0.6.0"
+    "@medux/web": "~0.2.14",
+    "deep-extend": "~0.6.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

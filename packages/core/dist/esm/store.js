@@ -1,4 +1,9 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
@@ -89,13 +94,11 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         return payload;
       }
 
-      return _objectSpread({}, state, payload);
+      return _objectSpread({}, state, {}, payload);
     }
 
     return state;
   };
-
-  var store;
 
   var combineReducers = function combineReducers(rootState, action) {
     if (!store) {
@@ -115,7 +118,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
-    var handlers = _objectSpread({}, handlersCommon, handlersEvery);
+    var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
 
     var handlerModules = Object.keys(handlers);
 
@@ -181,7 +184,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
         var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
-        var handlers = _objectSpread({}, handlersCommon, handlersEvery);
+        var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
 
         var handlerModules = Object.keys(handlers);
 
@@ -316,7 +319,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
+  var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
   bindHistory(store, history);
   MetaData.clientStore = store;
   return store;

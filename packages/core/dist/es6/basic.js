@@ -5,7 +5,7 @@ import { setLoading } from './loading'; // export const root: {__REDUX_DEVTOOLS_
 //   (typeof global == 'object' && global.global === global && global) ||
 //   this) as any;
 
-export const config = {
+export var config = {
   NSP: '/',
   VSP: '.',
   MSP: ','
@@ -15,7 +15,7 @@ export function setConfig(_config) {
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
-export const MetaData = {
+export var MetaData = {
   isServer: typeof global !== 'undefined' && typeof window === 'undefined',
   isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: null,
@@ -23,7 +23,7 @@ export const MetaData = {
   appModuleName: null,
   moduleGetter: null
 };
-export const client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
+export var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 export function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
@@ -39,7 +39,7 @@ export function reducer(target, key, descriptor) {
     descriptor = target.descriptor;
   }
 
-  const fun = descriptor.value;
+  var fun = descriptor.value;
   fun.__actionName__ = key;
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
@@ -57,13 +57,13 @@ export function effect(loadingForGroupName, loadingForModuleName) {
       descriptor = target.descriptor;
     }
 
-    const fun = descriptor.value;
+    var fun = descriptor.value;
     fun.__actionName__ = key;
     fun.__isEffect__ = true;
     descriptor.enumerable = true;
 
     if (loadingForGroupName) {
-      const before = (curAction, moduleName, promiseResult) => {
+      var before = (curAction, moduleName, promiseResult) => {
         if (!MetaData.isServer) {
           if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
@@ -90,7 +90,7 @@ export function logger(before, after) {
       descriptor = target.descriptor;
     }
 
-    const fun = descriptor.value;
+    var fun = descriptor.value;
 
     if (!fun.__decorators__) {
       fun.__decorators__ = [];
@@ -106,10 +106,10 @@ export function delayPromise(second) {
       descriptor = target.descriptor;
     }
 
-    const fun = descriptor.value;
+    var fun = descriptor.value;
 
     descriptor.value = function () {
-      const delay = new Promise(resolve => {
+      var delay = new Promise(resolve => {
         setTimeout(() => {
           resolve(true);
         }, second * 1000);
@@ -145,7 +145,7 @@ export function setProcessedError(error, meduxProcessed) {
 }
 
 function bindThis(fun, thisObj) {
-  const newFun = fun.bind(thisObj);
+  var newFun = fun.bind(thisObj);
   Object.keys(fun).forEach(key => {
     newFun[key] = fun[key];
   });
@@ -165,7 +165,7 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
 }
 
 function addModuleActionCreatorList(moduleName, actionName) {
-  const actions = MetaData.actionCreatorMap[moduleName];
+  var actions = MetaData.actionCreatorMap[moduleName];
 
   if (!actions[actionName]) {
     actions[actionName] = payload => ({
@@ -176,26 +176,28 @@ function addModuleActionCreatorList(moduleName, actionName) {
 }
 
 export function injectActions(store, moduleName, handlers) {
-  for (const actionNames in handlers) {
+  for (var actionNames in handlers) {
     if (typeof handlers[actionNames] === 'function') {
-      let handler = handlers[actionNames];
+      (function () {
+        var handler = handlers[actionNames];
 
-      if (handler.__isReducer__ || handler.__isEffect__) {
-        handler = bindThis(handler, handlers);
-        actionNames.split(config.MSP).forEach(actionName => {
-          actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
-          const arr = actionName.split(config.NSP);
+        if (handler.__isReducer__ || handler.__isEffect__) {
+          handler = bindThis(handler, handlers);
+          actionNames.split(config.MSP).forEach(actionName => {
+            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
+            var arr = actionName.split(config.NSP);
 
-          if (arr[1]) {
-            handler.__isHandler__ = true;
-            transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-          } else {
-            handler.__isHandler__ = false;
-            transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            addModuleActionCreatorList(moduleName, actionName);
-          }
-        });
-      }
+            if (arr[1]) {
+              handler.__isHandler__ = true;
+              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            } else {
+              handler.__isHandler__ = false;
+              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+              addModuleActionCreatorList(moduleName, actionName);
+            }
+          });
+        }
+      })();
     }
   }
 

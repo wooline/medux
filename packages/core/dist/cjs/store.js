@@ -6,7 +6,7 @@ exports.__esModule = true;
 exports.getActionData = getActionData;
 exports.buildStore = buildStore;
 
-var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _basic = require("./basic");
 
@@ -15,6 +15,10 @@ var _actions = require("./actions");
 var _redux = require("redux");
 
 var _module = require("./module");
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function getActionData(action) {
   var arr = Object.keys(action).filter(function (key) {
@@ -26,7 +30,8 @@ function getActionData(action) {
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
-    var data = (0, _objectSpread2.default)({}, action);
+    var data = _objectSpread({}, action);
+
     delete data['type'];
     delete data['priority'];
     delete data['time'];
@@ -101,13 +106,11 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         return payload;
       }
 
-      return (0, _objectSpread2.default)({}, state, payload);
+      return _objectSpread({}, state, {}, payload);
     }
 
     return state;
   };
-
-  var store;
 
   var combineReducers = function combineReducers(rootState, action) {
     if (!store) {
@@ -116,7 +119,9 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
     var meta = store._medux_;
     meta.prevState = rootState;
-    var currentState = (0, _objectSpread2.default)({}, rootState);
+
+    var currentState = _objectSpread({}, rootState);
+
     meta.currentState = currentState;
     Object.keys(storeReducers).forEach(function (moduleName) {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
@@ -124,7 +129,9 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
 
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-    var handlers = (0, _objectSpread2.default)({}, handlersCommon, handlersEvery);
+
+    var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
+
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -188,7 +195,9 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
         var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-        var handlers = (0, _objectSpread2.default)({}, handlersCommon, handlersEvery);
+
+        var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
+
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
@@ -322,7 +331,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     enhancers.push(_basic.client.__REDUX_DEVTOOLS_EXTENSION__(_basic.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
+  var store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
   bindHistory(store, history);
   _basic.MetaData.clientStore = store;
   return store;

@@ -86,19 +86,22 @@ export class PDispatcher {
 
 export class TaskCounter extends PDispatcher {
   public readonly list: {promise: Promise<any>; note: string}[] = [];
-  private ctimer: number = 0;
+  private ctimer: NodeJS.Timeout | null = null;
   public constructor(public deferSecond: number) {
     super();
   }
   public addItem(promise: Promise<any>, note: string = ''): Promise<any> {
     if (!this.list.some(item => item.promise === promise)) {
       this.list.push({promise, note});
-      promise.then(() => this.completeItem(promise), () => this.completeItem(promise));
+      promise.then(
+        () => this.completeItem(promise),
+        () => this.completeItem(promise)
+      );
 
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
         this.ctimer = setTimeout(() => {
-          this.ctimer = 0;
+          this.ctimer = null;
           if (this.list.length > 0) {
             this.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
           }
@@ -114,7 +117,7 @@ export class TaskCounter extends PDispatcher {
       if (this.list.length === 0) {
         if (this.ctimer) {
           clearTimeout(this.ctimer);
-          this.ctimer = 0;
+          this.ctimer = null;
         }
 
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));

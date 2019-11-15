@@ -35,9 +35,9 @@
     "react": "^0.14.9"
   },
   "dependencies": {
-    "@medux/core": "^0.2.14",
-    "@types/react-redux": "~7.1.1",
-    "react-redux": "~7.1.0"
+    "@medux/core": "~0.2.14",
+    "@types/react-redux": "~7.1.5",
+    "react-redux": "~7.1.3"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

@@ -1,17 +1,22 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { loadModel } from './module';
 export function getActionData(action) {
-  const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
+  var arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
 
   if (arr.length === 0) {
     return undefined;
   } else if (arr.length === 1) {
     return action[arr[0]];
   } else {
-    const data = _objectSpread({}, action);
+    var data = _objectSpread({}, action);
 
     delete data['type'];
     delete data['priority'];
@@ -21,11 +26,11 @@ export function getActionData(action) {
 }
 
 function bindHistory(store, history) {
-  let inTimeTravelling = false;
+  var inTimeTravelling = false;
 
-  const handleLocationChange = location => {
+  var handleLocationChange = location => {
     if (!inTimeTravelling) {
-      const {
+      var {
         route
       } = store.getState();
 
@@ -35,7 +40,7 @@ function bindHistory(store, history) {
         }
       }
 
-      const data = history.locationToRouteData(location);
+      var data = history.locationToRouteData(location);
       store.dispatch(routeChangeAction({
         location,
         data
@@ -48,7 +53,7 @@ function bindHistory(store, history) {
   history.subscribe(handleLocationChange);
   store.subscribe(() => {
     if (history.initialized) {
-      const storeRouteState = store.getState().route;
+      var storeRouteState = store.getState().route;
 
       if (!history.equal(storeRouteState.location, history.getLocation())) {
         inTimeTravelling = true;
@@ -82,47 +87,45 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
   storeReducers.route = (state, action) => {
     if (action.type === ActionTypes.RouteChange) {
-      const payload = getActionData(action);
+      var payload = getActionData(action);
 
       if (!state) {
         return payload;
       }
 
-      return _objectSpread({}, state, payload);
+      return _objectSpread({}, state, {}, payload);
     }
 
     return state;
   };
 
-  let store;
-
-  const combineReducers = (rootState, action) => {
+  var combineReducers = (rootState, action) => {
     if (!store) {
       return rootState;
     }
 
-    const meta = store._medux_;
+    var meta = store._medux_;
     meta.prevState = rootState;
 
-    const currentState = _objectSpread({}, rootState);
+    var currentState = _objectSpread({}, rootState);
 
     meta.currentState = currentState;
     Object.keys(storeReducers).forEach(moduleName => {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
-    const handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
+    var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-    const handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
-    const handlers = _objectSpread({}, handlersCommon, handlersEvery);
+    var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
 
-    const handlerModules = Object.keys(handlers);
+    var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
-      const orderList = [];
-      const priority = action.priority ? [...action.priority] : [];
+      var orderList = [];
+      var priority = action.priority ? [...action.priority] : [];
       handlerModules.forEach(moduleName => {
-        const fun = handlers[moduleName];
+        var fun = handlers[moduleName];
 
         if (moduleName === MetaData.appModuleName) {
           orderList.unshift(moduleName);
@@ -135,23 +138,23 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         }
       });
       orderList.unshift(...priority);
-      const moduleNameMap = {};
+      var moduleNameMap = {};
       orderList.forEach(moduleName => {
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
-          const fun = handlers[moduleName];
+          var fun = handlers[moduleName];
           currentState[moduleName] = fun(getActionData(action));
         }
       });
     }
 
-    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
+    var changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
   };
 
-  const middleware = (_ref) => {
-    let {
+  var middleware = (_ref) => {
+    var {
       dispatch
     } = _ref;
     return next => originalAction => {
@@ -161,11 +164,11 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         }
       }
 
-      const prevState = store._medux_.prevState;
-      const action = next(originalAction);
+      var prevState = store._medux_.prevState;
+      var action = next(originalAction);
 
       if (action.type === ActionTypes.RouteChange) {
-        const rootRouteParams = store._medux_.prevState.route.data.params;
+        var rootRouteParams = store._medux_.prevState.route.data.params;
         Object.keys(rootRouteParams).forEach(moduleName => {
           var preRouteParams = rootRouteParams[moduleName];
 
@@ -175,19 +178,19 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         });
       }
 
-      const handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
+      var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-      const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+      var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
-      const handlers = _objectSpread({}, handlersCommon, handlersEvery);
+      var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
 
-      const handlerModules = Object.keys(handlers);
+      var handlerModules = Object.keys(handlers);
 
       if (handlerModules.length > 0) {
-        const orderList = [];
-        const priority = action.priority ? [...action.priority] : [];
+        var orderList = [];
+        var priority = action.priority ? [...action.priority] : [];
         handlerModules.forEach(moduleName => {
-          const fun = handlers[moduleName];
+          var fun = handlers[moduleName];
 
           if (moduleName === MetaData.appModuleName) {
             orderList.unshift(moduleName);
@@ -200,29 +203,30 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
           }
         });
         orderList.unshift(...priority);
-        const moduleNameMap = {};
-        const promiseResults = [];
+        var moduleNameMap = {};
+        var promiseResults = [];
         orderList.forEach(moduleName => {
           if (!moduleNameMap[moduleName]) {
             moduleNameMap[moduleName] = true;
-            const fun = handlers[moduleName];
-            const effectResult = fun(getActionData(action), prevState);
-            const decorators = fun.__decorators__;
+            var fun = handlers[moduleName];
+            var effectResult = fun(getActionData(action), prevState);
+            var decorators = fun.__decorators__;
 
             if (decorators) {
-              const results = [];
+              var results = [];
               decorators.forEach((decorator, index) => {
                 results[index] = decorator[0](action, moduleName, effectResult);
               });
               fun.__decoratorResults__ = results;
             }
 
-            const errorHandler = effectResult.then(reslove => {
+            var errorHandler = effectResult.then(reslove => {
               if (decorators) {
-                const results = fun.__decoratorResults__ || [];
+                var _results = fun.__decoratorResults__ || [];
+
                 decorators.forEach((decorator, index) => {
                   if (decorator[1]) {
-                    decorator[1]('Resolved', results[index], reslove);
+                    decorator[1]('Resolved', _results[index], reslove);
                   }
                 });
                 fun.__decoratorResults__ = undefined;
@@ -231,10 +235,11 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
               return reslove;
             }, error => {
               if (decorators) {
-                const results = fun.__decoratorResults__ || [];
+                var _results2 = fun.__decoratorResults__ || [];
+
                 decorators.forEach((decorator, index) => {
                   if (decorator[1]) {
-                    decorator[1]('Rejected', results[index], error);
+                    decorator[1]('Rejected', _results2[index], error);
                   }
                 });
                 fun.__decoratorResults__ = undefined;
@@ -265,11 +270,11 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     };
   };
 
-  const preLoadMiddleware = () => next => action => {
-    const [moduleName, actionName] = action.type.split(config.NSP);
+  var preLoadMiddleware = () => next => action => {
+    var [moduleName, actionName] = action.type.split(config.NSP);
 
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const initModel = loadModel(moduleName, store);
+      var initModel = loadModel(moduleName, store);
 
       if (isPromise(initModel)) {
         return initModel.then(() => next(action));
@@ -279,12 +284,12 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     return next(action);
   };
 
-  const middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
+  var middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
 
-  const enhancer = newCreateStore => {
+  var enhancer = newCreateStore => {
     return function () {
-      const newStore = newCreateStore(...arguments);
-      const modelStore = newStore;
+      var newStore = newCreateStore(...arguments);
+      var modelStore = newStore;
       modelStore._medux_ = {
         prevState: {},
         currentState: {},
@@ -297,13 +302,13 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     };
   };
 
-  const enhancers = [...storeEnhancers, middlewareEnhancer, enhancer];
+  var enhancers = [...storeEnhancers, middlewareEnhancer, enhancer];
 
   if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  store = createStore(combineReducers, preloadedState, compose(...enhancers));
+  var store = createStore(combineReducers, preloadedState, compose(...enhancers));
   bindHistory(store, history);
   MetaData.clientStore = store;
   return store;

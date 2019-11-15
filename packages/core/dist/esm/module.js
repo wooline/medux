@@ -1,7 +1,6 @@
 import _regeneratorRuntime from "@babel/runtime/regenerator";
-import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _toArray from "@babel/runtime/helpers/esm/toArray";
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 
 function _decorate(decorators, factory, superClass, mixins) { var api = _getDecoratorsApi(); if (mixins) { for (var i = 0; i < mixins.length; i++) { api = mixins[i](api); } } var r = factory(function initialize(O) { api.initializeInstanceElements(O, decorated.elements); }, superClass); var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators); api.initializeClassElements(r.F, decorated.elements); return api.runClassFinishers(r.F, decorated.finishers); }
 
@@ -22,6 +21,10 @@ function _optionalCallableProperty(obj, name) { var value = obj[name]; if (value
 function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typeof key === "symbol" ? key : String(key); }
 
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 import { MetaData, client, config, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
@@ -154,7 +157,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.Update, _objectSpread({}, this.getState(), payload)));
+        this.dispatch(this.callThisAction(this.Update, _objectSpread({}, this.getState(), {}, payload)));
       }
     }, {
       kind: "method",
@@ -193,7 +196,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       value: function Loading(payload) {
         var state = this.getState();
         return _objectSpread({}, state, {
-          loading: _objectSpread({}, state.loading, payload)
+          loading: _objectSpread({}, state.loading, {}, payload)
         });
       }
     }]
@@ -333,7 +336,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   var initData = {};
 
   if (storeOptions.initData || client[ssrInitStoreKey]) {
-    initData = _objectSpread({}, client[ssrInitStoreKey], storeOptions.initData);
+    initData = _objectSpread({}, client[ssrInitStoreKey], {}, storeOptions.initData);
   }
 
   var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
@@ -361,72 +364,63 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     }
   });
 }
-export function renderSSR(_x, _x2, _x3, _x4, _x5) {
-  return _renderSSR.apply(this, arguments);
-}
+export function renderSSR(render, moduleGetter, appModuleName, history, storeOptions) {
+  var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
-function _renderSSR() {
-  _renderSSR = _asyncToGenerator(
-  /*#__PURE__*/
-  _regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
-    var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+  return _regeneratorRuntime.async(function renderSSR$(_context) {
+    while (1) {
+      switch (_context.prev = _context.next) {
+        case 0:
+          if (storeOptions === void 0) {
+            storeOptions = {};
+          }
 
-    return _regeneratorRuntime.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            if (storeOptions === void 0) {
-              storeOptions = {};
-            }
+          MetaData.appModuleName = appModuleName;
+          ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+          store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+          storeState = store.getState();
+          paths = storeState.route.data.paths;
+          paths.length === 0 && paths.push(appModuleName);
+          appModule = undefined;
+          inited = {};
+          i = 0, k = paths.length;
 
-            MetaData.appModuleName = appModuleName;
-            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-            store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            storeState = store.getState();
-            paths = storeState.route.data.paths;
-            paths.length === 0 && paths.push(appModuleName);
-            appModule = undefined;
-            inited = {};
-            i = 0, k = paths.length;
-
-          case 10:
-            if (!(i < k)) {
-              _context.next = 21;
-              break;
-            }
-
-            _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
-
-            if (inited[_moduleName]) {
-              _context.next = 18;
-              break;
-            }
-
-            inited[_moduleName] = true;
-            module = moduleGetter[_moduleName]();
-            _context.next = 17;
-            return module.default.model(store);
-
-          case 17:
-            if (i === 0) {
-              appModule = module;
-            }
-
-          case 18:
-            i++;
-            _context.next = 10;
+        case 10:
+          if (!(i < k)) {
+            _context.next = 21;
             break;
+          }
 
-          case 21:
-            return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+          _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
 
-          case 22:
-          case "end":
-            return _context.stop();
-        }
+          if (inited[_moduleName]) {
+            _context.next = 18;
+            break;
+          }
+
+          inited[_moduleName] = true;
+          module = moduleGetter[_moduleName]();
+          _context.next = 17;
+          return _regeneratorRuntime.awrap(module.default.model(store));
+
+        case 17:
+          if (i === 0) {
+            appModule = module;
+          }
+
+        case 18:
+          i++;
+          _context.next = 10;
+          break;
+
+        case 21:
+          return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+
+        case 22:
+        case "end":
+          return _context.stop();
       }
-    }, _callee);
-  }));
-  return _renderSSR.apply(this, arguments);
+    }
+  });
 }
 //# sourceMappingURL=module.js.map

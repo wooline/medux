@@ -30,15 +30,12 @@
     "build": "yarn build:cjs & yarn build:es"
   },
   "peerDependencies": {
+    "@types/react-native": "^0.50.65",
     "react-native": "^0.50.0",
     "react-navigation": "^3.0.0"
   },
   "dependencies": {
-    "@medux/react": "^0.2.14"
-  },
-  "devDependencies": {
-    "@types/react-native": "^0.57.65",
-    "react-navigation": "^3.11.1"
+    "@medux/react": "~0.2.14"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

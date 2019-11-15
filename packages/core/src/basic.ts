@@ -142,6 +142,7 @@ export function reducer(target: any, key: string, descriptor: PropertyDescriptor
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
 }
+
 export function effect(loadingForGroupName?: string | null, loadingForModuleName?: string) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';

@@ -1,8 +1,8 @@
 import { MetaData, config } from './basic';
 import { TaskCountEvent, TaskCounter } from './sprite';
 import { ActionTypes } from './actions';
-const loadings = {};
-let depthTime = 2;
+var loadings = {};
+var depthTime = 2;
 export function setLoadingDepthTime(second) {
   depthTime = second;
 }
@@ -19,16 +19,16 @@ export function setLoading(item, moduleName, group) {
     return item;
   }
 
-  const key = moduleName + config.NSP + group;
+  var key = moduleName + config.NSP + group;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
     loadings[key].addListener(TaskCountEvent, e => {
-      const store = MetaData.clientStore;
+      var store = MetaData.clientStore;
 
       if (store) {
-        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
-        const action = actions({
+        var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+        var action = actions({
           [group]: e.data
         });
         store.dispatch(action);
