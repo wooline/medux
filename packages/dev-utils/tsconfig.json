@@ -4,6 +4,7 @@
     "importHelpers": false,
     "noEmit": false,
     "declaration": false,
+    "isolatedModules": false,
     "baseUrl": "./src",
     "outDir": "./dist",
     "lib": ["es2017"],

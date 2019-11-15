@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.loadModel = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.setLoadingDepthTime = exports.setLoading = exports.HistoryProxy = exports.getActionData = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.preRouteParamsAction = exports.routeChangeAction = exports.errorAction = exports.ActionTypes = void 0;
+exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.loadModel = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.setLoadingDepthTime = exports.setLoading = exports.getActionData = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.preRouteParamsAction = exports.routeChangeAction = exports.errorAction = exports.ActionTypes = void 0;
 
 var _actions = require("./actions");
 
@@ -24,7 +24,6 @@ exports.delayPromise = _basic.delayPromise;
 var _store = require("./store");
 
 exports.getActionData = _store.getActionData;
-exports.HistoryProxy = _store.HistoryProxy;
 
 var _loading = require("./loading");
 
