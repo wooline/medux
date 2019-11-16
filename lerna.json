@@ -1,13 +1,25 @@
 {
-  "packages": ["packages/core", "packages/react", "packages/react-native-router", "packages/react-web-router", "packages/route-plan-a", "packages/web"],
+  "packages": [
+    "packages/core",
+    "packages/react",
+    "packages/react-native-router",
+    "packages/react-web-router",
+    "packages/route-plan-a",
+    "packages/web"
+  ],
   "command": {
     "publish": {
       "message": "chore(release): publish",
       "npmClient": "npm",
-      "ignoreChanges": ["**/*.md", "**/test/**", "**/dist/**", "**/__test__/**"]
+      "ignoreChanges": [
+        "**/*.md",
+        "**/test/**",
+        "**/dist/**",
+        "**/__test__/**"
+      ]
     }
   },
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "version": "0.2.15"
+  "version": "0.2.16"
 }
