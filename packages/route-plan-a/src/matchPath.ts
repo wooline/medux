@@ -1,4 +1,4 @@
-import pathToRegexp, {Key, PathFunction} from './path-to-regexp.js';
+import {Key, PathFunction, compile, pathToRegexp} from './path-to-regexp';
 
 const cache = {};
 const cacheLimit = 10000;
@@ -8,7 +8,7 @@ export function compileToPath(rule: string): PathFunction {
   if (cache[rule]) {
     return cache[rule];
   }
-  const result = pathToRegexp.compile(rule);
+  const result = compile(rule);
   if (cacheCount < cacheLimit) {
     cache[rule] = result;
     cacheCount++;
@@ -56,44 +56,41 @@ export function matchPath(pathname: string, options: string | string[] | MatchPa
 
   const paths = [].concat(path as any);
 
-  return paths.reduce(
-    (matched, path: string) => {
-      if (!path) return null;
-      if (matched) return matched;
-      if (path === '*') {
-        return {
-          path,
-          url: pathname,
-          isExact: true,
-          params: {},
-        };
-      }
-      const {regexp, keys} = compilePath(path, {
-        end: exact,
-        strict,
-        sensitive,
-      });
-      const match = regexp.exec(pathname);
-
-      if (!match) return null;
-
-      const [url, ...values] = match;
-      const isExact = pathname === url;
-
-      if (exact && !isExact) return null;
-
+  return paths.reduce((matched, path: string) => {
+    if (!path) return null;
+    if (matched) return matched;
+    if (path === '*') {
       return {
-        path, // the path used to match
-        url: path === '/' && url === '' ? '/' : url, // the matched portion of the URL
-        isExact, // whether or not we matched exactly
-        params: keys.reduce((memo: {[key: string]: any}, key: {name: string | number}, index: number) => {
-          memo[key.name] = values[index];
-          return memo;
-        }, {}),
+        path,
+        url: pathname,
+        isExact: true,
+        params: {},
       };
-    },
-    null as any
-  );
+    }
+    const {regexp, keys} = compilePath(path, {
+      end: exact,
+      strict,
+      sensitive,
+    });
+    const match = regexp.exec(pathname);
+
+    if (!match) return null;
+
+    const [url, ...values] = match;
+    const isExact = pathname === url;
+
+    if (exact && !isExact) return null;
+
+    return {
+      path, // the path used to match
+      url: path === '/' && url === '' ? '/' : url, // the matched portion of the URL
+      isExact, // whether or not we matched exactly
+      params: keys.reduce((memo: {[key: string]: any}, key: {name: string | number}, index: number) => {
+        memo[key.name] = values[index];
+        return memo;
+      }, {}),
+    };
+  }, null as any);
 }
 
 export default matchPath;

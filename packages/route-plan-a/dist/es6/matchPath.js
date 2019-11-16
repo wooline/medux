@@ -1,13 +1,13 @@
-import pathToRegexp from './path-to-regexp.js';
-const cache = {};
-const cacheLimit = 10000;
-let cacheCount = 0;
+import { compile, pathToRegexp } from './path-to-regexp';
+var cache = {};
+var cacheLimit = 10000;
+var cacheCount = 0;
 export function compileToPath(rule) {
   if (cache[rule]) {
     return cache[rule];
   }
 
-  const result = pathToRegexp.compile(rule);
+  var result = compile(rule);
 
   if (cacheCount < cacheLimit) {
     cache[rule] = result;
@@ -25,16 +25,16 @@ export function compilePath(path, options) {
     };
   }
 
-  const cacheKey = "" + options.end + options.strict + options.sensitive;
-  const pathCache = cache[cacheKey] || (cache[cacheKey] = {});
+  var cacheKey = "" + options.end + options.strict + options.sensitive;
+  var pathCache = cache[cacheKey] || (cache[cacheKey] = {});
 
   if (pathCache[path]) {
     return pathCache[path];
   }
 
-  const keys = [];
-  const regexp = pathToRegexp(path, keys, options);
-  const result = {
+  var keys = [];
+  var regexp = pathToRegexp(path, keys, options);
+  var result = {
     regexp,
     keys
   };
@@ -57,13 +57,13 @@ export function matchPath(pathname, options) {
     };
   }
 
-  const {
+  var {
     path,
     exact = false,
     strict = false,
     sensitive = false
   } = options;
-  const paths = [].concat(path);
+  var paths = [].concat(path);
   return paths.reduce((matched, path) => {
     if (!path) return null;
     if (matched) return matched;
@@ -77,7 +77,7 @@ export function matchPath(pathname, options) {
       };
     }
 
-    const {
+    var {
       regexp,
       keys
     } = compilePath(path, {
@@ -85,10 +85,10 @@ export function matchPath(pathname, options) {
       strict,
       sensitive
     });
-    const match = regexp.exec(pathname);
+    var match = regexp.exec(pathname);
     if (!match) return null;
-    const [url, ...values] = match;
-    const isExact = pathname === url;
+    var [url, ...values] = match;
+    var isExact = pathname === url;
     if (exact && !isExact) return null;
     return {
       path,

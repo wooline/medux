@@ -1,8 +1,13 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend';
 import { config as coreConfig } from '@medux/core';
-const config = {
+var config = {
   escape: true,
   dateParse: true,
   splitKey: 'q',
@@ -17,10 +22,10 @@ export function setRouteConfig(conf) {
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 function excludeDefaultData(data, def, holde, views) {
-  const result = {};
+  var result = {};
   Object.keys(data).forEach(moduleName => {
-    let value = data[moduleName];
-    const defaultValue = def[moduleName];
+    var value = data[moduleName];
+    var defaultValue = def[moduleName];
 
     if (value !== defaultValue) {
       if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
@@ -59,7 +64,7 @@ function excludeDefaultData(data, def, holde, views) {
 // };
 
 
-const ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
+var ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
 
 function dateParse(prop, value) {
   if (typeof value === 'string' && ISO_DATE_FORMAT.test(value)) {
@@ -101,9 +106,9 @@ function searchParse(search) {
 }
 
 function joinSearchString(arr) {
-  const strs = [''];
+  var strs = [''];
 
-  for (let i = 0, k = arr.length; i < k; i++) {
+  for (var i = 0, k = arr.length; i < k; i++) {
     strs.push(arr[i] || '');
   }
 
@@ -115,7 +120,7 @@ function searchStringify(searchData) {
     return '';
   }
 
-  const str = JSON.stringify(searchData);
+  var str = JSON.stringify(searchData);
 
   if (str === '{}') {
     return '';
@@ -129,9 +134,9 @@ function searchStringify(searchData) {
 }
 
 function splitSearch(search) {
-  const reg = new RegExp("[&?#]" + config.splitKey + "=[^&]*", 'g');
-  const arr = search.match(reg);
-  let stackParams = [];
+  var reg = new RegExp("[&?#]" + config.splitKey + "=[^&]*", 'g');
+  var arr = search.match(reg);
+  var stackParams = [];
 
   if (arr) {
     stackParams = arr.map(str => {
@@ -143,26 +148,29 @@ function splitSearch(search) {
 }
 
 function checkPathArgs(params) {
-  const obj = {};
+  var obj = {};
 
-  for (const key in params) {
-    if (params.hasOwnProperty(key)) {
-      const val = params[key];
-      const props = key.split('.');
+  for (var _key in params) {
+    if (params.hasOwnProperty(_key)) {
+      (function () {
+        var val = params[_key];
 
-      if (props.length > 1) {
-        props.reduce((prev, cur, index, arr) => {
-          if (index === arr.length - 1) {
-            prev[cur] = val;
-          } else {
-            prev[cur] = {};
-          }
+        var props = _key.split('.');
 
-          return prev[cur];
-        }, obj);
-      } else {
-        obj[key] = val;
-      }
+        if (props.length > 1) {
+          props.reduce((prev, cur, index, arr) => {
+            if (index === arr.length - 1) {
+              prev[cur] = val;
+            } else {
+              prev[cur] = {};
+            }
+
+            return prev[cur];
+          }, obj);
+        } else {
+          obj[_key] = val;
+        }
+      })();
     }
   }
 
@@ -170,24 +178,26 @@ function checkPathArgs(params) {
 }
 
 function pathnameParse(pathname, routeConfig, paths, args) {
-  for (const rule in routeConfig) {
-    if (routeConfig.hasOwnProperty(rule)) {
-      const item = routeConfig[rule];
-      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-      const match = matchPath(pathname, {
-        path: rule,
+  for (var _rule in routeConfig) {
+    if (routeConfig.hasOwnProperty(_rule)) {
+      var item = routeConfig[_rule];
+      var [_viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
+      var match = matchPath(pathname, {
+        path: _rule,
         exact: !pathConfig
       }); // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
 
       if (match) {
-        paths.push(viewName);
-        const moduleName = viewName.split(coreConfig.VSP)[0];
-        const {
+        paths.push(_viewName);
+
+        var _moduleName = _viewName.split(coreConfig.VSP)[0];
+
+        var {
           params
         } = match;
 
         if (params && Object.keys(params).length > 0) {
-          args[moduleName] = _objectSpread({}, args[moduleName], checkPathArgs(params));
+          args[_moduleName] = _objectSpread({}, args[_moduleName], {}, checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -214,26 +224,26 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   }
 
   // ruleToKeys将每条rule中的params key解析出来
-  for (const rule in routeConfig) {
-    if (routeConfig.hasOwnProperty(rule)) {
-      if (!ruleToKeys[rule]) {
-        const {
+  for (var _rule2 in routeConfig) {
+    if (routeConfig.hasOwnProperty(_rule2)) {
+      if (!ruleToKeys[_rule2]) {
+        var {
           keys
-        } = compilePath(rule, {
+        } = compilePath(_rule2, {
           end: true,
           strict: false,
           sensitive: false
         });
-        ruleToKeys[rule] = keys.reduce((prev, cur) => {
+        ruleToKeys[_rule2] = keys.reduce((prev, cur) => {
           prev.push(cur.name);
           return prev;
         }, []);
       }
 
-      const item = routeConfig[rule];
-      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-      const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
-      viewToRule[absoluteViewName] = rule;
+      var item = routeConfig[_rule2];
+      var [_viewName2, pathConfig] = typeof item === 'string' ? [item, null] : item;
+      var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
+      viewToRule[absoluteViewName] = _rule2;
 
       if (pathConfig) {
         compileConfig(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
@@ -252,10 +262,10 @@ function assignRouteData(paths, stackParams, args) {
     stackParams[0] = {};
   }
 
-  const firstStackParams = stackParams[0];
+  var firstStackParams = stackParams[0];
   args && assignDeep(firstStackParams, args);
-  const views = paths.reduce((prev, cur) => {
-    const [moduleName, viewName] = cur.split(coreConfig.VSP);
+  var views = paths.reduce((prev, cur) => {
+    var [moduleName, viewName] = cur.split(coreConfig.VSP);
 
     if (viewName) {
       if (!prev[moduleName]) {
@@ -274,7 +284,7 @@ function assignRouteData(paths, stackParams, args) {
   Object.keys(firstStackParams).forEach(moduleName => {
     firstStackParams[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], firstStackParams[moduleName]);
   });
-  const params = assignDeep({}, ...stackParams);
+  var params = assignDeep({}, ...stackParams);
   Object.keys(params).forEach(moduleName => {
     if (!firstStackParams[moduleName]) {
       params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
@@ -289,13 +299,13 @@ function assignRouteData(paths, stackParams, args) {
 }
 
 export function fillRouteData(routePayload) {
-  const extend = routePayload.extend || {
+  var extend = routePayload.extend || {
     views: {},
     paths: [],
     stackParams: [],
     params: {}
   };
-  const stackParams = [...extend.stackParams];
+  var stackParams = [...extend.stackParams];
 
   if (routePayload.stackParams) {
     routePayload.stackParams.forEach((item, index) => {
@@ -309,34 +319,38 @@ export function fillRouteData(routePayload) {
 }
 
 function extractHashData(params) {
-  const searchParams = {};
-  const hashParams = {};
+  var searchParams = {};
+  var hashParams = {};
 
-  for (const moduleName in params) {
-    if (params[moduleName] && params.hasOwnProperty(moduleName)) {
-      const data = params[moduleName];
-      const keys = Object.keys(data);
+  var _loop = function _loop(_moduleName2) {
+    if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
+      var _data = params[_moduleName2];
+      var keys = Object.keys(_data);
 
       if (keys.length > 0) {
         keys.forEach(key => {
           if (key.startsWith('_')) {
-            if (!hashParams[moduleName]) {
-              hashParams[moduleName] = {};
+            if (!hashParams[_moduleName2]) {
+              hashParams[_moduleName2] = {};
             }
 
-            hashParams[moduleName][key] = data[key];
+            hashParams[_moduleName2][key] = _data[key];
           } else {
-            if (!searchParams[moduleName]) {
-              searchParams[moduleName] = {};
+            if (!searchParams[_moduleName2]) {
+              searchParams[_moduleName2] = {};
             }
 
-            searchParams[moduleName][key] = data[key];
+            searchParams[_moduleName2][key] = _data[key];
           }
         });
       } else {
-        searchParams[moduleName] = {};
+        searchParams[_moduleName2] = {};
       }
     }
+  };
+
+  for (var _moduleName2 in params) {
+    _loop(_moduleName2);
   }
 
   return {
@@ -346,56 +360,56 @@ function extractHashData(params) {
 }
 
 export function buildTransformRoute(routeConfig) {
-  const {
+  var {
     viewToRule,
     ruleToKeys
   } = compileConfig(routeConfig);
 
-  const locationToRoute = location => {
-    const paths = [];
-    const pathsArgs = {};
+  var locationToRoute = location => {
+    var paths = [];
+    var pathsArgs = {};
     pathnameParse(location.pathname, routeConfig, paths, pathsArgs);
-    const stackParams = splitSearch(location.search);
-    const hashStackParams = splitSearch(location.hash);
+    var stackParams = splitSearch(location.search);
+    var hashStackParams = splitSearch(location.hash);
     hashStackParams.forEach((item, index) => {
       item && assignDeep(stackParams[index], item);
     });
     return assignRouteData(paths, stackParams, pathsArgs);
   };
 
-  const routeToLocation = routeData => {
-    const {
+  var routeToLocation = routeData => {
+    var {
       views,
       paths,
       params,
       stackParams
     } = routeData;
-    const firstStackParams = stackParams[0];
-    let pathname = '';
-    let firstStackParamsFilter;
+    var firstStackParams = stackParams[0];
+    var pathname = '';
+    var firstStackParamsFilter;
 
     if (paths.length > 0) {
       firstStackParamsFilter = {}; // 将args二层克隆params，因为后面可能会删除path中使用到的变量
 
-      for (const moduleName in firstStackParams) {
-        if (firstStackParams[moduleName] && firstStackParams.hasOwnProperty(moduleName)) {
-          firstStackParamsFilter[moduleName] = _objectSpread({}, firstStackParams[moduleName]);
+      for (var _moduleName3 in firstStackParams) {
+        if (firstStackParams[_moduleName3] && firstStackParams.hasOwnProperty(_moduleName3)) {
+          firstStackParamsFilter[_moduleName3] = _objectSpread({}, firstStackParams[_moduleName3]);
         }
       }
 
       paths.reduce((parentAbsoluteViewName, viewName, index) => {
-        const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
-        const rule = viewToRule[absoluteViewName];
-        const moduleName = viewName.split(coreConfig.VSP)[0]; //最深的一个view可以决定pathname
+        var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+        var rule = viewToRule[absoluteViewName];
+        var moduleName = viewName.split(coreConfig.VSP)[0]; //最深的一个view可以决定pathname
 
         if (index === paths.length - 1) {
           // const toPath = compileToPath(rule.replace(/\$$/, ''));
-          const toPath = compileToPath(rule);
+          var toPath = compileToPath(rule);
           pathname = toPath(params[moduleName]);
         } //pathname中传递的值可以不在params中重复传递
 
 
-        const keys = ruleToKeys[rule] || [];
+        var keys = ruleToKeys[rule] || [];
         keys.forEach(key => {
           if (firstStackParamsFilter[moduleName]) {
             delete firstStackParamsFilter[moduleName][key];
@@ -408,12 +422,12 @@ export function buildTransformRoute(routeConfig) {
     } //将带_前缀的变量放到hashData中
 
 
-    const arr = [...stackParams];
+    var arr = [...stackParams];
     arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams, false, views);
-    const searchStrings = [];
-    const hashStrings = [];
+    var searchStrings = [];
+    var hashStrings = [];
     arr.forEach((params, index) => {
-      const {
+      var {
         search,
         hash
       } = extractHashData(params);
@@ -433,13 +447,13 @@ export function buildTransformRoute(routeConfig) {
   };
 }
 export function fillBrowserRouteData(routePayload) {
-  const extend = routePayload.extend || {
+  var extend = routePayload.extend || {
     views: {},
     paths: [],
     stackParams: [],
     params: {}
   };
-  const stackParams = [...extend.stackParams];
+  var stackParams = [...extend.stackParams];
 
   if (routePayload.params) {
     stackParams[0] = assignDeep({}, stackParams[0], routePayload.params);
@@ -455,7 +469,7 @@ function isBrowserRoutePayload(data) {
 export function getBrowserRouteActions(getBrowserHistoryActions) {
   return {
     push(data) {
-      let args = data;
+      var args = data;
 
       if (isBrowserRoutePayload(data)) {
         args = fillBrowserRouteData(data);
@@ -465,7 +479,7 @@ export function getBrowserRouteActions(getBrowserHistoryActions) {
     },
 
     replace(data) {
-      let args = data;
+      var args = data;
 
       if (isBrowserRoutePayload(data)) {
         args = fillBrowserRouteData(data);
@@ -490,17 +504,18 @@ export function getBrowserRouteActions(getBrowserHistoryActions) {
 }
 export function buildToBrowserUrl(getTransformRoute) {
   function toUrl() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
+    for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
+      args[_key2] = arguments[_key2];
     }
 
     if (args.length === 1) {
-      const location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
-      args = [location.pathname, location.search, location.hash];
+      var _location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
+
+      args = [_location.pathname, _location.search, _location.hash];
     }
 
-    const [pathname, search, hash] = args;
-    let url = pathname;
+    var [pathname, search, hash] = args;
+    var url = pathname;
 
     if (search) {
       url += search;

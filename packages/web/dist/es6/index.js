@@ -1,5 +1,9 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 export { createBrowserHistory, createMemoryHistory, createHashHistory } from 'history';
 
 function isLocation(data) {
@@ -50,8 +54,9 @@ class BrowserHistoryActions {
     } else if (isLocation(data)) {
       this.history.push(data);
     } else {
-      const location = this.routeToLocation(data);
-      this.history.push(_objectSpread({}, location, {
+      var _location = this.routeToLocation(data);
+
+      this.history.push(_objectSpread({}, _location, {
         state: data
       }));
     }
@@ -63,8 +68,9 @@ class BrowserHistoryActions {
     } else if (isLocation(data)) {
       this.history.replace(data);
     } else {
-      const location = this.routeToLocation(data);
-      this.history.replace(_objectSpread({}, location, {
+      var _location2 = this.routeToLocation(data);
+
+      this.history.replace(_objectSpread({}, _location2, {
         state: data
       }));
     }
@@ -85,8 +91,8 @@ class BrowserHistoryActions {
 }
 
 export function createHistory(history, transformRoute) {
-  const historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  const historyActions = new BrowserHistoryActions(history, transformRoute.routeToLocation);
+  var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
+  var historyActions = new BrowserHistoryActions(history, transformRoute.routeToLocation);
   return {
     historyProxy,
     historyActions

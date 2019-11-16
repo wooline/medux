@@ -1,6 +1,6 @@
 import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core/types/export';
-import {BrowserRoutePayload, Location, RouteConfig, ToBrowserUrl, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import {History, createLocation} from 'history';
+import {Location, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 import React, {ReactElement} from 'react';
 import {Router, StaticRouter, withRouter} from 'react-router-dom';
 import {renderApp, renderSSR} from '@medux/react';
@@ -16,7 +16,7 @@ export {setRouteConfig} from '@medux/route-plan-a';
 export type RouteData = import('@medux/core/types/export').RouteData;
 export type LoadView<MG extends ModuleGetter, OPTS> = import('@medux/core/types/export').LoadView<MG, OPTS>;
 export type BaseModelState<R = {[key: string]: any}> = import('@medux/core/types/export').BaseModelState<R>;
-export type BrowserRoutePayloadd<P> = import('@medux/route-plan-a').BrowserRoutePayload<P>;
+export type BrowserRoutePayload<P> = import('@medux/route-plan-a').BrowserRoutePayload<P>;
 export type RouteConfig = import('@medux/route-plan-a').RouteConfig;
 export type ToBrowserUrl<Params> = import('@medux/route-plan-a').ToBrowserUrl<Params>;
 export type BrowserHistoryActions<Params> = import('@medux/route-plan-a').BrowserHistoryActions<BrowserRoutePayload<Params>>;

@@ -1,14 +1,12 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
 exports.__esModule = true;
 exports.compileToPath = compileToPath;
 exports.compilePath = compilePath;
 exports.matchPath = matchPath;
 exports.default = void 0;
 
-var _pathToRegexp = _interopRequireDefault(require("./path-to-regexp.js"));
+var _pathToRegexp = require("./path-to-regexp");
 
 var cache = {};
 var cacheLimit = 10000;
@@ -19,7 +17,7 @@ function compileToPath(rule) {
     return cache[rule];
   }
 
-  var result = _pathToRegexp.default.compile(rule);
+  var result = (0, _pathToRegexp.compile)(rule);
 
   if (cacheCount < cacheLimit) {
     cache[rule] = result;
@@ -46,7 +44,7 @@ function compilePath(path, options) {
   }
 
   var keys = [];
-  var regexp = (0, _pathToRegexp.default)(path, keys, options);
+  var regexp = (0, _pathToRegexp.pathToRegexp)(path, keys, options);
   var result = {
     regexp: regexp,
     keys: keys

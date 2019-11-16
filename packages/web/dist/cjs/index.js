@@ -6,8 +6,6 @@ exports.__esModule = true;
 exports.createHistory = createHistory;
 exports.createHashHistory = exports.createMemoryHistory = exports.createBrowserHistory = void 0;
 
-var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
-
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _history = require("history");
@@ -15,6 +13,10 @@ var _history = require("history");
 exports.createBrowserHistory = _history.createBrowserHistory;
 exports.createMemoryHistory = _history.createMemoryHistory;
 exports.createHashHistory = _history.createHashHistory;
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function isLocation(data) {
   return !!data['pathname'];
@@ -48,7 +50,7 @@ function () {
   };
 
   _proto.patch = function patch(location, routeData) {
-    this.history.push((0, _objectSpread2.default)({}, location, {
+    this.history.push(_objectSpread({}, location, {
       state: routeData
     }));
   };
@@ -74,7 +76,7 @@ function () {
     } else {
       var _location = this.routeToLocation(data);
 
-      this.history.push((0, _objectSpread2.default)({}, _location, {
+      this.history.push(_objectSpread({}, _location, {
         state: data
       }));
     }
@@ -88,7 +90,7 @@ function () {
     } else {
       var _location2 = this.routeToLocation(data);
 
-      this.history.replace((0, _objectSpread2.default)({}, _location2, {
+      this.history.replace(_objectSpread({}, _location2, {
         state: data
       }));
     }

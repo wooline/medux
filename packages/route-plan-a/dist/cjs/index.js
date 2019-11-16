@@ -10,13 +10,17 @@ exports.fillBrowserRouteData = fillBrowserRouteData;
 exports.getBrowserRouteActions = getBrowserRouteActions;
 exports.buildToBrowserUrl = buildToBrowserUrl;
 
-var _objectSpread2 = _interopRequireDefault(require("@babel/runtime/helpers/objectSpread"));
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _matchPath = require("./matchPath");
 
 var _deepExtend = _interopRequireDefault(require("deep-extend"));
 
 var _core = require("@medux/core");
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 var config = {
   escape: true,
@@ -211,7 +215,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = (0, _objectSpread2.default)({}, args[_moduleName], checkPathArgs(params));
+          args[_moduleName] = _objectSpread({}, args[_moduleName], {}, checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -412,7 +416,7 @@ function buildTransformRoute(routeConfig) {
 
       for (var _moduleName3 in firstStackParams) {
         if (firstStackParams[_moduleName3] && firstStackParams.hasOwnProperty(_moduleName3)) {
-          firstStackParamsFilter[_moduleName3] = (0, _objectSpread2.default)({}, firstStackParams[_moduleName3]);
+          firstStackParamsFilter[_moduleName3] = _objectSpread({}, firstStackParams[_moduleName3]);
         }
       }
 

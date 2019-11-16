@@ -11,7 +11,7 @@ var ViewNames;
   ViewNames["commentsDetailsList"] = "comments.DetailsList";
 })(ViewNames || (ViewNames = {}));
 
-const routeConfig = {
+var routeConfig = {
   '/': [ViewNames.appMain, {
     '/photos': ViewNames.photosList,
     '/photos/:itemId': [ViewNames.photosDetails, {
@@ -23,7 +23,7 @@ const routeConfig = {
     }]
   }]
 };
-const photoDefaultParams = {
+var photoDefaultParams = {
   _detailKey: '',
   _listKey: '',
   itemId: '',
@@ -33,7 +33,7 @@ const photoDefaultParams = {
     pageSize: 10
   }
 };
-const commentsDefaultParams = {
+var commentsDefaultParams = {
   _detailKey: '',
   _listKey: '',
   itemId: '',
@@ -45,7 +45,7 @@ const commentsDefaultParams = {
     pageSize: 10
   }
 };
-const defaultRouteParams = {
+var defaultRouteParams = {
   app: {},
   photos: photoDefaultParams,
   comments: commentsDefaultParams

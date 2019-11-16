@@ -1,11 +1,11 @@
 import { fillRouteData } from '../index';
 describe('routeToLocation：', () => {
   test('/', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main']
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/',
       search: '?',
@@ -13,8 +13,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/?q={"photos":{}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main'],
       stackParams: [{
         photos: {
@@ -26,7 +26,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/',
       search: '?q={"photos":{}}',
@@ -34,8 +34,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/?q={"photos":{"listSearch":{"page":2}}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main'],
       stackParams: [{
         photos: {
@@ -47,7 +47,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
@@ -55,8 +55,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos?q={"photos":{"listSearch":{"page":2}}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.List'],
       stackParams: [{
         photos: {
@@ -68,7 +68,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
@@ -76,8 +76,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details'],
       stackParams: [{
         photos: {
@@ -85,7 +85,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2',
       search: '?',
@@ -93,8 +93,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2?q={"photos":{"listSearch":{"page":2}}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details'],
       stackParams: [{
         photos: {
@@ -105,7 +105,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
@@ -113,8 +113,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2/comments', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.List'],
       stackParams: [{
         photos: {
@@ -126,7 +126,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments',
       search: '?',
@@ -134,8 +134,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2/comments?q={"photos":{"listSearch":{"page":2}},"comments":{"listSearch":{"page":3}}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.List'],
       stackParams: [{
         photos: {
@@ -154,7 +154,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments',
       search: '?q={"photos":{"listSearch":{"page":2}},"comments":{"listSearch":{"page":3}}}',
@@ -162,8 +162,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2/comments/8', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
       stackParams: [{
         photos: {
@@ -176,7 +176,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments/8',
       search: '?',
@@ -184,8 +184,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2/comments/8?q=&q={"photos":{"listSearch":{"page":2}}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
       stackParams: [{
         photos: {
@@ -204,7 +204,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments/8',
       search: '?q=&q={"photos":{"listSearch":{"page":2}}}',
@@ -212,8 +212,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2/comments/9?q=&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
       stackParams: [{
         photos: {
@@ -234,7 +234,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments/9',
       search: '?q=&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}',
@@ -242,8 +242,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2/comments/9?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
       stackParams: [{
         photos: {
@@ -267,7 +267,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments/9',
       search: '?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}',
@@ -275,8 +275,8 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2/comments/9?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}#q={"photos":{"_listKey":"sdk"}}&q={"comments":{"_listKey":"dba"}}', () => {
-    const transformRoute = global['transformRoute'];
-    const route = fillRouteData({
+    var transformRoute = global['transformRoute'];
+    var route = fillRouteData({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
       stackParams: [{
         photos: {
@@ -302,7 +302,7 @@ describe('routeToLocation：', () => {
         }
       }]
     });
-    const location = transformRoute.routeToLocation(route);
+    var location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments/9',
       search: '?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}',
@@ -312,13 +312,13 @@ describe('routeToLocation：', () => {
 });
 describe('locationToRoute：', () => {
   test('/', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -335,13 +335,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/?q={"photos":{"listSearch":{"page":2}}}', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -378,13 +378,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -424,13 +424,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -470,13 +470,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -516,13 +516,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -590,13 +590,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -664,13 +664,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -738,13 +738,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/99', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/99',
       search: '',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -812,13 +812,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}}}&b=swf', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}}}&b=swf',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -886,13 +886,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -960,13 +960,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf',
       hash: '#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf'
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -1034,13 +1034,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
       hash: ''
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -1119,13 +1119,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
       hash: '#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf'
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {
@@ -1206,13 +1206,13 @@ describe('locationToRoute：', () => {
     });
   });
   test('/photos/2/comments/8/?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf', () => {
-    const transformRoute = global['transformRoute'];
-    const location = {
+    var transformRoute = global['transformRoute'];
+    var location = {
       pathname: '/photos/2/comments/8/',
       search: '?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
       hash: '#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf'
     };
-    const route = transformRoute.locationToRoute(location);
+    var route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {
         app: {

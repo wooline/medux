@@ -1,4 +1,4 @@
-import pathToRegexp from './path-to-regexp.js';
+import { compile, pathToRegexp } from './path-to-regexp';
 var cache = {};
 var cacheLimit = 10000;
 var cacheCount = 0;
@@ -7,7 +7,7 @@ export function compileToPath(rule) {
     return cache[rule];
   }
 
-  var result = pathToRegexp.compile(rule);
+  var result = compile(rule);
 
   if (cacheCount < cacheLimit) {
     cache[rule] = result;

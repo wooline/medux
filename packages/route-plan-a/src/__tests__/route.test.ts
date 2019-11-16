@@ -116,7 +116,10 @@ describe('routeToLocation：', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
     const route = fillRouteData<{}>({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
-      stackParams: [{photos: {itemId: '2'}, comments: {articleType: 'photos', articleId: '2'}}, {photos: {listSearch: {page: 2}}, comments: {itemId: '9'}}],
+      stackParams: [
+        {photos: {itemId: '2'}, comments: {articleType: 'photos', articleId: '2'}},
+        {photos: {listSearch: {page: 2}}, comments: {itemId: '9'}},
+      ],
     });
     const location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
@@ -129,7 +132,10 @@ describe('routeToLocation：', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
     const route = fillRouteData<{}>({
       paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
-      stackParams: [{photos: {itemId: '2', listSearch: {pageSize: 20}}, comments: {articleType: 'photos', articleId: '2'}}, {photos: {listSearch: {page: 2}}, comments: {itemId: '9'}}],
+      stackParams: [
+        {photos: {itemId: '2', listSearch: {pageSize: 20}}, comments: {articleType: 'photos', articleId: '2'}},
+        {photos: {listSearch: {page: 2}}, comments: {itemId: '9'}},
+      ],
     });
     const location = transformRoute.routeToLocation(route);
     expect(location).toEqual({

@@ -6,13 +6,13 @@ exports.__esModule = true;
 exports.getBrowserHistory = getBrowserHistory;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
-exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
+exports.setRouteConfig = exports.reducer = exports.errorAction = exports.effect = exports.BaseModelHandlers = exports.exportActions = exports.LoadingState = exports.delayPromise = exports.ActionTypes = exports.exportModule = exports.loadView = void 0;
+
+var _history = require("history");
 
 var _routePlanA = require("@medux/route-plan-a");
 
 exports.setRouteConfig = _routePlanA.setRouteConfig;
-
-var _history = require("history");
 
 var _react = _interopRequireDefault(require("react"));
 
@@ -32,6 +32,7 @@ var _web = require("@medux/web");
 var _core = require("@medux/core");
 
 exports.ActionTypes = _core.ActionTypes;
+exports.delayPromise = _core.delayPromise;
 exports.LoadingState = _core.LoadingState;
 exports.exportActions = _core.exportActions;
 exports.BaseModelHandlers = _core.BaseModelHandlers;

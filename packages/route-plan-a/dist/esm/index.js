@@ -1,4 +1,9 @@
-import _objectSpread from "@babel/runtime/helpers/esm/objectSpread";
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend';
 import { config as coreConfig } from '@medux/core';
@@ -194,7 +199,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = _objectSpread({}, args[_moduleName], checkPathArgs(params));
+          args[_moduleName] = _objectSpread({}, args[_moduleName], {}, checkPathArgs(params));
         }
 
         if (pathConfig) {

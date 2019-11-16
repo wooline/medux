@@ -4,7 +4,7 @@ import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR
 import { Provider } from 'react-redux';
 export function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   return baseRenderApp((store, appModel, appViews, ssrInitStoreKey) => {
-    const ReduxProvider = props => {
+    var ReduxProvider = props => {
       // eslint-disable-next-line react/prop-types
       return React.createElement(Provider, {
         store: store
@@ -20,9 +20,9 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
   }
 
   return baseRenderSSR((store, appModel, appViews, ssrInitStoreKey) => {
-    const data = store.getState();
+    var data = store.getState();
 
-    const ReduxProvider = props => {
+    var ReduxProvider = props => {
       // eslint-disable-next-line react/prop-types
       return React.createElement(Provider, {
         store: store
@@ -37,7 +37,7 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export const loadView = (moduleName, viewName, Loading) => {
+export var loadView = (moduleName, viewName, Loading) => {
   var _temp;
 
   return _temp = class Loader extends React.Component {
@@ -48,7 +48,7 @@ export const loadView = (moduleName, viewName, Loading) => {
         Component: null
       });
 
-      const moduleViewResult = getView(moduleName, viewName);
+      var moduleViewResult = getView(moduleName, viewName);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(Component => {
@@ -68,7 +68,7 @@ export const loadView = (moduleName, viewName, Loading) => {
     }
 
     render() {
-      const {
+      var {
         Component
       } = this.state;
       return Component ? React.createElement(Component, this.props) : Loading ? React.createElement(Loading, this.props) : null;
@@ -76,5 +76,5 @@ export const loadView = (moduleName, viewName, Loading) => {
 
   }, _temp;
 };
-export const exportModule = baseExportModule;
+export var exportModule = baseExportModule;
 //# sourceMappingURL=index.js.map

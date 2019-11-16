@@ -1,7 +1,7 @@
 {
   "extends": "../../.tsconfig.json",
   "compilerOptions": {
-    "isolatedModules": true
+    "types": ["node"]
   },
   "include": ["./src"]
 }
