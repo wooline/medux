@@ -13,7 +13,6 @@
   "keywords": [],
   "workspaces": [
     "packages/core",
-    "packages/dev-utils",
     "packages/react",
     "packages/react-native-router",
     "packages/react-web-router",
