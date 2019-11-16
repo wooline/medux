@@ -318,13 +318,8 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     let pathname = '';
     let firstStackParamsFilter: {[moduleName: string]: {[key: string]: any} | undefined};
     if (paths.length > 0) {
-      firstStackParamsFilter = {};
-      // 将args二层克隆params，因为后面可能会删除path中使用到的变量
-      for (const moduleName in firstStackParams) {
-        if (firstStackParams[moduleName] && firstStackParams.hasOwnProperty(moduleName)) {
-          firstStackParamsFilter[moduleName] = {...firstStackParams[moduleName]};
-        }
-      }
+      // 将args深克隆，因为后面可能会删除path中使用到的变量
+      firstStackParamsFilter = assignDeep({}, firstStackParams);
       paths.reduce((parentAbsoluteViewName, viewName, index) => {
         const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
         const rule = viewToRule[absoluteViewName];
@@ -333,11 +328,37 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         if (index === paths.length - 1) {
           // const toPath = compileToPath(rule.replace(/\$$/, ''));
           const toPath = compileToPath(rule);
-          pathname = toPath(params[moduleName]);
+          const keys = ruleToKeys[rule] || [];
+          const args = keys.reduce((prev, cur) => {
+            if (typeof cur === 'string') {
+              const props = cur.split('.');
+              if (props.length) {
+                prev[cur] = props.reduce((p, c) => {
+                  return p[c];
+                }, params[moduleName]!);
+                return prev;
+              }
+            }
+            prev[cur] = params[moduleName]![cur];
+            return prev;
+          }, {});
+          pathname = toPath(args);
         }
         //pathname中传递的值可以不在params中重复传递
         const keys = ruleToKeys[rule] || [];
         keys.forEach(key => {
+          if (typeof key === 'string') {
+            const props = key.split('.');
+            if (props.length) {
+              props.reduce((p, c, i) => {
+                if (i === props.length - 1) {
+                  delete p[c];
+                }
+                return p[c] || {};
+              }, firstStackParamsFilter[moduleName] || {});
+              return;
+            }
+          }
           if (firstStackParamsFilter[moduleName]) {
             delete firstStackParamsFilter[moduleName]![key];
           }
