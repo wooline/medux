@@ -17,7 +17,8 @@
     "packages/react-native-router",
     "packages/react-web-router",
     "packages/route-plan-a",
-    "packages/web"
+    "packages/web",
+    "packages/dev-utils"
   ],
   "scripts": {
     "build:core": "lerna run build --scope @medux/core",

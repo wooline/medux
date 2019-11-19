@@ -91,19 +91,20 @@ function serializeUrl(method: string, url: string) {
 
 function urlToFileName(method: string, url: string, sourceDir: string, tempDir: string) {
   const name = serializeUrl(method, url);
-  const fileName = name + '.json';
+  const fileName = name + '.js';
   let sourceFileName = path.join(sourceDir, fileName);
   let tempFileName = path.join(tempDir, fileName);
   if (tempFileName.length > 240) {
     const md5 = crypto.createHash('md5');
-    sourceFileName = path.join(sourceDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.json';
-    tempFileName = path.join(tempDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.json';
+    sourceFileName = path.join(sourceDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.js';
+    tempFileName = path.join(tempDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.js';
   }
   return {sourceFileName, tempFileName, fileName};
 }
 
-function parseFile(content: string, res: Response) {
-  const data = JSON.parse(content);
+function parseFile(req: Request, content: string, res: Response) {
+  const fun = new Function('request', content);
+  const data = fun(req);
   let str = data.response;
   if (typeof str === 'object') {
     data.headers['content-type'] = 'application/json; charset=utf-8';
@@ -133,9 +134,11 @@ function cacheFileNames(sourceDir: string, timeout: number) {
     fileNamesLatest.files = {};
     fileNamesLatest.regExpFiles = {};
     fileList.forEach(name => {
-      if (name.endsWith('.json')) {
-        if (name.indexOf('-') === -1) {
-          const str = new Buffer(name.replace('.json', ''), 'base64').toString();
+      if (name.endsWith('.js')) {
+        const arr = name.split('@');
+        if (arr[1]) {
+          name = arr[1];
+          const str = new Buffer(name.replace('.js', ''), 'base64').toString();
           fileNamesLatest.regExpFiles[name] = new RegExp(str);
         } else {
           fileNamesLatest.files[name] = true;
@@ -170,7 +173,7 @@ function hitMockFile(fileName: string): string | RegExpMatchArray {
     return fileName;
   }
   const obj = fileNamesLatest.regExpFiles;
-  const str = fileName.replace('.json', '');
+  const str = fileName.replace('.js', '');
   for (const name in obj) {
     if (obj.hasOwnProperty(name)) {
       const match = str.match(obj[name]);
@@ -220,6 +223,7 @@ export = function middleware(
           } else {
             try {
               parseFile(
+                req,
                 regData
                   ? content.replace(/\$\{(\d+)\}/g, function($0, $1) {
                       return regData![$1];
@@ -244,7 +248,7 @@ export = function middleware(
           const contentType = res.get('content-type') || '';
           if ((statusCode === 200 || statusCode === 201 || statusCode === 204) && args.length === 0 && (!contentType || /\bjson\b|\bhtml\b|\btext\b/.test(contentType))) {
             const data = getResult(req.url, buffer, res);
-            fs.writeFile(tempFileName, jsonFormat(data, {type: 'space'}), err => {
+            fs.writeFile(tempFileName, 'return ' + jsonFormat(data, {type: 'space'}), err => {
               if (err) {
                 console.error(err);
               }
