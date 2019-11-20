@@ -101,7 +101,17 @@ function urlToFileName(method, url, sourceDir, tempDir) {
     }
     return { sourceFileName, tempFileName, fileName };
 }
-function parseFile(req, content, res) {
+function endSend(res, content, data) {
+    res.status(data.statusCode || 200);
+    res.set(data.headers);
+    if (Array.isArray(data.cookies)) {
+        data.cookies.forEach(item => {
+            res.cookie(...item);
+        });
+    }
+    res.end(content);
+}
+function parseFile(req, res, content) {
     const fun = new Function('request', content);
     const data = fun(req);
     let str = data.response;
@@ -112,15 +122,11 @@ function parseFile(req, content, res) {
     data.headers['content-length'] = Buffer.byteLength(str).toString();
     if (data.headers['x-delay']) {
         setTimeout(() => {
-            res.status(data.statusCode || 200);
-            res.set(data.headers);
-            res.end(str);
+            endSend(res, str, data);
         }, parseInt(data.headers['x-delay'], 10) || 1000);
     }
     else {
-        res.status(data.statusCode || 200);
-        res.set(data.headers);
-        res.end(str);
+        endSend(res, str, data);
     }
 }
 const fileNamesLatest = { date: 0, files: {}, regExpFiles: {} };
@@ -133,14 +139,13 @@ function cacheFileNames(sourceDir, timeout) {
         fileNamesLatest.regExpFiles = {};
         fileList.forEach(name => {
             if (name.endsWith('.js')) {
-                const arr = name.split("@");
+                const arr = name.split('@');
                 if (arr[1]) {
-                    name = arr[1];
-                    const str = new Buffer(name.replace('.js', ''), 'base64').toString();
-                    fileNamesLatest.regExpFiles[name] = new RegExp(str);
+                    const str = new Buffer(arr[1].replace('.js', ''), 'base64').toString();
+                    fileNamesLatest.regExpFiles[str] = name;
                 }
                 else {
-                    fileNamesLatest.files[name] = true;
+                    fileNamesLatest.files[name] = name;
                 }
             }
         });
@@ -172,12 +177,10 @@ function hitMockFile(fileName) {
     }
     const obj = fileNamesLatest.regExpFiles;
     const str = fileName.replace('.js', '');
-    for (const name in obj) {
-        if (obj.hasOwnProperty(name)) {
-            const match = str.match(obj[name]);
-            if (match) {
-                match.input = name;
-                return match;
+    for (const rule in obj) {
+        if (obj.hasOwnProperty(rule)) {
+            if (str.match(new RegExp(rule))) {
+                return obj[rule];
             }
         }
     }
@@ -200,13 +203,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
             cacheFileNames(sourceDir, cacheTimeout);
             const mockFile = hitMockFile(fileName);
             if (mockFile) {
-                let file = mockFile;
-                let regData = null;
-                if (typeof mockFile !== 'string') {
-                    file = mockFile.input;
-                    regData = mockFile;
-                }
-                fs_1.default.readFile(path_1.default.join(sourceDir, file), 'utf-8', function (err, content) {
+                fs_1.default.readFile(path_1.default.join(sourceDir, mockFile), 'utf-8', function (err, content) {
                     if (err) {
                         console.error(err);
                         res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
@@ -214,11 +211,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
                     }
                     else {
                         try {
-                            parseFile(req, regData
-                                ? content.replace(/\$\{(\d+)\}/g, function ($0, $1) {
-                                    return regData[$1];
-                                })
-                                : content, res);
+                            parseFile(req, res, content);
                         }
                         catch (err) {
                             console.error(err);

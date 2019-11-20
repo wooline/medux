@@ -101,8 +101,17 @@ function urlToFileName(method: string, url: string, sourceDir: string, tempDir: 
   }
   return {sourceFileName, tempFileName, fileName};
 }
-
-function parseFile(req: Request, content: string, res: Response) {
+function endSend(res: Response, content: string, data: {statusCode: number; headers: {[key: string]: string}; cookies: [string, string][]}) {
+  res.status(data.statusCode || 200);
+  res.set(data.headers);
+  if (Array.isArray(data.cookies)) {
+    data.cookies.forEach(item => {
+      res.cookie(...item);
+    });
+  }
+  res.end(content);
+}
+function parseFile(req: Request, res: Response, content: string) {
   const fun = new Function('request', content);
   const data = fun(req);
   let str = data.response;
@@ -113,18 +122,14 @@ function parseFile(req: Request, content: string, res: Response) {
   data.headers['content-length'] = Buffer.byteLength(str).toString();
   if (data.headers['x-delay']) {
     setTimeout(() => {
-      res.status(data.statusCode || 200);
-      res.set(data.headers);
-      res.end(str);
+      endSend(res, str, data);
     }, parseInt(data.headers['x-delay'], 10) || 1000);
   } else {
-    res.status(data.statusCode || 200);
-    res.set(data.headers);
-    res.end(str);
+    endSend(res, str, data);
   }
 }
 
-const fileNamesLatest: {date: number; files: {[name: string]: boolean}; regExpFiles: {[name: string]: RegExp}} = {date: 0, files: {}, regExpFiles: {}};
+const fileNamesLatest: {date: number; files: {[name: string]: string}; regExpFiles: {[name: string]: string}} = {date: 0, files: {}, regExpFiles: {}};
 
 function cacheFileNames(sourceDir: string, timeout: number) {
   const now = new Date().getTime();
@@ -137,11 +142,10 @@ function cacheFileNames(sourceDir: string, timeout: number) {
       if (name.endsWith('.js')) {
         const arr = name.split('@');
         if (arr[1]) {
-          name = arr[1];
-          const str = new Buffer(name.replace('.js', ''), 'base64').toString();
-          fileNamesLatest.regExpFiles[name] = new RegExp(str);
+          const str = new Buffer(arr[1].replace('.js', ''), 'base64').toString();
+          fileNamesLatest.regExpFiles[str] = name;
         } else {
-          fileNamesLatest.files[name] = true;
+          fileNamesLatest.files[name] = name;
         }
       }
     });
@@ -168,18 +172,16 @@ function getProxys(proxyMap: {[key: string]: any} | {context: string[] | string}
   return Object.keys(proxyMap);
 }
 
-function hitMockFile(fileName: string): string | RegExpMatchArray {
+function hitMockFile(fileName: string): string {
   if (fileNamesLatest.files[fileName]) {
     return fileName;
   }
   const obj = fileNamesLatest.regExpFiles;
   const str = fileName.replace('.js', '');
-  for (const name in obj) {
-    if (obj.hasOwnProperty(name)) {
-      const match = str.match(obj[name]);
-      if (match) {
-        match.input = name;
-        return match;
+  for (const rule in obj) {
+    if (obj.hasOwnProperty(rule)) {
+      if (str.match(new RegExp(rule))) {
+        return obj[rule];
       }
     }
   }
@@ -209,28 +211,14 @@ export = function middleware(
       cacheFileNames(sourceDir, cacheTimeout);
       const mockFile = hitMockFile(fileName);
       if (mockFile) {
-        let file: string = mockFile as string;
-        let regData: string[] | null = null;
-        if (typeof mockFile !== 'string') {
-          file = mockFile.input!;
-          regData = mockFile;
-        }
-        fs.readFile(path.join(sourceDir, file), 'utf-8', function(err, content) {
+        fs.readFile(path.join(sourceDir, mockFile), 'utf-8', function(err, content) {
           if (err) {
             console.error(err);
             res.writeHead(500, {'content-type': 'text/plain; charset=utf-8'});
             res.end(err.toString());
           } else {
             try {
-              parseFile(
-                req,
-                regData
-                  ? content.replace(/\$\{(\d+)\}/g, function($0, $1) {
-                      return regData![$1];
-                    })
-                  : content,
-                res
-              );
+              parseFile(req, res, content);
             } catch (err) {
               console.error(err);
               res.writeHead(500, {'content-type': 'text/plain; charset=utf-8'});
