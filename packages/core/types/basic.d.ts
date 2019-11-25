@@ -104,10 +104,10 @@ export interface EffectMap extends ActionHandlerMap {
         [moduleName: string]: EffectHandler;
     };
 }
-export interface Action<P = any> {
+export interface Action {
     type: string;
     priority?: string[];
-    payload?: P;
+    payload?: any[];
 }
 export interface ActionHandler {
     __actionName__: string;

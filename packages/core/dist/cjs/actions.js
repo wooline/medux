@@ -20,21 +20,21 @@ exports.ActionTypes = ActionTypes;
 function errorAction(error) {
   return {
     type: ActionTypes.Error,
-    payload: error
+    payload: [error]
   };
 }
 
 function routeChangeAction(route) {
   return {
     type: ActionTypes.RouteChange,
-    payload: route
+    payload: [route]
   };
 }
 
 function preRouteParamsAction(moduleName, params) {
   return {
     type: "" + moduleName + _basic.config.NSP + ActionTypes.MPreRouteParams,
-    payload: params
+    payload: [params]
   };
 }
 //# sourceMappingURL=actions.js.map

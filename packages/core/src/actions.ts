@@ -11,20 +11,20 @@ export const ActionTypes = {
 export function errorAction(error: any) {
   return {
     type: ActionTypes.Error,
-    payload: error,
+    payload: [error],
   };
 }
 
 export function routeChangeAction(route: RouteState) {
   return {
     type: ActionTypes.RouteChange,
-    payload: route,
+    payload: [route],
   };
 }
 
 export function preRouteParamsAction(moduleName: string, params: any) {
   return {
     type: `${moduleName}${config.NSP}${ActionTypes.MPreRouteParams}`,
-    payload: params,
+    payload: [params],
   };
 }

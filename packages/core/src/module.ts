@@ -185,7 +185,7 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
             {},
             {
               get: (target: {}, key: string) => {
-                return (payload: any) => ({type: moduleName + config.NSP + key, payload});
+                return (...payload: any[]) => ({type: moduleName + config.NSP + key, payload});
               },
               set: () => {
                 return true;

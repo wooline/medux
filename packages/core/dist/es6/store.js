@@ -9,20 +9,18 @@ import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } fro
 import { applyMiddleware, compose, createStore } from 'redux';
 import { loadModel } from './module';
 export function getActionData(action) {
-  var arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
-
-  if (arr.length === 0) {
-    return undefined;
-  } else if (arr.length === 1) {
-    return action[arr[0]];
-  } else {
-    var data = _objectSpread({}, action);
-
-    delete data['type'];
-    delete data['priority'];
-    delete data['time'];
-    return data;
-  }
+  return Array.isArray(action.payload) ? action.payload : []; // const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
+  // if (arr.length === 0) {
+  //   return undefined as any;
+  // } else if (arr.length === 1) {
+  //   return action[arr[0]];
+  // } else {
+  //   const data = {...action};
+  //   delete data['type'];
+  //   delete data['priority'];
+  //   delete data['time'];
+  //   return data as any;
+  // }
 }
 
 function bindHistory(store, history) {
@@ -87,7 +85,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
   storeReducers.route = (state, action) => {
     if (action.type === ActionTypes.RouteChange) {
-      var payload = getActionData(action);
+      var payload = getActionData(action)[0];
 
       if (!state) {
         return payload;
@@ -143,7 +141,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          currentState[moduleName] = fun(getActionData(action));
+          currentState[moduleName] = fun(...getActionData(action));
         }
       });
     }
@@ -209,7 +207,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
           if (!moduleNameMap[moduleName]) {
             moduleNameMap[moduleName] = true;
             var fun = handlers[moduleName];
-            var effectResult = fun(getActionData(action), prevState);
+            var effectResult = fun(...getActionData(action), prevState);
             var decorators = fun.__decorators__;
 
             if (decorators) {

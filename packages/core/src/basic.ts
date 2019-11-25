@@ -99,10 +99,10 @@ export interface ReducerMap extends ActionHandlerMap {
 export interface EffectMap extends ActionHandlerMap {
   [actionName: string]: {[moduleName: string]: EffectHandler};
 }
-export interface Action<P = any> {
+export interface Action {
   type: string;
   priority?: string[];
-  payload?: P;
+  payload?: any[];
 }
 export interface ActionHandler {
   __actionName__: string;
@@ -248,7 +248,7 @@ function transformAction(actionName: string, action: ActionHandler, listenerModu
 function addModuleActionCreatorList(moduleName: string, actionName: string) {
   const actions = MetaData.actionCreatorMap[moduleName];
   if (!actions[actionName]) {
-    actions[actionName] = payload => ({type: moduleName + config.NSP + actionName, payload});
+    actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
   }
 }
 export function injectActions(store: ModelStore, moduleName: string, handlers: ActionHandlerList) {

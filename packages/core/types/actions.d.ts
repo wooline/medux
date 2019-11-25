@@ -8,13 +8,13 @@ export declare const ActionTypes: {
 };
 export declare function errorAction(error: any): {
     type: string;
-    payload: any;
+    payload: any[];
 };
 export declare function routeChangeAction(route: RouteState): {
     type: string;
-    payload: RouteState<any>;
+    payload: RouteState<any>[];
 };
 export declare function preRouteParamsAction(moduleName: string, params: any): {
     type: string;
-    payload: any;
+    payload: any[];
 };

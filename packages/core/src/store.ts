@@ -4,19 +4,20 @@ import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, 
 
 import {loadModel} from './module';
 
-export function getActionData<T>(action: Action): T {
-  const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
-  if (arr.length === 0) {
-    return undefined as any;
-  } else if (arr.length === 1) {
-    return action[arr[0]];
-  } else {
-    const data = {...action};
-    delete data['type'];
-    delete data['priority'];
-    delete data['time'];
-    return data as any;
-  }
+export function getActionData(action: Action): any[] {
+  return Array.isArray(action.payload) ? action.payload : [];
+  // const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
+  // if (arr.length === 0) {
+  //   return undefined as any;
+  // } else if (arr.length === 1) {
+  //   return action[arr[0]];
+  // } else {
+  //   const data = {...action};
+  //   delete data['type'];
+  //   delete data['priority'];
+  //   delete data['time'];
+  //   return data as any;
+  // }
 }
 export interface HistoryProxy<L = any> {
   initialized: boolean;
@@ -68,7 +69,7 @@ export function buildStore(
   }
   storeReducers.route = (state: RouteState, action: Action) => {
     if (action.type === ActionTypes.RouteChange) {
-      const payload: RouteState = getActionData(action);
+      const payload: RouteState = getActionData(action)[0];
       if (!state) {
         return payload;
       }
@@ -115,7 +116,7 @@ export function buildStore(
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          currentState[moduleName] = fun(getActionData(action));
+          currentState[moduleName] = fun(...getActionData(action));
         }
       });
     }
@@ -168,7 +169,7 @@ export function buildStore(
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(getActionData(action), prevState);
+          const effectResult = fun(...getActionData(action), prevState);
           const decorators = fun.__decorators__;
           if (decorators) {
             const results: any[] = [];

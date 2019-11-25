@@ -1,6 +1,6 @@
 export interface ParseOptions {
     delimiter?: string;
-    whitelist?: string | string[];
+    prefixes?: string;
 }
 export declare function parse(str: string, options?: ParseOptions): Token[];
 export interface TokensToFunctionOptions {
@@ -26,10 +26,9 @@ export declare function regexpToFunction<P extends object = object>(re: RegExp, 
 export interface Key {
     name: string | number;
     prefix: string;
-    delimiter: string;
-    optional: boolean;
-    repeat: boolean;
+    suffix: string;
     pattern: string;
+    modifier: string;
 }
 export declare type Token = string | Key;
 export interface TokensToRegexpOptions {
@@ -38,7 +37,7 @@ export interface TokensToRegexpOptions {
     end?: boolean;
     start?: boolean;
     delimiter?: string;
-    endsWith?: string | string[];
+    endsWith?: string;
     encode?: (value: string) => string;
 }
 export declare function tokensToRegexp(tokens: Token[], keys?: Key[], options?: TokensToRegexpOptions): RegExp;

@@ -1,73 +1,62 @@
-// fork from path-to-regexp 5.0.0
+// fork from path-to-regexp 6.1.0
 // https://github.com/pillarjs/path-to-regexp
 
 /**
- * Default configs.
+ * Tokenizer results.
  */
-var DEFAULT_DELIMITER = '/';
 
 /**
- * Balanced bracket helper function.
+ * Tokenize input string.
  */
-function balanced(open, close, str, index) {
-  var count = 0;
-  var i = index;
-
-  while (i < str.length) {
-    if (str[i] === '\\') {
-      i += 2;
-      continue;
-    }
-
-    if (str[i] === close) {
-      count--;
-      if (count === 0) return i + 1;
-    }
-
-    if (str[i] === open) {
-      count++;
-    }
-
-    i++;
-  }
-
-  return -1;
-}
-/**
- * Parse a string for the raw tokens.
- */
-
-
-export function parse(str, options) {
-  var _options$delimiter, _options$whitelist;
-
-  if (options === void 0) {
-    options = {};
-  }
-
+function lexer(str) {
   var tokens = [];
-  var defaultDelimiter = (_options$delimiter = options.delimiter) !== null && _options$delimiter !== void 0 ? _options$delimiter : DEFAULT_DELIMITER;
-  var whitelist = (_options$whitelist = options.whitelist) !== null && _options$whitelist !== void 0 ? _options$whitelist : undefined;
   var i = 0;
-  var key = 0;
-  var path = '';
-  var isEscaped = false; // tslint:disable-next-line
 
   while (i < str.length) {
-    var prefix = '';
-    var name = '';
-    var pattern = ''; // Ignore escaped sequences.
+    var char = str[i];
 
-    if (str[i] === '\\') {
-      i++;
-      path += str[i++];
-      isEscaped = true;
+    if (char === '*' || char === '+' || char === '?') {
+      tokens.push({
+        type: 'MODIFIER',
+        index: i,
+        value: str[i++]
+      });
       continue;
     }
 
-    if (str[i] === ':') {
-      while (++i < str.length) {
-        var code = str.charCodeAt(i);
+    if (char === '\\') {
+      tokens.push({
+        type: 'ESCAPED_CHAR',
+        index: i++,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === '{') {
+      tokens.push({
+        type: 'OPEN',
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === '}') {
+      tokens.push({
+        type: 'CLOSE',
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === ':') {
+      var name = '';
+      var j = i + 1;
+
+      while (j < str.length) {
+        var code = str.charCodeAt(j);
 
         if ( // `0-9`
         code >= 48 && code <= 57 || // `A-Z`
@@ -75,76 +64,191 @@ export function parse(str, options) {
         code >= 97 && code <= 122 || // `_`
         code === 95 || // `.`
         code === 46) {
-          name += str[i];
+          name += str[j++];
           continue;
         }
 
         break;
-      } // False positive on param name.
-
-
-      if (!name) i--;
-    }
-
-    if (str[i] === '(') {
-      var end = balanced('(', ')', str, i); // False positive on matching brackets.
-
-      if (end > -1) {
-        pattern = str.slice(i + 1, end - 1);
-        i = end;
-
-        if (pattern[0] === '?') {
-          throw new TypeError('Path pattern must be a capturing group');
-        }
-
-        if (/\((?=[^?])/.test(pattern)) {
-          var validPattern = pattern.replace(/\((?=[^?])/, '(?:');
-          throw new TypeError("Capturing groups are not allowed in pattern, use a non-capturing group: (" + validPattern + ")");
-        }
       }
-    } // Add regular characters to the path string.
 
-
-    if (name === '' && pattern === '') {
-      path += str[i++];
-      isEscaped = false;
+      if (!name) throw new TypeError("Missing parameter name at " + i);
+      tokens.push({
+        type: 'NAME',
+        index: i,
+        value: name
+      });
+      i = j;
       continue;
-    } // Extract the final character from `path` for the prefix.
-
-
-    if (path.length && !isEscaped) {
-      var char = path[path.length - 1];
-      var matches = whitelist ? whitelist.indexOf(char) > -1 : true;
-
-      if (matches) {
-        prefix = char;
-        path = path.slice(0, -1);
-      }
-    } // Push the current path onto the list of tokens.
-
-
-    if (path.length) {
-      tokens.push(path);
-      path = '';
     }
 
-    var repeat = str[i] === '+' || str[i] === '*';
-    var optional = str[i] === '?' || str[i] === '*';
-    var delimiter = prefix || defaultDelimiter; // Increment `i` past modifier token.
+    if (char === '(') {
+      var count = 1;
+      var pattern = '';
 
-    if (repeat || optional) i++;
+      var _j = i + 1;
+
+      if (str[_j] === '?') {
+        throw new TypeError("Pattern cannot start with \"?\" at " + _j);
+      }
+
+      while (_j < str.length) {
+        if (str[_j] === '\\') {
+          pattern += str[_j++] + str[_j++];
+          continue;
+        }
+
+        if (str[_j] === ')') {
+          count--;
+
+          if (count === 0) {
+            _j++;
+            break;
+          }
+        } else if (str[_j] === '(') {
+          count++;
+
+          if (str[_j + 1] !== '?') {
+            throw new TypeError("Capturing groups are not allowed at " + _j);
+          }
+        }
+
+        pattern += str[_j++];
+      }
+
+      if (count) throw new TypeError("Unbalanced pattern at " + i);
+      if (!pattern) throw new TypeError("Missing pattern at " + i);
+      tokens.push({
+        type: 'PATTERN',
+        index: i,
+        value: pattern
+      });
+      i = _j;
+      continue;
+    }
+
     tokens.push({
-      name: name || key++,
-      prefix: prefix,
-      delimiter: delimiter,
-      optional: optional,
-      repeat: repeat,
-      pattern: pattern || "[^" + escapeString(delimiter === defaultDelimiter ? delimiter : delimiter + defaultDelimiter) + "]+?"
+      type: 'CHAR',
+      index: i,
+      value: str[i++]
     });
   }
 
-  if (path.length) tokens.push(path);
+  tokens.push({
+    type: 'END',
+    index: i,
+    value: ''
+  });
   return tokens;
+}
+
+/**
+ * Parse a string for the raw tokens.
+ */
+export function parse(str, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  var tokens = lexer(str);
+  var _options = options,
+      _options$prefixes = _options.prefixes,
+      prefixes = _options$prefixes === void 0 ? './' : _options$prefixes;
+  var defaultPattern = "[^" + escapeString(options.delimiter || '/#?') + "]+?";
+  var result = [];
+  var key = 0;
+  var i = 0;
+  var path = '';
+
+  var tryConsume = function tryConsume(type) {
+    if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
+    return undefined;
+  };
+
+  var mustConsume = function mustConsume(type) {
+    var value = tryConsume(type);
+    if (value !== undefined) return value;
+    var _tokens$i = tokens[i],
+        nextType = _tokens$i.type,
+        index = _tokens$i.index;
+    throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
+  };
+
+  var consumeText = function consumeText() {
+    var result = '';
+    var value; // tslint:disable-next-line
+
+    while (value = tryConsume('CHAR') || tryConsume('ESCAPED_CHAR')) {
+      result += value;
+    }
+
+    return result;
+  };
+
+  while (i < tokens.length) {
+    var char = tryConsume('CHAR');
+    var name = tryConsume('NAME');
+    var pattern = tryConsume('PATTERN');
+
+    if (name || pattern) {
+      var prefix = char || '';
+
+      if (prefixes.indexOf(prefix) === -1) {
+        path += prefix;
+        prefix = '';
+      }
+
+      if (path) {
+        result.push(path);
+        path = '';
+      }
+
+      result.push({
+        name: name || key++,
+        prefix: prefix,
+        suffix: '',
+        pattern: pattern || defaultPattern,
+        modifier: tryConsume('MODIFIER') || ''
+      });
+      continue;
+    }
+
+    var _value = char || tryConsume('ESCAPED_CHAR');
+
+    if (_value) {
+      path += _value;
+      continue;
+    }
+
+    if (path) {
+      result.push(path);
+      path = '';
+    }
+
+    var open = tryConsume('OPEN');
+
+    if (open) {
+      var _prefix = consumeText();
+
+      var _name = tryConsume('NAME') || '';
+
+      var _pattern = tryConsume('PATTERN') || '';
+
+      var suffix = consumeText();
+      mustConsume('CLOSE');
+      result.push({
+        name: _name || (_pattern ? key++ : ''),
+        pattern: _name && !_pattern ? defaultPattern : _pattern,
+        prefix: _prefix,
+        suffix: suffix,
+        modifier: tryConsume('MODIFIER') || ''
+      });
+      continue;
+    }
+
+    mustConsume('END');
+  }
+
+  return result;
 }
 
 /**
@@ -163,20 +267,20 @@ export function tokensToFunction(tokens, options) {
   }
 
   var reFlags = flags(options);
-  var _options = options,
-      _options$encode = _options.encode,
-      encode = _options$encode === void 0 ? function (x) {
+  var _options2 = options,
+      _options2$encode = _options2.encode,
+      encode = _options2$encode === void 0 ? function (x) {
     return x;
-  } : _options$encode,
-      _options$validate = _options.validate,
-      validate = _options$validate === void 0 ? true : _options$validate; // Compile all the tokens into regexps.
+  } : _options2$encode,
+      _options2$validate = _options2.validate,
+      validate = _options2$validate === void 0 ? true : _options2$validate; // Compile all the tokens into regexps.
 
   var matches = tokens.map(function (token) {
     if (typeof token === 'object') {
       return new RegExp("^(?:" + token.pattern + ")$", reFlags);
     }
 
-    return void 0;
+    return undefined;
   });
   return function (data) {
     var path = '';
@@ -189,44 +293,47 @@ export function tokensToFunction(tokens, options) {
         continue;
       }
 
-      var _value = data ? data[_token.name] : undefined;
+      var _value2 = data ? data[_token.name] : undefined;
 
-      if (Array.isArray(_value)) {
-        if (!_token.repeat) {
+      var optional = _token.modifier === '?' || _token.modifier === '*';
+      var repeat = _token.modifier === '*' || _token.modifier === '+';
+
+      if (Array.isArray(_value2)) {
+        if (!repeat) {
           throw new TypeError("Expected \"" + _token.name + "\" to not repeat, but got an array");
         }
 
-        if (_value.length === 0) {
-          if (_token.optional) continue;
+        if (_value2.length === 0) {
+          if (optional) continue;
           throw new TypeError("Expected \"" + _token.name + "\" to not be empty");
         }
 
-        for (var j = 0; j < _value.length; j++) {
-          var segment = encode(_value[j], _token);
+        for (var j = 0; j < _value2.length; j++) {
+          var segment = encode(_value2[j], _token);
 
           if (validate && !matches[i].test(segment)) {
             throw new TypeError("Expected all \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + segment + "\"");
           }
 
-          path += (j === 0 ? _token.prefix : _token.delimiter) + segment;
+          path += _token.prefix + segment + _token.suffix;
         }
 
         continue;
       }
 
-      if (typeof _value === 'string' || typeof _value === 'number') {
-        var _segment = encode(String(_value), _token);
+      if (typeof _value2 === 'string' || typeof _value2 === 'number') {
+        var _segment = encode(String(_value2), _token);
 
         if (validate && !matches[i].test(_segment)) {
           throw new TypeError("Expected \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + _segment + "\"");
         }
 
-        path += _token.prefix + _segment;
+        path += _token.prefix + _segment + _token.suffix;
         continue;
       }
 
-      if (_token.optional) continue;
-      var typeOfMessage = _token.repeat ? 'an array' : 'a string';
+      if (optional) continue;
+      var typeOfMessage = repeat ? 'an array' : 'a string';
       throw new TypeError("Expected \"" + _token.name + "\" to be " + typeOfMessage);
     }
 
@@ -251,11 +358,11 @@ export function regexpToFunction(re, keys, options) {
     options = {};
   }
 
-  var _options2 = options,
-      _options2$decode = _options2.decode,
-      decode = _options2$decode === void 0 ? function (x) {
+  var _options3 = options,
+      _options3$decode = _options3.decode,
+      decode = _options3$decode === void 0 ? function (x) {
     return x;
-  } : _options2$decode;
+  } : _options3$decode;
   return function (pathname) {
     var m = re.exec(pathname);
     if (!m) return false;
@@ -268,8 +375,8 @@ export function regexpToFunction(re, keys, options) {
       if (m[i] === undefined) return "continue";
       var key = keys[i - 1];
 
-      if (key.repeat) {
-        params[key.name] = m[i].split(key.delimiter).map(function (value) {
+      if (key.modifier === '*' || key.modifier === '+') {
+        params[key.name] = m[i].split(key.prefix + key.suffix).map(function (value) {
           return decode(value, key);
         });
       } else {
@@ -323,9 +430,8 @@ function regexpToRegexp(path, keys) {
       keys.push({
         name: i,
         prefix: '',
-        delimiter: '',
-        optional: false,
-        repeat: false,
+        suffix: '',
+        modifier: '',
         pattern: ''
       });
     }
@@ -361,19 +467,19 @@ export function tokensToRegexp(tokens, keys, options) {
     options = {};
   }
 
-  var _options3 = options,
-      strict = _options3.strict,
-      _options3$start = _options3.start,
-      start = _options3$start === void 0 ? true : _options3$start,
-      _options3$end = _options3.end,
-      end = _options3$end === void 0 ? true : _options3$end,
-      _options3$delimiter = _options3.delimiter,
-      delimiter = _options3$delimiter === void 0 ? DEFAULT_DELIMITER : _options3$delimiter,
-      _options3$encode = _options3.encode,
-      encode = _options3$encode === void 0 ? function (x) {
+  var _options4 = options,
+      _options4$strict = _options4.strict,
+      strict = _options4$strict === void 0 ? false : _options4$strict,
+      _options4$start = _options4.start,
+      start = _options4$start === void 0 ? true : _options4$start,
+      _options4$end = _options4.end,
+      end = _options4$end === void 0 ? true : _options4$end,
+      _options4$encode = _options4.encode,
+      encode = _options4$encode === void 0 ? function (x) {
     return x;
-  } : _options3$encode;
-  var endsWith = (typeof options.endsWith === 'string' ? options.endsWith.split('') : options.endsWith || []).map(escapeString).concat('$').join('|');
+  } : _options4$encode;
+  var endsWith = "[" + escapeString(options.endsWith || '') + "]|$";
+  var delimiter = "[" + escapeString(options.delimiter || '/#?') + "]";
   var route = start ? '^' : ''; // Iterate over the tokens and create our regexp string.
 
   for (var _iterator = tokens, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
@@ -393,35 +499,42 @@ export function tokensToRegexp(tokens, keys, options) {
     if (typeof _token2 === 'string') {
       route += escapeString(encode(_token2));
     } else {
-      var capture = _token2.repeat ? "(?:" + _token2.pattern + ")(?:" + escapeString(_token2.delimiter) + "(?:" + _token2.pattern + "))*" : _token2.pattern;
-      if (keys) keys.push(_token2);
+      var prefix = escapeString(encode(_token2.prefix));
+      var suffix = escapeString(encode(_token2.suffix));
 
-      if (_token2.optional) {
-        if (!_token2.prefix) {
-          route += "(" + capture + ")?";
+      if (_token2.pattern) {
+        if (keys) keys.push(_token2);
+
+        if (prefix || suffix) {
+          if (_token2.modifier === '+' || _token2.modifier === '*') {
+            var mod = _token2.modifier === '*' ? '?' : '';
+            route += "(?:" + prefix + "((?:" + _token2.pattern + ")(?:" + suffix + prefix + "(?:" + _token2.pattern + "))*)" + suffix + ")" + mod;
+          } else {
+            route += "(?:" + prefix + "(" + _token2.pattern + ")" + suffix + ")" + _token2.modifier;
+          }
         } else {
-          route += "(?:" + escapeString(_token2.prefix) + "(" + capture + "))?";
+          route += "(" + _token2.pattern + ")" + _token2.modifier;
         }
       } else {
-        route += escapeString(_token2.prefix) + "(" + capture + ")";
+        route += "(?:" + prefix + suffix + ")" + _token2.modifier;
       }
     }
   }
 
   if (end) {
-    if (!strict) route += "(?:" + escapeString(delimiter) + ")?";
-    route += endsWith === '$' ? '$' : "(?=" + endsWith + ")";
+    if (!strict) route += delimiter + "?";
+    route += !options.endsWith ? '$' : "(?=" + endsWith + ")";
   } else {
     var endToken = tokens[tokens.length - 1];
-    var isEndDelimited = typeof endToken === 'string' ? endToken[endToken.length - 1] === delimiter : // tslint:disable-next-line
+    var isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : // tslint:disable-next-line
     endToken === undefined;
 
     if (!strict) {
-      route += "(?:" + escapeString(delimiter) + "(?=" + endsWith + "))?";
+      route += "(?:" + delimiter + "(?=" + endsWith + "))?";
     }
 
     if (!isEndDelimited) {
-      route += "(?=" + escapeString(delimiter) + "|" + endsWith + ")";
+      route += "(?=" + delimiter + "|" + endsWith + ")";
     }
   }
 
@@ -439,14 +552,8 @@ export function tokensToRegexp(tokens, keys, options) {
  * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
  */
 export function pathToRegexp(path, keys, options) {
-  if (path instanceof RegExp) {
-    return regexpToRegexp(path, keys);
-  }
-
-  if (Array.isArray(path)) {
-    return arrayToRegexp(path, keys, options);
-  }
-
+  if (path instanceof RegExp) return regexpToRegexp(path, keys);
+  if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
   return stringToRegexp(path, keys, options);
 }
 //# sourceMappingURL=path-to-regexp.js.map

@@ -1,6 +1,6 @@
 import { Action, ModelStore, RouteData } from './basic';
 import { Middleware, ReducersMapObject, StoreEnhancer } from 'redux';
-export declare function getActionData<T>(action: Action): T;
+export declare function getActionData(action: Action): any[];
 export interface HistoryProxy<L = any> {
     initialized: boolean;
     getLocation(): L;

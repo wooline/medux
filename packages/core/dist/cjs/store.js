@@ -21,22 +21,18 @@ function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (O
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function getActionData(action) {
-  var arr = Object.keys(action).filter(function (key) {
-    return key !== 'type' && key !== 'priority' && key !== 'time';
-  });
-
-  if (arr.length === 0) {
-    return undefined;
-  } else if (arr.length === 1) {
-    return action[arr[0]];
-  } else {
-    var data = _objectSpread({}, action);
-
-    delete data['type'];
-    delete data['priority'];
-    delete data['time'];
-    return data;
-  }
+  return Array.isArray(action.payload) ? action.payload : []; // const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
+  // if (arr.length === 0) {
+  //   return undefined as any;
+  // } else if (arr.length === 1) {
+  //   return action[arr[0]];
+  // } else {
+  //   const data = {...action};
+  //   delete data['type'];
+  //   delete data['priority'];
+  //   delete data['time'];
+  //   return data as any;
+  // }
 }
 
 function bindHistory(store, history) {
@@ -100,7 +96,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
   storeReducers.route = function (state, action) {
     if (action.type === _actions.ActionTypes.RouteChange) {
-      var payload = getActionData(action);
+      var payload = getActionData(action)[0];
 
       if (!state) {
         return payload;
@@ -156,7 +152,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          currentState[moduleName] = fun(getActionData(action));
+          currentState[moduleName] = fun.apply(void 0, getActionData(action));
         }
       });
     }
@@ -223,7 +219,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun(getActionData(action), prevState);
+              var effectResult = fun.apply(void 0, getActionData(action).concat([prevState]));
               var decorators = fun.__decorators__;
 
               if (decorators) {

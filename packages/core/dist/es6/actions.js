@@ -9,19 +9,19 @@ export var ActionTypes = {
 export function errorAction(error) {
   return {
     type: ActionTypes.Error,
-    payload: error
+    payload: [error]
   };
 }
 export function routeChangeAction(route) {
   return {
     type: ActionTypes.RouteChange,
-    payload: route
+    payload: [route]
   };
 }
 export function preRouteParamsAction(moduleName, params) {
   return {
     type: "" + moduleName + config.NSP + ActionTypes.MPreRouteParams,
-    payload: params
+    payload: [params]
   };
 }
 //# sourceMappingURL=actions.js.map

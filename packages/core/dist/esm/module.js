@@ -213,7 +213,11 @@ export function exportActions(moduleGetter) {
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
     maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
       get: function get(target, key) {
-        return function (payload) {
+        return function () {
+          for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+            payload[_key] = arguments[_key];
+          }
+
           return {
             type: moduleName + config.NSP + key,
             payload: payload

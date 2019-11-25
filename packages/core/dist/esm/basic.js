@@ -168,7 +168,11 @@ function addModuleActionCreatorList(moduleName, actionName) {
   var actions = MetaData.actionCreatorMap[moduleName];
 
   if (!actions[actionName]) {
-    actions[actionName] = function (payload) {
+    actions[actionName] = function () {
+      for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        payload[_key2] = arguments[_key2];
+      }
+
       return {
         type: moduleName + config.NSP + actionName,
         payload: payload
