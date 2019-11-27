@@ -1,6 +1,6 @@
 {
   "name": "@medux/core",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "description": "Modular state management,Suitable for various javascript frameworks.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/core",
   "author": "wooline <wooline@qq.com>",
