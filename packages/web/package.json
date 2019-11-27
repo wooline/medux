@@ -1,6 +1,6 @@
 {
   "name": "@medux/web",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "description": "The practice of @medux/core in web app.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web",
   "author": "wooline <wooline@qq.com>",
@@ -31,7 +31,7 @@
     "build": "yarn build:esm & yarn build:cjs & yarn build:es6"
   },
   "dependencies": {
-    "@medux/core": "^0.2.18",
+    "@medux/core": "^0.2.19",
     "@types/history": "~4.7.2",
     "history": "~4.10.1"
   },
