@@ -177,7 +177,12 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "callThisAction",
       value: function callThisAction(handler) {
         var actions = MetaData.actionCreatorMap[this.moduleName];
-        return actions[handler.__actionName__](arguments.length <= 1 ? undefined : arguments[1]);
+
+        for (var _len = arguments.length, rest = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          rest[_key - 1] = arguments[_key];
+        }
+
+        return actions[handler.__actionName__].apply(actions, rest);
       }
     }, {
       kind: "method",
@@ -240,8 +245,8 @@ export function exportActions(moduleGetter) {
     maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
       get: function get(target, key) {
         return function () {
-          for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-            payload[_key] = arguments[_key];
+          for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+            payload[_key2] = arguments[_key2];
           }
 
           return {

@@ -308,7 +308,12 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     const stackParams = splitSearch(location.search);
     const hashStackParams = splitSearch(location.hash);
     hashStackParams.forEach((item, index) => {
-      item && assignDeep(stackParams[index], item);
+      if (item) {
+        if (!stackParams[index]) {
+          stackParams[index] = {};
+        }
+        assignDeep(stackParams[index], item);
+      }
     });
     return assignRouteData(paths, stackParams, pathsArgs);
   };

@@ -80,7 +80,7 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
     protected dispatch(action: Action): Action | Promise<void>;
     protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {
         type: string;
-        payload?: any;
+        payload?: any[];
     };
     protected updateState(payload: Partial<S>): void;
     protected loadModel(moduleName: Extract<keyof R, string>): void | Promise<void>;

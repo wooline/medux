@@ -379,7 +379,13 @@ export function buildTransformRoute(routeConfig) {
     var stackParams = splitSearch(location.search);
     var hashStackParams = splitSearch(location.hash);
     hashStackParams.forEach(function (item, index) {
-      item && assignDeep(stackParams[index], item);
+      if (item) {
+        if (!stackParams[index]) {
+          stackParams[index] = {};
+        }
+
+        assignDeep(stackParams[index], item);
+      }
     });
     return assignRouteData(paths, stackParams, pathsArgs);
   };

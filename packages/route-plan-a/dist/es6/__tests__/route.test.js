@@ -661,6 +661,80 @@ describe('locationToRoute：', () => {
       }]
     });
   });
+  test('/photos/2/comments#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}', () => {
+    var transformRoute = global['transformRoute'];
+    var location = {
+      pathname: '/photos/2/comments',
+      search: '',
+      hash: '#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}'
+    };
+    var route = transformRoute.locationToRoute(location);
+    expect(route).toEqual({
+      views: {
+        app: {
+          Main: true
+        },
+        photos: {
+          Details: true
+        },
+        comments: {
+          Main: true,
+          List: true
+        }
+      },
+      paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.List'],
+      params: {
+        photos: {
+          _detailKey: '',
+          _listKey: 'sdk',
+          itemId: '2',
+          listSearch: {
+            title: '',
+            page: 1,
+            pageSize: 10
+          }
+        },
+        comments: {
+          _detailKey: '',
+          _listKey: 'bde',
+          itemId: '',
+          articleType: 'photos',
+          articleId: '2',
+          listSearch: {
+            isNewest: false,
+            page: 1,
+            pageSize: 10
+          }
+        },
+        app: {}
+      },
+      stackParams: [{
+        photos: {
+          _detailKey: '',
+          _listKey: 'sdk',
+          itemId: '2',
+          listSearch: {
+            title: '',
+            page: 1,
+            pageSize: 10
+          }
+        },
+        comments: {
+          _detailKey: '',
+          _listKey: 'bde',
+          itemId: '',
+          articleType: 'photos',
+          articleId: '2',
+          listSearch: {
+            isNewest: false,
+            page: 1,
+            pageSize: 10
+          }
+        },
+        app: {}
+      }]
+    });
+  });
   test('/photos/2/comments/8', () => {
     var transformRoute = global['transformRoute'];
     var location = {

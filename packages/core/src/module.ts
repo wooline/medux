@@ -133,9 +133,9 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     return this.store.dispatch(action) as any;
   }
 
-  protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; payload?: any} {
+  protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; payload?: any[]} {
     const actions = MetaData.actionCreatorMap[this.moduleName];
-    return actions[(handler as ActionHandler).__actionName__](rest[0]);
+    return actions[(handler as ActionHandler).__actionName__](...rest);
   }
   protected updateState(payload: Partial<S>) {
     this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}));
