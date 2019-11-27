@@ -73,6 +73,10 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
     protected getCurrentState(): S;
     protected get currentRootState(): R;
     protected getCurrentRootState(): R;
+    protected get beforeState(): S;
+    protected getBeforeState(): S;
+    protected get beforeRootState(): R;
+    protected getBeforeRootState(): R;
     protected dispatch(action: Action): Action | Promise<void>;
     protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {
         type: string;

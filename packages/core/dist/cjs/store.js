@@ -21,18 +21,7 @@ function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (O
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function getActionData(action) {
-  return Array.isArray(action.payload) ? action.payload : []; // const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
-  // if (arr.length === 0) {
-  //   return undefined as any;
-  // } else if (arr.length === 1) {
-  //   return action[arr[0]];
-  // } else {
-  //   const data = {...action};
-  //   delete data['type'];
-  //   delete data['priority'];
-  //   delete data['time'];
-  //   return data as any;
-  // }
+  return Array.isArray(action.payload) ? action.payload : [];
 }
 
 function bindHistory(store, history) {
@@ -174,23 +163,24 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
           }
         }
 
-        var prevState = store._medux_.prevState;
+        var meta = store._medux_;
+        meta.beforeState = meta.prevState;
         var action = next(originalAction);
 
         if (action.type === _actions.ActionTypes.RouteChange) {
-          var rootRouteParams = store._medux_.prevState.route.data.params;
+          var rootRouteParams = meta.prevState.route.data.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
             var preRouteParams = rootRouteParams[moduleName];
 
-            if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
+            if (preRouteParams && Object.keys(preRouteParams).length > 0 && meta.injectedModules[moduleName]) {
               dispatch((0, _actions.preRouteParamsAction)(moduleName, preRouteParams));
             }
           });
         }
 
-        var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
+        var handlersCommon = meta.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-        var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
+        var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
 
         var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
 
@@ -219,7 +209,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun.apply(void 0, getActionData(action).concat([prevState]));
+              var effectResult = fun.apply(void 0, getActionData(action));
               var decorators = fun.__decorators__;
 
               if (decorators) {
@@ -310,6 +300,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
       var newStore = newCreateStore.apply(void 0, arguments);
       var modelStore = newStore;
       modelStore._medux_ = {
+        beforeState: {},
         prevState: {},
         currentState: {},
         reducerMap: {},

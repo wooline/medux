@@ -162,6 +162,32 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
         return this.store._medux_.currentState;
       }
     }, {
+      kind: "get",
+      key: "beforeState",
+      value: function beforeState() {
+        return this.getBeforeState();
+      } //ie8不支持getter
+
+    }, {
+      kind: "method",
+      key: "getBeforeState",
+      value: function getBeforeState() {
+        return this.store._medux_.beforeState[this.moduleName];
+      }
+    }, {
+      kind: "get",
+      key: "beforeRootState",
+      value: function beforeRootState() {
+        return this.getBeforeRootState();
+      } //ie8不支持getter
+
+    }, {
+      kind: "method",
+      key: "getBeforeRootState",
+      value: function getBeforeRootState() {
+        return this.store._medux_.beforeState;
+      }
+    }, {
       kind: "method",
       key: "dispatch",
       value: function dispatch(action) {

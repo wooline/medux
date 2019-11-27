@@ -6,18 +6,6 @@ import {loadModel} from './module';
 
 export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];
-  // const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
-  // if (arr.length === 0) {
-  //   return undefined as any;
-  // } else if (arr.length === 1) {
-  //   return action[arr[0]];
-  // } else {
-  //   const data = {...action};
-  //   delete data['type'];
-  //   delete data['priority'];
-  //   delete data['time'];
-  //   return data as any;
-  // }
 }
 export interface HistoryProxy<L = any> {
   initialized: boolean;
@@ -131,20 +119,21 @@ export function buildStore(
         return originalAction;
       }
     }
-    const prevState = store._medux_.prevState;
+    const meta = store._medux_;
+    meta.beforeState = meta.prevState;
     const action: Action = next(originalAction);
     if (action.type === ActionTypes.RouteChange) {
-      const rootRouteParams = store._medux_.prevState.route.data.params;
+      const rootRouteParams = meta.prevState.route.data.params;
       Object.keys(rootRouteParams).forEach(moduleName => {
         const preRouteParams = rootRouteParams[moduleName];
-        if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
+        if (preRouteParams && Object.keys(preRouteParams).length > 0 && meta.injectedModules[moduleName]) {
           dispatch(preRouteParamsAction(moduleName, preRouteParams));
         }
       });
     }
-    const handlersCommon = store._medux_.effectMap[action.type] || {};
+    const handlersCommon = meta.effectMap[action.type] || {};
     // 支持泛监听，形如 */loading
-    const handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
+    const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
     const handlers = {...handlersCommon, ...handlersEvery};
     const handlerModules = Object.keys(handlers);
 
@@ -169,7 +158,7 @@ export function buildStore(
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(...getActionData(action), prevState);
+          const effectResult = fun(...getActionData(action));
           const decorators = fun.__decorators__;
           if (decorators) {
             const results: any[] = [];
@@ -242,6 +231,7 @@ export function buildStore(
       const newStore = newCreateStore(...args);
       const modelStore: ModelStore = newStore as any;
       modelStore._medux_ = {
+        beforeState: {} as any,
         prevState: {} as any,
         currentState: {} as any,
         reducerMap: {},

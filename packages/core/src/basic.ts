@@ -57,6 +57,7 @@ export interface ModelStore extends Store {
     effectMap: EffectMap;
     injectedModules: {[moduleName: string]: boolean};
     currentViews: CurrentViews;
+    beforeState: StoreState;
     prevState: StoreState;
     currentState: StoreState;
   };

@@ -9,18 +9,7 @@ import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } fro
 import { applyMiddleware, compose, createStore } from 'redux';
 import { loadModel } from './module';
 export function getActionData(action) {
-  return Array.isArray(action.payload) ? action.payload : []; // const arr = Object.keys(action).filter(key => key !== 'type' && key !== 'priority' && key !== 'time');
-  // if (arr.length === 0) {
-  //   return undefined as any;
-  // } else if (arr.length === 1) {
-  //   return action[arr[0]];
-  // } else {
-  //   const data = {...action};
-  //   delete data['type'];
-  //   delete data['priority'];
-  //   delete data['time'];
-  //   return data as any;
-  // }
+  return Array.isArray(action.payload) ? action.payload : [];
 }
 
 function bindHistory(store, history) {
@@ -162,23 +151,24 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         }
       }
 
-      var prevState = store._medux_.prevState;
+      var meta = store._medux_;
+      meta.beforeState = meta.prevState;
       var action = next(originalAction);
 
       if (action.type === ActionTypes.RouteChange) {
-        var rootRouteParams = store._medux_.prevState.route.data.params;
+        var rootRouteParams = meta.prevState.route.data.params;
         Object.keys(rootRouteParams).forEach(moduleName => {
           var preRouteParams = rootRouteParams[moduleName];
 
-          if (preRouteParams && Object.keys(preRouteParams).length > 0 && store._medux_.injectedModules[moduleName]) {
+          if (preRouteParams && Object.keys(preRouteParams).length > 0 && meta.injectedModules[moduleName]) {
             dispatch(preRouteParamsAction(moduleName, preRouteParams));
           }
         });
       }
 
-      var handlersCommon = store._medux_.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
+      var handlersCommon = meta.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
-      var handlersEvery = store._medux_.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+      var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
 
       var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
 
@@ -207,7 +197,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
           if (!moduleNameMap[moduleName]) {
             moduleNameMap[moduleName] = true;
             var fun = handlers[moduleName];
-            var effectResult = fun(...getActionData(action), prevState);
+            var effectResult = fun(...getActionData(action));
             var decorators = fun.__decorators__;
 
             if (decorators) {
@@ -289,6 +279,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
       var newStore = newCreateStore(...arguments);
       var modelStore = newStore;
       modelStore._medux_ = {
+        beforeState: {},
         prevState: {},
         currentState: {},
         reducerMap: {},

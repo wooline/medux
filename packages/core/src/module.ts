@@ -115,6 +115,20 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected getCurrentRootState(): R {
     return this.store._medux_.currentState as any;
   }
+  protected get beforeState(): S {
+    return this.getBeforeState();
+  }
+  //ie8不支持getter
+  protected getBeforeState(): S {
+    return this.store._medux_.beforeState[this.moduleName] as S;
+  }
+  protected get beforeRootState(): R {
+    return this.getBeforeRootState();
+  }
+  //ie8不支持getter
+  protected getBeforeRootState(): R {
+    return this.store._medux_.beforeState as any;
+  }
   protected dispatch(action: Action): Action | Promise<void> {
     return this.store.dispatch(action) as any;
   }

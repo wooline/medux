@@ -41,6 +41,7 @@ export interface ModelStore extends Store {
             [moduleName: string]: boolean;
         };
         currentViews: CurrentViews;
+        beforeState: StoreState;
         prevState: StoreState;
         currentState: StoreState;
     };
