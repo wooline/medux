@@ -7,6 +7,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const fs_1 = __importDefault(require("fs"));
 const json_format_1 = __importDefault(require("json-format"));
 const micromatch_1 = __importDefault(require("micromatch"));
+const mockjs_1 = __importDefault(require("mockjs"));
 const path_1 = __importDefault(require("path"));
 const zlib_1 = __importDefault(require("zlib"));
 function checkDir(maxNum) {
@@ -112,8 +113,8 @@ function endSend(res, content, data) {
     res.end(content);
 }
 function parseFile(req, res, content) {
-    const fun = new Function('request', content);
-    const data = fun(req);
+    const fun = new Function('request', 'mockjs', content);
+    const data = fun(req, mockjs_1.default);
     let str = data.response;
     if (typeof str === 'object') {
         data.headers['content-type'] = 'application/json; charset=utf-8';
@@ -131,7 +132,7 @@ function parseFile(req, res, content) {
 }
 const fileNamesLatest = { date: 0, files: {}, regExpFiles: {} };
 function cacheFileNames(sourceDir, timeout) {
-    const now = new Date().getTime();
+    const now = Date.now();
     if (now - fileNamesLatest.date > timeout) {
         const fileList = fs_1.default.readdirSync(sourceDir);
         fileNamesLatest.date = now;
@@ -214,7 +215,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
                             parseFile(req, res, content);
                         }
                         catch (err) {
-                            console.error(err);
+                            console.error(err, mockFile);
                             res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
                             res.end(err.toString());
                         }

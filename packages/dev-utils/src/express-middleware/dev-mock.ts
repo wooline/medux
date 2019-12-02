@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import jsonFormat from 'json-format';
 import mm from 'micromatch';
+import mockjs from 'mockjs';
 import path from 'path';
 import zlib from 'zlib';
 
@@ -112,8 +113,8 @@ function endSend(res: Response, content: string, data: {statusCode: number; head
   res.end(content);
 }
 function parseFile(req: Request, res: Response, content: string) {
-  const fun = new Function('request', content);
-  const data = fun(req);
+  const fun = new Function('request', 'mockjs', content);
+  const data = fun(req, mockjs);
   let str = data.response;
   if (typeof str === 'object') {
     data.headers['content-type'] = 'application/json; charset=utf-8';
@@ -132,7 +133,7 @@ function parseFile(req: Request, res: Response, content: string) {
 const fileNamesLatest: {date: number; files: {[name: string]: string}; regExpFiles: {[name: string]: string}} = {date: 0, files: {}, regExpFiles: {}};
 
 function cacheFileNames(sourceDir: string, timeout: number) {
-  const now = new Date().getTime();
+  const now = Date.now();
   if (now - fileNamesLatest.date > timeout) {
     const fileList = fs.readdirSync(sourceDir);
     fileNamesLatest.date = now;
@@ -220,7 +221,7 @@ export = function middleware(
             try {
               parseFile(req, res, content);
             } catch (err) {
-              console.error(err);
+              console.error(err, mockFile);
               res.writeHead(500, {'content-type': 'text/plain; charset=utf-8'});
               res.end(err.toString());
             }
