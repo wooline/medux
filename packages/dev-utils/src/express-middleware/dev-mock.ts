@@ -97,8 +97,9 @@ function urlToFileName(method: string, url: string, sourceDir: string, tempDir: 
   let tempFileName = path.join(tempDir, fileName);
   if (tempFileName.length > 240) {
     const md5 = crypto.createHash('md5');
-    sourceFileName = path.join(sourceDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.js';
-    tempFileName = path.join(tempDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.js';
+    const fileName = md5.update(name).digest('hex') + '--' + name;
+    sourceFileName = path.join(sourceDir, fileName).substr(0, 240) + '.js';
+    tempFileName = path.join(tempDir, fileName).substr(0, 240) + '.js';
   }
   return {sourceFileName, tempFileName, fileName};
 }
@@ -112,9 +113,9 @@ function endSend(res: Response, content: string, data: {statusCode: number; head
   }
   res.end(content);
 }
-function parseFile(req: Request, res: Response, content: string) {
-  const fun = new Function('request', 'mockjs', content);
-  const data = fun(req, mockjs);
+function parseFile(req: Request, res: Response, database: any, content: string) {
+  const fun = new Function('request', 'mockjs', 'database', content);
+  const data = fun(req, mockjs, database);
   let str = data.response;
   if (typeof str === 'object') {
     data.headers['content-type'] = 'application/json; charset=utf-8';
@@ -204,6 +205,20 @@ export = function middleware(
 
   const proxyUrls = getProxys(proxyMap);
   const {tempDir, sourceDir} = checkDir(maxNum);
+  const databaseMock = path.join(sourceDir, 'database.js');
+  let database = {};
+  if (fs.existsSync(databaseMock)) {
+    const content = fs.readFileSync(path.join(sourceDir, 'database.js'), 'utf-8');
+    if (content) {
+      try {
+        const fun = new Function('mockjs', content);
+        database = fun(mockjs);
+      } catch (err) {
+        console.error(err, 'database.js');
+      }
+    }
+  }
+
   return function(req: Request, res: Response, next: NextFunction) {
     if (!proxyUrls.some(reg => mm.isMatch(req.url, reg))) {
       next();
@@ -219,7 +234,7 @@ export = function middleware(
             res.end(err.toString());
           } else {
             try {
-              parseFile(req, res, content);
+              parseFile(req, res, database, content);
             } catch (err) {
               console.error(err, mockFile);
               res.writeHead(500, {'content-type': 'text/plain; charset=utf-8'});

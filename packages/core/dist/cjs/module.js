@@ -63,7 +63,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
         var params = store._medux_.prevState.route.data.params;
         var preRouteParams = params[moduleName];
         initState = _objectSpread({}, initState, {
-          preRouteParams: initState.preRouteParams || preRouteParams,
+          preRouteParams: preRouteParams || initState.preRouteParams,
           routeParams: initState.routeParams || {}
         });
 

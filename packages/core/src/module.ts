@@ -61,7 +61,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       if (!moduleState) {
         const params = store._medux_.prevState.route.data.params;
         const preRouteParams = params[moduleName];
-        initState = {...initState, preRouteParams: initState.preRouteParams || preRouteParams, routeParams: initState.routeParams || {}};
+        initState = {...initState, preRouteParams: preRouteParams || initState.preRouteParams, routeParams: initState.routeParams || {}};
         const initAction = actions.Init(initState);
         return store.dispatch(initAction) as any;
       }

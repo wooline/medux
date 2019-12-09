@@ -97,8 +97,9 @@ function urlToFileName(method, url, sourceDir, tempDir) {
     let tempFileName = path_1.default.join(tempDir, fileName);
     if (tempFileName.length > 240) {
         const md5 = crypto_1.default.createHash('md5');
-        sourceFileName = path_1.default.join(sourceDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.js';
-        tempFileName = path_1.default.join(tempDir, md5.update(name).digest('hex') + '--' + name).substr(0, 240) + '.js';
+        const fileName = md5.update(name).digest('hex') + '--' + name;
+        sourceFileName = path_1.default.join(sourceDir, fileName).substr(0, 240) + '.js';
+        tempFileName = path_1.default.join(tempDir, fileName).substr(0, 240) + '.js';
     }
     return { sourceFileName, tempFileName, fileName };
 }
@@ -112,9 +113,9 @@ function endSend(res, content, data) {
     }
     res.end(content);
 }
-function parseFile(req, res, content) {
-    const fun = new Function('request', 'mockjs', content);
-    const data = fun(req, mockjs_1.default);
+function parseFile(req, res, database, content) {
+    const fun = new Function('request', 'mockjs', 'database', content);
+    const data = fun(req, mockjs_1.default, database);
     let str = data.response;
     if (typeof str === 'object') {
         data.headers['content-type'] = 'application/json; charset=utf-8';
@@ -195,6 +196,20 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
     }
     const proxyUrls = getProxys(proxyMap);
     const { tempDir, sourceDir } = checkDir(maxNum);
+    const databaseMock = path_1.default.join(sourceDir, 'database.js');
+    let database = {};
+    if (fs_1.default.existsSync(databaseMock)) {
+        const content = fs_1.default.readFileSync(path_1.default.join(sourceDir, 'database.js'), 'utf-8');
+        if (content) {
+            try {
+                const fun = new Function('mockjs', content);
+                database = fun(mockjs_1.default);
+            }
+            catch (err) {
+                console.error(err, 'database.js');
+            }
+        }
+    }
     return function (req, res, next) {
         if (!proxyUrls.some(reg => micromatch_1.default.isMatch(req.url, reg))) {
             next();
@@ -212,7 +227,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
                     }
                     else {
                         try {
-                            parseFile(req, res, content);
+                            parseFile(req, res, database, content);
                         }
                         catch (err) {
                             console.error(err, mockFile);
