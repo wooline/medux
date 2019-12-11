@@ -1,4 +1,4 @@
-import {ExportModule, HistoryProxy, LoadView, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import {LoadView as BaseLoadView, ExportModule, HistoryProxy, ModuleGetter, StoreOptions} from '@medux/core/types/export';
 import React, {ComponentType, ReactNode} from 'react';
 import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView} from '@medux/core';
 
@@ -70,14 +70,15 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
 interface LoadViewState {
   Component: ComponentType<any> | null;
 }
-export const loadView: LoadView<any, {Loading?: ComponentType<any>; modelOptions?: any}> = (moduleName, viewName, options = {}) => {
+export type LoadView<T extends ModuleGetter> = BaseLoadView<T, ComponentType<any>>;
+export const loadView: LoadView<any> = (moduleName, viewName, modelOptions, Loading) => {
   return class Loader extends React.Component {
     public state: LoadViewState = {
       Component: null,
     };
     public constructor(props: any, context?: any) {
       super(props, context);
-      const moduleViewResult = getView<ComponentType>(moduleName, viewName, options.modelOptions);
+      const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(Component => {
           Object.keys(Loader).forEach(key => (Component[key] = Loader[key]));
@@ -96,7 +97,7 @@ export const loadView: LoadView<any, {Loading?: ComponentType<any>; modelOptions
     }
     public render() {
       const {Component} = this.state;
-      return Component ? <Component {...this.props} /> : options.Loading ? <options.Loading {...this.props} /> : null;
+      return Component ? <Component {...this.props} /> : Loading ? <Loading {...this.props} /> : null;
     }
   } as any;
 };

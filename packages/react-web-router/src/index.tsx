@@ -14,7 +14,7 @@ export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandler
 export {setRouteConfig} from '@medux/route-plan-a';
 
 export type RouteData = import('@medux/core/types/export').RouteData;
-export type LoadView<MG extends ModuleGetter, OPTS> = import('@medux/core/types/export').LoadView<MG, OPTS>;
+export type LoadView<MG extends ModuleGetter> = import('@medux/react').LoadView<MG>;
 export type BaseModelState<R = {[key: string]: any}> = import('@medux/core/types/export').BaseModelState<R>;
 export type BrowserRoutePayload<P> = import('@medux/route-plan-a').BrowserRoutePayload<P>;
 export type RouteConfig = import('@medux/route-plan-a').RouteConfig;

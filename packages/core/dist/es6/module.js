@@ -55,6 +55,7 @@ export var exportModule = (moduleName, initState, ActionHandles, views) => {
   };
 
   model.moduleName = moduleName;
+  model.initState = initState;
   var actions = {};
   return {
     moduleName,
@@ -284,7 +285,7 @@ function _loadModel(moduleName, store, options) {
 }
 
 export { _loadModel as loadModel };
-export function getView(moduleName, viewName, options) {
+export function getView(moduleName, viewName, modelOptions) {
   var moduleGetter = MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();
 
@@ -298,7 +299,7 @@ export function getView(moduleName, viewName, options) {
         return view;
       }
 
-      var initModel = module.default.model(MetaData.clientStore, options);
+      var initModel = module.default.model(MetaData.clientStore, modelOptions);
 
       if (isPromise(initModel)) {
         return initModel.then(() => view);
@@ -313,7 +314,7 @@ export function getView(moduleName, viewName, options) {
       return view;
     }
 
-    var initModel = result.default.model(MetaData.clientStore, options);
+    var initModel = result.default.model(MetaData.clientStore, modelOptions);
 
     if (isPromise(initModel)) {
       return initModel.then(() => view);

@@ -73,6 +73,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
   };
 
   model.moduleName = moduleName;
+  model.initState = initState;
   var actions = {};
   return {
     moduleName: moduleName,
@@ -306,7 +307,7 @@ function _loadModel(moduleName, store, options) {
   }
 }
 
-function getView(moduleName, viewName, options) {
+function getView(moduleName, viewName, modelOptions) {
   var moduleGetter = _basic.MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();
 
@@ -322,7 +323,7 @@ function getView(moduleName, viewName, options) {
         return view;
       }
 
-      var initModel = module.default.model(_basic.MetaData.clientStore, options);
+      var initModel = module.default.model(_basic.MetaData.clientStore, modelOptions);
 
       if ((0, _basic.isPromise)(initModel)) {
         return initModel.then(function () {
@@ -339,7 +340,7 @@ function getView(moduleName, viewName, options) {
       return view;
     }
 
-    var initModel = result.default.model(_basic.MetaData.clientStore, options);
+    var initModel = result.default.model(_basic.MetaData.clientStore, modelOptions);
 
     if ((0, _basic.isPromise)(initModel)) {
       return initModel.then(function () {

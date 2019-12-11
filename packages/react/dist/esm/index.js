@@ -39,12 +39,8 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export var loadView = function loadView(moduleName, viewName, options) {
+export var loadView = function loadView(moduleName, viewName, modelOptions, Loading) {
   var _temp;
-
-  if (options === void 0) {
-    options = {};
-  }
 
   return _temp =
   /*#__PURE__*/
@@ -60,7 +56,7 @@ export var loadView = function loadView(moduleName, viewName, options) {
         Component: null
       });
 
-      var moduleViewResult = getView(moduleName, viewName, options.modelOptions);
+      var moduleViewResult = getView(moduleName, viewName, modelOptions);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
@@ -94,7 +90,7 @@ export var loadView = function loadView(moduleName, viewName, options) {
 
     _proto.render = function render() {
       var Component = this.state.Component;
-      return Component ? React.createElement(Component, this.props) : options.Loading ? React.createElement(options.Loading, this.props) : null;
+      return Component ? React.createElement(Component, this.props) : Loading ? React.createElement(Loading, this.props) : null;
     };
 
     return Loader;

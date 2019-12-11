@@ -37,12 +37,8 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export var loadView = function loadView(moduleName, viewName, options) {
+export var loadView = (moduleName, viewName, modelOptions, Loading) => {
   var _temp;
-
-  if (options === void 0) {
-    options = {};
-  }
 
   return _temp = class Loader extends React.Component {
     constructor(props, context) {
@@ -52,7 +48,7 @@ export var loadView = function loadView(moduleName, viewName, options) {
         Component: null
       });
 
-      var moduleViewResult = getView(moduleName, viewName, options.modelOptions);
+      var moduleViewResult = getView(moduleName, viewName, modelOptions);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(Component => {
@@ -75,7 +71,7 @@ export var loadView = function loadView(moduleName, viewName, options) {
       var {
         Component
       } = this.state;
-      return Component ? React.createElement(Component, this.props) : options.Loading ? React.createElement(options.Loading, this.props) : null;
+      return Component ? React.createElement(Component, this.props) : Loading ? React.createElement(Loading, this.props) : null;
     }
 
   }, _temp;

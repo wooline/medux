@@ -6,7 +6,7 @@ export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 export declare type RouteData = import('@medux/core/types/export').RouteData;
-export declare type LoadView<MG extends ModuleGetter, OPTS> = import('@medux/core/types/export').LoadView<MG, OPTS>;
+export declare type LoadView<MG extends ModuleGetter> = import('@medux/react').LoadView<MG>;
 export declare type BaseModelState<R = {
     [key: string]: any;
 }> = import('@medux/core/types/export').BaseModelState<R>;

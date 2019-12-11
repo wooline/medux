@@ -2,9 +2,10 @@ import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, Mode
 import {HistoryProxy, buildStore} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
-export interface Model {
+export interface Model<ModelState extends BaseModelState = BaseModelState> {
   moduleName: string;
-  (store: ModelStore, options: any): void | Promise<void>;
+  initState: ModelState;
+  (store: ModelStore, options?: any): void | Promise<void>;
 }
 
 export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = {}, N extends string = string> {
@@ -46,10 +47,10 @@ export type ExportModule<Component> = <S extends BaseModelState, V extends {[key
   initState: S,
   ActionHandles: {new (moduleName: string, store: any): T},
   views: V
-) => Module<Model, V, Actions<T>, N>['default'];
+) => Module<Model<S>, V, Actions<T>, N>['default'];
 
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
-  const model = (store: ModelStore, options: any) => {
+  const model = (store: ModelStore, options?: any) => {
     const hasInjected = store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = true;
@@ -67,6 +68,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
     return void 0;
   };
   model.moduleName = moduleName;
+  model.initState = initState;
   const actions = {} as any;
   return {
     moduleName,
@@ -222,7 +224,7 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
   }
 }
 
-export function getView<T>(moduleName: string, viewName: string, options?: any): T | Promise<T> {
+export function getView<T>(moduleName: string, viewName: string, modelOptions?: any): T | Promise<T> {
   const moduleGetter: ModuleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
@@ -232,7 +234,7 @@ export function getView<T>(moduleName: string, viewName: string, options?: any):
       if (MetaData.isServer) {
         return view;
       }
-      const initModel = module.default.model(MetaData.clientStore, options);
+      const initModel = module.default.model(MetaData.clientStore, modelOptions);
       if (isPromise(initModel)) {
         return initModel.then(() => view);
       } else {
@@ -244,7 +246,7 @@ export function getView<T>(moduleName: string, viewName: string, options?: any):
     if (MetaData.isServer) {
       return view;
     }
-    const initModel = result.default.model(MetaData.clientStore, options);
+    const initModel = result.default.model(MetaData.clientStore, modelOptions);
     if (isPromise(initModel)) {
       return initModel.then(() => view);
     } else {
@@ -253,10 +255,11 @@ export function getView<T>(moduleName: string, viewName: string, options?: any):
   }
 }
 
-export type LoadView<MG extends ModuleGetter, OPTS = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
+export type LoadView<MG extends ModuleGetter, Ags = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
   moduleName: M,
   viewName: N,
-  options?: OPTS
+  modelOptions?: any,
+  args?: Ags
 ) => V[N];
 
 function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module {
