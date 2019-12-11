@@ -45,7 +45,7 @@ export interface ActionCreatorMap {
 export interface ActionCreatorList {
   [actionName: string]: ActionCreator;
 }
-export type ActionCreator = (payload?: any) => Action;
+export type ActionCreator = (...args: any[]) => Action;
 interface Store {
   dispatch(action: Action): Action | Promise<void>;
   getState(): {[key: string]: any};

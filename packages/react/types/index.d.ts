@@ -11,5 +11,8 @@ export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyo
     ssrInitStoreKey: string;
     store: import("redux").Store<any, import("redux").AnyAction>;
 }>;
-export declare const loadView: LoadView<any, ComponentType<any>>;
+export declare const loadView: LoadView<any, {
+    Loading?: ComponentType<any>;
+    modelOptions?: any;
+}>;
 export declare const exportModule: ExportModule<ComponentType<any>>;

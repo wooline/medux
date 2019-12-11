@@ -1,10 +1,9 @@
 import { Action, ActionCreatorList, BaseModelState, ModelStore, RouteState } from './basic';
 import { HistoryProxy } from './store';
 import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
-export interface Model<ModelState extends BaseModelState = BaseModelState> {
+export interface Model {
     moduleName: string;
-    initState: ModelState;
-    (store: ModelStore): void | Promise<void>;
+    (store: ModelStore, options: any): void | Promise<void>;
 }
 export interface Module<M extends Model = Model, VS extends {
     [key: string]: any;
@@ -54,17 +53,16 @@ export declare type RootState<G extends ModuleGetter, L> = {
 export declare type ExportModule<Component> = <S extends BaseModelState, V extends {
     [key: string]: Component;
 }, T extends BaseModelHandlers<S, any>, N extends string>(moduleName: N, initState: S, ActionHandles: {
-    new (moduleName: string, store: any, initState: any, presetData?: any): T;
-}, views: V) => Module<Model<S>, V, Actions<T>, N>['default'];
+    new (moduleName: string, store: any): T;
+}, views: V) => Module<Model, V, Actions<T>, N>['default'];
 export declare const exportModule: ExportModule<any>;
 export declare abstract class BaseModelHandlers<S extends BaseModelState, R extends {
     route: RouteState;
 }> {
     protected readonly moduleName: string;
     protected readonly store: ModelStore;
-    protected readonly initState: S;
     protected readonly actions: Actions<this>;
-    constructor(moduleName: string, store: ModelStore, initState: S, presetData?: any);
+    constructor(moduleName: string, store: ModelStore);
     protected get state(): S;
     protected getState(): S;
     protected get rootState(): R;
@@ -83,8 +81,8 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
         payload?: any[];
     };
     protected updateState(payload: Partial<S>): void;
-    protected loadModel(moduleName: Extract<keyof R, string>): void | Promise<void>;
-    protected Init(payload: S): S;
+    protected loadModel(moduleName: Extract<keyof R, string>, options?: any): void | Promise<void>;
+    protected Init(initState: S, preRouteParams?: any, options?: any): S;
     protected Update(payload: S): S;
     PreRouteParams(payload: {
         [key: string]: any;
@@ -106,8 +104,8 @@ export declare function exportActions<G extends {
 }>(moduleGetter: G): {
     [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
 };
-export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore): void | Promise<void>;
-export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
+export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void>;
+export declare function getView<T>(moduleName: string, viewName: string, options?: any): T | Promise<T>;
 export declare type LoadView<MG extends ModuleGetter, OPTS = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, options?: OPTS) => V[N];
 export interface StoreOptions {
     ssrInitStoreKey?: string;

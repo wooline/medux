@@ -217,7 +217,7 @@ export function buildStore(
   const preLoadMiddleware = () => (next: Function) => (action: Action) => {
     const [moduleName, actionName] = action.type.split(config.NSP);
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const initModel = loadModel(moduleName, store);
+      const initModel = loadModel(moduleName, store, undefined);
       if (isPromise(initModel)) {
         return initModel.then(() => next(action));
       }

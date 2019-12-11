@@ -1,6 +1,10 @@
 import _regeneratorRuntime from "@babel/runtime/regenerator";
-import _toArray from "@babel/runtime/helpers/esm/toArray";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+import _toArray from "@babel/runtime/helpers/esm/toArray";
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _decorate(decorators, factory, superClass, mixins) { var api = _getDecoratorsApi(); if (mixins) { for (var i = 0; i < mixins.length; i++) { api = mixins[i](api); } } var r = factory(function initialize(O) { api.initializeInstanceElements(O, decorated.elements); }, superClass); var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators); api.initializeClassElements(r.F, decorated.elements); return api.runClassFinishers(r.F, decorated.finishers); }
 
@@ -22,20 +26,16 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return typ
 
 function _toPrimitive(input, hint) { if (typeof input !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (typeof res !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
 import { MetaData, client, config, injectActions, isPromise, reducer } from './basic';
 import { buildStore } from './store';
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
-  var model = function model(store) {
+  var model = function model(store, options) {
     var hasInjected = store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = true;
       var moduleState = store.getState()[moduleName];
-      var handlers = new ActionHandles(moduleName, store, initState, moduleState);
+      var handlers = new ActionHandles(moduleName, store);
 
       var _actions = injectActions(store, moduleName, handlers);
 
@@ -43,13 +43,9 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
 
       if (!moduleState) {
         var params = store._medux_.prevState.route.data.params;
-        var preRouteParams = params[moduleName];
-        initState = _objectSpread({}, initState, {
-          preRouteParams: preRouteParams || initState.preRouteParams,
-          routeParams: initState.routeParams || {}
-        });
+        initState.isModule = true;
 
-        var initAction = _actions.Init(initState);
+        var initAction = _actions.Init(initState, params[moduleName], options);
 
         return store.dispatch(initAction);
       }
@@ -59,7 +55,6 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
   };
 
   model.moduleName = moduleName;
-  model.initState = initState;
   var actions = {};
   return {
     moduleName: moduleName,
@@ -70,14 +65,11 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
 };
 export var BaseModelHandlers = _decorate(null, function (_initialize) {
   var BaseModelHandlers = // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function BaseModelHandlers(moduleName, store, initState, presetData) {
+  function BaseModelHandlers(moduleName, store) {
     this.moduleName = moduleName;
     this.store = store;
-    this.initState = initState;
 
     _initialize(this);
-
-    initState.isModule = true;
   };
 
   return {
@@ -193,15 +185,18 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       key: "loadModel",
-      value: function loadModel(moduleName) {
-        return _loadModel(moduleName, this.store);
+      value: function loadModel(moduleName, options) {
+        return _loadModel(moduleName, this.store, options);
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "Init",
-      value: function Init(payload) {
-        return payload;
+      value: function Init(initState, preRouteParams, options) {
+        return _objectSpread({}, initState, {
+          preRouteParams: preRouteParams || initState.preRouteParams,
+          routeParams: initState.routeParams || {}
+        }, options);
       }
     }, {
       kind: "method",
@@ -264,7 +259,7 @@ export function exportActions(moduleGetter) {
   return MetaData.actionCreatorMap;
 }
 
-function _loadModel(moduleName, store) {
+function _loadModel(moduleName, store, options) {
   var hasInjected = store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
@@ -277,16 +272,16 @@ function _loadModel(moduleName, store) {
           return module;
         };
 
-        return module.default.model(store);
+        return module.default.model(store, options);
       });
     } else {
-      return result.default.model(store);
+      return result.default.model(store, options);
     }
   }
 }
 
 export { _loadModel as loadModel };
-export function getView(moduleName, viewName) {
+export function getView(moduleName, viewName, options) {
   var moduleGetter = MetaData.moduleGetter;
   var result = moduleGetter[moduleName]();
 
@@ -302,7 +297,7 @@ export function getView(moduleName, viewName) {
         return view;
       }
 
-      var initModel = module.default.model(MetaData.clientStore);
+      var initModel = module.default.model(MetaData.clientStore, options);
 
       if (isPromise(initModel)) {
         return initModel.then(function () {
@@ -319,7 +314,7 @@ export function getView(moduleName, viewName) {
       return view;
     }
 
-    var initModel = result.default.model(MetaData.clientStore);
+    var initModel = result.default.model(MetaData.clientStore, options);
 
     if (isPromise(initModel)) {
       return initModel.then(function () {
@@ -387,7 +382,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
-    var initModel = appModule.default.model(store);
+    var initModel = appModule.default.model(store, undefined);
     render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
 
     if (isPromise(initModel)) {
@@ -436,7 +431,7 @@ export function renderSSR(render, moduleGetter, appModuleName, history, storeOpt
           inited[_moduleName] = true;
           module = moduleGetter[_moduleName]();
           _context.next = 17;
-          return _regeneratorRuntime.awrap(module.default.model(store));
+          return _regeneratorRuntime.awrap(module.default.model(store, undefined));
 
         case 17:
           if (i === 0) {

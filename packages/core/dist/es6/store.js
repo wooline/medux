@@ -262,7 +262,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     var [moduleName, actionName] = action.type.split(config.NSP);
 
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      var initModel = loadModel(moduleName, store);
+      var initModel = loadModel(moduleName, store, undefined);
 
       if (isPromise(initModel)) {
         return initModel.then(() => next(action));

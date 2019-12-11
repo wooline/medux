@@ -267,7 +267,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
             actionName = _action$type$split[1];
 
         if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-          var initModel = loadModel(moduleName, store);
+          var initModel = loadModel(moduleName, store, undefined);
 
           if (isPromise(initModel)) {
             return initModel.then(function () {
