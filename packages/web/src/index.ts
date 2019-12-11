@@ -62,7 +62,7 @@ class BrowserHistoryActions implements HistoryActions {
     if (typeof data === 'string') {
       this.history.push(data);
     } else if (isLocation(data)) {
-      this.history.push(data);
+      this.history.push({...data, state: undefined});
     } else {
       const location = this.routeToLocation(data as RouteData);
       this.history.push({...location, state: data});
@@ -72,7 +72,7 @@ class BrowserHistoryActions implements HistoryActions {
     if (typeof data === 'string') {
       this.history.replace(data);
     } else if (isLocation(data)) {
-      this.history.replace(data);
+      this.history.replace({...data, state: undefined});
     } else {
       const location = this.routeToLocation(data as RouteData);
       this.history.replace({...location, state: data});

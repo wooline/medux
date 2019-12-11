@@ -52,7 +52,9 @@ class BrowserHistoryActions {
     if (typeof data === 'string') {
       this.history.push(data);
     } else if (isLocation(data)) {
-      this.history.push(data);
+      this.history.push(_objectSpread({}, data, {
+        state: undefined
+      }));
     } else {
       var _location = this.routeToLocation(data);
 
@@ -66,7 +68,9 @@ class BrowserHistoryActions {
     if (typeof data === 'string') {
       this.history.replace(data);
     } else if (isLocation(data)) {
-      this.history.replace(data);
+      this.history.replace(_objectSpread({}, data, {
+        state: undefined
+      }));
     } else {
       var _location2 = this.routeToLocation(data);
 

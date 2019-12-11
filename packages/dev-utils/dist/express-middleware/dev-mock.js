@@ -7,7 +7,6 @@ const crypto_1 = __importDefault(require("crypto"));
 const fs_1 = __importDefault(require("fs"));
 const json_format_1 = __importDefault(require("json-format"));
 const micromatch_1 = __importDefault(require("micromatch"));
-const mockjs_1 = __importDefault(require("mockjs"));
 const path_1 = __importDefault(require("path"));
 const zlib_1 = __importDefault(require("zlib"));
 function checkDir(maxNum) {
@@ -114,8 +113,8 @@ function endSend(res, content, data) {
     res.end(content);
 }
 function parseFile(req, res, database, content) {
-    const fun = new Function('request', 'mockjs', 'database', content);
-    const data = fun(req, mockjs_1.default, database);
+    const fun = new Function('request', 'database', 'require', content);
+    const data = fun(req, database, require);
     let str = data.response;
     if (typeof str === 'object') {
         data.headers['content-type'] = 'application/json; charset=utf-8';
@@ -202,8 +201,8 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
         const content = fs_1.default.readFileSync(path_1.default.join(sourceDir, 'database.js'), 'utf-8');
         if (content) {
             try {
-                const fun = new Function('mockjs', content);
-                database = fun(mockjs_1.default);
+                const fun = new Function('require', content);
+                database = fun(require);
             }
             catch (err) {
                 console.error(err, 'database.js');

@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import fs from 'fs';
 import jsonFormat from 'json-format';
 import mm from 'micromatch';
-import mockjs from 'mockjs';
 import path from 'path';
 import zlib from 'zlib';
 
@@ -114,8 +113,8 @@ function endSend(res: Response, content: string, data: {statusCode: number; head
   res.end(content);
 }
 function parseFile(req: Request, res: Response, database: any, content: string) {
-  const fun = new Function('request', 'mockjs', 'database', content);
-  const data = fun(req, mockjs, database);
+  const fun = new Function('request', 'database', 'require', content);
+  const data = fun(req, database, require);
   let str = data.response;
   if (typeof str === 'object') {
     data.headers['content-type'] = 'application/json; charset=utf-8';
@@ -211,8 +210,8 @@ export = function middleware(
     const content = fs.readFileSync(path.join(sourceDir, 'database.js'), 'utf-8');
     if (content) {
       try {
-        const fun = new Function('mockjs', content);
-        database = fun(mockjs);
+        const fun = new Function('require', content);
+        database = fun(require);
       } catch (err) {
         console.error(err, 'database.js');
       }
