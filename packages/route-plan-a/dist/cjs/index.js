@@ -284,8 +284,11 @@ function assignRouteData(paths, stackParams, args) {
     stackParams[0] = {};
   }
 
+  if (args) {
+    stackParams[0] = (0, _deepExtend.default)({}, args, stackParams[0]);
+  }
+
   var firstStackParams = stackParams[0];
-  args && (0, _deepExtend.default)(firstStackParams, args);
   var views = paths.reduce(function (prev, cur) {
     var _cur$split = cur.split(_core.config.VSP),
         moduleName = _cur$split[0],

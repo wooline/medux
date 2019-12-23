@@ -228,8 +228,10 @@ function assignRouteData(paths: string[], stackParams: {[moduleName: string]: an
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
+  if (args) {
+    stackParams[0] = assignDeep({}, args, stackParams[0]);
+  }
   const firstStackParams = stackParams[0];
-  args && assignDeep(firstStackParams, args);
   const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
     const [moduleName, viewName] = cur.split(coreConfig.VSP);
     if (viewName) {
