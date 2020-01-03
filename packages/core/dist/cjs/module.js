@@ -214,10 +214,9 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       decorators: [_basic.reducer],
       key: "Init",
-      value: function Init(initState, preRouteParams, options) {
+      value: function Init(initState, routeParams, options) {
         return _objectSpread({}, initState, {
-          preRouteParams: preRouteParams || initState.preRouteParams,
-          routeParams: initState.routeParams || {}
+          routeParams: routeParams || initState.routeParams
         }, options);
       }
     }, {
@@ -230,11 +229,11 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       decorators: [_basic.reducer],
-      key: "PreRouteParams",
-      value: function PreRouteParams(payload) {
+      key: "RouteParams",
+      value: function RouteParams(payload) {
         var state = this.getState();
         return _objectSpread({}, state, {
-          preRouteParams: payload
+          routeParams: payload
         });
       }
     }, {

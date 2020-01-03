@@ -2,7 +2,7 @@ import { RouteState } from './basic';
 export declare const ActionTypes: {
     MLoading: string;
     MInit: string;
-    MPreRouteParams: string;
+    MRouteParams: string;
     Error: string;
     RouteChange: string;
 };
@@ -14,7 +14,7 @@ export declare function routeChangeAction(route: RouteState): {
     type: string;
     payload: RouteState<any>[];
 };
-export declare function preRouteParamsAction(moduleName: string, params: any): {
+export declare function routeParamsAction(moduleName: string, params: any): {
     type: string;
     payload: any[];
 };

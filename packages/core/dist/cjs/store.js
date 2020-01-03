@@ -170,10 +170,10 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         if (action.type === _actions.ActionTypes.RouteChange) {
           var rootRouteParams = meta.prevState.route.data.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
-            var preRouteParams = rootRouteParams[moduleName];
+            var routeParams = rootRouteParams[moduleName];
 
-            if (preRouteParams && Object.keys(preRouteParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch((0, _actions.preRouteParamsAction)(moduleName, preRouteParams));
+            if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
+              dispatch((0, _actions.routeParamsAction)(moduleName, routeParams));
             }
           });
         }

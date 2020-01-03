@@ -112,11 +112,11 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected getCurrentRootState(): R {
     return this.store._medux_.currentState as any;
   }
-  protected get beforeState(): S {
+  protected get beforeState(): undefined | S {
     return this.getBeforeState();
   }
   //ie8不支持getter
-  protected getBeforeState(): S {
+  protected getBeforeState(): undefined | S {
     return this.store._medux_.beforeState[this.moduleName] as S;
   }
   protected get beforeRootState(): R {
@@ -141,8 +141,8 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     return loadModel(moduleName, this.store, options);
   }
   @reducer
-  protected Init(initState: S, preRouteParams?: any, options?: any): S {
-    return {...initState, preRouteParams: preRouteParams || initState.preRouteParams, routeParams: initState.routeParams || {}, ...options};
+  protected Init(initState: S, routeParams?: any, options?: any): S {
+    return {...initState, routeParams: routeParams || initState.routeParams, ...options};
   }
 
   @reducer
@@ -151,11 +151,11 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   }
 
   @reducer
-  public PreRouteParams(payload: {[key: string]: any}): S {
+  public RouteParams(payload: {[key: string]: any}): S {
     const state = this.getState();
     return {
       ...state,
-      preRouteParams: payload,
+      routeParams: payload,
     };
   }
 

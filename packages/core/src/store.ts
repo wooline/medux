@@ -1,5 +1,5 @@
 import {Action, MetaData, ModelStore, RouteData, RouteState, StoreState, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
-import {ActionTypes, errorAction, preRouteParamsAction, routeChangeAction} from './actions';
+import {ActionTypes, errorAction, routeChangeAction, routeParamsAction} from './actions';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 
 import {loadModel} from './module';
@@ -125,9 +125,9 @@ export function buildStore(
     if (action.type === ActionTypes.RouteChange) {
       const rootRouteParams = meta.prevState.route.data.params;
       Object.keys(rootRouteParams).forEach(moduleName => {
-        const preRouteParams = rootRouteParams[moduleName];
-        if (preRouteParams && Object.keys(preRouteParams).length > 0 && meta.injectedModules[moduleName]) {
-          dispatch(preRouteParamsAction(moduleName, preRouteParams));
+        const routeParams = rootRouteParams[moduleName];
+        if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
+          dispatch(routeParamsAction(moduleName, routeParams));
         }
       });
     }

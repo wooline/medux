@@ -72,8 +72,8 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
     protected getCurrentState(): S;
     protected get currentRootState(): R;
     protected getCurrentRootState(): R;
-    protected get beforeState(): S;
-    protected getBeforeState(): S;
+    protected get beforeState(): undefined | S;
+    protected getBeforeState(): undefined | S;
     protected get beforeRootState(): R;
     protected getBeforeRootState(): R;
     protected dispatch(action: Action): Action | Promise<void>;
@@ -83,9 +83,9 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
     };
     protected updateState(payload: Partial<S>): void;
     protected loadModel(moduleName: Extract<keyof R, string>, options?: any): void | Promise<void>;
-    protected Init(initState: S, preRouteParams?: any, options?: any): S;
+    protected Init(initState: S, routeParams?: any, options?: any): S;
     protected Update(payload: S): S;
-    PreRouteParams(payload: {
+    RouteParams(payload: {
         [key: string]: any;
     }): S;
     protected Loading(payload: {

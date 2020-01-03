@@ -5,7 +5,7 @@ function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (O
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
-import { ActionTypes, errorAction, preRouteParamsAction, routeChangeAction } from './actions';
+import { ActionTypes, errorAction, routeChangeAction, routeParamsAction } from './actions';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { loadModel } from './module';
 export function getActionData(action) {
@@ -158,10 +158,10 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         if (action.type === ActionTypes.RouteChange) {
           var rootRouteParams = meta.prevState.route.data.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
-            var preRouteParams = rootRouteParams[moduleName];
+            var routeParams = rootRouteParams[moduleName];
 
-            if (preRouteParams && Object.keys(preRouteParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch(preRouteParamsAction(moduleName, preRouteParams));
+            if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
+              dispatch(routeParamsAction(moduleName, routeParams));
             }
           });
         }

@@ -3,7 +3,7 @@
 exports.__esModule = true;
 exports.errorAction = errorAction;
 exports.routeChangeAction = routeChangeAction;
-exports.preRouteParamsAction = preRouteParamsAction;
+exports.routeParamsAction = routeParamsAction;
 exports.ActionTypes = void 0;
 
 var _basic = require("./basic");
@@ -11,7 +11,7 @@ var _basic = require("./basic");
 var ActionTypes = {
   MLoading: 'Loading',
   MInit: 'Init',
-  MPreRouteParams: 'PreRouteParams',
+  MRouteParams: 'RouteParams',
   Error: "medux" + _basic.config.NSP + "Error",
   RouteChange: "medux" + _basic.config.NSP + "RouteChange"
 };
@@ -31,9 +31,9 @@ function routeChangeAction(route) {
   };
 }
 
-function preRouteParamsAction(moduleName, params) {
+function routeParamsAction(moduleName, params) {
   return {
-    type: "" + moduleName + _basic.config.NSP + ActionTypes.MPreRouteParams,
+    type: "" + moduleName + _basic.config.NSP + ActionTypes.MRouteParams,
     payload: [params]
   };
 }
