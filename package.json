@@ -61,15 +61,15 @@
     "@babel/plugin-proposal-optional-chaining": "~7.6.0",
     "@babel/preset-env": "~7.7.1",
     "@babel/preset-react": "~7.7.0",
-    "@babel/preset-typescript": "~7.7.2",
-    "@typescript-eslint/eslint-plugin": "~2.7.0",
-    "@typescript-eslint/parser": "~2.7.0",
+    "@babel/preset-typescript": "~7.8.3",
+    "@typescript-eslint/eslint-plugin": "~2.22.0",
+    "@typescript-eslint/parser": "~2.22.0",
     "copyfiles": "~2.1.1",
     "cross-env": "~6.0.3",
-    "eslint": "~6.6.0",
-    "eslint-config-prettier": "~6.5.0",
-    "eslint-plugin-prettier": "~3.1.1",
-    "eslint-plugin-react": "~7.16.0",
+    "eslint": "~6.8.0",
+    "eslint-config-prettier": "~6.10.0",
+    "eslint-plugin-prettier": "~3.1.2",
+    "eslint-plugin-react": "~7.19.0",
     "jest": "~24.9.0",
     "lerna": "~3.18.4",
     "prettier": "~1.19.1",
@@ -79,6 +79,6 @@
     "stylelint-config-standard": "~19.0.0",
     "stylelint-declaration-block-no-ignored-properties": "~2.1.0",
     "stylelint-prettier": "~1.1.1",
-    "typescript": "~3.7.2"
+    "typescript": "~3.8.3"
   }
 }

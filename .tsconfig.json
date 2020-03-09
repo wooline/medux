@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2017",
+    "target": "ESNext",
     "module": "commonjs",
     "moduleResolution": "node",
     "declaration": false,
@@ -18,7 +18,7 @@
     "jsx": "react",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "importHelpers": true,
+    "importHelpers": false,
     "forceConsistentCasingInFileNames": true,
     "suppressImplicitAnyIndexErrors": true,
     "preserveConstEnums": false,
