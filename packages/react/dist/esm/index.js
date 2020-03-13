@@ -1,13 +1,9 @@
-import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
-import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import React from 'react';
+import React, { useState } from 'react';
 import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView } from '@medux/core';
 import { Provider } from 'react-redux';
 export function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   return baseRenderApp(function (store, appModel, appViews, ssrInitStoreKey) {
     var ReduxProvider = function ReduxProvider(props) {
-      // eslint-disable-next-line react/prop-types
       return React.createElement(Provider, {
         store: store
       }, props.children);
@@ -25,7 +21,6 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     var data = store.getState();
 
     var ReduxProvider = function ReduxProvider(props) {
-      // eslint-disable-next-line react/prop-types
       return React.createElement(Provider, {
         store: store
       }, props.children);
@@ -40,61 +35,41 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
 export var loadView = function loadView(moduleName, viewName, modelOptions, Loading) {
-  var _temp;
-
-  return _temp =
-  /*#__PURE__*/
-  function (_React$Component) {
-    _inheritsLoose(Loader, _React$Component);
-
-    function Loader(props, context) {
-      var _this;
-
-      _this = _React$Component.call(this, props, context) || this;
-
-      _defineProperty(_assertThisInitialized(_this), "state", {
-        Component: null
-      });
-
+  var loader = function ViewLoader(props) {
+    var _useState = useState(function () {
       var moduleViewResult = getView(moduleName, viewName, modelOptions);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
-          Object.keys(Loader).forEach(function (key) {
-            return Component[key] = Loader[key];
+          Object.keys(loader).forEach(function (key) {
+            return Component[key] = loader[key];
           });
           Object.keys(Component).forEach(function (key) {
-            return Loader[key] = Component[key];
+            return loader[key] = Component[key];
           });
-
-          _this.setState({
+          setView({
             Component: Component
           });
         });
+        return null;
       } else {
-        Object.keys(Loader).forEach(function (key) {
-          return moduleViewResult[key] = Loader[key];
+        Object.keys(loader).forEach(function (key) {
+          return moduleViewResult[key] = loader[key];
         });
         Object.keys(moduleViewResult).forEach(function (key) {
-          return Loader[key] = moduleViewResult[key];
+          return loader[key] = moduleViewResult[key];
         });
-        _this.state = {
+        return {
           Component: moduleViewResult
         };
       }
+    }),
+        view = _useState[0],
+        setView = _useState[1];
 
-      return _this;
-    }
+    return view ? React.createElement(view.Component, props) : Loading ? React.createElement(Loading, props) : null;
+  };
 
-    var _proto = Loader.prototype;
-
-    _proto.render = function render() {
-      var Component = this.state.Component;
-      return Component ? React.createElement(Component, this.props) : Loading ? React.createElement(Loading, this.props) : null;
-    };
-
-    return Loader;
-  }(React.Component), _temp;
+  return loader;
 };
 export var exportModule = baseExportModule;
-//# sourceMappingURL=index.js.map

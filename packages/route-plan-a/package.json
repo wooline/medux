@@ -11,27 +11,32 @@
   "engines": {
     "node": ">=9.0.0"
   },
-  "main": "dist/cjs/index.js",
+  "main": "main.js",
   "module": "dist/esm/index.js",
+  "jsnext": "dist/next/index.js",
   "tsSource": "src/",
   "types": "types/",
   "files": [
     "src/",
     "types/",
     "dist/",
-    "index.js"
+    "main.js"
   ],
   "scripts": {
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types  && yarn test",
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
-    "build:cjs": "cross-env NODE_ENV=cjs babel ./src --ignore **/__tests__/,**/*.test.ts --out-dir ./dist/cjs  --extensions \".ts,.tsx\" --source-maps",
-    "build:esm": "cross-env NODE_ENV=esm babel ./src --ignore **/__tests__/,**/*.test.ts --out-dir ./dist/esm  --extensions \".ts,.tsx\" --source-maps",
-    "build:es6": "cross-env NODE_ENV=es6 babel ./src --out-dir ./dist/es6  --extensions \".ts,.tsx\" --source-maps",
-    "build": "yarn build:esm & yarn build:cjs & yarn build:es6",
-    "test": "cross-env NODE_ENV=cjs jest"
+    "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
+    "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
+    "build:cjs": "cross-env NODE_ENV=cjs rollup -c",
+    "build": "yarn build:next & yarn build:esm & yarn build:cjs",
+    "test": "jest"
+  },
+  "peerDependencies": {
+    "@babel/runtime": "^7.0.0"
   },
   "dependencies": {
+    "@medux/core": "^0.2.24",
     "@medux/web": "^0.2.24",
     "deep-extend": "~0.6.0"
   },

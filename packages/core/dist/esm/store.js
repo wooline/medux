@@ -1,13 +1,31 @@
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-import { MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
-import { ActionTypes, errorAction, routeChangeAction, routeParamsAction } from './actions';
+import { ActionTypes, MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { applyMiddleware, compose, createStore } from 'redux';
-import { loadModel } from './module';
+import { errorAction, routeChangeAction, routeParamsAction } from './actions';
+
+function isPromiseModule(module) {
+  return typeof module['then'] === 'function';
+}
+
+export function loadModel(moduleName, store, options) {
+  var hasInjected = store._medux_.injectedModules[moduleName];
+
+  if (!hasInjected) {
+    var moduleGetter = MetaData.moduleGetter;
+    var result = moduleGetter[moduleName]();
+
+    if (isPromiseModule(result)) {
+      return result.then(function (module) {
+        moduleGetter[moduleName] = function () {
+          return module;
+        };
+
+        return module.default.model(store, options);
+      });
+    } else {
+      return result.default.model(store, options);
+    }
+  }
+}
 export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
@@ -79,7 +97,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         return payload;
       }
 
-      return _objectSpread({}, state, {}, payload);
+      return Object.assign({}, state, {}, payload);
     }
 
     return state;
@@ -92,9 +110,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
     var meta = store._medux_;
     meta.prevState = rootState;
-
-    var currentState = _objectSpread({}, rootState);
-
+    var currentState = Object.assign({}, rootState);
     meta.currentState = currentState;
     Object.keys(storeReducers).forEach(function (moduleName) {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
@@ -102,9 +118,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
 
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-
-    var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
-
+    var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -169,9 +183,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         var handlersCommon = meta.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
 
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-
-        var handlers = _objectSpread({}, handlersCommon, {}, handlersEvery);
-
+        var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
@@ -311,4 +323,3 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
   MetaData.clientStore = store;
   return store;
 }
-//# sourceMappingURL=store.js.map

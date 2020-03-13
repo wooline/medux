@@ -1,18 +1,11 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
 export { createBrowserHistory, createMemoryHistory, createHashHistory } from 'history';
 
 function isLocation(data) {
   return !!data['pathname'];
 }
 
-var BrowserHistoryProxy =
-/*#__PURE__*/
-function () {
+var BrowserHistoryProxy = function () {
   function BrowserHistoryProxy(history, locationToRoute) {
     this.history = history;
     this.locationToRoute = locationToRoute;
@@ -39,7 +32,7 @@ function () {
   };
 
   _proto.patch = function patch(location, routeData) {
-    this.history.push(_objectSpread({}, location, {
+    this.history.push(Object.assign({}, location, {
       state: routeData
     }));
   };
@@ -47,9 +40,7 @@ function () {
   return BrowserHistoryProxy;
 }();
 
-var BrowserHistoryActions =
-/*#__PURE__*/
-function () {
+var BrowserHistoryActions = function () {
   function BrowserHistoryActions(history, routeToLocation) {
     this.history = history;
     this.routeToLocation = routeToLocation;
@@ -61,13 +52,13 @@ function () {
     if (typeof data === 'string') {
       this.history.push(data);
     } else if (isLocation(data)) {
-      this.history.push(_objectSpread({}, data, {
+      this.history.push(Object.assign({}, data, {
         state: undefined
       }));
     } else {
       var _location = this.routeToLocation(data);
 
-      this.history.push(_objectSpread({}, _location, {
+      this.history.push(Object.assign({}, _location, {
         state: data
       }));
     }
@@ -77,13 +68,13 @@ function () {
     if (typeof data === 'string') {
       this.history.replace(data);
     } else if (isLocation(data)) {
-      this.history.replace(_objectSpread({}, data, {
+      this.history.replace(Object.assign({}, data, {
         state: undefined
       }));
     } else {
       var _location2 = this.routeToLocation(data);
 
-      this.history.replace(_objectSpread({}, _location2, {
+      this.history.replace(Object.assign({}, _location2, {
         state: data
       }));
     }
@@ -112,4 +103,3 @@ export function createHistory(history, transformRoute) {
     historyActions: historyActions
   };
 }
-//# sourceMappingURL=index.js.map

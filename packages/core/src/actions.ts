@@ -1,12 +1,4 @@
-import {RouteState, config} from './basic';
-
-export const ActionTypes = {
-  MLoading: 'Loading',
-  MInit: 'Init',
-  MRouteParams: 'RouteParams',
-  Error: `medux${config.NSP}Error`,
-  RouteChange: `medux${config.NSP}RouteChange`,
-};
+import {ActionTypes, RouteState, config} from './basic';
 
 export function errorAction(error: any) {
   return {

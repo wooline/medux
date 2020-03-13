@@ -1,9 +1,3 @@
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend';
 import { config as coreConfig } from '@medux/core';
@@ -20,7 +14,6 @@ export function setRouteConfig(conf) {
   conf.defaultRouteParams && (config.defaultRouteParams = conf.defaultRouteParams);
 }
 
-// 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 function excludeDefaultData(data, def, holde, views) {
   var result = {};
   Object.keys(data).forEach(function (moduleName) {
@@ -43,26 +36,7 @@ function excludeDefaultData(data, def, holde, views) {
   }
 
   return result;
-} // 合并默认路由参数，如果路由中某参数没传，将用默认值替代，与上面方法互逆
-// function mergeDefaultData(data: {[moduleName: string]: any}, views: {[moduleName: string]: any}) {
-//   Object.keys(views).forEach(moduleName => {
-//     if (!data[moduleName]) {
-//       data[moduleName] = {};
-//     }
-//   });
-//   Object.keys(data).forEach(moduleName => {
-//     data[moduleName] = assignDeep({}, defaultRouteParams[moduleName], data[moduleName]);
-//   });
-// }
-// export const mergeDefaultParamsMiddleware: Middleware = () => (next: Function) => (action: any) => {
-//   if (action.type === ActionTypes.F_ROUTE_CHANGE) {
-//     const payload = getActionData<RouteState>(action);
-//     const params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
-//     action = {...action, payload: {...payload, data: {...payload.data, params}}};
-//   }
-//   return next(action);
-// };
-
+}
 
 var ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
 
@@ -72,22 +46,7 @@ function dateParse(prop, value) {
   }
 
   return value;
-} // function getSearch(searchOrHash: string, key: string): string {
-//   if (searchOrHash.length < 4) {
-//     return '';
-//   }
-//   const reg = new RegExp(`[&?#]${key}=`);
-//   const str = searchOrHash.split(reg)[1];
-//   if (!str) {
-//     return '';
-//   }
-//   return str.split('&')[0];
-// }
-
-/*
-  将字符串变成 Data，因为 JSON 中没有 Date 类型，所以用正则表达式匹配自动转换
-*/
-
+}
 
 function searchParse(search) {
   if (!search) {
@@ -189,7 +148,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
       var match = matchPath(pathname, {
         path: _rule,
         exact: !pathConfig
-      }); // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
+      });
 
       if (match) {
         paths.push(_viewName);
@@ -199,7 +158,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = _objectSpread({}, args[_moduleName], {}, checkPathArgs(params));
+          args[_moduleName] = Object.assign({}, args[_moduleName], {}, checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -225,7 +184,6 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
     ruleToKeys = {};
   }
 
-  // ruleToKeys将每条rule中的params key解析出来
   for (var _rule2 in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule2)) {
       if (!ruleToKeys[_rule2]) {
@@ -403,15 +361,13 @@ export function buildTransformRoute(routeConfig) {
     var firstStackParamsFilter;
 
     if (paths.length > 0) {
-      // 将args深克隆，因为后面可能会删除path中使用到的变量
       firstStackParamsFilter = assignDeep({}, firstStackParams);
       paths.reduce(function (parentAbsoluteViewName, viewName, index) {
         var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
         var rule = viewToRule[absoluteViewName];
-        var moduleName = viewName.split(coreConfig.VSP)[0]; //最深的一个view可以决定pathname
+        var moduleName = viewName.split(coreConfig.VSP)[0];
 
         if (index === paths.length - 1) {
-          // const toPath = compileToPath(rule.replace(/\$$/, ''));
           var toPath = compileToPath(rule);
 
           var _keys = ruleToKeys[rule] || [];
@@ -433,8 +389,7 @@ export function buildTransformRoute(routeConfig) {
           }, {});
 
           pathname = toPath(args);
-        } //pathname中传递的值可以不在params中重复传递
-
+        }
 
         var keys = ruleToKeys[rule] || [];
         keys.forEach(function (key) {
@@ -461,8 +416,7 @@ export function buildTransformRoute(routeConfig) {
       }, '');
     } else {
       firstStackParamsFilter = firstStackParams;
-    } //将带_前缀的变量放到hashData中
-
+    }
 
     var arr = [].concat(stackParams);
     arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams, false, views);
@@ -569,153 +523,4 @@ export function buildToBrowserUrl(getTransformRoute) {
   }
 
   return toUrl;
-} // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
-//   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
-//   const locationToRoute: LocationToRoute = location => {
-//     const paths: string[] = [];
-//     const {stackParams, params} = splitSearch(location.search);
-//     //算出paths，并将path参数提取出来并入searchParams中
-//     pathnameParse(location.pathname, routeConfig, paths, params);
-//     const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
-//       const [moduleName, viewName] = cur.split(coreConfig.VSP);
-//       if (viewName) {
-//         if (!prev[moduleName]) {
-//           prev[moduleName] = {};
-//         }
-//         prev[moduleName]![viewName] = true;
-//       }
-//       return prev;
-//     }, {});
-//     const {stackParams: hashStackParams, params: hashParams} = splitSearch(location.hash);
-//     //将hash参数并入params中
-//     assignDeep(params, hashParams);
-//     hashStackParams.forEach((item, index) => {
-//       item && assignDeep(stackParams[index], item);
-//     });
-//     mergeDefaultData(params, views);
-//     return {paths, params, views, stackParams};
-//   };
-//   const routeToLocation: RouteToLocation = routeData => {
-//     const {paths, params, stackParams} = routeData;
-//     const mainStackParams = stackParams[0] || {};
-//     let pathname = '';
-//     let args: {[moduleName: string]: {[key: string]: any} | undefined};
-//     if (paths.length > 0) {
-//       args = {};
-//       // 将args二层克隆params，因为后面可能会删除path中使用到的变量
-//       for (const moduleName in mainStackParams) {
-//         if (mainStackParams[moduleName] && mainStackParams.hasOwnProperty(moduleName)) {
-//           args[moduleName] = {...mainStackParams[moduleName]};
-//         }
-//       }
-//       paths.reduce((parentAbsoluteViewName, viewName, index) => {
-//         const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
-//         const rule = viewToRule[absoluteViewName];
-//         const moduleName = viewName.split(coreConfig.VSP)[0];
-//         //最深的一个view可以决定pathname
-//         if (index === paths.length - 1) {
-//           // const toPath = compileToPath(rule.replace(/\$$/, ''));
-//           const toPath = compileToPath(rule);
-//           pathname = toPath(params[moduleName]);
-//         }
-//         //pathname中传递的值可以不在params中重复传递
-//         const keys = ruleToKeys[rule] || [];
-//         keys.forEach(key => {
-//           if (args[moduleName]) {
-//             delete args[moduleName]![key];
-//           }
-//         });
-//         return absoluteViewName;
-//       }, '');
-//     } else {
-//       args = mainStackParams;
-//     }
-//     //将带_前缀的变量放到hashData中
-//     const searchData = {};
-//     const hashData = {};
-//     for (const moduleName in args) {
-//       if (args[moduleName] && args.hasOwnProperty(moduleName)) {
-//         const data = args[moduleName]!;
-//         const keys = Object.keys(data);
-//         if (keys.length > 0) {
-//           keys.forEach(key => {
-//             if (key.startsWith('_')) {
-//               if (!hashData[moduleName]) {
-//                 hashData[moduleName] = {};
-//               }
-//               hashData[moduleName][key] = data[key];
-//             } else {
-//               if (!searchData[moduleName]) {
-//                 searchData[moduleName] = {};
-//               }
-//               searchData[moduleName][key] = data[key];
-//             }
-//           });
-//         }
-//       }
-//     }
-//     return {
-//       pathname,
-//       search: searchStringify(excludeDefaultData(searchData, defaultRouteParams)),
-//       hash: searchStringify(excludeDefaultData(hashData, defaultRouteParams)),
-//     };
-//   };
-//   return {
-//     locationToRoute,
-//     routeToLocation,
-//   };
-// }
-
-/**
- '/:articleType/:articleId/comments/:itemId'
- www.aa.com/photos/1/comments/23?p={}&p=
-
- paths:["app.Main", "photos.detail", "comments.detail"]
- params:{app:{},photos:{itemid:1,searchList:{page:1,pageSize:10},_listkey:222222},comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10},_listkey:222222}}
- stackParams:[{app:{}}, {photos:{itemid:1,searchList:{page:1,pageSize:10},_listkey:222222}}, {comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10},_listkey:222222}}]
- stackParams:[{app:{},photos:{itemid:1,searchList:{page:1,pageSize:10},_listkey:222222},comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10},_listkey:222222}}]
-
- web: www.aa.com/photos/1/comments/23?p={comments:{searchList:{page:2}}}#p={photos:{_listkey:222222}, comments:{_listkey:222222}}
-
- rn: www.aa.com/photos/1/comments/23?p={app:{}}&p={photos:{}}&p={comments:{searchList:{page:2}}}#p={}&p={photos:{_listkey:222222}}&p={comments:{_listkey:222222}}
-
- routeData -> location
-1.根据paths得到匹配表达式：'/:articleType/:articleId/comments/:itemId'
-2.根据params填充表达式得到：www.aa.com/photos/1/comments/23
-3.将params中带_的提取为hash
-不作缩减将得到：
-www.aa.com/photos/1/comments/23?
-p={app:{}}&
-p={photos:{itemid:1,searchList:{page:1,pageSize:10}}}&
-p={comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10}}}
-#
-p={}&
-p={photos:{_listkey:222222}}
-p={comments:{_listkey:222222}}
-4.缩减默认值：
-www.aa.com/photos/1/comments/23?
-p={app:{}}&
-p={photos:{itemid:1}}&
-p={comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2}}}
-#
-p={}&
-p={photos:{_listkey:222222}}
-p={comments:{_listkey:222222}}
-5.缩减路径传参
-www.aa.com/photos/1/comments/23?
-p={app:{}}&
-p={photos:{}}&
-p={comments:{searchList:{page:2}}}
-#
-p={}&
-p={photos:{_listkey:222222}}
-p={comments:{_listkey:222222}}
-
-
-
- location->routeData
-1.解析出paths、views、pathArgs
-2.
-
- */
-//# sourceMappingURL=index.js.map
+}

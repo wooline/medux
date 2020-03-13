@@ -1,13 +1,41 @@
 /*global global:true process:true*/
-import {LoadingState} from './sprite';
+import {LoadingState, TaskCountEvent, TaskCounter} from './sprite';
+
 import {ModuleGetter} from './module';
-import {setLoading} from './loading';
 
 // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
 //   self.self === self &&
 //   self) ||
 //   (typeof global == 'object' && global.global === global && global) ||
 //   this) as any;
+
+const loadings: {[moduleName: string]: TaskCounter} = {};
+
+let depthTime = 2;
+
+export function setLoadingDepthTime(second: number) {
+  depthTime = second;
+}
+export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, group: string = 'global'): T {
+  if (MetaData.isServer) {
+    return item;
+  }
+  const key = moduleName + config.NSP + group;
+  if (!loadings[key]) {
+    loadings[key] = new TaskCounter(depthTime);
+    loadings[key].addListener(TaskCountEvent, e => {
+      const store = MetaData.clientStore;
+      if (store) {
+        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+        const action = actions({[group]: e.data});
+        store.dispatch(action);
+      }
+    });
+  }
+  loadings[key].addItem(item);
+  return item;
+}
+
 export const config: {
   NSP: string;
   VSP: string;
@@ -38,6 +66,13 @@ export const MetaData: {
   moduleGetter: null as any,
 };
 
+export const ActionTypes = {
+  MLoading: 'Loading',
+  MInit: 'Init',
+  MRouteParams: 'RouteParams',
+  Error: `medux${config.NSP}Error`,
+  RouteChange: `medux${config.NSP}RouteChange`,
+};
 export const client: Window | undefined = MetaData.isServer ? undefined : typeof window === 'undefined' ? (global as any) : window;
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;

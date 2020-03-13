@@ -1,13 +1,3 @@
-// fork from path-to-regexp 6.1.0
-// https://github.com/pillarjs/path-to-regexp
-
-/**
- * Tokenizer results.
- */
-
-/**
- * Tokenize input string.
- */
 function lexer(str) {
   var tokens = [];
   var i = 0;
@@ -58,12 +48,7 @@ function lexer(str) {
       while (j < str.length) {
         var code = str.charCodeAt(j);
 
-        if ( // `0-9`
-        code >= 48 && code <= 57 || // `A-Z`
-        code >= 65 && code <= 90 || // `a-z`
-        code >= 97 && code <= 122 || // `_`
-        code === 95 || // `.`
-        code === 46) {
+        if (code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code === 95 || code === 46) {
           name += str[j++];
           continue;
         }
@@ -141,9 +126,6 @@ function lexer(str) {
   return tokens;
 }
 
-/**
- * Parse a string for the raw tokens.
- */
 export function parse(str, options) {
   if (options === void 0) {
     options = {};
@@ -175,7 +157,7 @@ export function parse(str, options) {
 
   var consumeText = function consumeText() {
     var result = '';
-    var value; // tslint:disable-next-line
+    var value;
 
     while (value = tryConsume('CHAR') || tryConsume('ESCAPED_CHAR')) {
       result += value;
@@ -250,17 +232,9 @@ export function parse(str, options) {
 
   return result;
 }
-
-/**
- * Compile a string to a template function for the path.
- */
 export function compile(str, options) {
   return tokensToFunction(parse(str, options), options);
 }
-
-/**
- * Expose a method for transforming tokens into the path function.
- */
 export function tokensToFunction(tokens, options) {
   if (options === void 0) {
     options = {};
@@ -273,8 +247,7 @@ export function tokensToFunction(tokens, options) {
     return x;
   } : _options2$encode,
       _options2$validate = _options2.validate,
-      validate = _options2$validate === void 0 ? true : _options2$validate; // Compile all the tokens into regexps.
-
+      validate = _options2$validate === void 0 ? true : _options2$validate;
   var matches = tokens.map(function (token) {
     if (typeof token === 'object') {
       return new RegExp("^(?:" + token.pattern + ")$", reFlags);
@@ -340,19 +313,11 @@ export function tokensToFunction(tokens, options) {
     return path;
   };
 }
-
-/**
- * Create path match function from `path-to-regexp` spec.
- */
 export function match(str, options) {
   var keys = [];
   var re = pathToRegexp(str, keys, options);
   return regexpToFunction(re, keys, options);
 }
-/**
- * Create a path match function from `path-to-regexp` output.
- */
-
 export function regexpToFunction(re, keys, options) {
   if (options === void 0) {
     options = {};
@@ -371,7 +336,6 @@ export function regexpToFunction(re, keys, options) {
     var params = Object.create(null);
 
     var _loop = function _loop(i) {
-      // tslint:disable-next-line
       if (m[i] === undefined) return "continue";
       var key = keys[i - 1];
 
@@ -397,32 +361,17 @@ export function regexpToFunction(re, keys, options) {
     };
   };
 }
-/**
- * Escape a regular expression string.
- */
 
 function escapeString(str) {
   return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
 }
-/**
- * Get the flags for a regexp from the options.
- */
-
 
 function flags(options) {
   return options && options.sensitive ? '' : 'i';
 }
-/**
- * Metadata about a key.
- */
 
-
-/**
- * Pull out keys from a regexp.
- */
 function regexpToRegexp(path, keys) {
-  if (!keys) return path; // Use a negative lookahead to match only capturing groups.
-
+  if (!keys) return path;
   var groups = path.source.match(/\((?!\?)/g);
 
   if (groups) {
@@ -439,10 +388,6 @@ function regexpToRegexp(path, keys) {
 
   return path;
 }
-/**
- * Transform an array into a regexp.
- */
-
 
 function arrayToRegexp(paths, keys, options) {
   var parts = paths.map(function (path) {
@@ -450,18 +395,11 @@ function arrayToRegexp(paths, keys, options) {
   });
   return new RegExp("(?:" + parts.join('|') + ")", flags(options));
 }
-/**
- * Create a path regexp from string input.
- */
-
 
 function stringToRegexp(path, keys, options) {
   return tokensToRegexp(parse(path, options), keys, options);
 }
 
-/**
- * Expose a function for taking tokens and returning a RegExp.
- */
 export function tokensToRegexp(tokens, keys, options) {
   if (options === void 0) {
     options = {};
@@ -480,7 +418,7 @@ export function tokensToRegexp(tokens, keys, options) {
   } : _options4$encode;
   var endsWith = "[" + escapeString(options.endsWith || '') + "]|$";
   var delimiter = "[" + escapeString(options.delimiter || '/#?') + "]";
-  var route = start ? '^' : ''; // Iterate over the tokens and create our regexp string.
+  var route = start ? '^' : '';
 
   for (var _iterator = tokens, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
     var _ref;
@@ -526,8 +464,7 @@ export function tokensToRegexp(tokens, keys, options) {
     route += !options.endsWith ? '$' : "(?=" + endsWith + ")";
   } else {
     var endToken = tokens[tokens.length - 1];
-    var isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : // tslint:disable-next-line
-    endToken === undefined;
+    var isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
 
     if (!strict) {
       route += "(?:" + delimiter + "(?=" + endsWith + "))?";
@@ -540,20 +477,8 @@ export function tokensToRegexp(tokens, keys, options) {
 
   return new RegExp(route, flags(options));
 }
-/**
- * Supported `path-to-regexp` input types.
- */
-
-/**
- * Normalize the given path string, returning a regular expression.
- *
- * An empty array can be passed in for the keys, which will hold the
- * placeholder key descriptions. For example, using `/user/:id`, `keys` will
- * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
- */
 export function pathToRegexp(path, keys, options) {
   if (path instanceof RegExp) return regexpToRegexp(path, keys);
   if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
   return stringToRegexp(path, keys, options);
 }
-//# sourceMappingURL=path-to-regexp.js.map

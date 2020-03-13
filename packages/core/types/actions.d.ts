@@ -1,11 +1,4 @@
 import { RouteState } from './basic';
-export declare const ActionTypes: {
-    MLoading: string;
-    MInit: string;
-    MRouteParams: string;
-    Error: string;
-    RouteChange: string;
-};
 export declare function errorAction(error: any): {
     type: string;
     payload: any[];

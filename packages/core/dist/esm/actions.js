@@ -1,11 +1,4 @@
-import { config } from './basic';
-export var ActionTypes = {
-  MLoading: 'Loading',
-  MInit: 'Init',
-  MRouteParams: 'RouteParams',
-  Error: "medux" + config.NSP + "Error",
-  RouteChange: "medux" + config.NSP + "RouteChange"
-};
+import { ActionTypes, config } from './basic';
 export function errorAction(error) {
   return {
     type: ActionTypes.Error,
@@ -24,4 +17,3 @@ export function routeParamsAction(moduleName, params) {
     payload: [params]
   };
 }
-//# sourceMappingURL=actions.js.map

@@ -105,7 +105,6 @@ export declare function exportActions<G extends {
 }>(moduleGetter: G): {
     [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
 };
-export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void>;
 export declare function getView<T>(moduleName: string, viewName: string, modelOptions?: any): T | Promise<T>;
 export declare type LoadView<MG extends ModuleGetter, Ags = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, modelOptions?: any, args?: Ags) => V[N];
 export interface StoreOptions {

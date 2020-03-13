@@ -199,4 +199,3 @@ function (_PDispatcher) {
 
   return TaskCounter;
 }(PDispatcher);
-//# sourceMappingURL=sprite.js.map

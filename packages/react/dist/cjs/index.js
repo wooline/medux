@@ -1,29 +1,18 @@
-"use strict";
+'use strict';
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+Object.defineProperty(exports, '__esModule', { value: true });
 
-exports.__esModule = true;
-exports.renderApp = renderApp;
-exports.renderSSR = renderSSR;
-exports.exportModule = exports.loadView = void 0;
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
-
-var _inheritsLoose2 = _interopRequireDefault(require("@babel/runtime/helpers/inheritsLoose"));
-
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
-
-var _react = _interopRequireDefault(require("react"));
-
-var _core = require("@medux/core");
-
-var _reactRedux = require("react-redux");
+var React = require('react');
+var React__default = _interopDefault(React);
+var core = require('@medux/core');
+var reactRedux = require('react-redux');
 
 function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
-  return (0, _core.renderApp)(function (store, appModel, appViews, ssrInitStoreKey) {
+  return core.renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
     var ReduxProvider = function ReduxProvider(props) {
-      // eslint-disable-next-line react/prop-types
-      return _react.default.createElement(_reactRedux.Provider, {
+      return React__default.createElement(reactRedux.Provider, {
         store: store
       }, props.children);
     };
@@ -31,18 +20,16 @@ function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptio
     render(ReduxProvider, appViews.Main, ssrInitStoreKey);
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-
 function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  return (0, _core.renderSSR)(function (store, appModel, appViews, ssrInitStoreKey) {
+  return core.renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
     var data = store.getState();
 
     var ReduxProvider = function ReduxProvider(props) {
-      // eslint-disable-next-line react/prop-types
-      return _react.default.createElement(_reactRedux.Provider, {
+      return React__default.createElement(reactRedux.Provider, {
         store: store
       }, props.children);
     };
@@ -55,64 +42,47 @@ function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptio
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-
 var loadView = function loadView(moduleName, viewName, modelOptions, Loading) {
-  var _temp;
+  var loader = function ViewLoader(props) {
+    var _useState = React.useState(function () {
+      var moduleViewResult = core.getView(moduleName, viewName, modelOptions);
 
-  return _temp =
-  /*#__PURE__*/
-  function (_React$Component) {
-    (0, _inheritsLoose2.default)(Loader, _React$Component);
-
-    function Loader(props, context) {
-      var _this;
-
-      _this = _React$Component.call(this, props, context) || this;
-      (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "state", {
-        Component: null
-      });
-      var moduleViewResult = (0, _core.getView)(moduleName, viewName, modelOptions);
-
-      if ((0, _core.isPromiseView)(moduleViewResult)) {
+      if (core.isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
-          Object.keys(Loader).forEach(function (key) {
-            return Component[key] = Loader[key];
+          Object.keys(loader).forEach(function (key) {
+            return Component[key] = loader[key];
           });
           Object.keys(Component).forEach(function (key) {
-            return Loader[key] = Component[key];
+            return loader[key] = Component[key];
           });
-
-          _this.setState({
+          setView({
             Component: Component
           });
         });
+        return null;
       } else {
-        Object.keys(Loader).forEach(function (key) {
-          return moduleViewResult[key] = Loader[key];
+        Object.keys(loader).forEach(function (key) {
+          return moduleViewResult[key] = loader[key];
         });
         Object.keys(moduleViewResult).forEach(function (key) {
-          return Loader[key] = moduleViewResult[key];
+          return loader[key] = moduleViewResult[key];
         });
-        _this.state = {
+        return {
           Component: moduleViewResult
         };
       }
+    }),
+        view = _useState[0],
+        setView = _useState[1];
 
-      return _this;
-    }
+    return view ? React__default.createElement(view.Component, props) : Loading ? React__default.createElement(Loading, props) : null;
+  };
 
-    var _proto = Loader.prototype;
-
-    _proto.render = function render() {
-      var Component = this.state.Component;
-      return Component ? _react.default.createElement(Component, this.props) : Loading ? _react.default.createElement(Loading, this.props) : null;
-    };
-
-    return Loader;
-  }(_react.default.Component), _temp;
+  return loader;
 };
+var exportModule = core.exportModule;
 
-exports.loadView = loadView;
-var exportModule = _core.exportModule;
 exports.exportModule = exportModule;
-//# sourceMappingURL=index.js.map
+exports.loadView = loadView;
+exports.renderApp = renderApp;
+exports.renderSSR = renderSSR;

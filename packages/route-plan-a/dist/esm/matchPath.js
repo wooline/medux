@@ -95,11 +95,8 @@ export function matchPath(pathname, options) {
     if (exact && !isExact) return null;
     return {
       path: path,
-      // the path used to match
       url: path === '/' && url === '' ? '/' : url,
-      // the matched portion of the URL
       isExact: isExact,
-      // whether or not we matched exactly
       params: keys.reduce(function (memo, key, index) {
         memo[key.name] = values[index];
         return memo;
@@ -108,4 +105,3 @@ export function matchPath(pathname, options) {
   }, null);
 }
 export default matchPath;
-//# sourceMappingURL=matchPath.js.map

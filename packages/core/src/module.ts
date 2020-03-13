@@ -1,5 +1,5 @@
 import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, StoreState, client, config, injectActions, isPromise, reducer} from './basic';
-import {HistoryProxy, buildStore} from './store';
+import {HistoryProxy, buildStore, loadModel} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
@@ -206,22 +206,6 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
     return maps;
   }, {});
   return MetaData.actionCreatorMap as any;
-}
-
-export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void> {
-  const hasInjected = store._medux_.injectedModules[moduleName];
-  if (!hasInjected) {
-    const moduleGetter = MetaData.moduleGetter;
-    const result = moduleGetter[moduleName]();
-    if (isPromiseModule(result)) {
-      return result.then(module => {
-        moduleGetter[moduleName] = (() => module) as any;
-        return module.default.model(store, options);
-      });
-    } else {
-      return result.default.model(store, options);
-    }
-  }
 }
 
 export function getView<T>(moduleName: string, viewName: string, modelOptions?: any): T | Promise<T> {

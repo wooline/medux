@@ -1,8 +1,27 @@
-import {Action, MetaData, ModelStore, RouteData, RouteState, StoreState, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
-import {ActionTypes, errorAction, routeChangeAction, routeParamsAction} from './actions';
+import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
+import {Module, ModuleGetter} from './module';
+import {errorAction, routeChangeAction, routeParamsAction} from './actions';
 
-import {loadModel} from './module';
+function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
+  return typeof module['then'] === 'function';
+}
+
+export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void> {
+  const hasInjected = store._medux_.injectedModules[moduleName];
+  if (!hasInjected) {
+    const moduleGetter = MetaData.moduleGetter;
+    const result = moduleGetter[moduleName]();
+    if (isPromiseModule(result)) {
+      return result.then(module => {
+        moduleGetter[moduleName] = (() => module) as any;
+        return module.default.model(store, options);
+      });
+    } else {
+      return result.default.model(store, options);
+    }
+  }
+}
 
 export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];

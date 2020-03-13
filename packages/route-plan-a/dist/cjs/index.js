@@ -1,26 +1,554 @@
-"use strict";
+'use strict';
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+Object.defineProperty(exports, '__esModule', { value: true });
 
-exports.__esModule = true;
-exports.setRouteConfig = setRouteConfig;
-exports.fillRouteData = fillRouteData;
-exports.buildTransformRoute = buildTransformRoute;
-exports.fillBrowserRouteData = fillBrowserRouteData;
-exports.getBrowserRouteActions = getBrowserRouteActions;
-exports.buildToBrowserUrl = buildToBrowserUrl;
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+var assignDeep = _interopDefault(require('deep-extend'));
+var core = require('@medux/core');
 
-var _matchPath = require("./matchPath");
+function lexer(str) {
+  var tokens = [];
+  var i = 0;
 
-var _deepExtend = _interopRequireDefault(require("deep-extend"));
+  while (i < str.length) {
+    var char = str[i];
 
-var _core = require("@medux/core");
+    if (char === '*' || char === '+' || char === '?') {
+      tokens.push({
+        type: 'MODIFIER',
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+    if (char === '\\') {
+      tokens.push({
+        type: 'ESCAPED_CHAR',
+        index: i++,
+        value: str[i++]
+      });
+      continue;
+    }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+    if (char === '{') {
+      tokens.push({
+        type: 'OPEN',
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === '}') {
+      tokens.push({
+        type: 'CLOSE',
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === ':') {
+      var name = '';
+      var j = i + 1;
+
+      while (j < str.length) {
+        var code = str.charCodeAt(j);
+
+        if (code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code === 95 || code === 46) {
+          name += str[j++];
+          continue;
+        }
+
+        break;
+      }
+
+      if (!name) throw new TypeError("Missing parameter name at " + i);
+      tokens.push({
+        type: 'NAME',
+        index: i,
+        value: name
+      });
+      i = j;
+      continue;
+    }
+
+    if (char === '(') {
+      var count = 1;
+      var pattern = '';
+
+      var _j = i + 1;
+
+      if (str[_j] === '?') {
+        throw new TypeError("Pattern cannot start with \"?\" at " + _j);
+      }
+
+      while (_j < str.length) {
+        if (str[_j] === '\\') {
+          pattern += str[_j++] + str[_j++];
+          continue;
+        }
+
+        if (str[_j] === ')') {
+          count--;
+
+          if (count === 0) {
+            _j++;
+            break;
+          }
+        } else if (str[_j] === '(') {
+          count++;
+
+          if (str[_j + 1] !== '?') {
+            throw new TypeError("Capturing groups are not allowed at " + _j);
+          }
+        }
+
+        pattern += str[_j++];
+      }
+
+      if (count) throw new TypeError("Unbalanced pattern at " + i);
+      if (!pattern) throw new TypeError("Missing pattern at " + i);
+      tokens.push({
+        type: 'PATTERN',
+        index: i,
+        value: pattern
+      });
+      i = _j;
+      continue;
+    }
+
+    tokens.push({
+      type: 'CHAR',
+      index: i,
+      value: str[i++]
+    });
+  }
+
+  tokens.push({
+    type: 'END',
+    index: i,
+    value: ''
+  });
+  return tokens;
+}
+
+function parse(str, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  var tokens = lexer(str);
+  var _options = options,
+      _options$prefixes = _options.prefixes,
+      prefixes = _options$prefixes === void 0 ? './' : _options$prefixes;
+  var defaultPattern = "[^" + escapeString(options.delimiter || '/#?') + "]+?";
+  var result = [];
+  var key = 0;
+  var i = 0;
+  var path = '';
+
+  var tryConsume = function tryConsume(type) {
+    if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
+    return undefined;
+  };
+
+  var mustConsume = function mustConsume(type) {
+    var value = tryConsume(type);
+    if (value !== undefined) return value;
+    var _tokens$i = tokens[i],
+        nextType = _tokens$i.type,
+        index = _tokens$i.index;
+    throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
+  };
+
+  var consumeText = function consumeText() {
+    var result = '';
+    var value;
+
+    while (value = tryConsume('CHAR') || tryConsume('ESCAPED_CHAR')) {
+      result += value;
+    }
+
+    return result;
+  };
+
+  while (i < tokens.length) {
+    var char = tryConsume('CHAR');
+    var name = tryConsume('NAME');
+    var pattern = tryConsume('PATTERN');
+
+    if (name || pattern) {
+      var prefix = char || '';
+
+      if (prefixes.indexOf(prefix) === -1) {
+        path += prefix;
+        prefix = '';
+      }
+
+      if (path) {
+        result.push(path);
+        path = '';
+      }
+
+      result.push({
+        name: name || key++,
+        prefix: prefix,
+        suffix: '',
+        pattern: pattern || defaultPattern,
+        modifier: tryConsume('MODIFIER') || ''
+      });
+      continue;
+    }
+
+    var _value = char || tryConsume('ESCAPED_CHAR');
+
+    if (_value) {
+      path += _value;
+      continue;
+    }
+
+    if (path) {
+      result.push(path);
+      path = '';
+    }
+
+    var open = tryConsume('OPEN');
+
+    if (open) {
+      var _prefix = consumeText();
+
+      var _name = tryConsume('NAME') || '';
+
+      var _pattern = tryConsume('PATTERN') || '';
+
+      var suffix = consumeText();
+      mustConsume('CLOSE');
+      result.push({
+        name: _name || (_pattern ? key++ : ''),
+        pattern: _name && !_pattern ? defaultPattern : _pattern,
+        prefix: _prefix,
+        suffix: suffix,
+        modifier: tryConsume('MODIFIER') || ''
+      });
+      continue;
+    }
+
+    mustConsume('END');
+  }
+
+  return result;
+}
+function compile(str, options) {
+  return tokensToFunction(parse(str, options), options);
+}
+function tokensToFunction(tokens, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  var reFlags = flags(options);
+  var _options2 = options,
+      _options2$encode = _options2.encode,
+      encode = _options2$encode === void 0 ? function (x) {
+    return x;
+  } : _options2$encode,
+      _options2$validate = _options2.validate,
+      validate = _options2$validate === void 0 ? true : _options2$validate;
+  var matches = tokens.map(function (token) {
+    if (typeof token === 'object') {
+      return new RegExp("^(?:" + token.pattern + ")$", reFlags);
+    }
+
+    return undefined;
+  });
+  return function (data) {
+    var path = '';
+
+    for (var i = 0; i < tokens.length; i++) {
+      var _token = tokens[i];
+
+      if (typeof _token === 'string') {
+        path += _token;
+        continue;
+      }
+
+      var _value2 = data ? data[_token.name] : undefined;
+
+      var optional = _token.modifier === '?' || _token.modifier === '*';
+      var repeat = _token.modifier === '*' || _token.modifier === '+';
+
+      if (Array.isArray(_value2)) {
+        if (!repeat) {
+          throw new TypeError("Expected \"" + _token.name + "\" to not repeat, but got an array");
+        }
+
+        if (_value2.length === 0) {
+          if (optional) continue;
+          throw new TypeError("Expected \"" + _token.name + "\" to not be empty");
+        }
+
+        for (var j = 0; j < _value2.length; j++) {
+          var segment = encode(_value2[j], _token);
+
+          if (validate && !matches[i].test(segment)) {
+            throw new TypeError("Expected all \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + segment + "\"");
+          }
+
+          path += _token.prefix + segment + _token.suffix;
+        }
+
+        continue;
+      }
+
+      if (typeof _value2 === 'string' || typeof _value2 === 'number') {
+        var _segment = encode(String(_value2), _token);
+
+        if (validate && !matches[i].test(_segment)) {
+          throw new TypeError("Expected \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + _segment + "\"");
+        }
+
+        path += _token.prefix + _segment + _token.suffix;
+        continue;
+      }
+
+      if (optional) continue;
+      var typeOfMessage = repeat ? 'an array' : 'a string';
+      throw new TypeError("Expected \"" + _token.name + "\" to be " + typeOfMessage);
+    }
+
+    return path;
+  };
+}
+
+function escapeString(str) {
+  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
+}
+
+function flags(options) {
+  return options && options.sensitive ? '' : 'i';
+}
+
+function regexpToRegexp(path, keys) {
+  if (!keys) return path;
+  var groups = path.source.match(/\((?!\?)/g);
+
+  if (groups) {
+    for (var i = 0; i < groups.length; i++) {
+      keys.push({
+        name: i,
+        prefix: '',
+        suffix: '',
+        modifier: '',
+        pattern: ''
+      });
+    }
+  }
+
+  return path;
+}
+
+function arrayToRegexp(paths, keys, options) {
+  var parts = paths.map(function (path) {
+    return pathToRegexp(path, keys, options).source;
+  });
+  return new RegExp("(?:" + parts.join('|') + ")", flags(options));
+}
+
+function stringToRegexp(path, keys, options) {
+  return tokensToRegexp(parse(path, options), keys, options);
+}
+
+function tokensToRegexp(tokens, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  var _options4 = options,
+      _options4$strict = _options4.strict,
+      strict = _options4$strict === void 0 ? false : _options4$strict,
+      _options4$start = _options4.start,
+      start = _options4$start === void 0 ? true : _options4$start,
+      _options4$end = _options4.end,
+      end = _options4$end === void 0 ? true : _options4$end,
+      _options4$encode = _options4.encode,
+      encode = _options4$encode === void 0 ? function (x) {
+    return x;
+  } : _options4$encode;
+  var endsWith = "[" + escapeString(options.endsWith || '') + "]|$";
+  var delimiter = "[" + escapeString(options.delimiter || '/#?') + "]";
+  var route = start ? '^' : '';
+
+  for (var _iterator = tokens, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+    var _ref;
+
+    if (_isArray) {
+      if (_i >= _iterator.length) break;
+      _ref = _iterator[_i++];
+    } else {
+      _i = _iterator.next();
+      if (_i.done) break;
+      _ref = _i.value;
+    }
+
+    var _token2 = _ref;
+
+    if (typeof _token2 === 'string') {
+      route += escapeString(encode(_token2));
+    } else {
+      var prefix = escapeString(encode(_token2.prefix));
+      var suffix = escapeString(encode(_token2.suffix));
+
+      if (_token2.pattern) {
+        if (keys) keys.push(_token2);
+
+        if (prefix || suffix) {
+          if (_token2.modifier === '+' || _token2.modifier === '*') {
+            var mod = _token2.modifier === '*' ? '?' : '';
+            route += "(?:" + prefix + "((?:" + _token2.pattern + ")(?:" + suffix + prefix + "(?:" + _token2.pattern + "))*)" + suffix + ")" + mod;
+          } else {
+            route += "(?:" + prefix + "(" + _token2.pattern + ")" + suffix + ")" + _token2.modifier;
+          }
+        } else {
+          route += "(" + _token2.pattern + ")" + _token2.modifier;
+        }
+      } else {
+        route += "(?:" + prefix + suffix + ")" + _token2.modifier;
+      }
+    }
+  }
+
+  if (end) {
+    if (!strict) route += delimiter + "?";
+    route += !options.endsWith ? '$' : "(?=" + endsWith + ")";
+  } else {
+    var endToken = tokens[tokens.length - 1];
+    var isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
+
+    if (!strict) {
+      route += "(?:" + delimiter + "(?=" + endsWith + "))?";
+    }
+
+    if (!isEndDelimited) {
+      route += "(?=" + delimiter + "|" + endsWith + ")";
+    }
+  }
+
+  return new RegExp(route, flags(options));
+}
+function pathToRegexp(path, keys, options) {
+  if (path instanceof RegExp) return regexpToRegexp(path, keys);
+  if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
+  return stringToRegexp(path, keys, options);
+}
+
+var cache = {};
+var cacheLimit = 10000;
+var cacheCount = 0;
+function compileToPath(rule) {
+  if (cache[rule]) {
+    return cache[rule];
+  }
+
+  var result = compile(rule);
+
+  if (cacheCount < cacheLimit) {
+    cache[rule] = result;
+    cacheCount++;
+  }
+
+  return result;
+}
+function compilePath(path, options) {
+  if (options === void 0) {
+    options = {
+      end: false,
+      strict: false,
+      sensitive: false
+    };
+  }
+
+  var cacheKey = "" + options.end + options.strict + options.sensitive;
+  var pathCache = cache[cacheKey] || (cache[cacheKey] = {});
+
+  if (pathCache[path]) {
+    return pathCache[path];
+  }
+
+  var keys = [];
+  var regexp = pathToRegexp(path, keys, options);
+  var result = {
+    regexp: regexp,
+    keys: keys
+  };
+
+  if (cacheCount < cacheLimit) {
+    pathCache[path] = result;
+    cacheCount++;
+  }
+
+  return result;
+}
+function matchPath(pathname, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  if (typeof options === 'string' || Array.isArray(options)) {
+    options = {
+      path: options
+    };
+  }
+
+  var _options = options,
+      path = _options.path,
+      _options$exact = _options.exact,
+      exact = _options$exact === void 0 ? false : _options$exact,
+      _options$strict = _options.strict,
+      strict = _options$strict === void 0 ? false : _options$strict,
+      _options$sensitive = _options.sensitive,
+      sensitive = _options$sensitive === void 0 ? false : _options$sensitive;
+  var paths = [].concat(path);
+  return paths.reduce(function (matched, path) {
+    if (!path) return null;
+    if (matched) return matched;
+
+    if (path === '*') {
+      return {
+        path: path,
+        url: pathname,
+        isExact: true,
+        params: {}
+      };
+    }
+
+    var _compilePath = compilePath(path, {
+      end: exact,
+      strict: strict,
+      sensitive: sensitive
+    }),
+        regexp = _compilePath.regexp,
+        keys = _compilePath.keys;
+
+    var match = regexp.exec(pathname);
+    if (!match) return null;
+    var url = match[0],
+        values = match.slice(1);
+    var isExact = pathname === url;
+    if (exact && !isExact) return null;
+    return {
+      path: path,
+      url: path === '/' && url === '' ? '/' : url,
+      isExact: isExact,
+      params: keys.reduce(function (memo, key, index) {
+        memo[key.name] = values[index];
+        return memo;
+      }, {})
+    };
+  }, null);
+}
 
 var config = {
   escape: true,
@@ -28,7 +556,6 @@ var config = {
   splitKey: 'q',
   defaultRouteParams: {}
 };
-
 function setRouteConfig(conf) {
   conf.escape !== undefined && (config.escape = conf.escape);
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
@@ -36,7 +563,6 @@ function setRouteConfig(conf) {
   conf.defaultRouteParams && (config.defaultRouteParams = conf.defaultRouteParams);
 }
 
-// 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 function excludeDefaultData(data, def, holde, views) {
   var result = {};
   Object.keys(data).forEach(function (moduleName) {
@@ -59,26 +585,7 @@ function excludeDefaultData(data, def, holde, views) {
   }
 
   return result;
-} // 合并默认路由参数，如果路由中某参数没传，将用默认值替代，与上面方法互逆
-// function mergeDefaultData(data: {[moduleName: string]: any}, views: {[moduleName: string]: any}) {
-//   Object.keys(views).forEach(moduleName => {
-//     if (!data[moduleName]) {
-//       data[moduleName] = {};
-//     }
-//   });
-//   Object.keys(data).forEach(moduleName => {
-//     data[moduleName] = assignDeep({}, defaultRouteParams[moduleName], data[moduleName]);
-//   });
-// }
-// export const mergeDefaultParamsMiddleware: Middleware = () => (next: Function) => (action: any) => {
-//   if (action.type === ActionTypes.F_ROUTE_CHANGE) {
-//     const payload = getActionData<RouteState>(action);
-//     const params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
-//     action = {...action, payload: {...payload, data: {...payload.data, params}}};
-//   }
-//   return next(action);
-// };
-
+}
 
 var ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
 
@@ -88,22 +595,7 @@ function dateParse(prop, value) {
   }
 
   return value;
-} // function getSearch(searchOrHash: string, key: string): string {
-//   if (searchOrHash.length < 4) {
-//     return '';
-//   }
-//   const reg = new RegExp(`[&?#]${key}=`);
-//   const str = searchOrHash.split(reg)[1];
-//   if (!str) {
-//     return '';
-//   }
-//   return str.split('&')[0];
-// }
-
-/*
-  将字符串变成 Data，因为 JSON 中没有 Date 类型，所以用正则表达式匹配自动转换
-*/
-
+}
 
 function searchParse(search) {
   if (!search) {
@@ -202,20 +694,20 @@ function pathnameParse(pathname, routeConfig, paths, args) {
           _viewName = _ref[0],
           pathConfig = _ref[1];
 
-      var match = (0, _matchPath.matchPath)(pathname, {
+      var match = matchPath(pathname, {
         path: _rule,
         exact: !pathConfig
-      }); // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
+      });
 
       if (match) {
         paths.push(_viewName);
 
-        var _moduleName = _viewName.split(_core.config.VSP)[0];
+        var _moduleName = _viewName.split(core.config.VSP)[0];
 
         var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = _objectSpread({}, args[_moduleName], {}, checkPathArgs(params));
+          args[_moduleName] = Object.assign({}, args[_moduleName], {}, checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -241,11 +733,10 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
     ruleToKeys = {};
   }
 
-  // ruleToKeys将每条rule中的params key解析出来
   for (var _rule2 in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule2)) {
       if (!ruleToKeys[_rule2]) {
-        var _compilePath = (0, _matchPath.compilePath)(_rule2, {
+        var _compilePath = compilePath(_rule2, {
           end: true,
           strict: false,
           sensitive: false
@@ -285,12 +776,12 @@ function assignRouteData(paths, stackParams, args) {
   }
 
   if (args) {
-    stackParams[0] = (0, _deepExtend.default)({}, args, stackParams[0]);
+    stackParams[0] = assignDeep({}, args, stackParams[0]);
   }
 
   var firstStackParams = stackParams[0];
   var views = paths.reduce(function (prev, cur) {
-    var _cur$split = cur.split(_core.config.VSP),
+    var _cur$split = cur.split(core.config.VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
@@ -309,14 +800,12 @@ function assignRouteData(paths, stackParams, args) {
     return prev;
   }, {});
   Object.keys(firstStackParams).forEach(function (moduleName) {
-    firstStackParams[moduleName] = (0, _deepExtend.default)({}, config.defaultRouteParams[moduleName], firstStackParams[moduleName]);
+    firstStackParams[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], firstStackParams[moduleName]);
   });
-
-  var params = _deepExtend.default.apply(void 0, [{}].concat(stackParams));
-
+  var params = assignDeep.apply(void 0, [{}].concat(stackParams));
   Object.keys(params).forEach(function (moduleName) {
     if (!firstStackParams[moduleName]) {
-      params[moduleName] = (0, _deepExtend.default)({}, config.defaultRouteParams[moduleName], params[moduleName]);
+      params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
     }
   });
   return {
@@ -339,7 +828,7 @@ function fillRouteData(routePayload) {
   if (routePayload.stackParams) {
     routePayload.stackParams.forEach(function (item, index) {
       if (item) {
-        stackParams[index] = (0, _deepExtend.default)({}, stackParams[index], item);
+        stackParams[index] = assignDeep({}, stackParams[index], item);
       }
     });
   }
@@ -405,7 +894,7 @@ function buildTransformRoute(routeConfig) {
           stackParams[index] = {};
         }
 
-        (0, _deepExtend.default)(stackParams[index], item);
+        assignDeep(stackParams[index], item);
       }
     });
     return assignRouteData(paths, stackParams, pathsArgs);
@@ -421,16 +910,14 @@ function buildTransformRoute(routeConfig) {
     var firstStackParamsFilter;
 
     if (paths.length > 0) {
-      // 将args深克隆，因为后面可能会删除path中使用到的变量
-      firstStackParamsFilter = (0, _deepExtend.default)({}, firstStackParams);
+      firstStackParamsFilter = assignDeep({}, firstStackParams);
       paths.reduce(function (parentAbsoluteViewName, viewName, index) {
         var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
         var rule = viewToRule[absoluteViewName];
-        var moduleName = viewName.split(_core.config.VSP)[0]; //最深的一个view可以决定pathname
+        var moduleName = viewName.split(core.config.VSP)[0];
 
         if (index === paths.length - 1) {
-          // const toPath = compileToPath(rule.replace(/\$$/, ''));
-          var toPath = (0, _matchPath.compileToPath)(rule);
+          var toPath = compileToPath(rule);
 
           var _keys = ruleToKeys[rule] || [];
 
@@ -451,8 +938,7 @@ function buildTransformRoute(routeConfig) {
           }, {});
 
           pathname = toPath(args);
-        } //pathname中传递的值可以不在params中重复传递
-
+        }
 
         var keys = ruleToKeys[rule] || [];
         keys.forEach(function (key) {
@@ -479,8 +965,7 @@ function buildTransformRoute(routeConfig) {
       }, '');
     } else {
       firstStackParamsFilter = firstStackParams;
-    } //将带_前缀的变量放到hashData中
-
+    }
 
     var arr = [].concat(stackParams);
     arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams, false, views);
@@ -506,7 +991,6 @@ function buildTransformRoute(routeConfig) {
     routeToLocation: routeToLocation
   };
 }
-
 function fillBrowserRouteData(routePayload) {
   var extend = routePayload.extend || {
     views: {},
@@ -517,7 +1001,7 @@ function fillBrowserRouteData(routePayload) {
   var stackParams = [].concat(extend.stackParams);
 
   if (routePayload.params) {
-    stackParams[0] = (0, _deepExtend.default)({}, stackParams[0], routePayload.params);
+    stackParams[0] = assignDeep({}, stackParams[0], routePayload.params);
   }
 
   return assignRouteData(routePayload.paths || extend.paths, stackParams);
@@ -558,7 +1042,6 @@ function getBrowserRouteActions(getBrowserHistoryActions) {
     }
   };
 }
-
 function buildToBrowserUrl(getTransformRoute) {
   function toUrl() {
     for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
@@ -589,153 +1072,11 @@ function buildToBrowserUrl(getTransformRoute) {
   }
 
   return toUrl;
-} // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
-//   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
-//   const locationToRoute: LocationToRoute = location => {
-//     const paths: string[] = [];
-//     const {stackParams, params} = splitSearch(location.search);
-//     //算出paths，并将path参数提取出来并入searchParams中
-//     pathnameParse(location.pathname, routeConfig, paths, params);
-//     const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
-//       const [moduleName, viewName] = cur.split(coreConfig.VSP);
-//       if (viewName) {
-//         if (!prev[moduleName]) {
-//           prev[moduleName] = {};
-//         }
-//         prev[moduleName]![viewName] = true;
-//       }
-//       return prev;
-//     }, {});
-//     const {stackParams: hashStackParams, params: hashParams} = splitSearch(location.hash);
-//     //将hash参数并入params中
-//     assignDeep(params, hashParams);
-//     hashStackParams.forEach((item, index) => {
-//       item && assignDeep(stackParams[index], item);
-//     });
-//     mergeDefaultData(params, views);
-//     return {paths, params, views, stackParams};
-//   };
-//   const routeToLocation: RouteToLocation = routeData => {
-//     const {paths, params, stackParams} = routeData;
-//     const mainStackParams = stackParams[0] || {};
-//     let pathname = '';
-//     let args: {[moduleName: string]: {[key: string]: any} | undefined};
-//     if (paths.length > 0) {
-//       args = {};
-//       // 将args二层克隆params，因为后面可能会删除path中使用到的变量
-//       for (const moduleName in mainStackParams) {
-//         if (mainStackParams[moduleName] && mainStackParams.hasOwnProperty(moduleName)) {
-//           args[moduleName] = {...mainStackParams[moduleName]};
-//         }
-//       }
-//       paths.reduce((parentAbsoluteViewName, viewName, index) => {
-//         const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
-//         const rule = viewToRule[absoluteViewName];
-//         const moduleName = viewName.split(coreConfig.VSP)[0];
-//         //最深的一个view可以决定pathname
-//         if (index === paths.length - 1) {
-//           // const toPath = compileToPath(rule.replace(/\$$/, ''));
-//           const toPath = compileToPath(rule);
-//           pathname = toPath(params[moduleName]);
-//         }
-//         //pathname中传递的值可以不在params中重复传递
-//         const keys = ruleToKeys[rule] || [];
-//         keys.forEach(key => {
-//           if (args[moduleName]) {
-//             delete args[moduleName]![key];
-//           }
-//         });
-//         return absoluteViewName;
-//       }, '');
-//     } else {
-//       args = mainStackParams;
-//     }
-//     //将带_前缀的变量放到hashData中
-//     const searchData = {};
-//     const hashData = {};
-//     for (const moduleName in args) {
-//       if (args[moduleName] && args.hasOwnProperty(moduleName)) {
-//         const data = args[moduleName]!;
-//         const keys = Object.keys(data);
-//         if (keys.length > 0) {
-//           keys.forEach(key => {
-//             if (key.startsWith('_')) {
-//               if (!hashData[moduleName]) {
-//                 hashData[moduleName] = {};
-//               }
-//               hashData[moduleName][key] = data[key];
-//             } else {
-//               if (!searchData[moduleName]) {
-//                 searchData[moduleName] = {};
-//               }
-//               searchData[moduleName][key] = data[key];
-//             }
-//           });
-//         }
-//       }
-//     }
-//     return {
-//       pathname,
-//       search: searchStringify(excludeDefaultData(searchData, defaultRouteParams)),
-//       hash: searchStringify(excludeDefaultData(hashData, defaultRouteParams)),
-//     };
-//   };
-//   return {
-//     locationToRoute,
-//     routeToLocation,
-//   };
-// }
+}
 
-/**
- '/:articleType/:articleId/comments/:itemId'
- www.aa.com/photos/1/comments/23?p={}&p=
-
- paths:["app.Main", "photos.detail", "comments.detail"]
- params:{app:{},photos:{itemid:1,searchList:{page:1,pageSize:10},_listkey:222222},comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10},_listkey:222222}}
- stackParams:[{app:{}}, {photos:{itemid:1,searchList:{page:1,pageSize:10},_listkey:222222}}, {comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10},_listkey:222222}}]
- stackParams:[{app:{},photos:{itemid:1,searchList:{page:1,pageSize:10},_listkey:222222},comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10},_listkey:222222}}]
-
- web: www.aa.com/photos/1/comments/23?p={comments:{searchList:{page:2}}}#p={photos:{_listkey:222222}, comments:{_listkey:222222}}
-
- rn: www.aa.com/photos/1/comments/23?p={app:{}}&p={photos:{}}&p={comments:{searchList:{page:2}}}#p={}&p={photos:{_listkey:222222}}&p={comments:{_listkey:222222}}
-
- routeData -> location
-1.根据paths得到匹配表达式：'/:articleType/:articleId/comments/:itemId'
-2.根据params填充表达式得到：www.aa.com/photos/1/comments/23
-3.将params中带_的提取为hash
-不作缩减将得到：
-www.aa.com/photos/1/comments/23?
-p={app:{}}&
-p={photos:{itemid:1,searchList:{page:1,pageSize:10}}}&
-p={comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2,pageSize:10}}}
-#
-p={}&
-p={photos:{_listkey:222222}}
-p={comments:{_listkey:222222}}
-4.缩减默认值：
-www.aa.com/photos/1/comments/23?
-p={app:{}}&
-p={photos:{itemid:1}}&
-p={comments:{articleType:photos,articleId:1,itemid:23,searchList:{page:2}}}
-#
-p={}&
-p={photos:{_listkey:222222}}
-p={comments:{_listkey:222222}}
-5.缩减路径传参
-www.aa.com/photos/1/comments/23?
-p={app:{}}&
-p={photos:{}}&
-p={comments:{searchList:{page:2}}}
-#
-p={}&
-p={photos:{_listkey:222222}}
-p={comments:{_listkey:222222}}
-
-
-
- location->routeData
-1.解析出paths、views、pathArgs
-2.
-
- */
-//# sourceMappingURL=index.js.map
+exports.buildToBrowserUrl = buildToBrowserUrl;
+exports.buildTransformRoute = buildTransformRoute;
+exports.fillBrowserRouteData = fillBrowserRouteData;
+exports.fillRouteData = fillRouteData;
+exports.getBrowserRouteActions = getBrowserRouteActions;
+exports.setRouteConfig = setRouteConfig;

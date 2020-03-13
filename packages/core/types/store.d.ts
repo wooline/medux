@@ -1,5 +1,7 @@
 import { Action, ModelStore, RouteData } from './basic';
 import { Middleware, ReducersMapObject, StoreEnhancer } from 'redux';
+import { ModuleGetter } from './module';
+export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void>;
 export declare function getActionData(action: Action): any[];
 export interface HistoryProxy<L = any> {
     initialized: boolean;

@@ -1,5 +1,5 @@
 import {LoadView as BaseLoadView, ExportModule, HistoryProxy, ModuleGetter, StoreOptions} from '@medux/core/types/export';
-import React, {ComponentType, ReactNode} from 'react';
+import React, {ComponentType, FC, ReactNode, useState} from 'react';
 import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView} from '@medux/core';
 
 import {Provider} from 'react-redux';
@@ -67,39 +67,66 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
     storeOptions
   );
 }
-interface LoadViewState {
-  Component: ComponentType<any> | null;
-}
+
 export type LoadView<T extends ModuleGetter> = BaseLoadView<T, ComponentType<any>>;
+
 export const loadView: LoadView<any> = (moduleName, viewName, modelOptions, Loading) => {
-  return class Loader extends React.Component {
-    public state: LoadViewState = {
-      Component: null,
-    };
-    public constructor(props: any, context?: any) {
-      super(props, context);
+  const loader: FC<any> = function ViewLoader(props: any) {
+    const [view, setView] = useState<{Component: ComponentType} | null>(() => {
       const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
         moduleViewResult.then(Component => {
-          Object.keys(Loader).forEach(key => (Component[key] = Loader[key]));
-          Object.keys(Component).forEach(key => (Loader[key] = Component[key]));
-          this.setState({
-            Component,
-          });
+          // loader.propTypes = Component.propTypes;
+          // loader.contextTypes = Component.contextTypes;
+          // loader.defaultProps = Component.defaultProps;
+          Object.keys(loader).forEach(key => (Component[key] = loader[key]));
+          Object.keys(Component).forEach(key => (loader[key] = Component[key]));
+          setView({Component});
         });
+        return null;
       } else {
-        Object.keys(Loader).forEach(key => (moduleViewResult[key] = Loader[key]));
-        Object.keys(moduleViewResult).forEach(key => (Loader[key] = moduleViewResult[key]));
-        this.state = {
-          Component: moduleViewResult,
-        };
+        // loader.propTypes = moduleViewResult.propTypes;
+        // loader.contextTypes = moduleViewResult.contextTypes;
+        // loader.defaultProps = moduleViewResult.defaultProps;
+        Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
+        Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
+        return {Component: moduleViewResult};
       }
-    }
-    public render() {
-      const {Component} = this.state;
-      return Component ? <Component {...this.props} /> : Loading ? <Loading {...this.props} /> : null;
-    }
-  } as any;
+    });
+    return view ? <view.Component {...props} /> : Loading ? <Loading {...props} /> : null;
+  };
+  return loader as any;
 };
+
+// export const loadView: LoadView<any> = (moduleName, viewName, modelOptions, Loading) => {
+//   return class Loader extends React.Component {
+//     public state: LoadViewState = {
+//       Component: null,
+//     };
+//     public constructor(props: any, context?: any) {
+//       super(props, context);
+//       const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
+//       if (isPromiseView<ComponentType>(moduleViewResult)) {
+//         moduleViewResult.then(Component => {
+//           Object.keys(Loader).forEach(key => (Component[key] = Loader[key]));
+//           Object.keys(Component).forEach(key => (Loader[key] = Component[key]));
+//           this.setState({
+//             Component,
+//           });
+//         });
+//       } else {
+//         Object.keys(Loader).forEach(key => (moduleViewResult[key] = Loader[key]));
+//         Object.keys(moduleViewResult).forEach(key => (Loader[key] = moduleViewResult[key]));
+//         this.state = {
+//           Component: moduleViewResult,
+//         };
+//       }
+//     }
+//     public render() {
+//       const {Component} = this.state;
+//       return Component ? <Component {...this.props} /> : Loading ? <Loading {...this.props} /> : null;
+//     }
+//   } as any;
+// };
 
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;

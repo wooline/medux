@@ -1,5 +1,7 @@
 import { LoadingState } from './sprite';
 import { ModuleGetter } from './module';
+export declare function setLoadingDepthTime(second: number): void;
+export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, group?: string): T;
 export declare const config: {
     NSP: string;
     VSP: string;
@@ -17,6 +19,13 @@ export declare const MetaData: {
     clientStore: ModelStore;
     appModuleName: string;
     moduleGetter: ModuleGetter;
+};
+export declare const ActionTypes: {
+    MLoading: string;
+    MInit: string;
+    MRouteParams: string;
+    Error: string;
+    RouteChange: string;
 };
 export declare const client: Window | undefined;
 export interface ActionCreatorMap {

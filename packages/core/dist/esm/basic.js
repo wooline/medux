@@ -1,10 +1,50 @@
 /*global global:true process:true*/
-import { setLoading } from './loading'; // export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
+import { TaskCountEvent, TaskCounter } from './sprite';
+// export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
 //   self.self === self &&
 //   self) ||
 //   (typeof global == 'object' && global.global === global && global) ||
 //   this) as any;
+var loadings = {};
+var depthTime = 2;
+export function setLoadingDepthTime(second) {
+  depthTime = second;
+}
+export function setLoading(item, moduleName, group) {
+  if (moduleName === void 0) {
+    moduleName = MetaData.appModuleName;
+  }
 
+  if (group === void 0) {
+    group = 'global';
+  }
+
+  if (MetaData.isServer) {
+    return item;
+  }
+
+  var key = moduleName + config.NSP + group;
+
+  if (!loadings[key]) {
+    loadings[key] = new TaskCounter(depthTime);
+    loadings[key].addListener(TaskCountEvent, function (e) {
+      var store = MetaData.clientStore;
+
+      if (store) {
+        var _actions;
+
+        var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+
+        var _action = actions((_actions = {}, _actions[group] = e.data, _actions));
+
+        store.dispatch(_action);
+      }
+    });
+  }
+
+  loadings[key].addItem(item);
+  return item;
+}
 export var config = {
   NSP: '/',
   VSP: '.',
@@ -22,6 +62,13 @@ export var MetaData = {
   clientStore: null,
   appModuleName: null,
   moduleGetter: null
+};
+export var ActionTypes = {
+  MLoading: 'Loading',
+  MInit: 'Init',
+  MRouteParams: 'RouteParams',
+  Error: "medux" + config.NSP + "Error",
+  RouteChange: "medux" + config.NSP + "RouteChange"
 };
 export var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 export function isPromise(data) {
@@ -209,4 +256,3 @@ export function injectActions(store, moduleName, handlers) {
 
   return MetaData.actionCreatorMap[moduleName];
 }
-//# sourceMappingURL=basic.js.map

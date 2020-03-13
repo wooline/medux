@@ -79,4 +79,3 @@ export function buildSSR(moduleGetter, appModuleName, location, routeConfig, sto
     }, React.createElement(AppMainView, null))));
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-//# sourceMappingURL=index.js.map
