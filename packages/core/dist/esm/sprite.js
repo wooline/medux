@@ -10,9 +10,7 @@ export var LoadingState;
   LoadingState["Depth"] = "Depth";
 })(LoadingState || (LoadingState = {}));
 
-export var PEvent =
-/*#__PURE__*/
-function () {
+export var PEvent = function () {
   function PEvent(name, data, bubbling) {
     if (bubbling === void 0) {
       bubbling = false;
@@ -39,9 +37,7 @@ function () {
 
   return PEvent;
 }();
-export var PDispatcher =
-/*#__PURE__*/
-function () {
+export var PDispatcher = function () {
   function PDispatcher(parent) {
     this.parent = parent;
 
@@ -121,9 +117,7 @@ function () {
 
   return PDispatcher;
 }();
-export var TaskCounter =
-/*#__PURE__*/
-function (_PDispatcher) {
+export var TaskCounter = function (_PDispatcher) {
   _inheritsLoose(TaskCounter, _PDispatcher);
 
   function TaskCounter(deferSecond) {

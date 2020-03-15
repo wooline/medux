@@ -40,10 +40,10 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
   public initialized = true;
   public constructor(protected history: History, protected locationToRoute: LocationToRoute) {}
   public getLocation() {
-    return this.history.location;
+    return this.history.location as any;
   }
   public subscribe(listener: (location: BrowserLocation) => void) {
-    this.history.listen(listener);
+    this.history.listen(listener as any);
   }
   public locationToRouteData(location: BrowserLocation) {
     return location.state || this.locationToRoute(location);

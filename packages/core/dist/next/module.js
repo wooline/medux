@@ -35,7 +35,6 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
 };
 export let BaseModelHandlers = _decorate(null, function (_initialize) {
   class BaseModelHandlers {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(moduleName, store) {
       this.moduleName = moduleName;
       this.store = store;
@@ -60,8 +59,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "state",
       value: function state() {
         return this.getState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getState",
@@ -73,8 +71,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "rootState",
       value: function rootState() {
         return this.getRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getRootState",
@@ -86,8 +83,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "currentState",
       value: function currentState() {
         return this.getCurrentState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getCurrentState",
@@ -99,8 +95,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "currentRootState",
       value: function currentRootState() {
         return this.getCurrentRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getCurrentRootState",
@@ -112,8 +107,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "beforeState",
       value: function beforeState() {
         return this.getBeforeState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getBeforeState",
@@ -125,8 +119,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "beforeRootState",
       value: function beforeRootState() {
         return this.getBeforeRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getBeforeRootState",
@@ -265,7 +258,6 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(module => {
-      //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       moduleGetter[moduleName] = () => module;
 
       return module;
@@ -303,8 +295,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
 
   if (initData) {
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
-  } // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
-
+  }
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
     const initModel = appModule.default.model(store, undefined);

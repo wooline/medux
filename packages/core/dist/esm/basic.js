@@ -1,10 +1,4 @@
-/*global global:true process:true*/
 import { TaskCountEvent, TaskCounter } from './sprite';
-// export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
-//   self.self === self &&
-//   self) ||
-//   (typeof global == 'object' && global.global === global && global) ||
-//   this) as any;
 var loadings = {};
 var depthTime = 2;
 export function setLoadingDepthTime(second) {

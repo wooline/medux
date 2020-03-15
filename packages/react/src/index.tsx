@@ -68,10 +68,11 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   );
 }
 
-export type LoadView<T extends ModuleGetter> = BaseLoadView<T, ComponentType<any>>;
+export type LoadView<T extends ModuleGetter> = BaseLoadView<T, {forwardRef?: boolean}, ComponentType<any>>;
 
-export const loadView: LoadView<any> = (moduleName, viewName, modelOptions, Loading) => {
-  const loader: FC<any> = function ViewLoader(props: any) {
+export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) => {
+  const {forwardRef, ...modelOptions} = options || {};
+  const Loader: FC<any> = function ViewLoader(props: any) {
     const [view, setView] = useState<{Component: ComponentType} | null>(() => {
       const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
@@ -79,8 +80,8 @@ export const loadView: LoadView<any> = (moduleName, viewName, modelOptions, Load
           // loader.propTypes = Component.propTypes;
           // loader.contextTypes = Component.contextTypes;
           // loader.defaultProps = Component.defaultProps;
-          Object.keys(loader).forEach(key => (Component[key] = loader[key]));
-          Object.keys(Component).forEach(key => (loader[key] = Component[key]));
+          // Object.keys(loader).forEach(key => (Component[key] = loader[key]));
+          // Object.keys(Component).forEach(key => (loader[key] = Component[key]));
           setView({Component});
         });
         return null;
@@ -88,24 +89,29 @@ export const loadView: LoadView<any> = (moduleName, viewName, modelOptions, Load
         // loader.propTypes = moduleViewResult.propTypes;
         // loader.contextTypes = moduleViewResult.contextTypes;
         // loader.defaultProps = moduleViewResult.defaultProps;
-        Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
-        Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
+        // Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
+        // Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
         return {Component: moduleViewResult};
       }
     });
-    return view ? <view.Component {...props} /> : Loading ? <Loading {...props} /> : null;
+    const {forwardRef, ...other} = props;
+    const ref = forwardRef ? {ref: forwardRef} : {};
+    return view ? <view.Component {...other} {...ref} /> : Loading ? <Loading {...props} /> : null;
   };
-  return loader as any;
-};
+  // eslint-disable-next-line react/display-name
+  const Component = forwardRef ? React.forwardRef((props, ref) => <Loader {...props} forwardRef={ref} />) : Loader;
 
-// export const loadView: LoadView<any> = (moduleName, viewName, modelOptions, Loading) => {
+  return Component as any;
+};
+776002663516496;
+// export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) => {
 //   return class Loader extends React.Component {
 //     public state: LoadViewState = {
 //       Component: null,
 //     };
 //     public constructor(props: any, context?: any) {
 //       super(props, context);
-//       const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
+//       const moduleViewResult = getView<ComponentType>(moduleName, viewName, options);
 //       if (isPromiseView<ComponentType>(moduleViewResult)) {
 //         moduleViewResult.then(Component => {
 //           Object.keys(Loader).forEach(key => (Component[key] = Loader[key]));

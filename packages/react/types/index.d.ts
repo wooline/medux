@@ -11,6 +11,8 @@ export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyo
     ssrInitStoreKey: string;
     store: import("redux").Store<any, import("redux").AnyAction>;
 }>;
-export declare type LoadView<T extends ModuleGetter> = BaseLoadView<T, ComponentType<any>>;
+export declare type LoadView<T extends ModuleGetter> = BaseLoadView<T, {
+    forwardRef?: boolean;
+}, ComponentType<any>>;
 export declare const loadView: LoadView<any>;
 export declare const exportModule: ExportModule<ComponentType<any>>;

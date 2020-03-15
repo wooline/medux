@@ -1,4 +1,5 @@
 import _regeneratorRuntime from "@babel/runtime/regenerator";
+import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { MetaData, client, config, injectActions, isPromise, reducer } from './basic';
 import { buildStore, loadModel as _loadModel } from './store';
@@ -39,8 +40,7 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
   };
 };
 export var BaseModelHandlers = _decorate(null, function (_initialize) {
-  var BaseModelHandlers = // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function BaseModelHandlers(moduleName, store) {
+  var BaseModelHandlers = function BaseModelHandlers(moduleName, store) {
     this.moduleName = moduleName;
     this.store = store;
 
@@ -60,8 +60,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "state",
       value: function state() {
         return this.getState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getState",
@@ -73,8 +72,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "rootState",
       value: function rootState() {
         return this.getRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getRootState",
@@ -86,8 +84,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "currentState",
       value: function currentState() {
         return this.getCurrentState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getCurrentState",
@@ -99,8 +96,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "currentRootState",
       value: function currentRootState() {
         return this.getCurrentRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getCurrentRootState",
@@ -112,8 +108,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "beforeState",
       value: function beforeState() {
         return this.getBeforeState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getBeforeState",
@@ -125,8 +120,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "beforeRootState",
       value: function beforeRootState() {
         return this.getBeforeRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getBeforeRootState",
@@ -282,7 +276,6 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       moduleGetter[moduleName] = function () {
         return module;
       };
@@ -328,8 +321,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) {
       return key !== appModuleName && initData[key].isModule;
     }));
-  } // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
-
+  }
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
@@ -345,62 +337,69 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     }
   });
 }
-export function renderSSR(render, moduleGetter, appModuleName, history, storeOptions) {
-  var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+export function renderSSR(_x, _x2, _x3, _x4, _x5) {
+  return _renderSSR.apply(this, arguments);
+}
 
-  return _regeneratorRuntime.async(function renderSSR$(_context) {
-    while (1) {
-      switch (_context.prev = _context.next) {
-        case 0:
-          if (storeOptions === void 0) {
-            storeOptions = {};
-          }
+function _renderSSR() {
+  _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
+    var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
-          MetaData.appModuleName = appModuleName;
-          ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-          store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-          storeState = store.getState();
-          paths = storeState.route.data.paths;
-          paths.length === 0 && paths.push(appModuleName);
-          appModule = undefined;
-          inited = {};
-          i = 0, k = paths.length;
+    return _regeneratorRuntime.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (storeOptions === void 0) {
+              storeOptions = {};
+            }
 
-        case 10:
-          if (!(i < k)) {
-            _context.next = 21;
+            MetaData.appModuleName = appModuleName;
+            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            storeState = store.getState();
+            paths = storeState.route.data.paths;
+            paths.length === 0 && paths.push(appModuleName);
+            appModule = undefined;
+            inited = {};
+            i = 0, k = paths.length;
+
+          case 10:
+            if (!(i < k)) {
+              _context.next = 21;
+              break;
+            }
+
+            _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
+
+            if (inited[_moduleName]) {
+              _context.next = 18;
+              break;
+            }
+
+            inited[_moduleName] = true;
+            module = moduleGetter[_moduleName]();
+            _context.next = 17;
+            return module.default.model(store, undefined);
+
+          case 17:
+            if (i === 0) {
+              appModule = module;
+            }
+
+          case 18:
+            i++;
+            _context.next = 10;
             break;
-          }
 
-          _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
+          case 21:
+            return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
 
-          if (inited[_moduleName]) {
-            _context.next = 18;
-            break;
-          }
-
-          inited[_moduleName] = true;
-          module = moduleGetter[_moduleName]();
-          _context.next = 17;
-          return _regeneratorRuntime.awrap(module.default.model(store, undefined));
-
-        case 17:
-          if (i === 0) {
-            appModule = module;
-          }
-
-        case 18:
-          i++;
-          _context.next = 10;
-          break;
-
-        case 21:
-          return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
-
-        case 22:
-        case "end":
-          return _context.stop();
+          case 22:
+          case "end":
+            return _context.stop();
+        }
       }
-    }
-  });
+    }, _callee);
+  }));
+  return _renderSSR.apply(this, arguments);
 }

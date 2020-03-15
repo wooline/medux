@@ -106,7 +106,7 @@ export declare function exportActions<G extends {
     [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
 };
 export declare function getView<T>(moduleName: string, viewName: string, modelOptions?: any): T | Promise<T>;
-export declare type LoadView<MG extends ModuleGetter, Ags = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, modelOptions?: any, args?: Ags) => V[N];
+export declare type LoadView<MG extends ModuleGetter, Options = any, Loading = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, options?: Options, loading?: Loading) => V[N];
 export interface StoreOptions {
     ssrInitStoreKey?: string;
     reducers?: ReducersMapObject;

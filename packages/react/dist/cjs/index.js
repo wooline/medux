@@ -4,6 +4,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var _extends = _interopDefault(require('@babel/runtime/helpers/extends'));
+var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/helpers/objectWithoutPropertiesLoose'));
 var React = require('react');
 var React__default = _interopDefault(React);
 var core = require('@medux/core');
@@ -42,31 +44,23 @@ function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptio
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-var loadView = function loadView(moduleName, viewName, modelOptions, Loading) {
-  var loader = function ViewLoader(props) {
+var loadView = function loadView(moduleName, viewName, options, Loading) {
+  var _ref = options || {},
+      forwardRef = _ref.forwardRef,
+      modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
+
+  var Loader = function ViewLoader(props) {
     var _useState = React.useState(function () {
       var moduleViewResult = core.getView(moduleName, viewName, modelOptions);
 
       if (core.isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
-          Object.keys(loader).forEach(function (key) {
-            return Component[key] = loader[key];
-          });
-          Object.keys(Component).forEach(function (key) {
-            return loader[key] = Component[key];
-          });
           setView({
             Component: Component
           });
         });
         return null;
       } else {
-        Object.keys(loader).forEach(function (key) {
-          return moduleViewResult[key] = loader[key];
-        });
-        Object.keys(moduleViewResult).forEach(function (key) {
-          return loader[key] = moduleViewResult[key];
-        });
         return {
           Component: moduleViewResult
         };
@@ -75,10 +69,21 @@ var loadView = function loadView(moduleName, viewName, modelOptions, Loading) {
         view = _useState[0],
         setView = _useState[1];
 
-    return view ? React__default.createElement(view.Component, props) : Loading ? React__default.createElement(Loading, props) : null;
+    var forwardRef = props.forwardRef,
+        other = _objectWithoutPropertiesLoose(props, ["forwardRef"]);
+
+    var ref = forwardRef ? {
+      ref: forwardRef
+    } : {};
+    return view ? React__default.createElement(view.Component, _extends({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
   };
 
-  return loader;
+  var Component = forwardRef ? React__default.forwardRef(function (props, ref) {
+    return React__default.createElement(Loader, _extends({}, props, {
+      forwardRef: ref
+    }));
+  }) : Loader;
+  return Component;
 };
 var exportModule = core.exportModule;
 

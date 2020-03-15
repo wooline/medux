@@ -10,9 +10,13 @@ var _inheritsLoose = _interopDefault(require('@babel/runtime/helpers/esm/inherit
 var _defineProperty = _interopDefault(require('@babel/runtime/helpers/esm/defineProperty'));
 var redux = require('redux');
 var _regeneratorRuntime = _interopDefault(require('@babel/runtime/regenerator'));
+var _asyncToGenerator = _interopDefault(require('@babel/runtime/helpers/esm/asyncToGenerator'));
 var _decorate = _interopDefault(require('@babel/runtime/helpers/esm/decorate'));
-var React = _interopDefault(require('react'));
+var React = require('react');
+var React__default = _interopDefault(React);
 var reactRouterDom = require('react-router-dom');
+var _extends = _interopDefault(require('@babel/runtime/helpers/esm/extends'));
+var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/helpers/esm/objectWithoutPropertiesLoose'));
 var reactRedux = require('react-redux');
 var server = require('react-dom/server');
 var ReactDOM = _interopDefault(require('react-dom'));
@@ -683,9 +687,7 @@ var TaskCountEvent = 'TaskCountEvent';
   LoadingState["Depth"] = "Depth";
 })(exports.LoadingState || (exports.LoadingState = {}));
 
-var PEvent =
-/*#__PURE__*/
-function () {
+var PEvent = function () {
   function PEvent(name, data, bubbling) {
     if (bubbling === void 0) {
       bubbling = false;
@@ -712,9 +714,7 @@ function () {
 
   return PEvent;
 }();
-var PDispatcher =
-/*#__PURE__*/
-function () {
+var PDispatcher = function () {
   function PDispatcher(parent) {
     this.parent = parent;
 
@@ -794,9 +794,7 @@ function () {
 
   return PDispatcher;
 }();
-var TaskCounter =
-/*#__PURE__*/
-function (_PDispatcher) {
+var TaskCounter = function (_PDispatcher) {
   _inheritsLoose(TaskCounter, _PDispatcher);
 
   function TaskCounter(deferSecond) {
@@ -872,12 +870,6 @@ function (_PDispatcher) {
 
   return TaskCounter;
 }(PDispatcher);
-
-/*global global:true process:true*/
-//   self.self === self &&
-//   self) ||
-//   (typeof global == 'object' && global.global === global && global) ||
-//   this) as any;
 
 var loadings = {};
 var depthTime = 2;
@@ -1233,8 +1225,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     Object.keys(storeReducers).forEach(function (moduleName) {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
-    var handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
-
+    var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
     var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
     var handlerModules = Object.keys(handlers);
@@ -1298,8 +1289,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
           });
         }
 
-        var handlersCommon = meta.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
-
+        var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
         var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
         var handlerModules = Object.keys(handlers);
@@ -1479,8 +1469,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
   };
 };
 var BaseModelHandlers = _decorate(null, function (_initialize) {
-  var BaseModelHandlers = // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function BaseModelHandlers(moduleName, store) {
+  var BaseModelHandlers = function BaseModelHandlers(moduleName, store) {
     this.moduleName = moduleName;
     this.store = store;
 
@@ -1500,8 +1489,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "state",
       value: function state() {
         return this.getState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getState",
@@ -1513,8 +1501,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "rootState",
       value: function rootState() {
         return this.getRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getRootState",
@@ -1526,8 +1513,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "currentState",
       value: function currentState() {
         return this.getCurrentState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getCurrentState",
@@ -1539,8 +1525,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "currentRootState",
       value: function currentRootState() {
         return this.getCurrentRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getCurrentRootState",
@@ -1552,8 +1537,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "beforeState",
       value: function beforeState() {
         return this.getBeforeState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getBeforeState",
@@ -1565,8 +1549,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "beforeRootState",
       value: function beforeRootState() {
         return this.getBeforeRootState();
-      } //ie8不支持getter
-
+      }
     }, {
       kind: "method",
       key: "getBeforeRootState",
@@ -1722,7 +1705,6 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule$1(result)) {
     return result.then(function (module) {
-      //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       moduleGetter[moduleName] = function () {
         return module;
       };
@@ -1768,8 +1750,7 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
     preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) {
       return key !== appModuleName && initData[key].isModule;
     }));
-  } // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
-
+  }
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
@@ -1785,64 +1766,71 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
     }
   });
 }
-function renderSSR(render, moduleGetter, appModuleName, history, storeOptions) {
-  var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+function renderSSR(_x, _x2, _x3, _x4, _x5) {
+  return _renderSSR.apply(this, arguments);
+}
 
-  return _regeneratorRuntime.async(function renderSSR$(_context) {
-    while (1) {
-      switch (_context.prev = _context.next) {
-        case 0:
-          if (storeOptions === void 0) {
-            storeOptions = {};
-          }
+function _renderSSR() {
+  _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
+    var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
-          MetaData.appModuleName = appModuleName;
-          ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-          store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-          storeState = store.getState();
-          paths = storeState.route.data.paths;
-          paths.length === 0 && paths.push(appModuleName);
-          appModule = undefined;
-          inited = {};
-          i = 0, k = paths.length;
+    return _regeneratorRuntime.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (storeOptions === void 0) {
+              storeOptions = {};
+            }
 
-        case 10:
-          if (!(i < k)) {
-            _context.next = 21;
+            MetaData.appModuleName = appModuleName;
+            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            storeState = store.getState();
+            paths = storeState.route.data.paths;
+            paths.length === 0 && paths.push(appModuleName);
+            appModule = undefined;
+            inited = {};
+            i = 0, k = paths.length;
+
+          case 10:
+            if (!(i < k)) {
+              _context.next = 21;
+              break;
+            }
+
+            _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
+
+            if (inited[_moduleName]) {
+              _context.next = 18;
+              break;
+            }
+
+            inited[_moduleName] = true;
+            module = moduleGetter[_moduleName]();
+            _context.next = 17;
+            return module.default.model(store, undefined);
+
+          case 17:
+            if (i === 0) {
+              appModule = module;
+            }
+
+          case 18:
+            i++;
+            _context.next = 10;
             break;
-          }
 
-          _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
+          case 21:
+            return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
 
-          if (inited[_moduleName]) {
-            _context.next = 18;
-            break;
-          }
-
-          inited[_moduleName] = true;
-          module = moduleGetter[_moduleName]();
-          _context.next = 17;
-          return _regeneratorRuntime.awrap(module.default.model(store, undefined));
-
-        case 17:
-          if (i === 0) {
-            appModule = module;
-          }
-
-        case 18:
-          i++;
-          _context.next = 10;
-          break;
-
-        case 21:
-          return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
-
-        case 22:
-        case "end":
-          return _context.stop();
+          case 22:
+          case "end":
+            return _context.stop();
+        }
       }
-    }
-  });
+    }, _callee);
+  }));
+  return _renderSSR.apply(this, arguments);
 }
 
 var config$1 = {
@@ -2352,7 +2340,7 @@ function buildToBrowserUrl(getTransformRoute) {
 function renderApp$1(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
     var ReduxProvider = function ReduxProvider(props) {
-      return React.createElement(reactRedux.Provider, {
+      return React__default.createElement(reactRedux.Provider, {
         store: store
       }, props.children);
     };
@@ -2369,7 +2357,7 @@ function renderSSR$1(render, moduleGetter, appModuleName, historyProxy, storeOpt
     var data = store.getState();
 
     var ReduxProvider = function ReduxProvider(props) {
-      return React.createElement(reactRedux.Provider, {
+      return React__default.createElement(reactRedux.Provider, {
         store: store
       }, props.children);
     };
@@ -2382,60 +2370,46 @@ function renderSSR$1(render, moduleGetter, appModuleName, historyProxy, storeOpt
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-var loadView = function loadView(moduleName, viewName, modelOptions, Loading) {
-  var _temp;
+var loadView = function loadView(moduleName, viewName, options, Loading) {
+  var _ref = options || {},
+      forwardRef = _ref.forwardRef,
+      modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
 
-  return _temp = function (_React$Component) {
-    _inheritsLoose(Loader, _React$Component);
-
-    function Loader(props, context) {
-      var _this;
-
-      _this = _React$Component.call(this, props, context) || this;
-
-      _defineProperty(_assertThisInitialized(_this), "state", {
-        Component: null
-      });
-
+  var Loader = function ViewLoader(props) {
+    var _useState = React.useState(function () {
       var moduleViewResult = getView(moduleName, viewName, modelOptions);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
-          Object.keys(Loader).forEach(function (key) {
-            return Component[key] = Loader[key];
-          });
-          Object.keys(Component).forEach(function (key) {
-            return Loader[key] = Component[key];
-          });
-
-          _this.setState({
+          setView({
             Component: Component
           });
         });
+        return null;
       } else {
-        Object.keys(Loader).forEach(function (key) {
-          return moduleViewResult[key] = Loader[key];
-        });
-        Object.keys(moduleViewResult).forEach(function (key) {
-          return Loader[key] = moduleViewResult[key];
-        });
-        _this.state = {
+        return {
           Component: moduleViewResult
         };
       }
+    }),
+        view = _useState[0],
+        setView = _useState[1];
 
-      return _this;
-    }
+    var forwardRef = props.forwardRef,
+        other = _objectWithoutPropertiesLoose(props, ["forwardRef"]);
 
-    var _proto = Loader.prototype;
+    var ref = forwardRef ? {
+      ref: forwardRef
+    } : {};
+    return view ? React__default.createElement(view.Component, _extends({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
+  };
 
-    _proto.render = function render() {
-      var Component = this.state.Component;
-      return Component ? React.createElement(Component, this.props) : Loading ? React.createElement(Loading, this.props) : null;
-    };
-
-    return Loader;
-  }(React.Component), _temp;
+  var Component = forwardRef ? React__default.forwardRef(function (props, ref) {
+    return React__default.createElement(Loader, _extends({}, props, {
+      forwardRef: ref
+    }));
+  }) : Loader;
+  return Component;
 };
 var exportModule$1 = exportModule;
 
@@ -2572,9 +2546,9 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
   historyActions = historyData.historyActions;
   return renderApp$1(function (Provider, AppMainView, ssrInitStoreKey) {
     var WithRouter = reactRouterDom.withRouter(AppMainView);
-    var app = React.createElement(Provider, null, React.createElement(reactRouterDom.Router, {
+    var app = React__default.createElement(Provider, null, React__default.createElement(reactRouterDom.Router, {
       history: history
-    }, React.createElement(WithRouter, null)));
+    }, React__default.createElement(WithRouter, null)));
 
     if (typeof container === 'function') {
       container(app);
@@ -2607,9 +2581,9 @@ function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptio
   historyActions = historyData.historyActions;
   var render = renderToStream ? server.renderToNodeStream : server.renderToString;
   return renderSSR$1(function (Provider, AppMainView) {
-    return render(React.createElement(Provider, null, React.createElement(reactRouterDom.StaticRouter, {
+    return render(React__default.createElement(Provider, null, React__default.createElement(reactRouterDom.StaticRouter, {
       location: location
-    }, React.createElement(AppMainView, null))));
+    }, React__default.createElement(AppMainView, null))));
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
 

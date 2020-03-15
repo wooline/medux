@@ -1,3 +1,5 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import React, { useState } from 'react';
 import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView } from '@medux/core';
 import { Provider } from 'react-redux';
@@ -30,31 +32,46 @@ export function renderSSR(render, moduleGetter, appModuleName, historyProxy, sto
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export const loadView = (moduleName, viewName, modelOptions, Loading) => {
-  const loader = function ViewLoader(props) {
+export const loadView = (moduleName, viewName, options, Loading) => {
+  const _ref = options || {},
+        {
+    forwardRef
+  } = _ref,
+        modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
+
+  const Loader = function ViewLoader(props) {
     const [view, setView] = useState(() => {
       const moduleViewResult = getView(moduleName, viewName, modelOptions);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(Component => {
-          Object.keys(loader).forEach(key => Component[key] = loader[key]);
-          Object.keys(Component).forEach(key => loader[key] = Component[key]);
           setView({
             Component
           });
         });
         return null;
       } else {
-        Object.keys(loader).forEach(key => moduleViewResult[key] = loader[key]);
-        Object.keys(moduleViewResult).forEach(key => loader[key] = moduleViewResult[key]);
         return {
           Component: moduleViewResult
         };
       }
     });
-    return view ? React.createElement(view.Component, props) : Loading ? React.createElement(Loading, props) : null;
+
+    const {
+      forwardRef
+    } = props,
+          other = _objectWithoutPropertiesLoose(props, ["forwardRef"]);
+
+    const ref = forwardRef ? {
+      ref: forwardRef
+    } : {};
+    return view ? React.createElement(view.Component, _extends({}, other, ref)) : Loading ? React.createElement(Loading, props) : null;
   };
 
-  return loader;
+  const Component = forwardRef ? React.forwardRef((props, ref) => React.createElement(Loader, _extends({}, props, {
+    forwardRef: ref
+  }))) : Loader;
+  return Component;
 };
+776002663516496;
 export const exportModule = baseExportModule;

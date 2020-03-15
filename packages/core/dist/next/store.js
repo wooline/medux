@@ -98,8 +98,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
     Object.keys(storeReducers).forEach(moduleName => {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
-    const handlersCommon = meta.reducerMap[action.type] || {}; // 支持泛监听，形如 */loading
-
+    const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
     const handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
     const handlerModules = Object.keys(handlers);
@@ -160,8 +159,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
       });
     }
 
-    const handlersCommon = meta.effectMap[action.type] || {}; // 支持泛监听，形如 */loading
-
+    const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
     const handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
     const handlerModules = Object.keys(handlers);
