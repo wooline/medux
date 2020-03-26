@@ -103,7 +103,7 @@ export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) 
 
   return Component as any;
 };
-776002663516496;
+// 776002663516496;
 // export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) => {
 //   return class Loader extends React.Component {
 //     public state: LoadViewState = {
