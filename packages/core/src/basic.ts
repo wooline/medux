@@ -23,7 +23,7 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
   const key = moduleName + config.NSP + group;
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, e => {
+    loadings[key].addListener(TaskCountEvent, (e) => {
       const store = MetaData.clientStore;
       if (store) {
         const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
@@ -233,12 +233,12 @@ export function delayPromise(second: number) {
     }
     const fun = descriptor.value;
     descriptor.value = (...args: any[]) => {
-      const delay = new Promise(resolve => {
+      const delay = new Promise((resolve) => {
         setTimeout(() => {
           resolve(true);
         }, second * 1000);
       });
-      return Promise.all([delay, fun.apply(target, args)]).then(items => {
+      return Promise.all([delay, fun.apply(target, args)]).then((items) => {
         return items[1];
       });
     };
@@ -264,7 +264,7 @@ export function setProcessedError(error: any, meduxProcessed: boolean): {meduxPr
 }
 function bindThis(fun: ActionHandler, thisObj: any) {
   const newFun = fun.bind(thisObj);
-  Object.keys(fun).forEach(key => {
+  Object.keys(fun).forEach((key) => {
     newFun[key] = fun[key];
   });
 
@@ -292,7 +292,7 @@ export function injectActions(store: ModelStore, moduleName: string, handlers: A
       let handler = handlers[actionNames];
       if (handler.__isReducer__ || handler.__isEffect__) {
         handler = bindThis(handler, handlers);
-        actionNames.split(config.MSP).forEach(actionName => {
+        actionNames.split(config.MSP).forEach((actionName) => {
           actionName = actionName.trim().replace(new RegExp(`^this[${config.NSP}]`), `${moduleName}${config.NSP}`);
           const arr = actionName.split(config.NSP);
           if (arr[1]) {

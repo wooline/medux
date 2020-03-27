@@ -5,6 +5,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var _assertThisInitialized = _interopDefault(require('@babel/runtime/helpers/assertThisInitialized'));
+require('@babel/runtime/helpers/possibleConstructorReturn');
+require('@babel/runtime/helpers/getPrototypeOf');
 var _inheritsLoose = _interopDefault(require('@babel/runtime/helpers/inheritsLoose'));
 var _defineProperty = _interopDefault(require('@babel/runtime/helpers/defineProperty'));
 var redux = require('redux');

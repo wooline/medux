@@ -1,11 +1,10 @@
-import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import {RootState as BaseRootState, ModuleGetter, StoreOptions, RouteData} from '@medux/core';
 import {History, createLocation} from 'history';
-import {Location, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
+import {Location, TransformRoute, buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions, RouteConfig, BrowserRoutePayload, ToBrowserUrl} from '@medux/route-plan-a';
 import React, {ReactElement} from 'react';
 import {Router, StaticRouter, withRouter} from 'react-router-dom';
 import {renderApp, renderSSR} from '@medux/react';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
-
 import ReactDOM from 'react-dom';
 import {createHistory} from '@medux/web';
 
@@ -13,12 +12,10 @@ export {loadView, exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
 
-export type RouteData = import('@medux/core/types/export').RouteData;
-export type LoadView<MG extends ModuleGetter> = import('@medux/react').LoadView<MG>;
-export type BaseModelState<R = {[key: string]: any}> = import('@medux/core/types/export').BaseModelState<R>;
-export type BrowserRoutePayload<P> = import('@medux/route-plan-a').BrowserRoutePayload<P>;
-export type RouteConfig = import('@medux/route-plan-a').RouteConfig;
-export type ToBrowserUrl<Params> = import('@medux/route-plan-a').ToBrowserUrl<Params>;
+export type {Actions, RouteData, BaseModelState} from '@medux/core';
+export type {LoadView} from '@medux/react';
+export type {BrowserRoutePayload, RouteConfig, ToBrowserUrl} from '@medux/route-plan-a';
+
 export type BrowserHistoryActions<Params> = import('@medux/route-plan-a').BrowserHistoryActions<BrowserRoutePayload<Params>>;
 
 let historyActions: BrowserHistoryActions<RouteData> | undefined = undefined;

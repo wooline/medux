@@ -1,8 +1,7 @@
-import {DisplayViews, RouteData} from '@medux/core/types/export';
+import {DisplayViews, RouteData, config as coreConfig} from '@medux/core';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import assignDeep from 'deep-extend';
-import {config as coreConfig} from '@medux/core';
 
 const config = {
   escape: true,
@@ -34,7 +33,7 @@ export interface TransformRoute {
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 function excludeDefaultData(data: {[moduleName: string]: any}, def: {[moduleName: string]: any}, holde: boolean, views?: {[moduleName: string]: any}) {
   const result: any = {};
-  Object.keys(data).forEach(moduleName => {
+  Object.keys(data).forEach((moduleName) => {
     let value = data[moduleName];
     const defaultValue = def[moduleName];
     if (value !== defaultValue) {
@@ -141,7 +140,7 @@ function splitSearch(search: string) {
   const arr = search.match(reg);
   let stackParams: {[moduleName: string]: {[key: string]: any} | undefined}[] = [];
   if (arr) {
-    stackParams = arr.map(str => {
+    stackParams = arr.map((str) => {
       return searchParse(str.split('=')[1]);
     });
   }
@@ -245,11 +244,11 @@ function assignRouteData(paths: string[], stackParams: {[moduleName: string]: an
     }
     return prev;
   }, {});
-  Object.keys(firstStackParams).forEach(moduleName => {
+  Object.keys(firstStackParams).forEach((moduleName) => {
     firstStackParams[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], firstStackParams[moduleName]);
   });
   const params = assignDeep({}, ...stackParams);
-  Object.keys(params).forEach(moduleName => {
+  Object.keys(params).forEach((moduleName) => {
     if (!firstStackParams[moduleName]) {
       params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
     }
@@ -277,7 +276,7 @@ function extractHashData(params: {[moduleName: string]: any}) {
       const data = params[moduleName]!;
       const keys = Object.keys(data);
       if (keys.length > 0) {
-        keys.forEach(key => {
+        keys.forEach((key) => {
           if (key.startsWith('_')) {
             if (!hashParams[moduleName]) {
               hashParams[moduleName] = {};
@@ -303,7 +302,7 @@ function extractHashData(params: {[moduleName: string]: any}) {
 export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 
-  const locationToRoute: LocationToRoute = location => {
+  const locationToRoute: LocationToRoute = (location) => {
     const paths: string[] = [];
     const pathsArgs: {[moduleName: string]: {[key: string]: any}} = {};
     pathnameParse(location.pathname, routeConfig, paths, pathsArgs);
@@ -319,7 +318,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     });
     return assignRouteData(paths, stackParams, pathsArgs);
   };
-  const routeToLocation: RouteToLocation = routeData => {
+  const routeToLocation: RouteToLocation = (routeData) => {
     const {views, paths, params, stackParams} = routeData;
     const firstStackParams = stackParams[0];
     let pathname = '';
@@ -353,7 +352,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         }
         //pathname中传递的值可以不在params中重复传递
         const keys = ruleToKeys[rule] || [];
-        keys.forEach(key => {
+        keys.forEach((key) => {
           if (typeof key === 'string') {
             const props = key.split('.');
             if (props.length) {

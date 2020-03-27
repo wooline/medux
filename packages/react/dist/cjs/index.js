@@ -6,9 +6,9 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var _extends = _interopDefault(require('@babel/runtime/helpers/extends'));
 var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/helpers/objectWithoutPropertiesLoose'));
+var core = require('@medux/core');
 var React = require('react');
 var React__default = _interopDefault(React);
-var core = require('@medux/core');
 var reactRedux = require('react-redux');
 
 function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {

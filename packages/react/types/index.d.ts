@@ -1,4 +1,4 @@
-import { LoadView as BaseLoadView, ExportModule, HistoryProxy, ModuleGetter, StoreOptions } from '@medux/core/types/export';
+import { LoadView as BaseLoadView, ExportModule, HistoryProxy, ModuleGetter, StoreOptions } from '@medux/core';
 import { ComponentType, ReactNode } from 'react';
 export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (Provider: ComponentType<{
     children: ReactNode;

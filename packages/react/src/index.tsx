@@ -1,6 +1,16 @@
-import {LoadView as BaseLoadView, ExportModule, HistoryProxy, ModuleGetter, StoreOptions} from '@medux/core/types/export';
+import {
+  LoadView as BaseLoadView,
+  ExportModule,
+  HistoryProxy,
+  ModuleGetter,
+  StoreOptions,
+  exportModule as baseExportModule,
+  renderApp as baseRenderApp,
+  renderSSR as baseRenderSSR,
+  getView,
+  isPromiseView,
+} from '@medux/core';
 import React, {ComponentType, FC, ReactNode, useState} from 'react';
-import {exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView} from '@medux/core';
 
 import {Provider} from 'react-redux';
 
@@ -20,7 +30,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
       },
       ssrInitStoreKey
     ) => {
-      const ReduxProvider: ComponentType<{children: ReactNode}> = props => {
+      const ReduxProvider: ComponentType<{children: ReactNode}> = (props) => {
         // eslint-disable-next-line react/prop-types
         return <Provider store={store}>{props.children}</Provider>;
       };
@@ -50,7 +60,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
       ssrInitStoreKey
     ) => {
       const data = store.getState();
-      const ReduxProvider: ComponentType<{children: ReactNode}> = props => {
+      const ReduxProvider: ComponentType<{children: ReactNode}> = (props) => {
         // eslint-disable-next-line react/prop-types
         return <Provider store={store}>{props.children}</Provider>;
       };
@@ -76,7 +86,7 @@ export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) 
     const [view, setView] = useState<{Component: ComponentType} | null>(() => {
       const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
-        moduleViewResult.then(Component => {
+        moduleViewResult.then((Component) => {
           // loader.propTypes = Component.propTypes;
           // loader.contextTypes = Component.contextTypes;
           // loader.defaultProps = Component.defaultProps;
@@ -103,7 +113,7 @@ export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) 
 
   return Component as any;
 };
-// 776002663516496;
+
 // export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) => {
 //   return class Loader extends React.Component {
 //     public state: LoadViewState = {

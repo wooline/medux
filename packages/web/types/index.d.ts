@@ -1,4 +1,4 @@
-import { HistoryProxy, RouteData } from '@medux/core/types/export';
+import { HistoryProxy, RouteData } from '@medux/core';
 import { History } from 'history';
 export { createBrowserHistory, createMemoryHistory, createHashHistory } from 'history';
 interface BrowserLocation {

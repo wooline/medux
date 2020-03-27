@@ -1,4 +1,4 @@
-import { RouteData } from '@medux/core/types/export';
+import { RouteData } from '@medux/core';
 export declare function setRouteConfig(conf: {
     escape?: boolean;
     dateParse?: boolean;

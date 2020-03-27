@@ -1,6 +1,6 @@
+import { config as coreConfig } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend';
-import { config as coreConfig } from '@medux/core';
 const config = {
   escape: true,
   dateParse: true,

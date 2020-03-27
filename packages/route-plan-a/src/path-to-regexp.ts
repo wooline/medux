@@ -261,7 +261,7 @@ export function tokensToFunction<P extends object = object>(tokens: Token[], opt
   const {encode = (x: string) => x, validate = true} = options;
 
   // Compile all the tokens into regexps.
-  const matches = tokens.map(token => {
+  const matches = tokens.map((token) => {
     if (typeof token === 'object') {
       return new RegExp(`^(?:${token.pattern})$`, reFlags);
     }
@@ -369,7 +369,7 @@ export function match<P extends object = object>(str: Path, options?: ParseOptio
 export function regexpToFunction<P extends object = object>(re: RegExp, keys: Key[], options: RegexpToFunctionOptions = {}): MatchFunction<P> {
   const {decode = (x: string) => x} = options;
 
-  return function(pathname: string) {
+  return function (pathname: string) {
     const m = re.exec(pathname);
     if (!m) return false;
 
@@ -383,7 +383,7 @@ export function regexpToFunction<P extends object = object>(re: RegExp, keys: Ke
       const key = keys[i - 1];
 
       if (key.modifier === '*' || key.modifier === '+') {
-        params[key.name] = m[i].split(key.prefix + key.suffix).map(value => {
+        params[key.name] = m[i].split(key.prefix + key.suffix).map((value) => {
           return decode(value, key);
         });
       } else {
@@ -453,7 +453,7 @@ function regexpToRegexp(path: RegExp, keys?: Key[]): RegExp {
  * Transform an array into a regexp.
  */
 function arrayToRegexp(paths: Array<string | RegExp>, keys?: Key[], options?: TokensToRegexpOptions & ParseOptions): RegExp {
-  const parts = paths.map(path => pathToRegexp(path, keys, options).source);
+  const parts = paths.map((path) => pathToRegexp(path, keys, options).source);
   return new RegExp(`(?:${parts.join('|')})`, flags(options));
 }
 

@@ -39,7 +39,7 @@ export class PDispatcher {
 
   public removeListener(ename?: string, handler?: (e: PEvent) => void): this {
     if (!ename) {
-      Object.keys(this.storeHandlers).forEach(key => {
+      Object.keys(this.storeHandlers).forEach((key) => {
         delete this.storeHandlers[key];
       });
     } else {
@@ -91,7 +91,7 @@ export class TaskCounter extends PDispatcher {
     super();
   }
   public addItem(promise: Promise<any>, note: string = ''): Promise<any> {
-    if (!this.list.some(item => item.promise === promise)) {
+    if (!this.list.some((item) => item.promise === promise)) {
       this.list.push({promise, note});
       promise.then(
         () => this.completeItem(promise),
@@ -111,7 +111,7 @@ export class TaskCounter extends PDispatcher {
     return promise;
   }
   private completeItem(promise: Promise<any>): this {
-    const i = this.list.findIndex(item => item.promise === promise);
+    const i = this.list.findIndex((item) => item.promise === promise);
     if (i > -1) {
       this.list.splice(i, 1);
       if (this.list.length === 0) {

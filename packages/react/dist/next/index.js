@@ -1,7 +1,7 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
-import React, { useState } from 'react';
 import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView } from '@medux/core';
+import React, { useState } from 'react';
 import { Provider } from 'react-redux';
 export function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
   return baseRenderApp((store, appModel, appViews, ssrInitStoreKey) => {
@@ -73,5 +73,4 @@ export const loadView = (moduleName, viewName, options, Loading) => {
   }))) : Loader;
   return Component;
 };
-776002663516496;
 export const exportModule = baseExportModule;

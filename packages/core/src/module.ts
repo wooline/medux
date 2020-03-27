@@ -212,7 +212,7 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
   const moduleGetter: ModuleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
-    return result.then(module => {
+    return result.then((module) => {
       moduleGetter[moduleName] = () => module;
       const view: T = module.default.views[viewName];
       if (MetaData.isServer) {
@@ -249,7 +249,7 @@ export type LoadView<MG extends ModuleGetter, Options = any, Loading = any> = <M
 function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module {
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
-    return result.then(module => {
+    return result.then((module) => {
       //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       moduleGetter[moduleName] = () => module;
       return module;
@@ -259,7 +259,7 @@ function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promis
   }
 }
 function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter): Promise<Module[]> {
-  const preModules = moduleNames.map(moduleName => {
+  const preModules = moduleNames.map((moduleName) => {
     const module = getModuleByName(moduleName, moduleGetter);
     if (isPromiseModule(module)) {
       return module;
@@ -294,7 +294,7 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   const reduxStore: Store = store as any;
   const preModuleNames: string[] = [appModuleName];
   if (initData) {
-    preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
+    preModuleNames.push(...Object.keys(initData).filter((key) => key !== appModuleName && initData[key].isModule));
   }
   // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {

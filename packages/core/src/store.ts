@@ -13,7 +13,7 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
     const moduleGetter = MetaData.moduleGetter;
     const result = moduleGetter[moduleName]();
     if (isPromiseModule(result)) {
-      return result.then(module => {
+      return result.then((module) => {
         moduleGetter[moduleName] = (() => module) as any;
         return module.default.model(store, options);
       });
@@ -93,7 +93,7 @@ export function buildStore(
     meta.prevState = rootState;
     const currentState = {...rootState};
     meta.currentState = currentState;
-    Object.keys(storeReducers).forEach(moduleName => {
+    Object.keys(storeReducers).forEach((moduleName) => {
       currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
     });
 
@@ -106,7 +106,7 @@ export function buildStore(
     if (handlerModules.length > 0) {
       const orderList: string[] = [];
       const priority: string[] = action.priority ? [...action.priority] : [];
-      handlerModules.forEach(moduleName => {
+      handlerModules.forEach((moduleName) => {
         const fun = handlers[moduleName];
         if (moduleName === MetaData.appModuleName) {
           orderList.unshift(moduleName);
@@ -119,7 +119,7 @@ export function buildStore(
       });
       orderList.unshift(...priority);
       const moduleNameMap: {[key: string]: boolean} = {};
-      orderList.forEach(moduleName => {
+      orderList.forEach((moduleName) => {
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
@@ -128,7 +128,7 @@ export function buildStore(
       });
     }
 
-    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
+    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some((moduleName) => rootState[moduleName] !== currentState[moduleName]);
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
   };
@@ -143,7 +143,7 @@ export function buildStore(
     const action: Action = next(originalAction);
     if (action.type === ActionTypes.RouteChange) {
       const rootRouteParams = meta.prevState.route.data.params;
-      Object.keys(rootRouteParams).forEach(moduleName => {
+      Object.keys(rootRouteParams).forEach((moduleName) => {
         const routeParams = rootRouteParams[moduleName];
         if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
           dispatch(routeParamsAction(moduleName, routeParams));
@@ -159,7 +159,7 @@ export function buildStore(
     if (handlerModules.length > 0) {
       const orderList: string[] = [];
       const priority: string[] = action.priority ? [...action.priority] : [];
-      handlerModules.forEach(moduleName => {
+      handlerModules.forEach((moduleName) => {
         const fun = handlers[moduleName];
         if (moduleName === MetaData.appModuleName) {
           orderList.unshift(moduleName);
@@ -173,7 +173,7 @@ export function buildStore(
       orderList.unshift(...priority);
       const moduleNameMap: {[key: string]: boolean} = {};
       const promiseResults: Promise<any>[] = [];
-      orderList.forEach(moduleName => {
+      orderList.forEach((moduleName) => {
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
@@ -245,7 +245,7 @@ export function buildStore(
   };
 
   const middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
-  const enhancer: StoreEnhancer = newCreateStore => {
+  const enhancer: StoreEnhancer = (newCreateStore) => {
     return (...args) => {
       const newStore = newCreateStore(...args);
       const modelStore: ModelStore = newStore as any;
