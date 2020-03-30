@@ -436,23 +436,21 @@ function isBrowserRoutePayload(data) {
 export function getBrowserRouteActions(getBrowserHistoryActions) {
   return {
     push(data) {
-      let args = data;
-
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        const args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().push(args);
+      } else {
+        getBrowserHistoryActions().push(data);
       }
-
-      getBrowserHistoryActions().push(args);
     },
 
     replace(data) {
-      let args = data;
-
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        const args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().replace(args);
+      } else {
+        getBrowserHistoryActions().replace(data);
       }
-
-      getBrowserHistoryActions().replace(args);
     },
 
     go(n) {

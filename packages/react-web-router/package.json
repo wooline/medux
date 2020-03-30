@@ -36,7 +36,6 @@
     "react": true,
     "react-dom": true,
     "react-redux": true,
-    "react-router-dom": true,
     "history": true,
     "redux": true
   },
@@ -51,9 +50,7 @@
     "@medux/core": "^0.2.27",
     "@medux/react": "^0.2.27",
     "@medux/route-plan-a": "^0.2.27",
-    "@medux/web": "^0.2.27",
-    "@types/react-router-dom": "~5.1.3",
-    "react-router-dom": "~5.1.2"
+    "@medux/web": "^0.2.27"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

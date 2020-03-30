@@ -30,13 +30,14 @@ declare type ModuleActions<M extends any> = M['default']['actions'];
 declare type MountViews<M extends any> = {
     [key in keyof M['default']['views']]?: boolean;
 };
+export declare type RouteViews<G extends ModuleGetter> = {
+    [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
+};
 export declare type RootState<G extends ModuleGetter, L> = {
     route: {
         location: L;
         data: {
-            views: {
-                [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
-            };
+            views: RouteViews<G>;
             params: {
                 [key in keyof G]?: ModuleParams<ReturnModule<G[key]>>;
             };
@@ -45,7 +46,7 @@ export declare type RootState<G extends ModuleGetter, L> = {
                     [key: string]: any;
                 } | undefined;
             }[];
-            paths: any;
+            paths: string[];
         };
     };
 } & {

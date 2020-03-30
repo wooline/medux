@@ -7,20 +7,20 @@ interface BrowserLocation {
     hash: string;
     state: RouteData;
 }
-export interface Location {
+export interface MeduxLocation {
     pathname: string;
     search: string;
     hash: string;
 }
-export declare type RouteToLocation = (routeData: RouteData) => Location;
-export declare type LocationToRoute = (location: Location) => RouteData;
+export declare type RouteToLocation = (routeData: RouteData) => MeduxLocation;
+export declare type LocationToRoute = (location: MeduxLocation) => RouteData;
 export interface TransformRoute {
     locationToRoute: LocationToRoute;
     routeToLocation: RouteToLocation;
 }
 export interface HistoryActions<P = RouteData> {
-    push(data: P | Location | string): void;
-    replace(data: P | Location | string): void;
+    push(data: P | MeduxLocation | string): void;
+    replace(data: P | MeduxLocation | string): void;
     go(n: number): void;
     goBack(): void;
     goForward(): void;

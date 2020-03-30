@@ -1,7 +1,7 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 export { createBrowserHistory, createMemoryHistory, createHashHistory } from 'history';
 
-function isLocation(data) {
+function isMeduxLocation(data) {
   return !!data['pathname'];
 }
 
@@ -37,7 +37,7 @@ class BrowserHistoryProxy {
 
 }
 
-class BrowserHistoryActions {
+class HistoryActionsModule {
   constructor(history, routeToLocation) {
     this.history = history;
     this.routeToLocation = routeToLocation;
@@ -46,7 +46,7 @@ class BrowserHistoryActions {
   push(data) {
     if (typeof data === 'string') {
       this.history.push(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.push(Object.assign({}, data, {
         state: undefined
       }));
@@ -61,7 +61,7 @@ class BrowserHistoryActions {
   replace(data) {
     if (typeof data === 'string') {
       this.history.replace(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.replace(Object.assign({}, data, {
         state: undefined
       }));
@@ -89,7 +89,7 @@ class BrowserHistoryActions {
 
 export function createHistory(history, transformRoute) {
   const historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  const historyActions = new BrowserHistoryActions(history, transformRoute.routeToLocation);
+  const historyActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
   return {
     historyProxy,
     historyActions

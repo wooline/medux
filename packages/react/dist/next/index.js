@@ -1,34 +1,37 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
-import { exportModule as baseExportModule, renderApp as baseRenderApp, renderSSR as baseRenderSSR, getView, isPromiseView } from '@medux/core';
+import * as core from '@medux/core';
+import { getView, isPromiseView } from '@medux/core';
 import React, { useState } from 'react';
+import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
-export function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
-  return baseRenderApp((store, appModel, appViews, ssrInitStoreKey) => {
-    const ReduxProvider = props => {
-      return React.createElement(Provider, {
-        store: store
-      }, props.children);
-    };
+import ReactDOM from 'react-dom';
+export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container = 'root') {
+  return core.renderApp((store, appModel, appViews, ssrInitStoreKey) => {
+    const reduxProvider = React.createElement(Provider, {
+      store: store
+    }, React.createElement(appViews.Main, null));
 
-    render(ReduxProvider, appViews.Main, ssrInitStoreKey);
+    if (typeof container === 'function') {
+      container(reduxProvider);
+    } else {
+      const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+    }
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-export function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptions = {}) {
-  return baseRenderSSR((store, appModel, appViews, ssrInitStoreKey) => {
+export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions = {}, renderToStream = false) {
+  return core.renderSSR((store, appModel, appViews, ssrInitStoreKey) => {
     const data = store.getState();
-
-    const ReduxProvider = props => {
-      return React.createElement(Provider, {
-        store: store
-      }, props.children);
-    };
-
+    const reduxProvider = React.createElement(Provider, {
+      store: store
+    }, React.createElement(appViews.Main, null));
+    const render = renderToStream ? renderToNodeStream : renderToString;
     return {
       store,
       ssrInitStoreKey,
       data,
-      html: render(ReduxProvider, appViews.Main)
+      html: render(reduxProvider)
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
@@ -73,4 +76,4 @@ export const loadView = (moduleName, viewName, options, Loading) => {
   }))) : Loader;
   return Component;
 };
-export const exportModule = baseExportModule;
+export const exportModule = core.exportModule;

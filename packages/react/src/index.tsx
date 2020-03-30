@@ -1,27 +1,20 @@
-import {
-  LoadView as BaseLoadView,
-  ExportModule,
-  HistoryProxy,
-  ModuleGetter,
-  StoreOptions,
-  exportModule as baseExportModule,
-  renderApp as baseRenderApp,
-  renderSSR as baseRenderSSR,
-  getView,
-  isPromiseView,
-} from '@medux/core';
-import React, {ComponentType, FC, ReactNode, useState} from 'react';
+import * as core from '@medux/core';
+
+import {ExportModule, HistoryProxy, ModuleGetter, StoreOptions, getView, isPromiseView} from '@medux/core';
+import React, {ComponentType, FC, ReactElement, useState} from 'react';
+import {renderToNodeStream, renderToString} from 'react-dom/server';
 
 import {Provider} from 'react-redux';
+import ReactDOM from 'react-dom';
 
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (Provider: ComponentType<{children: ReactNode}>, AppMainView: any, ssrInitStoreKey: string) => void,
   moduleGetter: M,
   appModuleName: A,
   historyProxy: HistoryProxy,
-  storeOptions: StoreOptions
+  storeOptions: StoreOptions,
+  container: string | Element | ((component: ReactElement<any>) => void) = 'root'
 ) {
-  return baseRenderApp(
+  return core.renderApp(
     (
       store,
       appModel,
@@ -30,11 +23,17 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
       },
       ssrInitStoreKey
     ) => {
-      const ReduxProvider: ComponentType<{children: ReactNode}> = (props) => {
-        // eslint-disable-next-line react/prop-types
-        return <Provider store={store}>{props.children}</Provider>;
-      };
-      render(ReduxProvider, appViews.Main, ssrInitStoreKey);
+      const reduxProvider = (
+        <Provider store={store}>
+          <appViews.Main />
+        </Provider>
+      );
+      if (typeof container === 'function') {
+        container(reduxProvider);
+      } else {
+        const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+      }
     },
     moduleGetter,
     appModuleName,
@@ -44,13 +43,13 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
 }
 
 export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (Provider: ComponentType<{children: ReactNode}>, AppMainView: ComponentType<any>) => any,
   moduleGetter: M,
   appModuleName: A,
   historyProxy: HistoryProxy,
-  storeOptions: StoreOptions = {}
+  storeOptions: StoreOptions = {},
+  renderToStream: boolean = false
 ) {
-  return baseRenderSSR(
+  return core.renderSSR(
     (
       store,
       appModel,
@@ -60,15 +59,17 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
       ssrInitStoreKey
     ) => {
       const data = store.getState();
-      const ReduxProvider: ComponentType<{children: ReactNode}> = (props) => {
-        // eslint-disable-next-line react/prop-types
-        return <Provider store={store}>{props.children}</Provider>;
-      };
+      const reduxProvider = (
+        <Provider store={store}>
+          <appViews.Main />
+        </Provider>
+      );
+      const render = renderToStream ? renderToNodeStream : renderToString;
       return {
         store,
         ssrInitStoreKey,
         data,
-        html: render(ReduxProvider, appViews.Main),
+        html: render(reduxProvider),
       };
     },
     moduleGetter,
@@ -78,7 +79,7 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   );
 }
 
-export type LoadView<T extends ModuleGetter> = BaseLoadView<T, {forwardRef?: boolean}, ComponentType<any>>;
+export type LoadView<T extends ModuleGetter> = core.LoadView<T, {forwardRef?: boolean}, ComponentType<any>>;
 
 export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) => {
   const {forwardRef, ...modelOptions} = options || {};
@@ -145,4 +146,4 @@ export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) 
 //   } as any;
 // };
 
-export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
+export const exportModule: ExportModule<ComponentType<any>> = core.exportModule;

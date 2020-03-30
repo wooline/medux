@@ -1,11 +1,9 @@
-import { RouteData } from '@medux/core';
+import _extends from "@babel/runtime/helpers/esm/extends";
+import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import { createLocation } from 'history';
-import { buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions, RouteConfig, BrowserRoutePayload, ToBrowserUrl } from '@medux/route-plan-a';
+import { buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions } from '@medux/route-plan-a';
 import React from 'react';
-import { Router, StaticRouter, withRouter } from 'react-router-dom';
 import { renderApp, renderSSR } from '@medux/react';
-import { renderToNodeStream, renderToString } from 'react-dom/server';
-import ReactDOM from 'react-dom';
 import { createHistory } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
@@ -38,19 +36,7 @@ export function buildApp(moduleGetter, appModuleName, history, routeConfig, stor
   var historyData = createHistory(history, transformRoute);
   var historyProxy = historyData.historyProxy;
   historyActions = historyData.historyActions;
-  return renderApp(function (Provider, AppMainView, ssrInitStoreKey) {
-    var WithRouter = withRouter(AppMainView);
-    var app = React.createElement(Provider, null, React.createElement(Router, {
-      history: history
-    }, React.createElement(WithRouter, null)));
-
-    if (typeof container === 'function') {
-      container(app);
-    } else {
-      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(app, typeof container === 'string' ? document.getElementById(container) : container);
-    }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  return renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container);
 }
 export function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
@@ -73,10 +59,47 @@ export function buildSSR(moduleGetter, appModuleName, location, routeConfig, sto
   }, transformRoute);
   var historyProxy = historyData.historyProxy;
   historyActions = historyData.historyActions;
-  var render = renderToStream ? renderToNodeStream : renderToString;
-  return renderSSR(function (Provider, AppMainView) {
-    return render(React.createElement(Provider, null, React.createElement(StaticRouter, {
-      location: location
-    }, React.createElement(AppMainView, null))));
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  return renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream);
 }
+export var Switch = function Switch(_ref) {
+  var children = _ref.children,
+      elseView = _ref.elseView;
+
+  if (!children || Array.isArray(children) && children.every(function (item) {
+    return !item;
+  })) {
+    return React.createElement(React.Fragment, null, elseView);
+  } else {
+    return React.createElement(React.Fragment, null, children);
+  }
+};
+
+function isModifiedEvent(event) {
+  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
+}
+
+export var Link = React.forwardRef(function (_ref2, ref) {
+  var _onClick = _ref2.onClick,
+      replace = _ref2.replace,
+      rest = _objectWithoutPropertiesLoose(_ref2, ["onClick", "replace"]);
+
+  var target = rest.target;
+  var props = Object.assign({}, rest, {
+    onClick: function onClick(event) {
+      try {
+        _onClick && _onClick(event);
+      } catch (ex) {
+        event.preventDefault();
+        throw ex;
+      }
+
+      if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
+          event.preventDefault();
+          replace ? historyActions.replace(rest.href) : historyActions.push(rest.href);
+        }
+    }
+  });
+  return React.createElement("a", _extends({}, props, {
+    ref: ref
+  }));
+});

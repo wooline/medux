@@ -293,8 +293,8 @@ function extractHashData(params) {
 
   var _loop = function _loop(_moduleName2) {
     if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-      var _data = params[_moduleName2];
-      var keys = Object.keys(_data);
+      var data = params[_moduleName2];
+      var keys = Object.keys(data);
 
       if (keys.length > 0) {
         keys.forEach(function (key) {
@@ -303,13 +303,13 @@ function extractHashData(params) {
               hashParams[_moduleName2] = {};
             }
 
-            hashParams[_moduleName2][key] = _data[key];
+            hashParams[_moduleName2][key] = data[key];
           } else {
             if (!searchParams[_moduleName2]) {
               searchParams[_moduleName2] = {};
             }
 
-            searchParams[_moduleName2][key] = _data[key];
+            searchParams[_moduleName2][key] = data[key];
           }
         });
       } else {
@@ -465,22 +465,20 @@ function isBrowserRoutePayload(data) {
 export function getBrowserRouteActions(getBrowserHistoryActions) {
   return {
     push: function push(data) {
-      var args = data;
-
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        var args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().push(args);
+      } else {
+        getBrowserHistoryActions().push(data);
       }
-
-      getBrowserHistoryActions().push(args);
     },
     replace: function replace(data) {
-      var args = data;
-
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        var args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().replace(args);
+      } else {
+        getBrowserHistoryActions().replace(data);
       }
-
-      getBrowserHistoryActions().replace(args);
     },
     go: function go(n) {
       getBrowserHistoryActions().go(n);
@@ -500,9 +498,8 @@ export function buildToBrowserUrl(getTransformRoute) {
     }
 
     if (args.length === 1) {
-      var _location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
-
-      args = [_location.pathname, _location.search, _location.hash];
+      var location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
+      args = [location.pathname, location.search, location.hash];
     }
 
     var _ref3 = args,

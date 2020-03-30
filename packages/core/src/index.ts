@@ -5,4 +5,4 @@ export {LoadingState} from './sprite';
 export {exportActions, renderApp, renderSSR, BaseModelHandlers, exportModule, isPromiseModule, isPromiseView, getView} from './module';
 export type {Action, BaseModelState, CurrentViews, StoreState, RouteState, RouteData, DisplayViews} from './basic';
 export type {HistoryProxy} from './store';
-export type {Actions, RootState, ModuleGetter, StoreOptions, Model, Module, ExportModule, LoadView} from './module';
+export type {Actions, RouteViews, RootState, ModuleGetter, StoreOptions, Model, Module, ExportModule, LoadView} from './module';

@@ -1,4 +1,5 @@
 import { RouteData } from '@medux/core';
+import { HistoryActions, TransformRoute } from '@medux/web';
 export declare function setRouteConfig(conf: {
     escape?: boolean;
     dateParse?: boolean;
@@ -7,17 +8,6 @@ export declare function setRouteConfig(conf: {
         [moduleName: string]: any;
     };
 }): void;
-export interface Location {
-    pathname: string;
-    search: string;
-    hash: string;
-}
-export declare type RouteToLocation = (routeData: RouteData) => Location;
-export declare type LocationToRoute = (location: Location) => RouteData;
-export interface TransformRoute {
-    locationToRoute: LocationToRoute;
-    routeToLocation: RouteToLocation;
-}
 export interface RouteConfig {
     [path: string]: string | [string, RouteConfig];
 }
@@ -37,14 +27,8 @@ export interface BrowserRoutePayload<P> {
     paths?: string[];
 }
 export declare function fillBrowserRouteData<R>(routePayload: BrowserRoutePayload<R>): RouteData;
-export interface BrowserHistoryActions<P = RouteData> {
-    push(data: P | Location | string): void;
-    replace(data: P | Location | string): void;
-    go(n: number): void;
-    goBack(): void;
-    goForward(): void;
-}
-export declare function getBrowserRouteActions<T>(getBrowserHistoryActions: () => BrowserHistoryActions<RouteData>): BrowserHistoryActions<BrowserRoutePayload<T>>;
+export declare type BrowserHistoryActions<T> = HistoryActions<BrowserRoutePayload<T>>;
+export declare function getBrowserRouteActions<T>(getBrowserHistoryActions: () => HistoryActions<RouteData>): BrowserHistoryActions<T>;
 export interface ToBrowserUrl<T> {
     (routeOptions: BrowserRoutePayload<T>): string;
     (pathname: string, search: string, hash: string): string;

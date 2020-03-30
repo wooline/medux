@@ -11,27 +11,27 @@ interface BrowserLocation {
   state: RouteData;
 }
 
-export interface Location {
+export interface MeduxLocation {
   pathname: string;
   search: string;
   hash: string;
 }
 
-export type RouteToLocation = (routeData: RouteData) => Location;
-export type LocationToRoute = (location: Location) => RouteData;
+export type RouteToLocation = (routeData: RouteData) => MeduxLocation;
+export type LocationToRoute = (location: MeduxLocation) => RouteData;
 
 export interface TransformRoute {
   locationToRoute: LocationToRoute;
   routeToLocation: RouteToLocation;
 }
 
-function isLocation(data: RouteData | Location): data is Location {
+function isMeduxLocation(data: RouteData | MeduxLocation): data is MeduxLocation {
   return !!data['pathname'];
 }
 
 export interface HistoryActions<P = RouteData> {
-  push(data: P | Location | string): void;
-  replace(data: P | Location | string): void;
+  push(data: P | MeduxLocation | string): void;
+  replace(data: P | MeduxLocation | string): void;
   go(n: number): void;
   goBack(): void;
   goForward(): void;
@@ -56,25 +56,25 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
   }
 }
 
-class BrowserHistoryActions implements HistoryActions {
+class HistoryActionsModule implements HistoryActions {
   public constructor(protected history: History, protected routeToLocation: RouteToLocation) {}
-  public push(data: RouteData | Location | string): void {
+  public push(data: RouteData | MeduxLocation | string): void {
     if (typeof data === 'string') {
       this.history.push(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.push({...data, state: undefined});
     } else {
-      const location = this.routeToLocation(data as RouteData);
+      const location = this.routeToLocation(data);
       this.history.push({...location, state: data});
     }
   }
-  public replace(data: RouteData | Location | string): void {
+  public replace(data: RouteData | MeduxLocation | string): void {
     if (typeof data === 'string') {
       this.history.replace(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.replace({...data, state: undefined});
     } else {
-      const location = this.routeToLocation(data as RouteData);
+      const location = this.routeToLocation(data);
       this.history.replace({...location, state: data});
     }
   }
@@ -91,7 +91,7 @@ class BrowserHistoryActions implements HistoryActions {
 
 export function createHistory(history: History, transformRoute: TransformRoute) {
   const historyProxy: HistoryProxy<BrowserLocation> = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  const historyActions: HistoryActions = new BrowserHistoryActions(history, transformRoute.routeToLocation);
+  const historyActions: HistoryActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
   return {
     historyProxy,
     historyActions,

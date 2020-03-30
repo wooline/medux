@@ -1,4 +1,5 @@
 import {DisplayViews, RouteData, config as coreConfig} from '@medux/core';
+import {HistoryActions, LocationToRoute, MeduxLocation, RouteToLocation, TransformRoute} from '@medux/web';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import assignDeep from 'deep-extend';
@@ -14,20 +15,6 @@ export function setRouteConfig(conf: {escape?: boolean; dateParse?: boolean; spl
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
   conf.splitKey && (config.splitKey = conf.splitKey);
   conf.defaultRouteParams && (config.defaultRouteParams = conf.defaultRouteParams);
-}
-
-export interface Location {
-  pathname: string;
-  search: string;
-  hash: string;
-}
-
-export type RouteToLocation = (routeData: RouteData) => Location;
-export type LocationToRoute = (location: Location) => RouteData;
-
-export interface TransformRoute {
-  locationToRoute: LocationToRoute;
-  routeToLocation: RouteToLocation;
 }
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
@@ -396,7 +383,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     routeToLocation,
   };
 }
-
+//web中只有单个stack
 export interface BrowserRoutePayload<P> {
   extend?: RouteData;
   params?: DeepPartial<P>;
@@ -411,31 +398,27 @@ export function fillBrowserRouteData<R>(routePayload: BrowserRoutePayload<R>): R
   return assignRouteData(routePayload.paths || extend.paths, stackParams);
 }
 
-export interface BrowserHistoryActions<P = RouteData> {
-  push(data: P | Location | string): void;
-  replace(data: P | Location | string): void;
-  go(n: number): void;
-  goBack(): void;
-  goForward(): void;
-}
-function isBrowserRoutePayload(data: string | Location | BrowserRoutePayload<any>): data is BrowserRoutePayload<any> {
+function isBrowserRoutePayload(data: string | MeduxLocation | BrowserRoutePayload<any>): data is BrowserRoutePayload<any> {
   return typeof data !== 'string' && !data['pathname'];
 }
-export function getBrowserRouteActions<T>(getBrowserHistoryActions: () => BrowserHistoryActions<RouteData>): BrowserHistoryActions<BrowserRoutePayload<T>> {
+export type BrowserHistoryActions<T> = HistoryActions<BrowserRoutePayload<T>>;
+export function getBrowserRouteActions<T>(getBrowserHistoryActions: () => HistoryActions<RouteData>): BrowserHistoryActions<T> {
   return {
     push(data) {
-      let args = data as any;
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        const args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().push(args);
+      } else {
+        getBrowserHistoryActions().push(data);
       }
-      getBrowserHistoryActions().push(args);
     },
     replace(data) {
-      let args = data as any;
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        const args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().replace(args);
+      } else {
+        getBrowserHistoryActions().replace(data);
       }
-      getBrowserHistoryActions().replace(args);
     },
     go(n) {
       getBrowserHistoryActions().go(n);

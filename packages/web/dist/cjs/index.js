@@ -7,7 +7,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var _defineProperty = _interopDefault(require('@babel/runtime/helpers/defineProperty'));
 var history = require('history');
 
-function isLocation(data) {
+function isMeduxLocation(data) {
   return !!data['pathname'];
 }
 
@@ -46,18 +46,18 @@ var BrowserHistoryProxy = function () {
   return BrowserHistoryProxy;
 }();
 
-var BrowserHistoryActions = function () {
-  function BrowserHistoryActions(history, routeToLocation) {
+var HistoryActionsModule = function () {
+  function HistoryActionsModule(history, routeToLocation) {
     this.history = history;
     this.routeToLocation = routeToLocation;
   }
 
-  var _proto2 = BrowserHistoryActions.prototype;
+  var _proto2 = HistoryActionsModule.prototype;
 
   _proto2.push = function push(data) {
     if (typeof data === 'string') {
       this.history.push(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.push(Object.assign({}, data, {
         state: undefined
       }));
@@ -73,7 +73,7 @@ var BrowserHistoryActions = function () {
   _proto2.replace = function replace(data) {
     if (typeof data === 'string') {
       this.history.replace(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.replace(Object.assign({}, data, {
         state: undefined
       }));
@@ -98,12 +98,12 @@ var BrowserHistoryActions = function () {
     this.history.goForward();
   };
 
-  return BrowserHistoryActions;
+  return HistoryActionsModule;
 }();
 
 function createHistory(history, transformRoute) {
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  var historyActions = new BrowserHistoryActions(history, transformRoute.routeToLocation);
+  var historyActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
   return {
     historyProxy: historyProxy,
     historyActions: historyActions

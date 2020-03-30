@@ -9,38 +9,48 @@ var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/help
 var core = require('@medux/core');
 var React = require('react');
 var React__default = _interopDefault(React);
+var server = require('react-dom/server');
 var reactRedux = require('react-redux');
+var ReactDOM = _interopDefault(require('react-dom'));
 
-function renderApp(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
+function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container) {
+  if (container === void 0) {
+    container = 'root';
+  }
+
   return core.renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
-    var ReduxProvider = function ReduxProvider(props) {
-      return React__default.createElement(reactRedux.Provider, {
-        store: store
-      }, props.children);
-    };
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
 
-    render(ReduxProvider, appViews.Main, ssrInitStoreKey);
+    if (typeof container === 'function') {
+      container(reduxProvider);
+    } else {
+      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+    }
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-function renderSSR(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
+function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
+  if (renderToStream === void 0) {
+    renderToStream = false;
+  }
+
   return core.renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
     var data = store.getState();
-
-    var ReduxProvider = function ReduxProvider(props) {
-      return React__default.createElement(reactRedux.Provider, {
-        store: store
-      }, props.children);
-    };
-
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
+    var render = renderToStream ? server.renderToNodeStream : server.renderToString;
     return {
       store: store,
       ssrInitStoreKey: ssrInitStoreKey,
       data: data,
-      html: render(ReduxProvider, appViews.Main)
+      html: render(reduxProvider)
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }

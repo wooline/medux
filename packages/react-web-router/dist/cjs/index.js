@@ -4,6 +4,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var _extends = _interopDefault(require('@babel/runtime/helpers/extends'));
+var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/helpers/objectWithoutPropertiesLoose'));
+var history = require('history');
 var _assertThisInitialized = _interopDefault(require('@babel/runtime/helpers/esm/assertThisInitialized'));
 require('@babel/runtime/helpers/esm/possibleConstructorReturn');
 require('@babel/runtime/helpers/esm/getPrototypeOf');
@@ -13,14 +16,12 @@ var redux = require('redux');
 var _regeneratorRuntime = _interopDefault(require('@babel/runtime/regenerator'));
 var _asyncToGenerator = _interopDefault(require('@babel/runtime/helpers/esm/asyncToGenerator'));
 var _decorate = _interopDefault(require('@babel/runtime/helpers/esm/decorate'));
-var history = require('history');
 var React = require('react');
 var React__default = _interopDefault(React);
-var reactRouterDom = require('react-router-dom');
-var _extends = _interopDefault(require('@babel/runtime/helpers/esm/extends'));
-var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/helpers/esm/objectWithoutPropertiesLoose'));
-var reactRedux = require('react-redux');
+var _extends$1 = _interopDefault(require('@babel/runtime/helpers/esm/extends'));
+var _objectWithoutPropertiesLoose$1 = _interopDefault(require('@babel/runtime/helpers/esm/objectWithoutPropertiesLoose'));
 var server = require('react-dom/server');
+var reactRedux = require('react-redux');
 var ReactDOM = _interopDefault(require('react-dom'));
 
 var TaskCountEvent = 'TaskCountEvent';
@@ -2135,8 +2136,8 @@ function extractHashData(params) {
 
   var _loop = function _loop(_moduleName2) {
     if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-      var _data = params[_moduleName2];
-      var keys = Object.keys(_data);
+      var data = params[_moduleName2];
+      var keys = Object.keys(data);
 
       if (keys.length > 0) {
         keys.forEach(function (key) {
@@ -2145,13 +2146,13 @@ function extractHashData(params) {
               hashParams[_moduleName2] = {};
             }
 
-            hashParams[_moduleName2][key] = _data[key];
+            hashParams[_moduleName2][key] = data[key];
           } else {
             if (!searchParams[_moduleName2]) {
               searchParams[_moduleName2] = {};
             }
 
-            searchParams[_moduleName2][key] = _data[key];
+            searchParams[_moduleName2][key] = data[key];
           }
         });
       } else {
@@ -2307,22 +2308,20 @@ function isBrowserRoutePayload(data) {
 function getBrowserRouteActions(getBrowserHistoryActions) {
   return {
     push: function push(data) {
-      var args = data;
-
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        var args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().push(args);
+      } else {
+        getBrowserHistoryActions().push(data);
       }
-
-      getBrowserHistoryActions().push(args);
     },
     replace: function replace(data) {
-      var args = data;
-
       if (isBrowserRoutePayload(data)) {
-        args = fillBrowserRouteData(data);
+        var args = fillBrowserRouteData(data);
+        getBrowserHistoryActions().replace(args);
+      } else {
+        getBrowserHistoryActions().replace(data);
       }
-
-      getBrowserHistoryActions().replace(args);
     },
     go: function go(n) {
       getBrowserHistoryActions().go(n);
@@ -2342,9 +2341,8 @@ function buildToBrowserUrl(getTransformRoute) {
     }
 
     if (args.length === 1) {
-      var _location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
-
-      args = [_location.pathname, _location.search, _location.hash];
+      var location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
+      args = [location.pathname, location.search, location.hash];
     }
 
     var _ref3 = args,
@@ -2367,43 +2365,51 @@ function buildToBrowserUrl(getTransformRoute) {
   return toUrl;
 }
 
-function renderApp$1(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
-  return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
-    var ReduxProvider = function ReduxProvider(props) {
-      return React__default.createElement(reactRedux.Provider, {
-        store: store
-      }, props.children);
-    };
+function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container) {
+  if (container === void 0) {
+    container = 'root';
+  }
 
-    render(ReduxProvider, appViews.Main, ssrInitStoreKey);
+  return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
+
+    if (typeof container === 'function') {
+      container(reduxProvider);
+    } else {
+      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+    }
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
-function renderSSR$1(render, moduleGetter, appModuleName, historyProxy, storeOptions) {
+function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
+  if (renderToStream === void 0) {
+    renderToStream = false;
+  }
+
   return renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
     var data = store.getState();
-
-    var ReduxProvider = function ReduxProvider(props) {
-      return React__default.createElement(reactRedux.Provider, {
-        store: store
-      }, props.children);
-    };
-
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
+    var render = renderToStream ? server.renderToNodeStream : server.renderToString;
     return {
       store: store,
       ssrInitStoreKey: ssrInitStoreKey,
       data: data,
-      html: render(ReduxProvider, appViews.Main)
+      html: render(reduxProvider)
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions);
 }
 var loadView = function loadView(moduleName, viewName, options, Loading) {
   var _ref = options || {},
       forwardRef = _ref.forwardRef,
-      modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
+      modelOptions = _objectWithoutPropertiesLoose$1(_ref, ["forwardRef"]);
 
   var Loader = function ViewLoader(props) {
     var _useState = React.useState(function () {
@@ -2426,16 +2432,16 @@ var loadView = function loadView(moduleName, viewName, options, Loading) {
         setView = _useState[1];
 
     var forwardRef = props.forwardRef,
-        other = _objectWithoutPropertiesLoose(props, ["forwardRef"]);
+        other = _objectWithoutPropertiesLoose$1(props, ["forwardRef"]);
 
     var ref = forwardRef ? {
       ref: forwardRef
     } : {};
-    return view ? React__default.createElement(view.Component, _extends({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
+    return view ? React__default.createElement(view.Component, _extends$1({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
   };
 
   var Component = forwardRef ? React__default.forwardRef(function (props, ref) {
-    return React__default.createElement(Loader, _extends({}, props, {
+    return React__default.createElement(Loader, _extends$1({}, props, {
       forwardRef: ref
     }));
   }) : Loader;
@@ -2443,7 +2449,7 @@ var loadView = function loadView(moduleName, viewName, options, Loading) {
 };
 var exportModule$1 = exportModule;
 
-function isLocation(data) {
+function isMeduxLocation(data) {
   return !!data['pathname'];
 }
 
@@ -2482,18 +2488,18 @@ var BrowserHistoryProxy = function () {
   return BrowserHistoryProxy;
 }();
 
-var BrowserHistoryActions = function () {
-  function BrowserHistoryActions(history, routeToLocation) {
+var HistoryActionsModule = function () {
+  function HistoryActionsModule(history, routeToLocation) {
     this.history = history;
     this.routeToLocation = routeToLocation;
   }
 
-  var _proto2 = BrowserHistoryActions.prototype;
+  var _proto2 = HistoryActionsModule.prototype;
 
   _proto2.push = function push(data) {
     if (typeof data === 'string') {
       this.history.push(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.push(Object.assign({}, data, {
         state: undefined
       }));
@@ -2509,7 +2515,7 @@ var BrowserHistoryActions = function () {
   _proto2.replace = function replace(data) {
     if (typeof data === 'string') {
       this.history.replace(data);
-    } else if (isLocation(data)) {
+    } else if (isMeduxLocation(data)) {
       this.history.replace(Object.assign({}, data, {
         state: undefined
       }));
@@ -2534,12 +2540,12 @@ var BrowserHistoryActions = function () {
     this.history.goForward();
   };
 
-  return BrowserHistoryActions;
+  return HistoryActionsModule;
 }();
 
 function createHistory(history, transformRoute) {
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  var historyActions = new BrowserHistoryActions(history, transformRoute.routeToLocation);
+  var historyActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
   return {
     historyProxy: historyProxy,
     historyActions: historyActions
@@ -2574,19 +2580,7 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
   var historyData = createHistory(history, transformRoute);
   var historyProxy = historyData.historyProxy;
   historyActions = historyData.historyActions;
-  return renderApp$1(function (Provider, AppMainView, ssrInitStoreKey) {
-    var WithRouter = reactRouterDom.withRouter(AppMainView);
-    var app = React__default.createElement(Provider, null, React__default.createElement(reactRouterDom.Router, {
-      history: history
-    }, React__default.createElement(WithRouter, null)));
-
-    if (typeof container === 'function') {
-      container(app);
-    } else {
-      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(app, typeof container === 'string' ? document.getElementById(container) : container);
-    }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  return renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container);
 }
 function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
@@ -2609,16 +2603,55 @@ function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptio
   }, transformRoute);
   var historyProxy = historyData.historyProxy;
   historyActions = historyData.historyActions;
-  var render = renderToStream ? server.renderToNodeStream : server.renderToString;
-  return renderSSR$1(function (Provider, AppMainView) {
-    return render(React__default.createElement(Provider, null, React__default.createElement(reactRouterDom.StaticRouter, {
-      location: location
-    }, React__default.createElement(AppMainView, null))));
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  return renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream);
 }
+var Switch = function Switch(_ref) {
+  var children = _ref.children,
+      elseView = _ref.elseView;
+
+  if (!children || Array.isArray(children) && children.every(function (item) {
+    return !item;
+  })) {
+    return React__default.createElement(React__default.Fragment, null, elseView);
+  } else {
+    return React__default.createElement(React__default.Fragment, null, children);
+  }
+};
+
+function isModifiedEvent(event) {
+  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
+}
+
+var Link = React__default.forwardRef(function (_ref2, ref) {
+  var _onClick = _ref2.onClick,
+      replace = _ref2.replace,
+      rest = _objectWithoutPropertiesLoose(_ref2, ["onClick", "replace"]);
+
+  var target = rest.target;
+  var props = Object.assign({}, rest, {
+    onClick: function onClick(event) {
+      try {
+        _onClick && _onClick(event);
+      } catch (ex) {
+        event.preventDefault();
+        throw ex;
+      }
+
+      if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
+          event.preventDefault();
+          replace ? historyActions.replace(rest.href) : historyActions.push(rest.href);
+        }
+    }
+  });
+  return React__default.createElement("a", _extends({}, props, {
+    ref: ref
+  }));
+});
 
 exports.ActionTypes = ActionTypes;
 exports.BaseModelHandlers = BaseModelHandlers;
+exports.Link = Link;
+exports.Switch = Switch;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
 exports.delayPromise = delayPromise;

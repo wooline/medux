@@ -1,4 +1,7 @@
-import {Location, TransformRoute, fillRouteData} from '../index';
+import {MeduxLocation, TransformRoute} from '@medux/web';
+
+import {fillRouteData} from '../index';
+
 describe('routeToLocation：', () => {
   test('/', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
@@ -199,7 +202,7 @@ describe('routeToLocation：', () => {
 describe('locationToRoute：', () => {
   test('/', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}},
@@ -210,7 +213,7 @@ describe('locationToRoute：', () => {
   });
   test('/?q={"photos":{"listSearch":{"page":2}}}', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/', search: '?q={"photos":{"listSearch":{"page":2}}}', hash: ''};
+    const location: MeduxLocation = {pathname: '/', search: '?q={"photos":{"listSearch":{"page":2}}}', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}},
@@ -221,7 +224,7 @@ describe('locationToRoute：', () => {
   });
   test('/photos', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {List: true}},
@@ -233,7 +236,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {List: true}},
@@ -245,7 +248,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/2', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}},
@@ -257,7 +260,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2/comments', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/2/comments', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, List: true}},
@@ -279,7 +282,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2/comments', search: '', hash: '#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}'};
+    const location: MeduxLocation = {pathname: '/photos/2/comments', search: '', hash: '#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}'};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, List: true}},
@@ -301,7 +304,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2/comments/8', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/2/comments/8', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, Details: true}},
@@ -322,7 +325,7 @@ describe('locationToRoute：', () => {
   });
   test('/photos/2/comments/8/', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2/comments/8/', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/2/comments/8/', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, Details: true}},
@@ -343,7 +346,7 @@ describe('locationToRoute：', () => {
   });
   test('/photos/2/comments/8/99', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2/comments/8/99', search: '', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/2/comments/8/99', search: '', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, DetailsList: true}},
@@ -364,7 +367,7 @@ describe('locationToRoute：', () => {
   });
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}}}&b=swf', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2/comments/8/', search: '?q={"photos":{"listSearch":{"page":3}}}&b=swf', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/2/comments/8/', search: '?q={"photos":{"listSearch":{"page":3}}}&b=swf', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, Details: true}},
@@ -386,7 +389,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {pathname: '/photos/2/comments/8/', search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf', hash: ''};
+    const location: MeduxLocation = {pathname: '/photos/2/comments/8/', search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf', hash: ''};
     const route = transformRoute.locationToRoute(location);
     expect(route).toEqual({
       views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, Details: true}},
@@ -408,7 +411,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {
+    const location: MeduxLocation = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf',
       hash: '#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf',
@@ -434,7 +437,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {
+    const location: MeduxLocation = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
       hash: '',
@@ -461,7 +464,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8/?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {
+    const location: MeduxLocation = {
       pathname: '/photos/2/comments/8/',
       search: '?q={"photos":{"listSearch":{"page":3}},"comments":{"listSearch":{"isNewest":true}}}&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
       hash: '#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf',
@@ -488,7 +491,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8/?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {
+    const location: MeduxLocation = {
       pathname: '/photos/2/comments/8/',
       search: '?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
       hash: '#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf',
@@ -515,7 +518,7 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8/99?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
-    const location: Location = {
+    const location: MeduxLocation = {
       pathname: '/photos/2/comments/8/99',
       search: '?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
       hash: '#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf',
