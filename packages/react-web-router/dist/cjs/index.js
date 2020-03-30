@@ -7,6 +7,10 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var _extends = _interopDefault(require('@babel/runtime/helpers/extends'));
 var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/helpers/objectWithoutPropertiesLoose'));
 var history = require('history');
+var React = require('react');
+var React__default = _interopDefault(React);
+var _extends$1 = _interopDefault(require('@babel/runtime/helpers/esm/extends'));
+var _objectWithoutPropertiesLoose$1 = _interopDefault(require('@babel/runtime/helpers/esm/objectWithoutPropertiesLoose'));
 var _assertThisInitialized = _interopDefault(require('@babel/runtime/helpers/esm/assertThisInitialized'));
 require('@babel/runtime/helpers/esm/possibleConstructorReturn');
 require('@babel/runtime/helpers/esm/getPrototypeOf');
@@ -16,10 +20,6 @@ var redux = require('redux');
 var _regeneratorRuntime = _interopDefault(require('@babel/runtime/regenerator'));
 var _asyncToGenerator = _interopDefault(require('@babel/runtime/helpers/esm/asyncToGenerator'));
 var _decorate = _interopDefault(require('@babel/runtime/helpers/esm/decorate'));
-var React = require('react');
-var React__default = _interopDefault(React);
-var _extends$1 = _interopDefault(require('@babel/runtime/helpers/esm/extends'));
-var _objectWithoutPropertiesLoose$1 = _interopDefault(require('@babel/runtime/helpers/esm/objectWithoutPropertiesLoose'));
 var server = require('react-dom/server');
 var reactRedux = require('react-redux');
 var ReactDOM = _interopDefault(require('react-dom'));
@@ -1088,6 +1088,14 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
   }
 
   var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  var storeState = store.getState();
+  var _storeState$route$dat = storeState.route.data,
+      paths = _storeState$route$dat.paths,
+      views = _storeState$route$dat.views;
+  console.log({
+    paths: paths,
+    views: views
+  });
   var reduxStore = store;
   var preModuleNames = [appModuleName];
 
@@ -1117,7 +1125,7 @@ function renderSSR(_x, _x2, _x3, _x4, _x5) {
 
 function _renderSSR() {
   _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
-    var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+    var ssrInitStoreKey, store, storeState, _storeState$route$dat2, paths, views, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
     return _regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
@@ -1131,44 +1139,48 @@ function _renderSSR() {
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             storeState = store.getState();
-            paths = storeState.route.data.paths;
+            _storeState$route$dat2 = storeState.route.data, paths = _storeState$route$dat2.paths, views = _storeState$route$dat2.views;
+            console.log({
+              paths: paths,
+              views: views
+            });
             paths.length === 0 && paths.push(appModuleName);
             appModule = undefined;
             inited = {};
             i = 0, k = paths.length;
 
-          case 10:
+          case 11:
             if (!(i < k)) {
-              _context.next = 21;
+              _context.next = 22;
               break;
             }
 
             _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
 
             if (inited[_moduleName]) {
-              _context.next = 18;
+              _context.next = 19;
               break;
             }
 
             inited[_moduleName] = true;
             module = moduleGetter[_moduleName]();
-            _context.next = 17;
+            _context.next = 18;
             return module.default.model(store, undefined);
 
-          case 17:
+          case 18:
             if (i === 0) {
               appModule = module;
             }
 
-          case 18:
+          case 19:
             i++;
-            _context.next = 10;
+            _context.next = 11;
             break;
 
-          case 21:
+          case 22:
             return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
 
-          case 22:
+          case 23:
           case "end":
             return _context.stop();
         }
@@ -1177,6 +1189,90 @@ function _renderSSR() {
   }));
   return _renderSSR.apply(this, arguments);
 }
+
+function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container) {
+  if (container === void 0) {
+    container = 'root';
+  }
+
+  return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
+
+    if (typeof container === 'function') {
+      container(reduxProvider);
+    } else {
+      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+    }
+  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+}
+function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream) {
+  if (storeOptions === void 0) {
+    storeOptions = {};
+  }
+
+  if (renderToStream === void 0) {
+    renderToStream = false;
+  }
+
+  return renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
+    var data = store.getState();
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
+    var render = renderToStream ? server.renderToNodeStream : server.renderToString;
+    return {
+      store: store,
+      ssrInitStoreKey: ssrInitStoreKey,
+      data: data,
+      html: render(reduxProvider)
+    };
+  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+}
+var loadView = function loadView(moduleName, viewName, options, Loading) {
+  var _ref = options || {},
+      forwardRef = _ref.forwardRef,
+      modelOptions = _objectWithoutPropertiesLoose$1(_ref, ["forwardRef"]);
+
+  var Loader = function ViewLoader(props) {
+    var _useState = React.useState(function () {
+      var moduleViewResult = getView(moduleName, viewName, modelOptions);
+
+      if (isPromiseView(moduleViewResult)) {
+        moduleViewResult.then(function (Component) {
+          setView({
+            Component: Component
+          });
+        });
+        return null;
+      } else {
+        return {
+          Component: moduleViewResult
+        };
+      }
+    }),
+        view = _useState[0],
+        setView = _useState[1];
+
+    var forwardRef = props.forwardRef,
+        other = _objectWithoutPropertiesLoose$1(props, ["forwardRef"]);
+
+    var ref = forwardRef ? {
+      ref: forwardRef
+    } : {};
+    return view ? React__default.createElement(view.Component, _extends$1({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
+  };
+
+  var Component = forwardRef ? React__default.forwardRef(function (props, ref) {
+    return React__default.createElement(Loader, _extends$1({}, props, {
+      forwardRef: ref
+    }));
+  }) : Loader;
+  return Component;
+};
+var exportModule$1 = exportModule;
 
 function _createForOfIteratorHelperLoose(o) {
   var i = 0;
@@ -1864,6 +1960,7 @@ var deepExtend = module.exports = function ()
 };
 });
 
+var deepAssign = deepExtend_1;
 var config$1 = {
   escape: true,
   dateParse: true,
@@ -2009,7 +2106,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
           pathConfig = _ref[1];
 
       var match = matchPath(pathname, {
-        path: _rule,
+        path: _rule.replace(/\$$/, ''),
         exact: !pathConfig
       });
 
@@ -2285,6 +2382,7 @@ function buildTransformRoute(routeConfig) {
     routeToLocation: routeToLocation
   };
 }
+
 function fillBrowserRouteData(routePayload) {
   var extend = routePayload.extend || {
     views: {},
@@ -2295,162 +2393,14 @@ function fillBrowserRouteData(routePayload) {
   var stackParams = [].concat(extend.stackParams);
 
   if (routePayload.params) {
-    stackParams[0] = deepExtend_1({}, stackParams[0], routePayload.params);
+    stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
   }
 
   return assignRouteData(routePayload.paths || extend.paths, stackParams);
 }
 
 function isBrowserRoutePayload(data) {
-  return typeof data !== 'string' && !data['pathname'];
-}
-
-function getBrowserRouteActions(getBrowserHistoryActions) {
-  return {
-    push: function push(data) {
-      if (isBrowserRoutePayload(data)) {
-        var args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().push(args);
-      } else {
-        getBrowserHistoryActions().push(data);
-      }
-    },
-    replace: function replace(data) {
-      if (isBrowserRoutePayload(data)) {
-        var args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().replace(args);
-      } else {
-        getBrowserHistoryActions().replace(data);
-      }
-    },
-    go: function go(n) {
-      getBrowserHistoryActions().go(n);
-    },
-    goBack: function goBack() {
-      getBrowserHistoryActions().goBack();
-    },
-    goForward: function goForward() {
-      getBrowserHistoryActions().goForward();
-    }
-  };
-}
-function buildToBrowserUrl(getTransformRoute) {
-  function toUrl() {
-    for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
-      args[_key2] = arguments[_key2];
-    }
-
-    if (args.length === 1) {
-      var location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
-      args = [location.pathname, location.search, location.hash];
-    }
-
-    var _ref3 = args,
-        pathname = _ref3[0],
-        search = _ref3[1],
-        hash = _ref3[2];
-    var url = pathname;
-
-    if (search) {
-      url += search;
-    }
-
-    if (hash) {
-      url += hash;
-    }
-
-    return url;
-  }
-
-  return toUrl;
-}
-
-function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container) {
-  if (container === void 0) {
-    container = 'root';
-  }
-
-  return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
-    var reduxProvider = React__default.createElement(reactRedux.Provider, {
-      store: store
-    }, React__default.createElement(appViews.Main, null));
-
-    if (typeof container === 'function') {
-      container(reduxProvider);
-    } else {
-      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
-    }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
-}
-function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream) {
-  if (storeOptions === void 0) {
-    storeOptions = {};
-  }
-
-  if (renderToStream === void 0) {
-    renderToStream = false;
-  }
-
-  return renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
-    var data = store.getState();
-    var reduxProvider = React__default.createElement(reactRedux.Provider, {
-      store: store
-    }, React__default.createElement(appViews.Main, null));
-    var render = renderToStream ? server.renderToNodeStream : server.renderToString;
-    return {
-      store: store,
-      ssrInitStoreKey: ssrInitStoreKey,
-      data: data,
-      html: render(reduxProvider)
-    };
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
-}
-var loadView = function loadView(moduleName, viewName, options, Loading) {
-  var _ref = options || {},
-      forwardRef = _ref.forwardRef,
-      modelOptions = _objectWithoutPropertiesLoose$1(_ref, ["forwardRef"]);
-
-  var Loader = function ViewLoader(props) {
-    var _useState = React.useState(function () {
-      var moduleViewResult = getView(moduleName, viewName, modelOptions);
-
-      if (isPromiseView(moduleViewResult)) {
-        moduleViewResult.then(function (Component) {
-          setView({
-            Component: Component
-          });
-        });
-        return null;
-      } else {
-        return {
-          Component: moduleViewResult
-        };
-      }
-    }),
-        view = _useState[0],
-        setView = _useState[1];
-
-    var forwardRef = props.forwardRef,
-        other = _objectWithoutPropertiesLoose$1(props, ["forwardRef"]);
-
-    var ref = forwardRef ? {
-      ref: forwardRef
-    } : {};
-    return view ? React__default.createElement(view.Component, _extends$1({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
-  };
-
-  var Component = forwardRef ? React__default.forwardRef(function (props, ref) {
-    return React__default.createElement(Loader, _extends$1({}, props, {
-      forwardRef: ref
-    }));
-  }) : Loader;
-  return Component;
-};
-var exportModule$1 = exportModule;
-
-function isMeduxLocation(data) {
-  return !!data['pathname'];
+  return !data['pathname'];
 }
 
 var BrowserHistoryProxy = function () {
@@ -2488,80 +2438,103 @@ var BrowserHistoryProxy = function () {
   return BrowserHistoryProxy;
 }();
 
-var HistoryActionsModule = function () {
-  function HistoryActionsModule(history, routeToLocation) {
-    this.history = history;
-    this.routeToLocation = routeToLocation;
+function createRouter(history, routeConfig) {
+  var transformRoute = buildTransformRoute(routeConfig);
+  var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+  var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
+  var historyActions = {
+    push: function push(data) {
+      if (typeof data === 'string') {
+        history.push(data);
+      } else if (isBrowserRoutePayload(data)) {
+        var routeData = fillBrowserRouteData(data);
+
+        var _location = transformRoute.routeToLocation(routeData);
+
+        history.push(Object.assign({}, _location, {
+          state: routeData
+        }));
+      } else {
+        history.push(Object.assign({}, data, {
+          state: undefined
+        }));
+      }
+    },
+    replace: function replace(data) {
+      if (typeof data === 'string') {
+        history.replace(data);
+      } else if (isBrowserRoutePayload(data)) {
+        var routeData = fillBrowserRouteData(data);
+
+        var _location2 = transformRoute.routeToLocation(routeData);
+
+        history.replace(Object.assign({}, _location2, {
+          state: routeData
+        }));
+      } else {
+        history.replace(Object.assign({}, data, {
+          state: undefined
+        }));
+      }
+    },
+    go: function go(n) {
+      history.go(n);
+    },
+    goBack: function goBack() {
+      history.goBack();
+    },
+    goForward: function goForward() {
+      history.goForward();
+    }
+  };
+  return {
+    transformRoute: transformRoute,
+    historyProxy: historyProxy,
+    historyActions: historyActions,
+    toBrowserUrl: toBrowserUrl
+  };
+}
+
+function buildToBrowserUrl(routeToLocation) {
+  function toUrl() {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    if (args.length === 1) {
+      var _location3 = routeToLocation(fillBrowserRouteData(args[0]));
+
+      args = [_location3.pathname, _location3.search, _location3.hash];
+    }
+
+    var _ref = args,
+        pathname = _ref[0],
+        search = _ref[1],
+        hash = _ref[2];
+    var url = pathname;
+
+    if (search) {
+      url += search;
+    }
+
+    if (hash) {
+      url += hash;
+    }
+
+    return url;
   }
 
-  var _proto2 = HistoryActionsModule.prototype;
-
-  _proto2.push = function push(data) {
-    if (typeof data === 'string') {
-      this.history.push(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.push(Object.assign({}, data, {
-        state: undefined
-      }));
-    } else {
-      var _location = this.routeToLocation(data);
-
-      this.history.push(Object.assign({}, _location, {
-        state: data
-      }));
-    }
-  };
-
-  _proto2.replace = function replace(data) {
-    if (typeof data === 'string') {
-      this.history.replace(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.replace(Object.assign({}, data, {
-        state: undefined
-      }));
-    } else {
-      var _location2 = this.routeToLocation(data);
-
-      this.history.replace(Object.assign({}, _location2, {
-        state: data
-      }));
-    }
-  };
-
-  _proto2.go = function go(n) {
-    this.history.go(n);
-  };
-
-  _proto2.goBack = function goBack() {
-    this.history.goBack();
-  };
-
-  _proto2.goForward = function goForward() {
-    this.history.goForward();
-  };
-
-  return HistoryActionsModule;
-}();
-
-function createHistory(history, transformRoute) {
-  var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  var historyActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
-  return {
-    historyProxy: historyProxy,
-    historyActions: historyActions
-  };
+  return toUrl;
 }
 
 var historyActions = undefined;
 var transformRoute = undefined;
-function getBrowserHistory() {
+var toBrowserUrl = undefined;
+function getBrowserRouter() {
   return {
-    historyActions: getBrowserRouteActions(function () {
-      return historyActions;
-    }),
-    toUrl: buildToBrowserUrl(function () {
-      return transformRoute;
-    })
+    transformRoute: transformRoute,
+    historyActions: historyActions,
+    toUrl: toBrowserUrl
   };
 }
 function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
@@ -2573,14 +2546,11 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
     container = 'root';
   }
 
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-
-  var historyData = createHistory(history, transformRoute);
-  var historyProxy = historyData.historyProxy;
-  historyActions = historyData.historyActions;
-  return renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container);
+  var router = createRouter(history, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderApp$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, container);
 }
 function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
@@ -2591,19 +2561,16 @@ function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptio
     renderToStream = false;
   }
 
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-
-  var historyData = createHistory({
+  var router = createRouter({
     listen: function listen() {
       return void 0;
     },
     location: history.createLocation(location)
-  }, transformRoute);
-  var historyProxy = historyData.historyProxy;
-  historyActions = historyData.historyActions;
-  return renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream);
+  }, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderSSR$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream);
 }
 var Switch = function Switch(_ref) {
   var children = _ref.children,
@@ -2659,7 +2626,7 @@ exports.effect = effect;
 exports.errorAction = errorAction;
 exports.exportActions = exportActions;
 exports.exportModule = exportModule$1;
-exports.getBrowserHistory = getBrowserHistory;
+exports.getBrowserRouter = getBrowserRouter;
 exports.loadView = loadView;
 exports.reducer = reducer;
 exports.setRouteConfig = setRouteConfig;

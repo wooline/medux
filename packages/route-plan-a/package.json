@@ -23,7 +23,7 @@
     "main.js"
   ],
   "scripts": {
-    "prebuild": "yarn lint && rimraf ./dist ./types && yarn types  && yarn test",
+    "prebuild": "yarn lint && rimraf ./dist ./types && yarn types && yarn test",
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
     "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
@@ -37,7 +37,6 @@
   },
   "dependencies": {
     "@medux/core": "^0.2.28",
-    "@medux/web": "^0.2.28",
     "deep-extend": "~0.6.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"

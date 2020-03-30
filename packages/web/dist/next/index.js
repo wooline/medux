@@ -1,8 +1,24 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+import { assignRouteData, buildTransformRoute, deepAssign } from '@medux/route-plan-a';
 export { createBrowserHistory, createMemoryHistory, createHashHistory } from 'history';
+export function fillBrowserRouteData(routePayload) {
+  const extend = routePayload.extend || {
+    views: {},
+    paths: [],
+    stackParams: [],
+    params: {}
+  };
+  const stackParams = [...extend.stackParams];
 
-function isMeduxLocation(data) {
-  return !!data['pathname'];
+  if (routePayload.params) {
+    stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
+  }
+
+  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+}
+
+function isBrowserRoutePayload(data) {
+  return !data['pathname'];
 }
 
 class BrowserHistoryProxy {
@@ -37,61 +53,84 @@ class BrowserHistoryProxy {
 
 }
 
-class HistoryActionsModule {
-  constructor(history, routeToLocation) {
-    this.history = history;
-    this.routeToLocation = routeToLocation;
-  }
+export function createRouter(history, routeConfig) {
+  const transformRoute = buildTransformRoute(routeConfig);
+  const toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+  const historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
+  const historyActions = {
+    push(data) {
+      if (typeof data === 'string') {
+        history.push(data);
+      } else if (isBrowserRoutePayload(data)) {
+        const routeData = fillBrowserRouteData(data);
+        const location = transformRoute.routeToLocation(routeData);
+        history.push(Object.assign({}, location, {
+          state: routeData
+        }));
+      } else {
+        history.push(Object.assign({}, data, {
+          state: undefined
+        }));
+      }
+    },
 
-  push(data) {
-    if (typeof data === 'string') {
-      this.history.push(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.push(Object.assign({}, data, {
-        state: undefined
-      }));
-    } else {
-      const location = this.routeToLocation(data);
-      this.history.push(Object.assign({}, location, {
-        state: data
-      }));
+    replace(data) {
+      if (typeof data === 'string') {
+        history.replace(data);
+      } else if (isBrowserRoutePayload(data)) {
+        const routeData = fillBrowserRouteData(data);
+        const location = transformRoute.routeToLocation(routeData);
+        history.replace(Object.assign({}, location, {
+          state: routeData
+        }));
+      } else {
+        history.replace(Object.assign({}, data, {
+          state: undefined
+        }));
+      }
+    },
+
+    go(n) {
+      history.go(n);
+    },
+
+    goBack() {
+      history.goBack();
+    },
+
+    goForward() {
+      history.goForward();
     }
-  }
 
-  replace(data) {
-    if (typeof data === 'string') {
-      this.history.replace(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.replace(Object.assign({}, data, {
-        state: undefined
-      }));
-    } else {
-      const location = this.routeToLocation(data);
-      this.history.replace(Object.assign({}, location, {
-        state: data
-      }));
-    }
-  }
-
-  go(n) {
-    this.history.go(n);
-  }
-
-  goBack() {
-    this.history.goBack();
-  }
-
-  goForward() {
-    this.history.goForward();
-  }
-
+  };
+  return {
+    transformRoute,
+    historyProxy,
+    historyActions,
+    toBrowserUrl
+  };
 }
 
-export function createHistory(history, transformRoute) {
-  const historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  const historyActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
-  return {
-    historyProxy,
-    historyActions
-  };
+function buildToBrowserUrl(routeToLocation) {
+  function toUrl(...args) {
+    if (args.length === 1) {
+      const location = routeToLocation(fillBrowserRouteData(args[0]));
+      args = [location.pathname, location.search, location.hash];
+    }
+
+    const [pathname, search, hash] = args;
+    let url = pathname;
+
+    if (search) {
+      url += search;
+    }
+
+    if (hash) {
+      url += hash;
+    }
+
+    return url;
+  }
+
+  return toUrl;
 }

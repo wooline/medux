@@ -1,6 +1,7 @@
 import { config as coreConfig } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend';
+export const deepAssign = assignDeep;
 const config = {
   escape: true,
   dateParse: true,
@@ -139,7 +140,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
       const item = routeConfig[rule];
       const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
       const match = matchPath(pathname, {
-        path: rule,
+        path: rule.replace(/\$$/, ''),
         exact: !pathConfig
       });
 
@@ -198,7 +199,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName = '', viewToRule = {}
   };
 }
 
-function assignRouteData(paths, stackParams, args) {
+export function assignRouteData(paths, stackParams, args) {
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
@@ -241,7 +242,6 @@ function assignRouteData(paths, stackParams, args) {
     stackParams
   };
 }
-
 export function fillRouteData(routePayload) {
   const extend = routePayload.extend || {
     views: {},
@@ -412,81 +412,4 @@ export function buildTransformRoute(routeConfig) {
     locationToRoute,
     routeToLocation
   };
-}
-export function fillBrowserRouteData(routePayload) {
-  const extend = routePayload.extend || {
-    views: {},
-    paths: [],
-    stackParams: [],
-    params: {}
-  };
-  const stackParams = [...extend.stackParams];
-
-  if (routePayload.params) {
-    stackParams[0] = assignDeep({}, stackParams[0], routePayload.params);
-  }
-
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
-}
-
-function isBrowserRoutePayload(data) {
-  return typeof data !== 'string' && !data['pathname'];
-}
-
-export function getBrowserRouteActions(getBrowserHistoryActions) {
-  return {
-    push(data) {
-      if (isBrowserRoutePayload(data)) {
-        const args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().push(args);
-      } else {
-        getBrowserHistoryActions().push(data);
-      }
-    },
-
-    replace(data) {
-      if (isBrowserRoutePayload(data)) {
-        const args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().replace(args);
-      } else {
-        getBrowserHistoryActions().replace(data);
-      }
-    },
-
-    go(n) {
-      getBrowserHistoryActions().go(n);
-    },
-
-    goBack() {
-      getBrowserHistoryActions().goBack();
-    },
-
-    goForward() {
-      getBrowserHistoryActions().goForward();
-    }
-
-  };
-}
-export function buildToBrowserUrl(getTransformRoute) {
-  function toUrl(...args) {
-    if (args.length === 1) {
-      const location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
-      args = [location.pathname, location.search, location.hash];
-    }
-
-    const [pathname, search, hash] = args;
-    let url = pathname;
-
-    if (search) {
-      url += search;
-    }
-
-    if (hash) {
-      url += hash;
-    }
-
-    return url;
-  }
-
-  return toUrl;
 }

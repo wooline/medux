@@ -290,6 +290,15 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   }
 
   const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const storeState = store.getState();
+  const {
+    paths,
+    views
+  } = storeState.route.data;
+  console.log({
+    paths,
+    views
+  });
   const reduxStore = store;
   const preModuleNames = [appModuleName];
 
@@ -314,8 +323,13 @@ export async function renderSSR(render, moduleGetter, appModuleName, history, st
   const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const storeState = store.getState();
   const {
-    paths
+    paths,
+    views
   } = storeState.route.data;
+  console.log({
+    paths,
+    views
+  });
   paths.length === 0 && paths.push(appModuleName);
   let appModule = undefined;
   const inited = {};

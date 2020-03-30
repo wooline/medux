@@ -1,6 +1,4 @@
-import {MeduxLocation, TransformRoute} from '@medux/web';
-
-import {fillRouteData} from '../index';
+import {MeduxLocation, TransformRoute, fillRouteData} from '../index';
 
 describe('routeToLocation：', () => {
   test('/', () => {

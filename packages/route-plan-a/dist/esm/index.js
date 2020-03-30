@@ -1,6 +1,7 @@
 import { config as coreConfig } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from 'deep-extend';
+export var deepAssign = assignDeep;
 var config = {
   escape: true,
   dateParse: true,
@@ -146,7 +147,7 @@ function pathnameParse(pathname, routeConfig, paths, args) {
           pathConfig = _ref[1];
 
       var match = matchPath(pathname, {
-        path: _rule,
+        path: _rule.replace(/\$$/, ''),
         exact: !pathConfig
       });
 
@@ -221,7 +222,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   };
 }
 
-function assignRouteData(paths, stackParams, args) {
+export function assignRouteData(paths, stackParams, args) {
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
@@ -266,7 +267,6 @@ function assignRouteData(paths, stackParams, args) {
     stackParams: stackParams
   };
 }
-
 export function fillRouteData(routePayload) {
   var extend = routePayload.extend || {
     views: {},
@@ -441,83 +441,4 @@ export function buildTransformRoute(routeConfig) {
     locationToRoute: locationToRoute,
     routeToLocation: routeToLocation
   };
-}
-export function fillBrowserRouteData(routePayload) {
-  var extend = routePayload.extend || {
-    views: {},
-    paths: [],
-    stackParams: [],
-    params: {}
-  };
-  var stackParams = [].concat(extend.stackParams);
-
-  if (routePayload.params) {
-    stackParams[0] = assignDeep({}, stackParams[0], routePayload.params);
-  }
-
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
-}
-
-function isBrowserRoutePayload(data) {
-  return typeof data !== 'string' && !data['pathname'];
-}
-
-export function getBrowserRouteActions(getBrowserHistoryActions) {
-  return {
-    push: function push(data) {
-      if (isBrowserRoutePayload(data)) {
-        var args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().push(args);
-      } else {
-        getBrowserHistoryActions().push(data);
-      }
-    },
-    replace: function replace(data) {
-      if (isBrowserRoutePayload(data)) {
-        var args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().replace(args);
-      } else {
-        getBrowserHistoryActions().replace(data);
-      }
-    },
-    go: function go(n) {
-      getBrowserHistoryActions().go(n);
-    },
-    goBack: function goBack() {
-      getBrowserHistoryActions().goBack();
-    },
-    goForward: function goForward() {
-      getBrowserHistoryActions().goForward();
-    }
-  };
-}
-export function buildToBrowserUrl(getTransformRoute) {
-  function toUrl() {
-    for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
-      args[_key2] = arguments[_key2];
-    }
-
-    if (args.length === 1) {
-      var location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
-      args = [location.pathname, location.search, location.hash];
-    }
-
-    var _ref3 = args,
-        pathname = _ref3[0],
-        search = _ref3[1],
-        hash = _ref3[2];
-    var url = pathname;
-
-    if (search) {
-      url += search;
-    }
-
-    if (hash) {
-      url += hash;
-    }
-
-    return url;
-  }
-
-  return toUrl;
 }

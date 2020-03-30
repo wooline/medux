@@ -1,8 +1,25 @@
 import {HistoryProxy, RouteData} from '@medux/core';
+import {LocationToRoute, MeduxLocation, RouteConfig, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
 
 import {History} from 'history';
 
 export {createBrowserHistory, createMemoryHistory, createHashHistory} from 'history';
+
+export interface BrowserRoutePayload<P = {}> {
+  extend?: RouteData;
+  params?: DeepPartial<P>;
+  paths?: string[];
+}
+
+export interface HistoryActions<P = {}> {
+  push(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
+  replace(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
+  go(n: number): void;
+  goBack(): void;
+  goForward(): void;
+}
+
+type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 interface BrowserLocation {
   pathname: string;
@@ -11,30 +28,17 @@ interface BrowserLocation {
   state: RouteData;
 }
 
-export interface MeduxLocation {
-  pathname: string;
-  search: string;
-  hash: string;
+export function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData {
+  const extend: RouteData = routePayload.extend || {views: {}, paths: [], stackParams: [], params: {}};
+  const stackParams = [...extend.stackParams];
+  if (routePayload.params) {
+    stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
+  }
+  return assignRouteData(routePayload.paths || extend.paths, stackParams);
 }
 
-export type RouteToLocation = (routeData: RouteData) => MeduxLocation;
-export type LocationToRoute = (location: MeduxLocation) => RouteData;
-
-export interface TransformRoute {
-  locationToRoute: LocationToRoute;
-  routeToLocation: RouteToLocation;
-}
-
-function isMeduxLocation(data: RouteData | MeduxLocation): data is MeduxLocation {
-  return !!data['pathname'];
-}
-
-export interface HistoryActions<P = RouteData> {
-  push(data: P | MeduxLocation | string): void;
-  replace(data: P | MeduxLocation | string): void;
-  go(n: number): void;
-  goBack(): void;
-  goForward(): void;
+function isBrowserRoutePayload(data: MeduxLocation | BrowserRoutePayload): data is BrowserRoutePayload {
+  return !data['pathname'];
 }
 class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
   public initialized = true;
@@ -56,44 +60,74 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
   }
 }
 
-class HistoryActionsModule implements HistoryActions {
-  public constructor(protected history: History, protected routeToLocation: RouteToLocation) {}
-  public push(data: RouteData | MeduxLocation | string): void {
-    if (typeof data === 'string') {
-      this.history.push(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.push({...data, state: undefined});
-    } else {
-      const location = this.routeToLocation(data);
-      this.history.push({...location, state: data});
-    }
-  }
-  public replace(data: RouteData | MeduxLocation | string): void {
-    if (typeof data === 'string') {
-      this.history.replace(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.replace({...data, state: undefined});
-    } else {
-      const location = this.routeToLocation(data);
-      this.history.replace({...location, state: data});
-    }
-  }
-  public go(n: number) {
-    this.history.go(n);
-  }
-  public goBack() {
-    this.history.goBack();
-  }
-  public goForward() {
-    this.history.goForward();
-  }
-}
-
-export function createHistory(history: History, transformRoute: TransformRoute) {
+export function createRouter(history: History, routeConfig: RouteConfig) {
+  const transformRoute: TransformRoute = buildTransformRoute(routeConfig);
+  const toBrowserUrl: ToBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   const historyProxy: HistoryProxy<BrowserLocation> = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  const historyActions: HistoryActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
+
+  const historyActions: HistoryActions = {
+    push(data) {
+      if (typeof data === 'string') {
+        history.push(data);
+      } else if (isBrowserRoutePayload(data)) {
+        const routeData = fillBrowserRouteData(data);
+        const location = transformRoute!.routeToLocation(routeData);
+        history.push({...location, state: routeData});
+      } else {
+        history.push({...data, state: undefined});
+      }
+    },
+    replace(data) {
+      if (typeof data === 'string') {
+        history.replace(data);
+      } else if (isBrowserRoutePayload(data)) {
+        const routeData = fillBrowserRouteData(data);
+        const location = transformRoute!.routeToLocation(routeData);
+        history.replace({...location, state: routeData});
+      } else {
+        history.replace({...data, state: undefined});
+      }
+    },
+    go(n: number) {
+      history.go(n);
+    },
+    goBack() {
+      history.goBack();
+    },
+    goForward() {
+      history.goForward();
+    },
+  };
+
   return {
+    transformRoute,
     historyProxy,
     historyActions,
+    toBrowserUrl,
   };
+}
+
+export interface ToBrowserUrl<T = {}> {
+  (routeOptions: BrowserRoutePayload<T>): string;
+  (pathname: string, search: string, hash: string): string;
+}
+function buildToBrowserUrl(routeToLocation: RouteToLocation): ToBrowserUrl<any> {
+  function toUrl(routeOptions: BrowserRoutePayload<any>): string;
+  function toUrl(pathname: string, search: string, hash: string): string;
+  function toUrl(...args: any[]): string {
+    if (args.length === 1) {
+      const location = routeToLocation(fillBrowserRouteData(args[0]));
+      args = [location.pathname, location.search, location.hash];
+    }
+    const [pathname, search, hash] = args as [string, string, string];
+    let url = pathname;
+    if (search) {
+      url += search;
+    }
+    if (hash) {
+      url += hash;
+    }
+    return url;
+  }
+  return toUrl;
 }

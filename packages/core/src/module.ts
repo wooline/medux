@@ -292,6 +292,9 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
     initData = {...client![ssrInitStoreKey], ...storeOptions.initData};
   }
   const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const storeState = store.getState() as StoreState;
+  const {paths, views} = storeState.route.data;
+  console.log({paths, views});
   const reduxStore: Store = store as any;
   const preModuleNames: string[] = [appModuleName];
   if (initData) {
@@ -320,7 +323,8 @@ export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof 
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const storeState = store.getState() as StoreState;
-  const {paths} = storeState.route.data;
+  const {paths, views} = storeState.route.data;
+  console.log({paths, views});
   paths.length === 0 && paths.push(appModuleName);
   let appModule: Module | undefined = undefined;
   const inited: {[moduleName: string]: boolean} = {};

@@ -1,5 +1,16 @@
 import { RouteData } from '@medux/core';
-import { HistoryActions, TransformRoute } from '@medux/web';
+export interface MeduxLocation {
+    pathname: string;
+    search: string;
+    hash: string;
+}
+export declare type RouteToLocation = (routeData: RouteData) => MeduxLocation;
+export declare type LocationToRoute = (location: MeduxLocation) => RouteData;
+export interface TransformRoute {
+    locationToRoute: LocationToRoute;
+    routeToLocation: RouteToLocation;
+}
+export declare const deepAssign: any;
 export declare function setRouteConfig(conf: {
     escape?: boolean;
     dateParse?: boolean;
@@ -19,19 +30,11 @@ export interface RoutePayload<P> {
     stackParams?: DeepPartial<P>[];
     paths?: string[];
 }
+export declare function assignRouteData(paths: string[], stackParams: {
+    [moduleName: string]: any;
+}[], args?: {
+    [moduleName: string]: any;
+}): RouteData;
 export declare function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
-export interface BrowserRoutePayload<P> {
-    extend?: RouteData;
-    params?: DeepPartial<P>;
-    paths?: string[];
-}
-export declare function fillBrowserRouteData<R>(routePayload: BrowserRoutePayload<R>): RouteData;
-export declare type BrowserHistoryActions<T> = HistoryActions<BrowserRoutePayload<T>>;
-export declare function getBrowserRouteActions<T>(getBrowserHistoryActions: () => HistoryActions<RouteData>): BrowserHistoryActions<T>;
-export interface ToBrowserUrl<T> {
-    (routeOptions: BrowserRoutePayload<T>): string;
-    (pathname: string, search: string, hash: string): string;
-}
-export declare function buildToBrowserUrl(getTransformRoute: () => TransformRoute): ToBrowserUrl<any>;
 export {};

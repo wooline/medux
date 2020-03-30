@@ -1,23 +1,20 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import { createLocation } from 'history';
-import { buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions } from '@medux/route-plan-a';
 import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
-import { createHistory } from '@medux/web';
+import { createRouter } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 var historyActions = undefined;
 var transformRoute = undefined;
-export function getBrowserHistory() {
+var toBrowserUrl = undefined;
+export function getBrowserRouter() {
   return {
-    historyActions: getBrowserRouteActions(function () {
-      return historyActions;
-    }),
-    toUrl: buildToBrowserUrl(function () {
-      return transformRoute;
-    })
+    transformRoute: transformRoute,
+    historyActions: historyActions,
+    toUrl: toBrowserUrl
   };
 }
 export function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
@@ -29,14 +26,11 @@ export function buildApp(moduleGetter, appModuleName, history, routeConfig, stor
     container = 'root';
   }
 
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-
-  var historyData = createHistory(history, transformRoute);
-  var historyProxy = historyData.historyProxy;
-  historyActions = historyData.historyActions;
-  return renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container);
+  var router = createRouter(history, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container);
 }
 export function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream) {
   if (storeOptions === void 0) {
@@ -47,19 +41,16 @@ export function buildSSR(moduleGetter, appModuleName, location, routeConfig, sto
     renderToStream = false;
   }
 
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-
-  var historyData = createHistory({
+  var router = createRouter({
     listen: function listen() {
       return void 0;
     },
     location: createLocation(location)
-  }, transformRoute);
-  var historyProxy = historyData.historyProxy;
-  historyActions = historyData.historyActions;
-  return renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream);
+  }, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream);
 }
 export var Switch = function Switch(_ref) {
   var children = _ref.children,

@@ -1,47 +1,38 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import { createLocation } from 'history';
-import { buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions } from '@medux/route-plan-a';
 import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
-import { createHistory } from '@medux/web';
+import { createRouter } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 let historyActions = undefined;
 let transformRoute = undefined;
-export function getBrowserHistory() {
+let toBrowserUrl = undefined;
+export function getBrowserRouter() {
   return {
-    historyActions: getBrowserRouteActions(() => historyActions),
-    toUrl: buildToBrowserUrl(() => transformRoute)
+    transformRoute: transformRoute,
+    historyActions: historyActions,
+    toUrl: toBrowserUrl
   };
 }
 export function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions = {}, container = 'root') {
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-
-  const historyData = createHistory(history, transformRoute);
-  const {
-    historyProxy
-  } = historyData;
-  historyActions = historyData.historyActions;
-  return renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container);
+  const router = createRouter(history, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container);
 }
 export function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions = {}, renderToStream = false) {
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-
-  const historyData = createHistory({
+  const router = createRouter({
     listen: () => void 0,
     location: createLocation(location)
-  }, transformRoute);
-  const {
-    historyProxy
-  } = historyData;
-  historyActions = historyData.historyActions;
-  return renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream);
+  }, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream);
 }
 export const Switch = ({
   children,

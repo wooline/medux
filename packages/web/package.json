@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@medux/core": "^0.2.28",
+    "@medux/route-plan-a": "^0.2.28",
     "@types/history": "~4.7.2",
     "history": "~4.10.1"
   },

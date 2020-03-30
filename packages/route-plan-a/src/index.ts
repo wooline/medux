@@ -1,8 +1,23 @@
 import {DisplayViews, RouteData, config as coreConfig} from '@medux/core';
-import {HistoryActions, LocationToRoute, MeduxLocation, RouteToLocation, TransformRoute} from '@medux/web';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import assignDeep from 'deep-extend';
+
+export interface MeduxLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
+export type RouteToLocation = (routeData: RouteData) => MeduxLocation;
+export type LocationToRoute = (location: MeduxLocation) => RouteData;
+
+export interface TransformRoute {
+  locationToRoute: LocationToRoute;
+  routeToLocation: RouteToLocation;
+}
+
+export const deepAssign = assignDeep;
 
 const config = {
   escape: true,
@@ -160,7 +175,7 @@ function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string
     if (routeConfig.hasOwnProperty(rule)) {
       const item = routeConfig[rule];
       const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-      const match = matchPath(pathname, {path: rule, exact: !pathConfig});
+      const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: !pathConfig});
       // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
       if (match) {
         paths.push(viewName);
@@ -210,7 +225,7 @@ export interface RoutePayload<P> {
   paths?: string[];
 }
 
-function assignRouteData(paths: string[], stackParams: {[moduleName: string]: any}[], args?: {[moduleName: string]: any}): RouteData {
+export function assignRouteData(paths: string[], stackParams: {[moduleName: string]: any}[], args?: {[moduleName: string]: any}): RouteData {
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
@@ -384,77 +399,6 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   };
 }
 //web中只有单个stack
-export interface BrowserRoutePayload<P> {
-  extend?: RouteData;
-  params?: DeepPartial<P>;
-  paths?: string[];
-}
-export function fillBrowserRouteData<R>(routePayload: BrowserRoutePayload<R>): RouteData {
-  const extend: RouteData = routePayload.extend || {views: {}, paths: [], stackParams: [], params: {}};
-  const stackParams = [...extend.stackParams];
-  if (routePayload.params) {
-    stackParams[0] = assignDeep({}, stackParams[0], routePayload.params);
-  }
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
-}
-
-function isBrowserRoutePayload(data: string | MeduxLocation | BrowserRoutePayload<any>): data is BrowserRoutePayload<any> {
-  return typeof data !== 'string' && !data['pathname'];
-}
-export type BrowserHistoryActions<T> = HistoryActions<BrowserRoutePayload<T>>;
-export function getBrowserRouteActions<T>(getBrowserHistoryActions: () => HistoryActions<RouteData>): BrowserHistoryActions<T> {
-  return {
-    push(data) {
-      if (isBrowserRoutePayload(data)) {
-        const args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().push(args);
-      } else {
-        getBrowserHistoryActions().push(data);
-      }
-    },
-    replace(data) {
-      if (isBrowserRoutePayload(data)) {
-        const args = fillBrowserRouteData(data);
-        getBrowserHistoryActions().replace(args);
-      } else {
-        getBrowserHistoryActions().replace(data);
-      }
-    },
-    go(n) {
-      getBrowserHistoryActions().go(n);
-    },
-    goBack() {
-      getBrowserHistoryActions().goBack();
-    },
-    goForward() {
-      getBrowserHistoryActions().goForward();
-    },
-  };
-}
-export interface ToBrowserUrl<T> {
-  (routeOptions: BrowserRoutePayload<T>): string;
-  (pathname: string, search: string, hash: string): string;
-}
-export function buildToBrowserUrl(getTransformRoute: () => TransformRoute): ToBrowserUrl<any> {
-  function toUrl(routeOptions: BrowserRoutePayload<any>): string;
-  function toUrl(pathname: string, search: string, hash: string): string;
-  function toUrl(...args: any[]): string {
-    if (args.length === 1) {
-      const location = getTransformRoute().routeToLocation(fillBrowserRouteData(args[0]));
-      args = [location.pathname, location.search, location.hash];
-    }
-    const [pathname, search, hash] = args as [string, string, string];
-    let url = pathname;
-    if (search) {
-      url += search;
-    }
-    if (hash) {
-      url += hash;
-    }
-    return url;
-  }
-  return toUrl;
-}
 
 // export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
 //   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);

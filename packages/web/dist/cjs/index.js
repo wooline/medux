@@ -5,10 +5,27 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var _defineProperty = _interopDefault(require('@babel/runtime/helpers/defineProperty'));
+var routePlanA = require('@medux/route-plan-a');
 var history = require('history');
 
-function isMeduxLocation(data) {
-  return !!data['pathname'];
+function fillBrowserRouteData(routePayload) {
+  var extend = routePayload.extend || {
+    views: {},
+    paths: [],
+    stackParams: [],
+    params: {}
+  };
+  var stackParams = [].concat(extend.stackParams);
+
+  if (routePayload.params) {
+    stackParams[0] = routePlanA.deepAssign({}, stackParams[0], routePayload.params);
+  }
+
+  return routePlanA.assignRouteData(routePayload.paths || extend.paths, stackParams);
+}
+
+function isBrowserRoutePayload(data) {
+  return !data['pathname'];
 }
 
 var BrowserHistoryProxy = function () {
@@ -46,68 +63,93 @@ var BrowserHistoryProxy = function () {
   return BrowserHistoryProxy;
 }();
 
-var HistoryActionsModule = function () {
-  function HistoryActionsModule(history, routeToLocation) {
-    this.history = history;
-    this.routeToLocation = routeToLocation;
+function createRouter(history, routeConfig) {
+  var transformRoute = routePlanA.buildTransformRoute(routeConfig);
+  var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+  var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
+  var historyActions = {
+    push: function push(data) {
+      if (typeof data === 'string') {
+        history.push(data);
+      } else if (isBrowserRoutePayload(data)) {
+        var routeData = fillBrowserRouteData(data);
+
+        var _location = transformRoute.routeToLocation(routeData);
+
+        history.push(Object.assign({}, _location, {
+          state: routeData
+        }));
+      } else {
+        history.push(Object.assign({}, data, {
+          state: undefined
+        }));
+      }
+    },
+    replace: function replace(data) {
+      if (typeof data === 'string') {
+        history.replace(data);
+      } else if (isBrowserRoutePayload(data)) {
+        var routeData = fillBrowserRouteData(data);
+
+        var _location2 = transformRoute.routeToLocation(routeData);
+
+        history.replace(Object.assign({}, _location2, {
+          state: routeData
+        }));
+      } else {
+        history.replace(Object.assign({}, data, {
+          state: undefined
+        }));
+      }
+    },
+    go: function go(n) {
+      history.go(n);
+    },
+    goBack: function goBack() {
+      history.goBack();
+    },
+    goForward: function goForward() {
+      history.goForward();
+    }
+  };
+  return {
+    transformRoute: transformRoute,
+    historyProxy: historyProxy,
+    historyActions: historyActions,
+    toBrowserUrl: toBrowserUrl
+  };
+}
+
+function buildToBrowserUrl(routeToLocation) {
+  function toUrl() {
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    if (args.length === 1) {
+      var _location3 = routeToLocation(fillBrowserRouteData(args[0]));
+
+      args = [_location3.pathname, _location3.search, _location3.hash];
+    }
+
+    var _ref = args,
+        pathname = _ref[0],
+        search = _ref[1],
+        hash = _ref[2];
+    var url = pathname;
+
+    if (search) {
+      url += search;
+    }
+
+    if (hash) {
+      url += hash;
+    }
+
+    return url;
   }
 
-  var _proto2 = HistoryActionsModule.prototype;
-
-  _proto2.push = function push(data) {
-    if (typeof data === 'string') {
-      this.history.push(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.push(Object.assign({}, data, {
-        state: undefined
-      }));
-    } else {
-      var _location = this.routeToLocation(data);
-
-      this.history.push(Object.assign({}, _location, {
-        state: data
-      }));
-    }
-  };
-
-  _proto2.replace = function replace(data) {
-    if (typeof data === 'string') {
-      this.history.replace(data);
-    } else if (isMeduxLocation(data)) {
-      this.history.replace(Object.assign({}, data, {
-        state: undefined
-      }));
-    } else {
-      var _location2 = this.routeToLocation(data);
-
-      this.history.replace(Object.assign({}, _location2, {
-        state: data
-      }));
-    }
-  };
-
-  _proto2.go = function go(n) {
-    this.history.go(n);
-  };
-
-  _proto2.goBack = function goBack() {
-    this.history.goBack();
-  };
-
-  _proto2.goForward = function goForward() {
-    this.history.goForward();
-  };
-
-  return HistoryActionsModule;
-}();
-
-function createHistory(history, transformRoute) {
-  var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
-  var historyActions = new HistoryActionsModule(history, transformRoute.routeToLocation);
-  return {
-    historyProxy: historyProxy,
-    historyActions: historyActions
-  };
+  return toUrl;
 }
 
 Object.defineProperty(exports, 'createBrowserHistory', {
@@ -128,4 +170,5 @@ Object.defineProperty(exports, 'createMemoryHistory', {
     return history.createMemoryHistory;
   }
 });
-exports.createHistory = createHistory;
+exports.createRouter = createRouter;
+exports.fillBrowserRouteData = fillBrowserRouteData;

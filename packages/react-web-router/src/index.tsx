@@ -1,66 +1,58 @@
-import * as plana from '@medux/route-plan-a';
-import * as web from '@medux/web';
+import {TransformRoute, MeduxLocation} from '@medux/route-plan-a';
 import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core';
 import {History, createLocation} from 'history';
-import {buildToBrowserUrl, buildTransformRoute, getBrowserRouteActions} from '@medux/route-plan-a';
 
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
-import {createHistory} from '@medux/web';
+import {HistoryActions, createRouter, ToBrowserUrl} from '@medux/web';
 
 export {loadView, exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
 
-export type {MeduxLocation, TransformRoute} from '@medux/web';
 export type {Actions, RouteData, BaseModelState} from '@medux/core';
 export type {LoadView} from '@medux/react';
-export type {BrowserRoutePayload, RouteConfig, ToBrowserUrl} from '@medux/route-plan-a';
+export type {RouteConfig} from '@medux/route-plan-a';
 
-let historyActions: web.HistoryActions | undefined = undefined;
-let transformRoute: web.TransformRoute | undefined = undefined;
+let historyActions: HistoryActions | undefined = undefined;
+let transformRoute: TransformRoute | undefined = undefined;
+let toBrowserUrl: ToBrowserUrl | undefined = undefined;
 
-export function getBrowserHistory<Params>(): {historyActions: plana.BrowserHistoryActions<Params>; toUrl: plana.ToBrowserUrl<Params>} {
-  return {historyActions: getBrowserRouteActions<Params>(() => historyActions!), toUrl: buildToBrowserUrl(() => transformRoute!)};
+export function getBrowserRouter<Params>(): {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>} {
+  return {transformRoute: transformRoute!, historyActions: historyActions!, toUrl: toBrowserUrl!};
 }
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
   appModuleName: A,
   history: History,
-  routeConfig: plana.RouteConfig,
+  routeConfig: import('@medux/route-plan-a').RouteConfig,
   storeOptions: StoreOptions = {},
   container: string | Element | ((component: ReactElement<any>) => void) = 'root'
 ) {
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-  const historyData = createHistory(history, transformRoute);
-  const {historyProxy} = historyData;
-  historyActions = historyData.historyActions;
-
-  return renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container);
+  const router = createRouter(history, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container);
 }
 
 export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
   appModuleName: A,
   location: string,
-  routeConfig: plana.RouteConfig,
+  routeConfig: import('@medux/route-plan-a').RouteConfig,
   storeOptions: StoreOptions = {},
   renderToStream: boolean = false
 ): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
-  if (!transformRoute) {
-    transformRoute = buildTransformRoute(routeConfig);
-  }
-  const historyData = createHistory({listen: () => void 0, location: createLocation(location)} as any, transformRoute);
-  const {historyProxy} = historyData;
-  historyActions = historyData.historyActions;
-
-  return renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream);
+  const router = createRouter({listen: () => void 0, location: createLocation(location)} as any, routeConfig);
+  historyActions = router.historyActions;
+  toBrowserUrl = router.toBrowserUrl;
+  transformRoute = router.transformRoute;
+  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream);
 }
 
-export type RootState<G extends ModuleGetter> = BaseRootState<G, web.MeduxLocation>;
+export type RootState<G extends ModuleGetter> = BaseRootState<G, MeduxLocation>;
 
 interface SwitchProps {
   elseView?: React.ReactNode;

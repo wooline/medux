@@ -314,6 +314,14 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   }
 
   var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  var storeState = store.getState();
+  var _storeState$route$dat = storeState.route.data,
+      paths = _storeState$route$dat.paths,
+      views = _storeState$route$dat.views;
+  console.log({
+    paths: paths,
+    views: views
+  });
   var reduxStore = store;
   var preModuleNames = [appModuleName];
 
@@ -343,7 +351,7 @@ export function renderSSR(_x, _x2, _x3, _x4, _x5) {
 
 function _renderSSR() {
   _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
-    var ssrInitStoreKey, store, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+    var ssrInitStoreKey, store, storeState, _storeState$route$dat2, paths, views, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
     return _regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
@@ -357,44 +365,48 @@ function _renderSSR() {
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             storeState = store.getState();
-            paths = storeState.route.data.paths;
+            _storeState$route$dat2 = storeState.route.data, paths = _storeState$route$dat2.paths, views = _storeState$route$dat2.views;
+            console.log({
+              paths: paths,
+              views: views
+            });
             paths.length === 0 && paths.push(appModuleName);
             appModule = undefined;
             inited = {};
             i = 0, k = paths.length;
 
-          case 10:
+          case 11:
             if (!(i < k)) {
-              _context.next = 21;
+              _context.next = 22;
               break;
             }
 
             _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
 
             if (inited[_moduleName]) {
-              _context.next = 18;
+              _context.next = 19;
               break;
             }
 
             inited[_moduleName] = true;
             module = moduleGetter[_moduleName]();
-            _context.next = 17;
+            _context.next = 18;
             return module.default.model(store, undefined);
 
-          case 17:
+          case 18:
             if (i === 0) {
               appModule = module;
             }
 
-          case 18:
+          case 19:
             i++;
-            _context.next = 10;
+            _context.next = 11;
             break;
 
-          case 21:
+          case 22:
             return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
 
-          case 22:
+          case 23:
           case "end":
             return _context.stop();
         }
