@@ -1,18 +1,20 @@
 import * as core from '@medux/core';
 
-import {ExportModule, HistoryProxy, ModuleGetter, StoreOptions, getView, isPromiseView} from '@medux/core';
+import {ExportModule, HistoryProxy, ModuleGetter, StoreOptions, StoreState, getView, isPromiseView} from '@medux/core';
 import React, {ComponentType, FC, ReactElement, useState} from 'react';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 
 import {Provider} from 'react-redux';
 import ReactDOM from 'react-dom';
+import {Store} from 'redux';
 
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
   appModuleName: A,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions,
-  container: string | Element | ((component: ReactElement<any>) => void) = 'root'
+  container: string | Element | ((component: ReactElement<any>) => void) = 'root',
+  beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ) {
   return core.renderApp(
     (
@@ -38,7 +40,8 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
     moduleGetter,
     appModuleName,
     historyProxy,
-    storeOptions
+    storeOptions,
+    beforeRender
   );
 }
 
@@ -47,7 +50,8 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
   appModuleName: A,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions = {},
-  renderToStream: boolean = false
+  renderToStream: boolean = false,
+  beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ) {
   return core.renderSSR(
     (
@@ -75,7 +79,8 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
     moduleGetter,
     appModuleName,
     historyProxy,
-    storeOptions
+    storeOptions,
+    beforeRender
   );
 }
 

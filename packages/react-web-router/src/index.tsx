@@ -1,7 +1,7 @@
 import {TransformRoute, MeduxLocation} from '@medux/route-plan-a';
-import {RootState as BaseRootState, ModuleGetter, StoreOptions} from '@medux/core';
+import {RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState} from '@medux/core';
 import {History, createLocation} from 'history';
-
+import {Store} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
 import {HistoryActions, createRouter, ToBrowserUrl} from '@medux/web';
@@ -19,7 +19,20 @@ let transformRoute: TransformRoute | undefined = undefined;
 let toBrowserUrl: ToBrowserUrl | undefined = undefined;
 
 export function getBrowserRouter<Params>(): {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>} {
-  return {transformRoute: transformRoute!, historyActions: historyActions!, toUrl: toBrowserUrl!};
+  return {
+    transformRoute: {
+      locationToRoute: (...args) => transformRoute!.locationToRoute(...args),
+      routeToLocation: (...args) => transformRoute!.routeToLocation(...args),
+    },
+    historyActions: {
+      push: (data: any) => historyActions!.push(data),
+      replace: (data: any) => historyActions!.replace(data),
+      go: (n: number) => historyActions!.go(n),
+      goBack: () => historyActions!.goBack(),
+      goForward: () => historyActions!.goForward(),
+    },
+    toUrl: (...args: [any]) => toBrowserUrl!(...args),
+  };
 }
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
@@ -28,13 +41,19 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   history: History,
   routeConfig: import('@medux/route-plan-a').RouteConfig,
   storeOptions: StoreOptions = {},
-  container: string | Element | ((component: ReactElement<any>) => void) = 'root'
+  container: string | Element | ((component: ReactElement<any>) => void) = 'root',
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>
 ) {
   const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container);
+  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, (store) => {
+    const storeState = store.getState();
+    const {paths, views} = storeState.route.data;
+    console.log({paths, views});
+    return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
+  });
 }
 
 export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
@@ -43,13 +62,20 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
   location: string,
   routeConfig: import('@medux/route-plan-a').RouteConfig,
   storeOptions: StoreOptions = {},
-  renderToStream: boolean = false
+  renderToStream: boolean = false,
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>
 ): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
-  const router = createRouter({listen: () => void 0, location: createLocation(location)} as any, routeConfig);
+  const history: History = {listen: () => void 0, location: createLocation(location)} as any;
+  const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream);
+  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, (store) => {
+    const storeState = store.getState();
+    const {paths, views} = storeState.route.data;
+    console.log({paths, views});
+    return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
+  });
 }
 
 export type RootState<G extends ModuleGetter> = BaseRootState<G, MeduxLocation>;

@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
-export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container) {
+export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
   }
@@ -22,9 +22,9 @@ export function renderApp(moduleGetter, appModuleName, historyProxy, storeOption
       var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
       render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
     }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
-export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream) {
+export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -45,7 +45,7 @@ export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOption
       data: data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 export var loadView = function loadView(moduleName, viewName, options, Loading) {
   var _ref = options || {},

@@ -1,12 +1,13 @@
 import * as core from '@medux/core';
-import { ExportModule, HistoryProxy, ModuleGetter, StoreOptions } from '@medux/core';
+import { ExportModule, HistoryProxy, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { ComponentType, ReactElement } from 'react';
-export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, historyProxy: HistoryProxy, storeOptions: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void)): Promise<import("redux").Store<any, import("redux").AnyAction>>;
-export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, historyProxy: HistoryProxy, storeOptions?: StoreOptions, renderToStream?: boolean): Promise<{
+import { Store } from 'redux';
+export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, historyProxy: HistoryProxy, storeOptions: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void), beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<void>;
+export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, historyProxy: HistoryProxy, storeOptions?: StoreOptions, renderToStream?: boolean, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<{
     html: any;
     data: any;
     ssrInitStoreKey: string;
-    store: import("redux").Store<any, import("redux").AnyAction>;
+    store: Store<any, import("redux").AnyAction>;
 }>;
 export declare type LoadView<T extends ModuleGetter> = core.LoadView<T, {
     forwardRef?: boolean;

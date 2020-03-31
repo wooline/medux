@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
-export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container = 'root') {
+export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container = 'root', beforeRender) {
   return core.renderApp((store, appModel, appViews, ssrInitStoreKey) => {
     const reduxProvider = React.createElement(Provider, {
       store: store
@@ -18,9 +18,9 @@ export function renderApp(moduleGetter, appModuleName, historyProxy, storeOption
       const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
       render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
     }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
-export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions = {}, renderToStream = false) {
+export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions = {}, renderToStream = false, beforeRender) {
   return core.renderSSR((store, appModel, appViews, ssrInitStoreKey) => {
     const data = store.getState();
     const reduxProvider = React.createElement(Provider, {
@@ -33,7 +33,7 @@ export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOption
       data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 export const loadView = (moduleName, viewName, options, Loading) => {
   const _ref = options || {},

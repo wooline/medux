@@ -279,52 +279,47 @@ export interface StoreOptions {
 }
 
 export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
+  render: (store: Store<StoreState>, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
   moduleGetter: M,
   appModuleName: A,
   history: HistoryProxy,
-  storeOptions: StoreOptions = {}
-): Promise<Store> {
+  storeOptions: StoreOptions = {},
+  beforeRender?: (store: Store<StoreState>) => Store<StoreState>
+): Promise<void> {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
   if (storeOptions.initData || client![ssrInitStoreKey]) {
     initData = {...client![ssrInitStoreKey], ...storeOptions.initData};
   }
-  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const storeState = store.getState() as StoreState;
-  const {paths, views} = storeState.route.data;
-  console.log({paths, views});
-  const reduxStore: Store = store as any;
+  const store: Store<StoreState> = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers) as any;
+  const reduxStore = beforeRender ? beforeRender(store) : store;
   const preModuleNames: string[] = [appModuleName];
   if (initData) {
     preModuleNames.push(...Object.keys(initData).filter((key) => key !== appModuleName && initData[key].isModule));
   }
   // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
-    const initModel = appModule.default.model(store, undefined);
+    const initModel = appModule.default.model(reduxStore as any, undefined);
     render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-    if (isPromise(initModel)) {
-      return initModel.then(() => reduxStore);
-    } else {
-      return reduxStore;
-    }
+    return initModel;
   });
 }
 
 export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (store: Store, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
+  render: (store: Store<StoreState>, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
   moduleGetter: M,
   appModuleName: A,
   history: HistoryProxy,
-  storeOptions: StoreOptions = {}
+  storeOptions: StoreOptions = {},
+  beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ) {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const storeState = store.getState() as StoreState;
-  const {paths, views} = storeState.route.data;
-  console.log({paths, views});
+  const store: Store<StoreState> = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers) as any;
+  const reduxStore = beforeRender ? beforeRender(store) : store;
+  const storeState = reduxStore.getState();
+  const {paths} = storeState.route.data;
   paths.length === 0 && paths.push(appModuleName);
   let appModule: Module | undefined = undefined;
   const inited: {[moduleName: string]: boolean} = {};
@@ -333,11 +328,11 @@ export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof 
     if (!inited[moduleName]) {
       inited[moduleName] = true;
       const module = moduleGetter[moduleName]() as Module;
-      await module.default.model(store, undefined);
+      await module.default.model(reduxStore as any, undefined);
       if (i === 0) {
         appModule = module;
       }
     }
   }
-  return render(store as any, appModule!.default.model, appModule!.default.views, ssrInitStoreKey);
+  return render(reduxStore, appModule!.default.model, appModule!.default.views, ssrInitStoreKey);
 }

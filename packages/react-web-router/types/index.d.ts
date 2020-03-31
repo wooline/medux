@@ -1,6 +1,7 @@
 import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';
-import { RootState as BaseRootState, ModuleGetter, StoreOptions } from '@medux/core';
+import { RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { History } from 'history';
+import { Store } from 'redux';
 import React, { ReactElement } from 'react';
 import { HistoryActions, ToBrowserUrl } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
@@ -14,8 +15,20 @@ export declare function getBrowserRouter<Params>(): {
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;
 };
-export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, history: History, routeConfig: import('@medux/route-plan-a').RouteConfig, storeOptions?: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void)): Promise<import("redux").Store<any, import("redux").AnyAction>>;
-export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, location: string, routeConfig: import('@medux/route-plan-a').RouteConfig, storeOptions?: StoreOptions, renderToStream?: boolean): Promise<{
+export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, history: History, routeConfig: import('@medux/route-plan-a').RouteConfig, storeOptions?: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void), beforeRender?: (data: {
+    store: Store<StoreState>;
+    history: History;
+    historyActions: HistoryActions;
+    toBrowserUrl: ToBrowserUrl;
+    transformRoute: TransformRoute;
+}) => Store<StoreState>): Promise<void>;
+export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, location: string, routeConfig: import('@medux/route-plan-a').RouteConfig, storeOptions?: StoreOptions, renderToStream?: boolean, beforeRender?: (data: {
+    store: Store<StoreState>;
+    history: History;
+    historyActions: HistoryActions;
+    toBrowserUrl: ToBrowserUrl;
+    transformRoute: TransformRoute;
+}) => Store<StoreState>): Promise<{
     html: string | ReadableStream;
     data: any;
     ssrInitStoreKey: string;

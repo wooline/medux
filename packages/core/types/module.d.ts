@@ -1,4 +1,4 @@
-import { Action, ActionCreatorList, BaseModelState, ModelStore, RouteState } from './basic';
+import { Action, ActionCreatorList, BaseModelState, ModelStore, RouteState, StoreState } from './basic';
 import { HistoryProxy } from './store';
 import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
@@ -117,17 +117,17 @@ export interface StoreOptions {
         [key: string]: any;
     };
 }
-export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
+export declare function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store<StoreState>, appModel: Model, appViews: {
     [key: string]: any;
-}, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions): Promise<Store>;
-export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store, appModel: Model, appViews: {
+}, ssrInitStoreKey: string) => void, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<void>;
+export declare function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(render: (store: Store<StoreState>, appModel: Model, appViews: {
     [key: string]: any;
 }, ssrInitStoreKey: string) => {
     html: any;
     data: any;
     ssrInitStoreKey: string;
     store: Store;
-}, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions): Promise<{
+}, moduleGetter: M, appModuleName: A, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<{
     html: any;
     data: any;
     ssrInitStoreKey: string;

@@ -13,7 +13,7 @@ var server = require('react-dom/server');
 var reactRedux = require('react-redux');
 var ReactDOM = _interopDefault(require('react-dom'));
 
-function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container) {
+function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
   }
@@ -29,9 +29,9 @@ function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, cont
       var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
       render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
     }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
-function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream) {
+function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -52,7 +52,7 @@ function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, rend
       data: data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 var loadView = function loadView(moduleName, viewName, options, Loading) {
   var _ref = options || {},

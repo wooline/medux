@@ -300,7 +300,7 @@ function getModuleListByNames(moduleNames, moduleGetter) {
   return Promise.all(preModules);
 }
 
-export function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
+export function renderApp(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -314,15 +314,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   }
 
   var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  var storeState = store.getState();
-  var _storeState$route$dat = storeState.route.data,
-      paths = _storeState$route$dat.paths,
-      views = _storeState$route$dat.views;
-  console.log({
-    paths: paths,
-    views: views
-  });
-  var reduxStore = store;
+  var reduxStore = beforeRender ? beforeRender(store) : store;
   var preModuleNames = [appModuleName];
 
   if (initData) {
@@ -333,25 +325,18 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
-    var initModel = appModule.default.model(store, undefined);
+    var initModel = appModule.default.model(reduxStore, undefined);
     render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-
-    if (isPromise(initModel)) {
-      return initModel.then(function () {
-        return reduxStore;
-      });
-    } else {
-      return reduxStore;
-    }
+    return initModel;
   });
 }
-export function renderSSR(_x, _x2, _x3, _x4, _x5) {
+export function renderSSR(_x, _x2, _x3, _x4, _x5, _x6) {
   return _renderSSR.apply(this, arguments);
 }
 
 function _renderSSR() {
-  _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
-    var ssrInitStoreKey, store, storeState, _storeState$route$dat2, paths, views, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+  _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
+    var ssrInitStoreKey, store, reduxStore, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
     return _regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
@@ -364,12 +349,9 @@ function _renderSSR() {
             MetaData.appModuleName = appModuleName;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            storeState = store.getState();
-            _storeState$route$dat2 = storeState.route.data, paths = _storeState$route$dat2.paths, views = _storeState$route$dat2.views;
-            console.log({
-              paths: paths,
-              views: views
-            });
+            reduxStore = beforeRender ? beforeRender(store) : store;
+            storeState = reduxStore.getState();
+            paths = storeState.route.data.paths;
             paths.length === 0 && paths.push(appModuleName);
             appModule = undefined;
             inited = {};
@@ -391,7 +373,7 @@ function _renderSSR() {
             inited[_moduleName] = true;
             module = moduleGetter[_moduleName]();
             _context.next = 18;
-            return module.default.model(store, undefined);
+            return module.default.model(reduxStore, undefined);
 
           case 18:
             if (i === 0) {
@@ -404,7 +386,7 @@ function _renderSSR() {
             break;
 
           case 22:
-            return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+            return _context.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey));
 
           case 23:
           case "end":

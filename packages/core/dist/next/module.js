@@ -280,7 +280,7 @@ function getModuleListByNames(moduleNames, moduleGetter) {
   return Promise.all(preModules);
 }
 
-export function renderApp(render, moduleGetter, appModuleName, history, storeOptions = {}) {
+export function renderApp(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
@@ -290,16 +290,7 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   }
 
   const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const storeState = store.getState();
-  const {
-    paths,
-    views
-  } = storeState.route.data;
-  console.log({
-    paths,
-    views
-  });
-  const reduxStore = store;
+  const reduxStore = beforeRender ? beforeRender(store) : store;
   const preModuleNames = [appModuleName];
 
   if (initData) {
@@ -307,29 +298,20 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   }
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
-    const initModel = appModule.default.model(store, undefined);
+    const initModel = appModule.default.model(reduxStore, undefined);
     render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-
-    if (isPromise(initModel)) {
-      return initModel.then(() => reduxStore);
-    } else {
-      return reduxStore;
-    }
+    return initModel;
   });
 }
-export async function renderSSR(render, moduleGetter, appModuleName, history, storeOptions = {}) {
+export async function renderSSR(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const storeState = store.getState();
+  const reduxStore = beforeRender ? beforeRender(store) : store;
+  const storeState = reduxStore.getState();
   const {
-    paths,
-    views
+    paths
   } = storeState.route.data;
-  console.log({
-    paths,
-    views
-  });
   paths.length === 0 && paths.push(appModuleName);
   let appModule = undefined;
   const inited = {};
@@ -340,7 +322,7 @@ export async function renderSSR(render, moduleGetter, appModuleName, history, st
     if (!inited[moduleName]) {
       inited[moduleName] = true;
       const module = moduleGetter[moduleName]();
-      await module.default.model(store, undefined);
+      await module.default.model(reduxStore, undefined);
 
       if (i === 0) {
         appModule = module;
@@ -348,5 +330,5 @@ export async function renderSSR(render, moduleGetter, appModuleName, history, st
     }
   }
 
-  return render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+  return render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
 }

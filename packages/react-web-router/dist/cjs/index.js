@@ -1074,7 +1074,7 @@ function getModuleListByNames(moduleNames, moduleGetter) {
   return Promise.all(preModules);
 }
 
-function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
+function renderApp(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -1088,15 +1088,7 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
   }
 
   var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  var storeState = store.getState();
-  var _storeState$route$dat = storeState.route.data,
-      paths = _storeState$route$dat.paths,
-      views = _storeState$route$dat.views;
-  console.log({
-    paths: paths,
-    views: views
-  });
-  var reduxStore = store;
+  var reduxStore = beforeRender ? beforeRender(store) : store;
   var preModuleNames = [appModuleName];
 
   if (initData) {
@@ -1107,25 +1099,18 @@ function renderApp(render, moduleGetter, appModuleName, history, storeOptions) {
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
-    var initModel = appModule.default.model(store, undefined);
+    var initModel = appModule.default.model(reduxStore, undefined);
     render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
-
-    if (isPromise(initModel)) {
-      return initModel.then(function () {
-        return reduxStore;
-      });
-    } else {
-      return reduxStore;
-    }
+    return initModel;
   });
 }
-function renderSSR(_x, _x2, _x3, _x4, _x5) {
+function renderSSR(_x, _x2, _x3, _x4, _x5, _x6) {
   return _renderSSR.apply(this, arguments);
 }
 
 function _renderSSR() {
-  _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions) {
-    var ssrInitStoreKey, store, storeState, _storeState$route$dat2, paths, views, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+  _renderSSR = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
+    var ssrInitStoreKey, store, reduxStore, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
 
     return _regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
@@ -1138,12 +1123,9 @@ function _renderSSR() {
             MetaData.appModuleName = appModuleName;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            storeState = store.getState();
-            _storeState$route$dat2 = storeState.route.data, paths = _storeState$route$dat2.paths, views = _storeState$route$dat2.views;
-            console.log({
-              paths: paths,
-              views: views
-            });
+            reduxStore = beforeRender ? beforeRender(store) : store;
+            storeState = reduxStore.getState();
+            paths = storeState.route.data.paths;
             paths.length === 0 && paths.push(appModuleName);
             appModule = undefined;
             inited = {};
@@ -1165,7 +1147,7 @@ function _renderSSR() {
             inited[_moduleName] = true;
             module = moduleGetter[_moduleName]();
             _context.next = 18;
-            return module.default.model(store, undefined);
+            return module.default.model(reduxStore, undefined);
 
           case 18:
             if (i === 0) {
@@ -1178,7 +1160,7 @@ function _renderSSR() {
             break;
 
           case 22:
-            return _context.abrupt("return", render(store, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+            return _context.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey));
 
           case 23:
           case "end":
@@ -1190,7 +1172,7 @@ function _renderSSR() {
   return _renderSSR.apply(this, arguments);
 }
 
-function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container) {
+function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
   }
@@ -1206,9 +1188,9 @@ function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, co
       var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
       render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
     }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
-function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream) {
+function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -1229,7 +1211,7 @@ function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, re
       data: data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, historyProxy, storeOptions);
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 var loadView = function loadView(moduleName, viewName, options, Loading) {
   var _ref = options || {},
@@ -2532,12 +2514,41 @@ var transformRoute = undefined;
 var toBrowserUrl = undefined;
 function getBrowserRouter() {
   return {
-    transformRoute: transformRoute,
-    historyActions: historyActions,
-    toUrl: toBrowserUrl
+    transformRoute: {
+      locationToRoute: function locationToRoute() {
+        var _ref;
+
+        return (_ref = transformRoute).locationToRoute.apply(_ref, arguments);
+      },
+      routeToLocation: function routeToLocation() {
+        var _ref2;
+
+        return (_ref2 = transformRoute).routeToLocation.apply(_ref2, arguments);
+      }
+    },
+    historyActions: {
+      push: function push(data) {
+        return historyActions.push(data);
+      },
+      replace: function replace(data) {
+        return historyActions.replace(data);
+      },
+      go: function go(n) {
+        return historyActions.go(n);
+      },
+      goBack: function goBack() {
+        return historyActions.goBack();
+      },
+      goForward: function goForward() {
+        return historyActions.goForward();
+      }
+    },
+    toUrl: function toUrl() {
+      return toBrowserUrl.apply(void 0, arguments);
+    }
   };
 }
-function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container) {
+function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -2550,9 +2561,25 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderApp$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, container);
+  return renderApp$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, function (store) {
+    var storeState = store.getState();
+    var _storeState$route$dat = storeState.route.data,
+        paths = _storeState$route$dat.paths,
+        views = _storeState$route$dat.views;
+    console.log({
+      paths: paths,
+      views: views
+    });
+    return beforeRender ? beforeRender({
+      store: store,
+      history: history,
+      historyActions: historyActions,
+      toBrowserUrl: toBrowserUrl,
+      transformRoute: transformRoute
+    }) : store;
+  });
 }
-function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream) {
+function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -2561,20 +2588,37 @@ function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptio
     renderToStream = false;
   }
 
-  var router = createRouter({
+  var history$1 = {
     listen: function listen() {
       return void 0;
     },
     location: history.createLocation(location)
-  }, routeConfig);
+  };
+  var router = createRouter(history$1, routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderSSR$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream);
+  return renderSSR$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, function (store) {
+    var storeState = store.getState();
+    var _storeState$route$dat2 = storeState.route.data,
+        paths = _storeState$route$dat2.paths,
+        views = _storeState$route$dat2.views;
+    console.log({
+      paths: paths,
+      views: views
+    });
+    return beforeRender ? beforeRender({
+      store: store,
+      history: history$1,
+      historyActions: historyActions,
+      toBrowserUrl: toBrowserUrl,
+      transformRoute: transformRoute
+    }) : store;
+  });
 }
-var Switch = function Switch(_ref) {
-  var children = _ref.children,
-      elseView = _ref.elseView;
+var Switch = function Switch(_ref3) {
+  var children = _ref3.children,
+      elseView = _ref3.elseView;
 
   if (!children || Array.isArray(children) && children.every(function (item) {
     return !item;
@@ -2589,10 +2633,10 @@ function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-var Link = React__default.forwardRef(function (_ref2, ref) {
-  var _onClick = _ref2.onClick,
-      replace = _ref2.replace,
-      rest = _objectWithoutPropertiesLoose(_ref2, ["onClick", "replace"]);
+var Link = React__default.forwardRef(function (_ref4, ref) {
+  var _onClick = _ref4.onClick,
+      replace = _ref4.replace,
+      rest = _objectWithoutPropertiesLoose(_ref4, ["onClick", "replace"]);
 
   var target = rest.target;
   var props = Object.assign({}, rest, {
