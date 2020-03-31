@@ -1,6 +1,6 @@
+import { History, LocationListener, UnregisterCallback } from 'history';
 import { HistoryProxy, RouteData } from '@medux/core';
 import { MeduxLocation, RouteConfig, TransformRoute } from '@medux/route-plan-a';
-import { History } from 'history';
 export { createBrowserHistory, createMemoryHistory, createHashHistory } from 'history';
 export interface BrowserRoutePayload<P = {}> {
     extend?: RouteData;
@@ -8,6 +8,9 @@ export interface BrowserRoutePayload<P = {}> {
     paths?: string[];
 }
 export interface HistoryActions<P = {}> {
+    listen(listener: LocationListener<never>): UnregisterCallback;
+    getLocation(): MeduxLocation;
+    getRouteData(): RouteData;
     push(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
     replace(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
     go(n: number): void;

@@ -1,7 +1,6 @@
+import {History, LocationListener, UnregisterCallback} from 'history';
 import {HistoryProxy, RouteData} from '@medux/core';
 import {LocationToRoute, MeduxLocation, RouteConfig, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
-
-import {History} from 'history';
 
 export {createBrowserHistory, createMemoryHistory, createHashHistory} from 'history';
 
@@ -12,6 +11,9 @@ export interface BrowserRoutePayload<P = {}> {
 }
 
 export interface HistoryActions<P = {}> {
+  listen(listener: LocationListener<never>): UnregisterCallback;
+  getLocation(): MeduxLocation;
+  getRouteData(): RouteData;
   push(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
   replace(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
   go(n: number): void;
@@ -66,6 +68,15 @@ export function createRouter(history: History, routeConfig: RouteConfig) {
   const historyProxy: HistoryProxy<BrowserLocation> = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
 
   const historyActions: HistoryActions = {
+    listen(listener) {
+      return history.listen(listener as any);
+    },
+    getLocation() {
+      return history.location;
+    },
+    getRouteData() {
+      return (history.location.state as any) || transformRoute.locationToRoute(history.location);
+    },
     push(data) {
       if (typeof data === 'string') {
         history.push(data);

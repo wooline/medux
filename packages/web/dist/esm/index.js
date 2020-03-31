@@ -61,6 +61,15 @@ export function createRouter(history, routeConfig) {
   var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   var historyActions = {
+    listen: function listen(listener) {
+      return history.listen(listener);
+    },
+    getLocation: function getLocation() {
+      return history.location;
+    },
+    getRouteData: function getRouteData() {
+      return history.location.state || transformRoute.locationToRoute(history.location);
+    },
     push: function push(data) {
       if (typeof data === 'string') {
         history.push(data);
