@@ -1,7 +1,7 @@
 import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
-import {RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState} from '@medux/core';
+import {RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews} from '@medux/core';
 import {History, createLocation} from 'history';
-import {Store} from 'redux';
+import {Store, Middleware} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
 import {HistoryActions, createRouter, ToBrowserUrl} from '@medux/web';
@@ -20,7 +20,30 @@ let toBrowserUrl: ToBrowserUrl | undefined = undefined;
 
 export type BrowserRouter<Params> = {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>};
 
-export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>({
+function checkRedirect(views: DisplayViews, throwError?: boolean): boolean {
+  if (views['@']) {
+    const url = Object.keys(views['@'])[0];
+    if (throwError) {
+      throw {code: '301', message: url, detail: url};
+    } else {
+      historyActions!.replace(url);
+    }
+    return true;
+  }
+  return false;
+}
+const redirectMiddleware: Middleware = () => (next) => (action) => {
+  if (action.type === ActionTypes.RouteChange) {
+    const routeState: RouteState = action.payload[0];
+    const {views} = routeState.data;
+    if (checkRedirect(views)) {
+      return;
+    }
+  }
+  return next(action);
+};
+
+export function buildApp({
   moduleGetter,
   appModuleName,
   history,
@@ -30,8 +53,8 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   container = 'root',
   beforeRender,
 }: {
-  moduleGetter: M;
-  appModuleName: A;
+  moduleGetter: ModuleGetter;
+  appModuleName: string;
   history: History;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
   defaultRouteParams?: {[moduleName: string]: any};
@@ -44,18 +67,19 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
+  if (!storeOptions.middlewares) {
+    storeOptions.middlewares = [];
+  }
+  storeOptions.middlewares.unshift(redirectMiddleware);
   return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, (store) => {
     const storeState = store.getState();
     const {views} = storeState.route.data;
-    if (views['@']) {
-      const url = Object.keys(views['@'])[0];
-      historyActions!.replace(url);
-    }
+    checkRedirect(views);
     return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
   });
 }
 
-export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>({
+export function buildSSR({
   moduleGetter,
   appModuleName,
   location,
@@ -65,8 +89,8 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
   renderToStream = false,
   beforeRender,
 }: {
-  moduleGetter: M;
-  appModuleName: A;
+  moduleGetter: ModuleGetter;
+  appModuleName: string;
   location: string;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
   defaultRouteParams?: {[moduleName: string]: any};
@@ -83,10 +107,7 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
   return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, (store) => {
     const storeState = store.getState();
     const {views} = storeState.route.data;
-    if (views['@']) {
-      const url = Object.keys(views['@'])[0];
-      throw {code: '301', message: url, detail: url};
-    }
+    checkRedirect(views, true);
     return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
   });
 }

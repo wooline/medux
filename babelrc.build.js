@@ -8,7 +8,7 @@ const env = cfg[process.env.NODE_ENV];
 
 console.log('args: ', env);
 
-module.exports = function(features = []) {
+module.exports = function (features = []) {
   const config = {
     presets: [
       [
@@ -32,7 +32,7 @@ module.exports = function(features = []) {
       [
         '@babel/plugin-transform-runtime',
         {
-          useESModules: env.code !== 'cjs' && env.code !== 'test',
+          useESModules: env.code !== 'test',
           version: '^7.7.2',
         },
       ],

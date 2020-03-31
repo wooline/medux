@@ -25,19 +25,17 @@
   "scripts": {
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
-    "types": "tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
+    "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
     "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_ENV=cjs rollup -c",
     "build": "yarn build:next & yarn build:esm & yarn build:cjs"
   },
   "externals": {
-    "@babel/runtime": true,
     "react": true,
     "react-dom": true,
     "react-redux": true,
-    "history": true,
-    "redux": true
+    "history": true
   },
   "peerDependencies": {
     "@babel/runtime": "^7.0.0",

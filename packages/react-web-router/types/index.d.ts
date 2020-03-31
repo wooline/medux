@@ -15,9 +15,9 @@ export declare type BrowserRouter<Params> = {
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;
 };
-export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>({ moduleGetter, appModuleName, history, routeConfig, defaultRouteParams, storeOptions, container, beforeRender, }: {
-    moduleGetter: M;
-    appModuleName: A;
+export declare function buildApp({ moduleGetter, appModuleName, history, routeConfig, defaultRouteParams, storeOptions, container, beforeRender, }: {
+    moduleGetter: ModuleGetter;
+    appModuleName: string;
     history: History;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
     defaultRouteParams?: {
@@ -33,9 +33,9 @@ export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof
         transformRoute: TransformRoute;
     }) => Store<StoreState>;
 }): Promise<void>;
-export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>({ moduleGetter, appModuleName, location, routeConfig, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
-    moduleGetter: M;
-    appModuleName: A;
+export declare function buildSSR({ moduleGetter, appModuleName, location, routeConfig, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
+    moduleGetter: ModuleGetter;
+    appModuleName: string;
     location: string;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
     defaultRouteParams?: {

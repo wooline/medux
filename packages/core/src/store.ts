@@ -132,7 +132,7 @@ export function buildStore(
     meta.prevState = changed ? currentState : rootState;
     return meta.prevState;
   };
-  const middleware = ({dispatch}: {dispatch: Function}) => (next: Function) => (originalAction: Action) => {
+  const middleware: Middleware = ({dispatch}) => (next) => (originalAction) => {
     if (MetaData.isServer) {
       if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
         return originalAction;
@@ -233,7 +233,7 @@ export function buildStore(
     return action;
   };
 
-  const preLoadMiddleware = () => (next: Function) => (action: Action) => {
+  const preLoadMiddleware: Middleware = () => (next) => (action) => {
     const [moduleName, actionName] = action.type.split(config.NSP);
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
       const initModel = loadModel(moduleName, store, undefined);

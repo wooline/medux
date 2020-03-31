@@ -11,7 +11,7 @@
   "engines": {
     "node": ">=9.0.0"
   },
-  "main": "main.js",
+  "main": "dist/esm/index.js",
   "module": "dist/esm/index.js",
   "jsnext": "dist/next/index.js",
   "tsSource": "src/",
@@ -19,17 +19,15 @@
   "files": [
     "src/",
     "types/",
-    "dist/",
-    "main.js"
+    "dist/"
   ],
   "scripts": {
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
-    "types": "tsc --emitDeclarationOnly --declaration --isolatedModules false --noEmit false  --outDir ./types && copyfiles -f ./src/*.d.ts ./types",
+    "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
     "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
-    "build:cjs": "cross-env NODE_ENV=cjs rollup -c",
-    "build": "yarn build:next & yarn build:esm & yarn build:cjs"
+    "build": "yarn build:next & yarn build:esm"
   },
   "peerDependencies": {
     "@babel/runtime": "^7.0.0",

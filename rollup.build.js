@@ -5,7 +5,7 @@ import path from 'path';
 import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 
-export default function(root) {
+export default function (root) {
   const extensions = ['.js', '.ts', '.tsx'];
   const distDir = 'cjs';
   const pkgResult = {include: {}, external: {}};
@@ -19,8 +19,8 @@ export default function(root) {
       {file: 'dist/' + distDir + '/index.js', format: 'cjs'},
       {file: 'dist/' + distDir + '/index.min.js', format: 'cjs', plugins: [terser()], sourcemap: true},
     ],
-    external: id => {
-      const hit = externals.some(mod => mod === id || id.startsWith(mod + '/'));
+    external: (id) => {
+      const hit = externals.some((mod) => mod === id || id.startsWith(mod + '/'));
       if (hit) {
         if (!pkgResult.external[id]) {
           pkgResult.external[id] = true;
