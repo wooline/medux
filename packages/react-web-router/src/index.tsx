@@ -18,22 +18,7 @@ let historyActions: HistoryActions | undefined = undefined;
 let transformRoute: TransformRoute | undefined = undefined;
 let toBrowserUrl: ToBrowserUrl | undefined = undefined;
 
-export function getBrowserRouter<Params>(): {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>} {
-  return {
-    transformRoute: {
-      locationToRoute: (...args) => transformRoute!.locationToRoute(...args),
-      routeToLocation: (...args) => transformRoute!.routeToLocation(...args),
-    },
-    historyActions: {
-      push: (data: any) => historyActions!.push(data),
-      replace: (data: any) => historyActions!.replace(data),
-      go: (n: number) => historyActions!.go(n),
-      goBack: () => historyActions!.goBack(),
-      goForward: () => historyActions!.goForward(),
-    },
-    toUrl: (...args: [any]) => toBrowserUrl!(...args),
-  };
-}
+export type BrowserRouter<Params> = {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>};
 
 export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
   moduleGetter: M,
@@ -50,8 +35,11 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   transformRoute = router.transformRoute;
   return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, (store) => {
     const storeState = store.getState();
-    const {paths, views} = storeState.route.data;
-    console.log({paths, views});
+    const {views} = storeState.route.data;
+    if (views['@']) {
+      const url = Object.keys(views['@'])[0];
+      historyActions!.replace(url);
+    }
     return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
   });
 }
@@ -72,8 +60,11 @@ export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, stri
   transformRoute = router.transformRoute;
   return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, (store) => {
     const storeState = store.getState();
-    const {paths, views} = storeState.route.data;
-    console.log({paths, views});
+    const {views} = storeState.route.data;
+    if (views['@']) {
+      const url = Object.keys(views['@'])[0];
+      throw {code: '301', message: url, detail: url};
+    }
     return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
   });
 }

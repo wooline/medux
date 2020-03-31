@@ -10,22 +10,6 @@ export { setRouteConfig } from '@medux/route-plan-a';
 let historyActions = undefined;
 let transformRoute = undefined;
 let toBrowserUrl = undefined;
-export function getBrowserRouter() {
-  return {
-    transformRoute: {
-      locationToRoute: (...args) => transformRoute.locationToRoute(...args),
-      routeToLocation: (...args) => transformRoute.routeToLocation(...args)
-    },
-    historyActions: {
-      push: data => historyActions.push(data),
-      replace: data => historyActions.replace(data),
-      go: n => historyActions.go(n),
-      goBack: () => historyActions.goBack(),
-      goForward: () => historyActions.goForward()
-    },
-    toUrl: (...args) => toBrowserUrl(...args)
-  };
-}
 export function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions = {}, container = 'root', beforeRender) {
   const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;
@@ -34,13 +18,14 @@ export function buildApp(moduleGetter, appModuleName, history, routeConfig, stor
   return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, store => {
     const storeState = store.getState();
     const {
-      paths,
       views
     } = storeState.route.data;
-    console.log({
-      paths,
-      views
-    });
+
+    if (views['@']) {
+      const url = Object.keys(views['@'])[0];
+      historyActions.replace(url);
+    }
+
     return beforeRender ? beforeRender({
       store,
       history,
@@ -62,13 +47,18 @@ export function buildSSR(moduleGetter, appModuleName, location, routeConfig, sto
   return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, store => {
     const storeState = store.getState();
     const {
-      paths,
       views
     } = storeState.route.data;
-    console.log({
-      paths,
-      views
-    });
+
+    if (views['@']) {
+      const url = Object.keys(views['@'])[0];
+      throw {
+        code: '301',
+        message: url,
+        detail: url
+      };
+    }
+
     return beforeRender ? beforeRender({
       store,
       history,

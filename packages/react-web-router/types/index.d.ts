@@ -10,7 +10,7 @@ export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, BaseModelState } from '@medux/core';
 export type { LoadView } from '@medux/react';
 export type { RouteConfig } from '@medux/route-plan-a';
-export declare function getBrowserRouter<Params>(): {
+export declare type BrowserRouter<Params> = {
     transformRoute: TransformRoute;
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;

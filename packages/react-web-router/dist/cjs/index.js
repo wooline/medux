@@ -2425,6 +2425,15 @@ function createRouter(history, routeConfig) {
   var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   var historyActions = {
+    listen: function listen(listener) {
+      return history.listen(listener);
+    },
+    getLocation: function getLocation() {
+      return history.location;
+    },
+    getRouteData: function getRouteData() {
+      return history.location.state || transformRoute.locationToRoute(history.location);
+    },
     push: function push(data) {
       if (typeof data === 'string') {
         history.push(data);
@@ -2512,42 +2521,6 @@ function buildToBrowserUrl(routeToLocation) {
 var historyActions = undefined;
 var transformRoute = undefined;
 var toBrowserUrl = undefined;
-function getBrowserRouter() {
-  return {
-    transformRoute: {
-      locationToRoute: function locationToRoute() {
-        var _ref;
-
-        return (_ref = transformRoute).locationToRoute.apply(_ref, arguments);
-      },
-      routeToLocation: function routeToLocation() {
-        var _ref2;
-
-        return (_ref2 = transformRoute).routeToLocation.apply(_ref2, arguments);
-      }
-    },
-    historyActions: {
-      push: function push(data) {
-        return historyActions.push(data);
-      },
-      replace: function replace(data) {
-        return historyActions.replace(data);
-      },
-      go: function go(n) {
-        return historyActions.go(n);
-      },
-      goBack: function goBack() {
-        return historyActions.goBack();
-      },
-      goForward: function goForward() {
-        return historyActions.goForward();
-      }
-    },
-    toUrl: function toUrl() {
-      return toBrowserUrl.apply(void 0, arguments);
-    }
-  };
-}
 function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
@@ -2563,13 +2536,13 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
   transformRoute = router.transformRoute;
   return renderApp$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, function (store) {
     var storeState = store.getState();
-    var _storeState$route$dat = storeState.route.data,
-        paths = _storeState$route$dat.paths,
-        views = _storeState$route$dat.views;
-    console.log({
-      paths: paths,
-      views: views
-    });
+    var views = storeState.route.data.views;
+
+    if (views['@']) {
+      var url = Object.keys(views['@'])[0];
+      historyActions.replace(url);
+    }
+
     return beforeRender ? beforeRender({
       store: store,
       history: history,
@@ -2600,13 +2573,17 @@ function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptio
   transformRoute = router.transformRoute;
   return renderSSR$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, function (store) {
     var storeState = store.getState();
-    var _storeState$route$dat2 = storeState.route.data,
-        paths = _storeState$route$dat2.paths,
-        views = _storeState$route$dat2.views;
-    console.log({
-      paths: paths,
-      views: views
-    });
+    var views = storeState.route.data.views;
+
+    if (views['@']) {
+      var url = Object.keys(views['@'])[0];
+      throw {
+        code: '301',
+        message: url,
+        detail: url
+      };
+    }
+
     return beforeRender ? beforeRender({
       store: store,
       history: history$1,
@@ -2616,9 +2593,9 @@ function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptio
     }) : store;
   });
 }
-var Switch = function Switch(_ref3) {
-  var children = _ref3.children,
-      elseView = _ref3.elseView;
+var Switch = function Switch(_ref) {
+  var children = _ref.children,
+      elseView = _ref.elseView;
 
   if (!children || Array.isArray(children) && children.every(function (item) {
     return !item;
@@ -2633,10 +2610,10 @@ function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-var Link = React__default.forwardRef(function (_ref4, ref) {
-  var _onClick = _ref4.onClick,
-      replace = _ref4.replace,
-      rest = _objectWithoutPropertiesLoose(_ref4, ["onClick", "replace"]);
+var Link = React__default.forwardRef(function (_ref2, ref) {
+  var _onClick = _ref2.onClick,
+      replace = _ref2.replace,
+      rest = _objectWithoutPropertiesLoose(_ref2, ["onClick", "replace"]);
 
   var target = rest.target;
   var props = Object.assign({}, rest, {
@@ -2670,7 +2647,6 @@ exports.effect = effect;
 exports.errorAction = errorAction;
 exports.exportActions = exportActions;
 exports.exportModule = exportModule$1;
-exports.getBrowserRouter = getBrowserRouter;
 exports.loadView = loadView;
 exports.reducer = reducer;
 exports.setRouteConfig = setRouteConfig;
