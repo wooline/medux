@@ -1,4 +1,4 @@
-import {TransformRoute, MeduxLocation} from '@medux/route-plan-a';
+import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
 import {RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState} from '@medux/core';
 import {History, createLocation} from 'history';
 import {Store} from 'redux';
@@ -10,7 +10,7 @@ export {loadView, exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer} from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
 
-export type {Actions, RouteData, BaseModelState} from '@medux/core';
+export type {Actions, RouteData, RouteViews, BaseModelState} from '@medux/core';
 export type {LoadView} from '@medux/react';
 export type {RouteConfig} from '@medux/route-plan-a';
 
@@ -20,15 +20,26 @@ let toBrowserUrl: ToBrowserUrl | undefined = undefined;
 
 export type BrowserRouter<Params> = {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>};
 
-export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  moduleGetter: M,
-  appModuleName: A,
-  history: History,
-  routeConfig: import('@medux/route-plan-a').RouteConfig,
-  storeOptions: StoreOptions = {},
-  container: string | Element | ((component: ReactElement<any>) => void) = 'root',
-  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>
-) {
+export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>({
+  moduleGetter,
+  appModuleName,
+  history,
+  routeConfig = {},
+  defaultRouteParams,
+  storeOptions = {},
+  container = 'root',
+  beforeRender,
+}: {
+  moduleGetter: M;
+  appModuleName: A;
+  history: History;
+  routeConfig?: import('@medux/route-plan-a').RouteConfig;
+  defaultRouteParams?: {[moduleName: string]: any};
+  storeOptions?: StoreOptions;
+  container?: string | Element | ((component: ReactElement<any>) => void);
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
+}) {
+  setRouteConfig({defaultRouteParams});
   const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
@@ -44,15 +55,26 @@ export function buildApp<M extends ModuleGetter, A extends Extract<keyof M, stri
   });
 }
 
-export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  moduleGetter: M,
-  appModuleName: A,
-  location: string,
-  routeConfig: import('@medux/route-plan-a').RouteConfig,
-  storeOptions: StoreOptions = {},
-  renderToStream: boolean = false,
-  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>
-): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
+export function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>({
+  moduleGetter,
+  appModuleName,
+  location,
+  routeConfig = {},
+  defaultRouteParams,
+  storeOptions = {},
+  renderToStream = false,
+  beforeRender,
+}: {
+  moduleGetter: M;
+  appModuleName: A;
+  location: string;
+  routeConfig?: import('@medux/route-plan-a').RouteConfig;
+  defaultRouteParams?: {[moduleName: string]: any};
+  storeOptions?: StoreOptions;
+  renderToStream?: boolean;
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
+}): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
+  setRouteConfig({defaultRouteParams});
   const history: History = {listen: () => void 0, location: createLocation(location)} as any;
   const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;

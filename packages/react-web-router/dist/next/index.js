@@ -1,5 +1,6 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
+import { setRouteConfig } from '@medux/route-plan-a';
 import { createLocation } from 'history';
 import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
@@ -10,7 +11,19 @@ export { setRouteConfig } from '@medux/route-plan-a';
 let historyActions = undefined;
 let transformRoute = undefined;
 let toBrowserUrl = undefined;
-export function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions = {}, container = 'root', beforeRender) {
+export function buildApp({
+  moduleGetter,
+  appModuleName,
+  history,
+  routeConfig = {},
+  defaultRouteParams,
+  storeOptions = {},
+  container = 'root',
+  beforeRender
+}) {
+  setRouteConfig({
+    defaultRouteParams
+  });
   const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
@@ -35,7 +48,19 @@ export function buildApp(moduleGetter, appModuleName, history, routeConfig, stor
     }) : store;
   });
 }
-export function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions = {}, renderToStream = false, beforeRender) {
+export function buildSSR({
+  moduleGetter,
+  appModuleName,
+  location,
+  routeConfig = {},
+  defaultRouteParams,
+  storeOptions = {},
+  renderToStream = false,
+  beforeRender
+}) {
+  setRouteConfig({
+    defaultRouteParams
+  });
   const history = {
     listen: () => void 0,
     location: createLocation(location)

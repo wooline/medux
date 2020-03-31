@@ -7,7 +7,7 @@ import { HistoryActions, ToBrowserUrl } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, effect, errorAction, reducer } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
-export type { Actions, RouteData, BaseModelState } from '@medux/core';
+export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
 export type { LoadView } from '@medux/react';
 export type { RouteConfig } from '@medux/route-plan-a';
 export declare type BrowserRouter<Params> = {
@@ -15,20 +15,42 @@ export declare type BrowserRouter<Params> = {
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;
 };
-export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, history: History, routeConfig: import('@medux/route-plan-a').RouteConfig, storeOptions?: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void), beforeRender?: (data: {
-    store: Store<StoreState>;
+export declare function buildApp<M extends ModuleGetter, A extends Extract<keyof M, string>>({ moduleGetter, appModuleName, history, routeConfig, defaultRouteParams, storeOptions, container, beforeRender, }: {
+    moduleGetter: M;
+    appModuleName: A;
     history: History;
-    historyActions: HistoryActions;
-    toBrowserUrl: ToBrowserUrl;
-    transformRoute: TransformRoute;
-}) => Store<StoreState>): Promise<void>;
-export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(moduleGetter: M, appModuleName: A, location: string, routeConfig: import('@medux/route-plan-a').RouteConfig, storeOptions?: StoreOptions, renderToStream?: boolean, beforeRender?: (data: {
-    store: Store<StoreState>;
-    history: History;
-    historyActions: HistoryActions;
-    toBrowserUrl: ToBrowserUrl;
-    transformRoute: TransformRoute;
-}) => Store<StoreState>): Promise<{
+    routeConfig?: import('@medux/route-plan-a').RouteConfig;
+    defaultRouteParams?: {
+        [moduleName: string]: any;
+    };
+    storeOptions?: StoreOptions;
+    container?: string | Element | ((component: ReactElement<any>) => void);
+    beforeRender?: (data: {
+        store: Store<StoreState>;
+        history: History;
+        historyActions: HistoryActions;
+        toBrowserUrl: ToBrowserUrl;
+        transformRoute: TransformRoute;
+    }) => Store<StoreState>;
+}): Promise<void>;
+export declare function buildSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>({ moduleGetter, appModuleName, location, routeConfig, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
+    moduleGetter: M;
+    appModuleName: A;
+    location: string;
+    routeConfig?: import('@medux/route-plan-a').RouteConfig;
+    defaultRouteParams?: {
+        [moduleName: string]: any;
+    };
+    storeOptions?: StoreOptions;
+    renderToStream?: boolean;
+    beforeRender?: (data: {
+        store: Store<StoreState>;
+        history: History;
+        historyActions: HistoryActions;
+        toBrowserUrl: ToBrowserUrl;
+        transformRoute: TransformRoute;
+    }) => Store<StoreState>;
+}): Promise<{
     html: string | ReadableStream;
     data: any;
     ssrInitStoreKey: string;

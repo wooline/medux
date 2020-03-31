@@ -6,11 +6,6 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var _extends = _interopDefault(require('@babel/runtime/helpers/extends'));
 var _objectWithoutPropertiesLoose = _interopDefault(require('@babel/runtime/helpers/objectWithoutPropertiesLoose'));
-var history = require('history');
-var React = require('react');
-var React__default = _interopDefault(React);
-var _extends$1 = _interopDefault(require('@babel/runtime/helpers/esm/extends'));
-var _objectWithoutPropertiesLoose$1 = _interopDefault(require('@babel/runtime/helpers/esm/objectWithoutPropertiesLoose'));
 var _assertThisInitialized = _interopDefault(require('@babel/runtime/helpers/esm/assertThisInitialized'));
 require('@babel/runtime/helpers/esm/possibleConstructorReturn');
 require('@babel/runtime/helpers/esm/getPrototypeOf');
@@ -20,6 +15,11 @@ var redux = require('redux');
 var _regeneratorRuntime = _interopDefault(require('@babel/runtime/regenerator'));
 var _asyncToGenerator = _interopDefault(require('@babel/runtime/helpers/esm/asyncToGenerator'));
 var _decorate = _interopDefault(require('@babel/runtime/helpers/esm/decorate'));
+var history = require('history');
+var React = require('react');
+var React__default = _interopDefault(React);
+var _extends$1 = _interopDefault(require('@babel/runtime/helpers/esm/extends'));
+var _objectWithoutPropertiesLoose$1 = _interopDefault(require('@babel/runtime/helpers/esm/objectWithoutPropertiesLoose'));
 var server = require('react-dom/server');
 var reactRedux = require('react-redux');
 var ReactDOM = _interopDefault(require('react-dom'));
@@ -1172,90 +1172,6 @@ function _renderSSR() {
   return _renderSSR.apply(this, arguments);
 }
 
-function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
-  if (container === void 0) {
-    container = 'root';
-  }
-
-  return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
-    var reduxProvider = React__default.createElement(reactRedux.Provider, {
-      store: store
-    }, React__default.createElement(appViews.Main, null));
-
-    if (typeof container === 'function') {
-      container(reduxProvider);
-    } else {
-      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
-    }
-  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
-}
-function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {
-  if (storeOptions === void 0) {
-    storeOptions = {};
-  }
-
-  if (renderToStream === void 0) {
-    renderToStream = false;
-  }
-
-  return renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
-    var data = store.getState();
-    var reduxProvider = React__default.createElement(reactRedux.Provider, {
-      store: store
-    }, React__default.createElement(appViews.Main, null));
-    var render = renderToStream ? server.renderToNodeStream : server.renderToString;
-    return {
-      store: store,
-      ssrInitStoreKey: ssrInitStoreKey,
-      data: data,
-      html: render(reduxProvider)
-    };
-  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
-}
-var loadView = function loadView(moduleName, viewName, options, Loading) {
-  var _ref = options || {},
-      forwardRef = _ref.forwardRef,
-      modelOptions = _objectWithoutPropertiesLoose$1(_ref, ["forwardRef"]);
-
-  var Loader = function ViewLoader(props) {
-    var _useState = React.useState(function () {
-      var moduleViewResult = getView(moduleName, viewName, modelOptions);
-
-      if (isPromiseView(moduleViewResult)) {
-        moduleViewResult.then(function (Component) {
-          setView({
-            Component: Component
-          });
-        });
-        return null;
-      } else {
-        return {
-          Component: moduleViewResult
-        };
-      }
-    }),
-        view = _useState[0],
-        setView = _useState[1];
-
-    var forwardRef = props.forwardRef,
-        other = _objectWithoutPropertiesLoose$1(props, ["forwardRef"]);
-
-    var ref = forwardRef ? {
-      ref: forwardRef
-    } : {};
-    return view ? React__default.createElement(view.Component, _extends$1({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
-  };
-
-  var Component = forwardRef ? React__default.forwardRef(function (props, ref) {
-    return React__default.createElement(Loader, _extends$1({}, props, {
-      forwardRef: ref
-    }));
-  }) : Loader;
-  return Component;
-};
-var exportModule$1 = exportModule;
-
 function _createForOfIteratorHelperLoose(o) {
   var i = 0;
 
@@ -2365,6 +2281,90 @@ function buildTransformRoute(routeConfig) {
   };
 }
 
+function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
+  if (container === void 0) {
+    container = 'root';
+  }
+
+  return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
+
+    if (typeof container === 'function') {
+      container(reduxProvider);
+    } else {
+      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+    }
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
+}
+function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {
+  if (storeOptions === void 0) {
+    storeOptions = {};
+  }
+
+  if (renderToStream === void 0) {
+    renderToStream = false;
+  }
+
+  return renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
+    var data = store.getState();
+    var reduxProvider = React__default.createElement(reactRedux.Provider, {
+      store: store
+    }, React__default.createElement(appViews.Main, null));
+    var render = renderToStream ? server.renderToNodeStream : server.renderToString;
+    return {
+      store: store,
+      ssrInitStoreKey: ssrInitStoreKey,
+      data: data,
+      html: render(reduxProvider)
+    };
+  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
+}
+var loadView = function loadView(moduleName, viewName, options, Loading) {
+  var _ref = options || {},
+      forwardRef = _ref.forwardRef,
+      modelOptions = _objectWithoutPropertiesLoose$1(_ref, ["forwardRef"]);
+
+  var Loader = function ViewLoader(props) {
+    var _useState = React.useState(function () {
+      var moduleViewResult = getView(moduleName, viewName, modelOptions);
+
+      if (isPromiseView(moduleViewResult)) {
+        moduleViewResult.then(function (Component) {
+          setView({
+            Component: Component
+          });
+        });
+        return null;
+      } else {
+        return {
+          Component: moduleViewResult
+        };
+      }
+    }),
+        view = _useState[0],
+        setView = _useState[1];
+
+    var forwardRef = props.forwardRef,
+        other = _objectWithoutPropertiesLoose$1(props, ["forwardRef"]);
+
+    var ref = forwardRef ? {
+      ref: forwardRef
+    } : {};
+    return view ? React__default.createElement(view.Component, _extends$1({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
+  };
+
+  var Component = forwardRef ? React__default.forwardRef(function (props, ref) {
+    return React__default.createElement(Loader, _extends$1({}, props, {
+      forwardRef: ref
+    }));
+  }) : Loader;
+  return Component;
+};
+var exportModule$1 = exportModule;
+
 function fillBrowserRouteData(routePayload) {
   var extend = routePayload.extend || {
     views: {},
@@ -2521,15 +2521,21 @@ function buildToBrowserUrl(routeToLocation) {
 var historyActions = undefined;
 var transformRoute = undefined;
 var toBrowserUrl = undefined;
-function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOptions, container, beforeRender) {
-  if (storeOptions === void 0) {
-    storeOptions = {};
-  }
-
-  if (container === void 0) {
-    container = 'root';
-  }
-
+function buildApp(_ref) {
+  var moduleGetter = _ref.moduleGetter,
+      appModuleName = _ref.appModuleName,
+      history = _ref.history,
+      _ref$routeConfig = _ref.routeConfig,
+      routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
+      defaultRouteParams = _ref.defaultRouteParams,
+      _ref$storeOptions = _ref.storeOptions,
+      storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
+      _ref$container = _ref.container,
+      container = _ref$container === void 0 ? 'root' : _ref$container,
+      beforeRender = _ref.beforeRender;
+  setRouteConfig({
+    defaultRouteParams: defaultRouteParams
+  });
   var router = createRouter(history, routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
@@ -2552,15 +2558,21 @@ function buildApp(moduleGetter, appModuleName, history, routeConfig, storeOption
     }) : store;
   });
 }
-function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptions, renderToStream, beforeRender) {
-  if (storeOptions === void 0) {
-    storeOptions = {};
-  }
-
-  if (renderToStream === void 0) {
-    renderToStream = false;
-  }
-
+function buildSSR(_ref2) {
+  var moduleGetter = _ref2.moduleGetter,
+      appModuleName = _ref2.appModuleName,
+      location = _ref2.location,
+      _ref2$routeConfig = _ref2.routeConfig,
+      routeConfig = _ref2$routeConfig === void 0 ? {} : _ref2$routeConfig,
+      defaultRouteParams = _ref2.defaultRouteParams,
+      _ref2$storeOptions = _ref2.storeOptions,
+      storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
+      _ref2$renderToStream = _ref2.renderToStream,
+      renderToStream = _ref2$renderToStream === void 0 ? false : _ref2$renderToStream,
+      beforeRender = _ref2.beforeRender;
+  setRouteConfig({
+    defaultRouteParams: defaultRouteParams
+  });
   var history$1 = {
     listen: function listen() {
       return void 0;
@@ -2593,9 +2605,9 @@ function buildSSR(moduleGetter, appModuleName, location, routeConfig, storeOptio
     }) : store;
   });
 }
-var Switch = function Switch(_ref) {
-  var children = _ref.children,
-      elseView = _ref.elseView;
+var Switch = function Switch(_ref3) {
+  var children = _ref3.children,
+      elseView = _ref3.elseView;
 
   if (!children || Array.isArray(children) && children.every(function (item) {
     return !item;
@@ -2610,10 +2622,10 @@ function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-var Link = React__default.forwardRef(function (_ref2, ref) {
-  var _onClick = _ref2.onClick,
-      replace = _ref2.replace,
-      rest = _objectWithoutPropertiesLoose(_ref2, ["onClick", "replace"]);
+var Link = React__default.forwardRef(function (_ref4, ref) {
+  var _onClick = _ref4.onClick,
+      replace = _ref4.replace,
+      rest = _objectWithoutPropertiesLoose(_ref4, ["onClick", "replace"]);
 
   var target = rest.target;
   var props = Object.assign({}, rest, {
