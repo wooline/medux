@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-web-router",
-  "version": "0.2.31",
+  "version": "0.2.32",
   "description": "The practice of @medux/core in react.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-web-router",
   "author": "wooline <wooline@qq.com>",
