@@ -2,6 +2,7 @@ const cfg = {
   next: {code: process.env.NODE_ENV, targets: {chrome: 80}},
   esm: {code: process.env.NODE_ENV, targets: {ie: 11}},
   cjs: {code: process.env.NODE_ENV, targets: {ie: 11}},
+  pkg: {code: process.env.NODE_ENV, targets: {ie: 11}},
   test: {code: process.env.NODE_ENV, targets: {ie: 11}},
 };
 const env = cfg[process.env.NODE_ENV];
@@ -15,7 +16,7 @@ module.exports = function (features = []) {
         '@babel/preset-env',
         {
           loose: true,
-          modules: env.code === 'test' ? 'cjs' : false,
+          modules: env.code === 'cjs' || env.code === 'test' ? 'cjs' : false,
           targets: env.targets,
         },
       ],
@@ -32,7 +33,7 @@ module.exports = function (features = []) {
       [
         '@babel/plugin-transform-runtime',
         {
-          useESModules: env.code !== 'test',
+          useESModules: env.code !== 'cjs' && env.code !== 'test',
           version: '^7.7.2',
         },
       ],

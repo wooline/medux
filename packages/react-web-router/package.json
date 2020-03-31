@@ -28,8 +28,8 @@
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
     "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
-    "build:cjs": "cross-env NODE_ENV=cjs rollup -c",
-    "build": "yarn build:next & yarn build:esm & yarn build:cjs"
+    "build:pkg": "cross-env NODE_ENV=pkg rollup -c",
+    "build": "yarn build:next & yarn build:esm & yarn build:pkg"
   },
   "externals": {
     "react": true,

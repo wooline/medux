@@ -1,0 +1,121 @@
+"use strict";
+
+exports.__esModule = true;
+exports.compileToPath = compileToPath;
+exports.compilePath = compilePath;
+exports.matchPath = matchPath;
+exports.default = void 0;
+
+var _pathToRegexp = require("./path-to-regexp");
+
+var cache = {};
+var cacheLimit = 10000;
+var cacheCount = 0;
+
+function compileToPath(rule) {
+  if (cache[rule]) {
+    return cache[rule];
+  }
+
+  var result = (0, _pathToRegexp.compile)(rule);
+
+  if (cacheCount < cacheLimit) {
+    cache[rule] = result;
+    cacheCount++;
+  }
+
+  return result;
+}
+
+function compilePath(path, options) {
+  if (options === void 0) {
+    options = {
+      end: false,
+      strict: false,
+      sensitive: false
+    };
+  }
+
+  var cacheKey = "" + options.end + options.strict + options.sensitive;
+  var pathCache = cache[cacheKey] || (cache[cacheKey] = {});
+
+  if (pathCache[path]) {
+    return pathCache[path];
+  }
+
+  var keys = [];
+  var regexp = (0, _pathToRegexp.pathToRegexp)(path, keys, options);
+  var result = {
+    regexp: regexp,
+    keys: keys
+  };
+
+  if (cacheCount < cacheLimit) {
+    pathCache[path] = result;
+    cacheCount++;
+  }
+
+  return result;
+}
+
+function matchPath(pathname, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  if (typeof options === 'string' || Array.isArray(options)) {
+    options = {
+      path: options
+    };
+  }
+
+  var _options = options,
+      path = _options.path,
+      _options$exact = _options.exact,
+      exact = _options$exact === void 0 ? false : _options$exact,
+      _options$strict = _options.strict,
+      strict = _options$strict === void 0 ? false : _options$strict,
+      _options$sensitive = _options.sensitive,
+      sensitive = _options$sensitive === void 0 ? false : _options$sensitive;
+  var paths = [].concat(path);
+  return paths.reduce(function (matched, path) {
+    if (!path) return null;
+    if (matched) return matched;
+
+    if (path === '*') {
+      return {
+        path: path,
+        url: pathname,
+        isExact: true,
+        params: {}
+      };
+    }
+
+    var _compilePath = compilePath(path, {
+      end: exact,
+      strict: strict,
+      sensitive: sensitive
+    }),
+        regexp = _compilePath.regexp,
+        keys = _compilePath.keys;
+
+    var match = regexp.exec(pathname);
+    if (!match) return null;
+    var url = match[0],
+        values = match.slice(1);
+    var isExact = pathname === url;
+    if (exact && !isExact) return null;
+    return {
+      path: path,
+      url: path === '/' && url === '' ? '/' : url,
+      isExact: isExact,
+      params: keys.reduce(function (memo, key, index) {
+        memo[key.name] = values[index];
+        return memo;
+      }, {})
+    };
+  }, null);
+}
+
+var _default = matchPath;
+exports.default = _default;

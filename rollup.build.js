@@ -5,9 +5,8 @@ import path from 'path';
 import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 
-export default function (root) {
+export default function (root, moduleName, globals) {
   const extensions = ['.js', '.ts', '.tsx'];
-  const distDir = 'cjs';
   const pkgResult = {include: {}, external: {}};
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pkg = require(path.resolve(root, './package.json'));
@@ -16,8 +15,10 @@ export default function (root) {
   const config = {
     input: 'src/',
     output: [
-      {file: 'dist/' + distDir + '/index.js', format: 'cjs'},
-      {file: 'dist/' + distDir + '/index.min.js', format: 'cjs', plugins: [terser()], sourcemap: true},
+      {file: 'dist/umd/index.js', format: 'umd', name: moduleName, globals},
+      {file: 'dist/umd/index.min.js', format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
+      {file: 'dist/cjs/index.js', format: 'cjs'},
+      {file: 'dist/cjs/index.min.js', format: 'cjs', plugins: [terser()], sourcemap: true},
     ],
     external: (id) => {
       const hit = externals.some((mod) => mod === id || id.startsWith(mod + '/'));
