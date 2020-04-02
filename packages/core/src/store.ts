@@ -8,7 +8,7 @@ function isPromiseModule(module: Module | Promise<Module>): module is Promise<Mo
 }
 
 export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void> {
-  const hasInjected = store._medux_.injectedModules[moduleName];
+  const hasInjected = !!store._medux_.injectedModules[moduleName];
   if (!hasInjected) {
     const moduleGetter = MetaData.moduleGetter;
     const result = moduleGetter[moduleName]();
@@ -256,7 +256,6 @@ export function buildStore(
         reducerMap: {},
         effectMap: {},
         injectedModules: {},
-        currentViews: {},
       };
       return newStore;
     };

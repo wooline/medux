@@ -7,7 +7,7 @@ function isPromiseModule(module) {
 }
 
 export function loadModel(moduleName, store, options) {
-  const hasInjected = store._medux_.injectedModules[moduleName];
+  const hasInjected = !!store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
     const moduleGetter = MetaData.moduleGetter;
@@ -271,8 +271,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
         currentState: {},
         reducerMap: {},
         effectMap: {},
-        injectedModules: {},
-        currentViews: {}
+        injectedModules: {}
       };
       return newStore;
     };

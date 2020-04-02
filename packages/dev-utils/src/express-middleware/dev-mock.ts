@@ -24,12 +24,12 @@ function checkDir(maxNum: number) {
   fs.readdir(tempDir, (err, files) => {
     if (!err) {
       if (files.length > maxNum) {
-        const arr = files.map(file => {
+        const arr = files.map((file) => {
           file = path.join(tempDir, file);
           return {file, time: fs.statSync(file).atimeMs};
         });
         arr.sort((a, b) => b.time - a.time);
-        arr.slice(Math.round(maxNum - maxNum / 3)).forEach(item => {
+        arr.slice(Math.round(maxNum - maxNum / 3)).forEach((item) => {
           fs.unlinkSync(item.file);
         });
       }
@@ -75,13 +75,7 @@ function getResult(url: string, buffer: Buffer, res: Response) {
 function serializeUrl(method: string, url: string) {
   const arr = url.split('?');
   if (arr[1]) {
-    url =
-      arr[0] +
-      '?' +
-      arr[1]
-        .split('&')
-        .sort()
-        .join('&');
+    url = arr[0] + '?' + arr[1].split('&').sort().join('&');
   }
   return (method.toLowerCase() + '/' + url)
     .replace(/\//g, '-')
@@ -106,7 +100,7 @@ function endSend(res: Response, content: string, data: {statusCode: number; head
   res.status(data.statusCode || 200);
   res.set(data.headers);
   if (Array.isArray(data.cookies)) {
-    data.cookies.forEach(item => {
+    data.cookies.forEach((item) => {
       res.cookie(...item);
     });
   }
@@ -139,7 +133,7 @@ function cacheFileNames(sourceDir: string, timeout: number) {
     fileNamesLatest.date = now;
     fileNamesLatest.files = {};
     fileNamesLatest.regExpFiles = {};
-    fileList.forEach(name => {
+    fileList.forEach((name) => {
       if (name.endsWith('.js')) {
         const arr = name.split('@');
         if (arr[1]) {
@@ -197,7 +191,7 @@ export = function middleware(
   cacheTimeout: number = 3000
 ) {
   if (!enable || !proxyMap) {
-    return function(req: Request, res: Response, next: NextFunction) {
+    return function (req: Request, res: Response, next: NextFunction) {
       next();
     };
   }
@@ -218,15 +212,15 @@ export = function middleware(
     }
   }
 
-  return function(req: Request, res: Response, next: NextFunction) {
-    if (!proxyUrls.some(reg => mm.isMatch(req.url, reg))) {
+  return function (req: Request, res: Response, next: NextFunction) {
+    if (!proxyUrls.some((reg) => mm.isMatch(req.url, reg))) {
       next();
     } else {
       const {sourceFileName, tempFileName, fileName} = urlToFileName(req.method, req.url, sourceDir, tempDir);
       cacheFileNames(sourceDir, cacheTimeout);
       const mockFile = hitMockFile(fileName);
       if (mockFile) {
-        fs.readFile(path.join(sourceDir, mockFile), 'utf-8', function(err, content) {
+        fs.readFile(path.join(sourceDir, mockFile), 'utf-8', function (err, content) {
           if (err) {
             console.error(err);
             res.writeHead(500, {'content-type': 'text/plain; charset=utf-8'});
@@ -251,7 +245,7 @@ export = function middleware(
           const contentType = res.get('content-type') || '';
           if ((statusCode === 200 || statusCode === 201 || statusCode === 204) && args.length === 0 && (!contentType || /\bjson\b|\bhtml\b|\btext\b/.test(contentType))) {
             const data = getResult(req.url, buffer, res);
-            fs.writeFile(tempFileName, 'return ' + jsonFormat(data, {type: 'space'}), err => {
+            fs.writeFile(tempFileName, 'return ' + jsonFormat(data, {type: 'space'}), (err) => {
               if (err) {
                 console.error(err);
               }

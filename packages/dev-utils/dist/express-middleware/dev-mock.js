@@ -25,12 +25,12 @@ function checkDir(maxNum) {
     fs_1.default.readdir(tempDir, (err, files) => {
         if (!err) {
             if (files.length > maxNum) {
-                const arr = files.map(file => {
+                const arr = files.map((file) => {
                     file = path_1.default.join(tempDir, file);
                     return { file, time: fs_1.default.statSync(file).atimeMs };
                 });
                 arr.sort((a, b) => b.time - a.time);
-                arr.slice(Math.round(maxNum - maxNum / 3)).forEach(item => {
+                arr.slice(Math.round(maxNum - maxNum / 3)).forEach((item) => {
                     fs_1.default.unlinkSync(item.file);
                 });
             }
@@ -60,7 +60,7 @@ function getResult(url, buffer, res) {
             body = JSON.parse(body);
         }
     }
-    const resHeaders = Object.assign({}, res.getHeaders());
+    const resHeaders = { ...res.getHeaders() };
     delete resHeaders['content-length'];
     delete resHeaders['etag'];
     delete resHeaders['date'];
@@ -76,13 +76,7 @@ function getResult(url, buffer, res) {
 function serializeUrl(method, url) {
     const arr = url.split('?');
     if (arr[1]) {
-        url =
-            arr[0] +
-                '?' +
-                arr[1]
-                    .split('&')
-                    .sort()
-                    .join('&');
+        url = arr[0] + '?' + arr[1].split('&').sort().join('&');
     }
     return (method.toLowerCase() + '/' + url)
         .replace(/\//g, '-')
@@ -106,7 +100,7 @@ function endSend(res, content, data) {
     res.status(data.statusCode || 200);
     res.set(data.headers);
     if (Array.isArray(data.cookies)) {
-        data.cookies.forEach(item => {
+        data.cookies.forEach((item) => {
             res.cookie(...item);
         });
     }
@@ -138,7 +132,7 @@ function cacheFileNames(sourceDir, timeout) {
         fileNamesLatest.date = now;
         fileNamesLatest.files = {};
         fileNamesLatest.regExpFiles = {};
-        fileList.forEach(name => {
+        fileList.forEach((name) => {
             if (name.endsWith('.js')) {
                 const arr = name.split('@');
                 if (arr[1]) {
@@ -210,7 +204,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
         }
     }
     return function (req, res, next) {
-        if (!proxyUrls.some(reg => micromatch_1.default.isMatch(req.url, reg))) {
+        if (!proxyUrls.some((reg) => micromatch_1.default.isMatch(req.url, reg))) {
             next();
         }
         else {
@@ -245,7 +239,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, max
                     const contentType = res.get('content-type') || '';
                     if ((statusCode === 200 || statusCode === 201 || statusCode === 204) && args.length === 0 && (!contentType || /\bjson\b|\bhtml\b|\btext\b/.test(contentType))) {
                         const data = getResult(req.url, buffer, res);
-                        fs_1.default.writeFile(tempFileName, 'return ' + json_format_1.default(data, { type: 'space' }), err => {
+                        fs_1.default.writeFile(tempFileName, 'return ' + json_format_1.default(data, { type: 'space' }), (err) => {
                             if (err) {
                                 console.error(err);
                             }

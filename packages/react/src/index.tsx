@@ -86,20 +86,27 @@ export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, str
 
 export type LoadView<T extends ModuleGetter> = core.LoadView<T, {forwardRef?: boolean}, ComponentType<any>>;
 
-export const loadView: LoadView<any> = (moduleName, viewName, options, Loading) => {
+const LoadViewOnError: ComponentType<any> = () => {
+  return <div>error</div>;
+};
+export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, Error) => {
   const {forwardRef, ...modelOptions} = options || {};
   const Loader: FC<any> = function ViewLoader(props: any) {
-    const [view, setView] = useState<{Component: ComponentType} | null>(() => {
+    const [view, setView] = useState<{Component: ComponentType<any>} | null>(() => {
       const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
-        moduleViewResult.then((Component) => {
-          // loader.propTypes = Component.propTypes;
-          // loader.contextTypes = Component.contextTypes;
-          // loader.defaultProps = Component.defaultProps;
-          // Object.keys(loader).forEach(key => (Component[key] = loader[key]));
-          // Object.keys(Component).forEach(key => (loader[key] = Component[key]));
-          setView({Component});
-        });
+        moduleViewResult
+          .then((Component) => {
+            // loader.propTypes = Component.propTypes;
+            // loader.contextTypes = Component.contextTypes;
+            // loader.defaultProps = Component.defaultProps;
+            // Object.keys(loader).forEach(key => (Component[key] = loader[key]));
+            // Object.keys(Component).forEach(key => (loader[key] = Component[key]));
+            setView({Component});
+          })
+          .catch(() => {
+            setView({Component: Error || LoadViewOnError});
+          });
         return null;
       } else {
         // loader.propTypes = moduleViewResult.propTypes;

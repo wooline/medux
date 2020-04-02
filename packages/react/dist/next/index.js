@@ -35,7 +35,12 @@ export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOption
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
-export const loadView = (moduleName, viewName, options, Loading) => {
+
+const LoadViewOnError = () => {
+  return React.createElement("div", null, "error");
+};
+
+export const loadView = (moduleName, viewName, options, Loading, Error) => {
   const _ref = options || {},
         {
     forwardRef
@@ -50,6 +55,10 @@ export const loadView = (moduleName, viewName, options, Loading) => {
         moduleViewResult.then(Component => {
           setView({
             Component
+          });
+        }).catch(() => {
+          setView({
+            Component: Error || LoadViewOnError
           });
         });
         return null;

@@ -29,13 +29,13 @@ function getProxys(proxyMap: {[key: string]: any} | {context: string[] | string}
 
 export = function middleware(enableSSR: boolean, proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function, replaceTpl?: (req: Request, htmlTpl: string) => string) {
   if (!enableSSR) {
-    return function(req: Request, res: Response, next: NextFunction) {
+    return function (req: Request, res: Response, next: NextFunction) {
       next();
     };
   }
   const passUrls = [...getProxys(proxyMap), '/index.html', '/server/**', '/client/**', '/sockjs-node/**', '**/*.hot-update.*'];
   return (req: Request, res: Response, next: NextFunction) => {
-    if (passUrls.some(reg => mm.isMatch(req.url, reg))) {
+    if (passUrls.some((reg) => mm.isMatch(req.url, reg))) {
       next();
     } else {
       Promise.all([ajax.get(`${req.protocol}://${req.headers.host}/server/main.js`), ajax.get(`${req.protocol}://${req.headers.host}/index.html`)]).then(([main, tpl]) => {

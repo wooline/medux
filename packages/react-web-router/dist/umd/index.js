@@ -1029,7 +1029,7 @@
   }
 
   function loadModel(moduleName, store, options) {
-    var hasInjected = store._medux_.injectedModules[moduleName];
+    var hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
       var moduleGetter = MetaData.moduleGetter;
@@ -1325,8 +1325,7 @@
           currentState: {},
           reducerMap: {},
           effectMap: {},
-          injectedModules: {},
-          currentViews: {}
+          injectedModules: {}
         };
         return newStore;
       };
@@ -2542,12 +2541,37 @@
     return value;
   }
 
+  function clearHandlers(key, actionHandlerMap) {
+    for (var actionName in actionHandlerMap) {
+      if (actionHandlerMap.hasOwnProperty(actionName)) {
+        var maps = actionHandlerMap[actionName];
+        delete maps[key];
+      }
+    }
+  }
+
+  var modelHotReplacement = function modelHotReplacement(moduleName, initState, ActionHandles) {
+    var store = MetaData.clientStore;
+    var prevInitState = store._medux_.injectedModules[moduleName];
+
+    if (prevInitState) {
+      if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+        throw 'store cannot apply update for HMR.';
+      }
+
+      clearHandlers(moduleName, store._medux_.reducerMap);
+      clearHandlers(moduleName, store._medux_.effectMap);
+      var handlers = new ActionHandles(moduleName, store);
+      var actions = injectActions(store, moduleName, handlers);
+      handlers.actions = actions;
+    }
+  };
   var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
     var model = function model(store, options) {
-      var hasInjected = store._medux_.injectedModules[moduleName];
+      var hasInjected = !!store._medux_.injectedModules[moduleName];
 
       if (!hasInjected) {
-        store._medux_.injectedModules[moduleName] = true;
+        store._medux_.injectedModules[moduleName] = initState;
         var moduleState = store.getState()[moduleName];
         var handlers = new ActionHandles(moduleName, store);
 
@@ -4083,7 +4107,12 @@
       };
     }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
   }
-  var loadView = function loadView(moduleName, viewName, options, Loading) {
+
+  var LoadViewOnError = function LoadViewOnError() {
+    return React__default.createElement("div", null, "error");
+  };
+
+  var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
     var _ref = options || {},
         forwardRef = _ref.forwardRef,
         modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
@@ -4096,6 +4125,10 @@
           moduleViewResult.then(function (Component) {
             setView({
               Component: Component
+            });
+          }).catch(function () {
+            setView({
+              Component: Error || LoadViewOnError
             });
           });
           return null;
@@ -4451,6 +4484,7 @@
   exports.exportActions = exportActions;
   exports.exportModule = exportModule$1;
   exports.loadView = loadView;
+  exports.modelHotReplacement = modelHotReplacement;
   exports.reducer = reducer;
   exports.setRouteConfig = setRouteConfig;
 

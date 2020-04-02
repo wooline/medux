@@ -40,7 +40,7 @@ export = function middleware(
     try {
       ssrModule
         .default(req.url)
-        .then(result => {
+        .then((result) => {
           const {ssrInitStoreKey, data, html} = result;
           if (res.headersSent) {
             res.write(htmlChunks[1].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, `${html}`).replace(/<!--\s*{script}\s*-->/, `<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>`));

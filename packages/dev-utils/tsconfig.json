@@ -3,6 +3,7 @@
   "compilerOptions": {
     "importHelpers": false,
     "noEmit": false,
+    "strict": false,
     "declaration": false,
     "isolatedModules": false,
     "baseUrl": "./src",

@@ -3,12 +3,38 @@ import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { MetaData, client, config, injectActions, isPromise, reducer } from './basic';
 import { buildStore, loadModel as _loadModel } from './store';
+
+function clearHandlers(key, actionHandlerMap) {
+  for (var actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      var maps = actionHandlerMap[actionName];
+      delete maps[key];
+    }
+  }
+}
+
+export var modelHotReplacement = function modelHotReplacement(moduleName, initState, ActionHandles) {
+  var store = MetaData.clientStore;
+  var prevInitState = store._medux_.injectedModules[moduleName];
+
+  if (prevInitState) {
+    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+      throw 'store cannot apply update for HMR.';
+    }
+
+    clearHandlers(moduleName, store._medux_.reducerMap);
+    clearHandlers(moduleName, store._medux_.effectMap);
+    var handlers = new ActionHandles(moduleName, store);
+    var actions = injectActions(store, moduleName, handlers);
+    handlers.actions = actions;
+  }
+};
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store, options) {
-    var hasInjected = store._medux_.injectedModules[moduleName];
+    var hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
-      store._medux_.injectedModules[moduleName] = true;
+      store._medux_.injectedModules[moduleName] = initState;
       var moduleState = store.getState()[moduleName];
       var handlers = new ActionHandles(moduleName, store);
 

@@ -47,7 +47,12 @@ export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOption
     };
   }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
-export var loadView = function loadView(moduleName, viewName, options, Loading) {
+
+var LoadViewOnError = function LoadViewOnError() {
+  return React.createElement("div", null, "error");
+};
+
+export var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
   var _ref = options || {},
       forwardRef = _ref.forwardRef,
       modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
@@ -60,6 +65,10 @@ export var loadView = function loadView(moduleName, viewName, options, Loading) 
         moduleViewResult.then(function (Component) {
           setView({
             Component: Component
+          });
+        }).catch(function () {
+          setView({
+            Component: Error || LoadViewOnError
           });
         });
         return null;

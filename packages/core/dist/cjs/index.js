@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.loadModel = exports.getActionData = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.routeParamsAction = exports.routeChangeAction = exports.errorAction = void 0;
+exports.modelHotReplacement = exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.loadModel = exports.getActionData = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.routeParamsAction = exports.routeChangeAction = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -42,3 +42,4 @@ exports.exportModule = _module.exportModule;
 exports.isPromiseModule = _module.isPromiseModule;
 exports.isPromiseView = _module.isPromiseView;
 exports.getView = _module.getView;
+exports.modelHotReplacement = _module.modelHotReplacement;

@@ -34,7 +34,7 @@ module.exports = function middleware(enableSSR, proxyMap, replaceTpl) {
     }
     const passUrls = [...getProxys(proxyMap), '/index.html', '/server/**', '/client/**', '/sockjs-node/**', '**/*.hot-update.*'];
     return (req, res, next) => {
-        if (passUrls.some(reg => micromatch_1.default.isMatch(req.url, reg))) {
+        if (passUrls.some((reg) => micromatch_1.default.isMatch(req.url, reg))) {
             next();
         }
         else {

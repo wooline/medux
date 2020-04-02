@@ -9,7 +9,7 @@ exports.exportActions = exportActions;
 exports.getView = getView;
 exports.renderApp = renderApp;
 exports.renderSSR = renderSSR;
-exports.BaseModelHandlers = exports.exportModule = void 0;
+exports.BaseModelHandlers = exports.exportModule = exports.modelHotReplacement = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
@@ -21,12 +21,40 @@ var _basic = require("./basic");
 
 var _store = require("./store");
 
+function clearHandlers(key, actionHandlerMap) {
+  for (var actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      var maps = actionHandlerMap[actionName];
+      delete maps[key];
+    }
+  }
+}
+
+var modelHotReplacement = function modelHotReplacement(moduleName, initState, ActionHandles) {
+  var store = _basic.MetaData.clientStore;
+  var prevInitState = store._medux_.injectedModules[moduleName];
+
+  if (prevInitState) {
+    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+      throw 'store cannot apply update for HMR.';
+    }
+
+    clearHandlers(moduleName, store._medux_.reducerMap);
+    clearHandlers(moduleName, store._medux_.effectMap);
+    var handlers = new ActionHandles(moduleName, store);
+    var actions = (0, _basic.injectActions)(store, moduleName, handlers);
+    handlers.actions = actions;
+  }
+};
+
+exports.modelHotReplacement = modelHotReplacement;
+
 var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store, options) {
-    var hasInjected = store._medux_.injectedModules[moduleName];
+    var hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
-      store._medux_.injectedModules[moduleName] = true;
+      store._medux_.injectedModules[moduleName] = initState;
       var moduleState = store.getState()[moduleName];
       var handlers = new ActionHandles(moduleName, store);
 

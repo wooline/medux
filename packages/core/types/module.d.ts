@@ -57,6 +57,7 @@ export declare type ExportModule<Component> = <S extends BaseModelState, V exten
 }, T extends BaseModelHandlers<S, any>, N extends string>(moduleName: N, initState: S, ActionHandles: {
     new (moduleName: string, store: any): T;
 }, views: V) => Module<Model<S>, V, Actions<T>, N>['default'];
+export declare const modelHotReplacement: (moduleName: string, initState: any, ActionHandles: new (moduleName: string, store: any) => BaseModelHandlers<any, any>) => void;
 export declare const exportModule: ExportModule<any>;
 export declare abstract class BaseModelHandlers<S extends BaseModelState, R extends {
     route: RouteState;
@@ -107,7 +108,7 @@ export declare function exportActions<G extends {
     [key in keyof G]: ModuleActions<ReturnModule<G[key]>>;
 };
 export declare function getView<T>(moduleName: string, viewName: string, modelOptions?: any): T | Promise<T>;
-export declare type LoadView<MG extends ModuleGetter, Options = any, Loading = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, options?: Options, loading?: Loading) => V[N];
+export declare type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, options?: Options, loading?: Comp, error?: Comp) => V[N];
 export interface StoreOptions {
     ssrInitStoreKey?: string;
     reducers?: ReducersMapObject;

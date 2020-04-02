@@ -68,7 +68,11 @@ function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, rend
   }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 
-var loadView = function loadView(moduleName, viewName, options, Loading) {
+var LoadViewOnError = function LoadViewOnError() {
+  return _react.default.createElement("div", null, "error");
+};
+
+var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
   var _ref = options || {},
       forwardRef = _ref.forwardRef,
       modelOptions = (0, _objectWithoutPropertiesLoose2.default)(_ref, ["forwardRef"]);
@@ -81,6 +85,10 @@ var loadView = function loadView(moduleName, viewName, options, Loading) {
         moduleViewResult.then(function (Component) {
           setView({
             Component: Component
+          });
+        }).catch(function () {
+          setView({
+            Component: Error || LoadViewOnError
           });
         });
         return null;

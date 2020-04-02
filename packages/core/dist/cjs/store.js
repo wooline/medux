@@ -16,7 +16,7 @@ function isPromiseModule(module) {
 }
 
 function loadModel(moduleName, store, options) {
-  var hasInjected = store._medux_.injectedModules[moduleName];
+  var hasInjected = !!store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
     var moduleGetter = _basic.MetaData.moduleGetter;
@@ -313,8 +313,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         currentState: {},
         reducerMap: {},
         effectMap: {},
-        injectedModules: {},
-        currentViews: {}
+        injectedModules: {}
       };
       return newStore;
     };

@@ -1,4 +1,4 @@
-import {Action, ActionCreatorList, ActionHandler, BaseModelState, MetaData, ModelStore, RouteState, StoreState, client, config, injectActions, isPromise, reducer} from './basic';
+import {Action, ActionCreatorList, ActionHandler, ActionHandlerMap, BaseModelState, MetaData, ModelStore, RouteState, StoreState, client, config, injectActions, isPromise, reducer} from './basic';
 import {HistoryProxy, buildStore, loadModel} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -50,11 +50,33 @@ export type ExportModule<Component> = <S extends BaseModelState, V extends {[key
   views: V
 ) => Module<Model<S>, V, Actions<T>, N>['default'];
 
+function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
+  for (const actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      const maps = actionHandlerMap[actionName];
+      delete maps[key];
+    }
+  }
+}
+export const modelHotReplacement = (moduleName: string, initState: any, ActionHandles: {new (moduleName: string, store: any): BaseModelHandlers<any, any>}) => {
+  const store = MetaData.clientStore;
+  const prevInitState = store._medux_.injectedModules[moduleName];
+  if (prevInitState) {
+    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+      throw 'store cannot apply update for HMR.';
+    }
+    clearHandlers(moduleName, store._medux_.reducerMap);
+    clearHandlers(moduleName, store._medux_.effectMap);
+    const handlers = new ActionHandles(moduleName, store);
+    const actions = injectActions(store, moduleName, handlers as any);
+    (handlers as any).actions = actions;
+  }
+};
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
   const model = (store: ModelStore, options?: any) => {
-    const hasInjected = store._medux_.injectedModules[moduleName];
+    const hasInjected = !!store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
-      store._medux_.injectedModules[moduleName] = true;
+      store._medux_.injectedModules[moduleName] = initState;
       const moduleState: BaseModelState = store.getState()[moduleName];
       const handlers = new ActionHandles(moduleName, store);
       const actions = injectActions(store, moduleName, handlers as any);
@@ -240,11 +262,12 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
   }
 }
 
-export type LoadView<MG extends ModuleGetter, Options = any, Loading = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
+export type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
   moduleName: M,
   viewName: N,
   options?: Options,
-  loading?: Loading
+  loading?: Comp,
+  error?: Comp
 ) => V[N];
 
 function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module {

@@ -37,9 +37,9 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
 }
 
 export const config: {
-  NSP: string;
-  VSP: string;
-  MSP: string;
+  NSP: string; //ModuleName${NSP}ActionName用于ActionName
+  VSP: string; //ModuleName${VSP}ViewName用于路由
+  MSP: string; //用于同时监听多个Action
 } = {
   NSP: '/',
   VSP: '.',
@@ -90,8 +90,7 @@ export interface ModelStore extends Store {
   _medux_: {
     reducerMap: ReducerMap;
     effectMap: EffectMap;
-    injectedModules: {[moduleName: string]: boolean};
-    currentViews: CurrentViews;
+    injectedModules: {[moduleName: string]: {}};
     beforeState: StoreState;
     prevState: StoreState;
     currentState: StoreState;
@@ -114,9 +113,7 @@ export type StoreState = {
 export interface DisplayViews {
   [moduleName: string]: {[viewName: string]: boolean | undefined} | undefined;
 }
-export interface CurrentViews {
-  [moduleName: string]: {[viewName: string]: {[key: string]: boolean}};
-}
+
 export interface ReducerHandler extends ActionHandler {
   (payload: any): BaseModelState;
 }
