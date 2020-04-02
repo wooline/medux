@@ -1,4 +1,20 @@
-import {Action, ActionCreatorList, ActionHandler, ActionHandlerMap, BaseModelState, MetaData, ModelStore, RouteState, StoreState, client, config, injectActions, isPromise, reducer} from './basic';
+import {
+  Action,
+  ActionCreatorList,
+  ActionHandler,
+  ActionHandlerMap,
+  BaseModelState,
+  MetaData,
+  ModelStore,
+  RouteState,
+  StoreState,
+  cacheModule,
+  client,
+  config,
+  injectActions,
+  isPromise,
+  reducer,
+} from './basic';
 import {HistoryProxy, buildStore, loadModel} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
@@ -58,20 +74,30 @@ function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
     }
   }
 }
-export const modelHotReplacement = (moduleName: string, initState: any, ActionHandles: {new (moduleName: string, store: any): BaseModelHandlers<any, any>}) => {
+export function modelHotReplacement(moduleName: string, initState: any, ActionHandles: {new (moduleName: string, store: any): BaseModelHandlers<any, any>}) {
   const store = MetaData.clientStore;
   const prevInitState = store._medux_.injectedModules[moduleName];
+  initState.isModule = true;
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      throw 'store cannot apply update for HMR.';
-    }
+    // if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+    //   throw 'store cannot apply update for HMR.';
+    // }
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     const handlers = new ActionHandles(moduleName, store);
     const actions = injectActions(store, moduleName, handlers as any);
     (handlers as any).actions = actions;
   }
-};
+}
+export function viewHotReplacement(moduleName: string, views: {[key: string]: any}) {
+  const moduleGetter = MetaData.moduleGetter[moduleName];
+  const module = moduleGetter['__module__'] as Module;
+  if (module) {
+    module.default.views = views;
+  } else {
+    throw 'views cannot apply update for HMR.';
+  }
+}
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
   const model = (store: ModelStore, options?: any) => {
     const hasInjected = !!store._medux_.injectedModules[moduleName];
@@ -236,7 +262,7 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
     return result.then((module) => {
-      moduleGetter[moduleName] = () => module;
+      moduleGetter[moduleName] = cacheModule(module);
       const view: T = module.default.views[viewName];
       if (MetaData.isServer) {
         return view;
@@ -275,7 +301,7 @@ function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promis
   if (isPromiseModule(result)) {
     return result.then((module) => {
       //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
-      moduleGetter[moduleName] = () => module;
+      moduleGetter[moduleName] = cacheModule(module);
       return module;
     });
   } else {

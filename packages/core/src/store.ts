@@ -1,4 +1,4 @@
-import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
+import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, cacheModule, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 import {Module, ModuleGetter} from './module';
 import {errorAction, routeChangeAction, routeParamsAction} from './actions';
@@ -14,7 +14,7 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
     const result = moduleGetter[moduleName]();
     if (isPromiseModule(result)) {
       return result.then((module) => {
-        moduleGetter[moduleName] = (() => module) as any;
+        moduleGetter[moduleName] = cacheModule(module);
         return module.default.model(store, options);
       });
     } else {

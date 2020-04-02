@@ -57,7 +57,12 @@ export declare type ExportModule<Component> = <S extends BaseModelState, V exten
 }, T extends BaseModelHandlers<S, any>, N extends string>(moduleName: N, initState: S, ActionHandles: {
     new (moduleName: string, store: any): T;
 }, views: V) => Module<Model<S>, V, Actions<T>, N>['default'];
-export declare const modelHotReplacement: (moduleName: string, initState: any, ActionHandles: new (moduleName: string, store: any) => BaseModelHandlers<any, any>) => void;
+export declare function modelHotReplacement(moduleName: string, initState: any, ActionHandles: {
+    new (moduleName: string, store: any): BaseModelHandlers<any, any>;
+}): void;
+export declare function viewHotReplacement(moduleName: string, views: {
+    [key: string]: any;
+}): void;
 export declare const exportModule: ExportModule<any>;
 export declare abstract class BaseModelHandlers<S extends BaseModelState, R extends {
     route: RouteState;

@@ -7,7 +7,7 @@ import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
 import { createRouter } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer } from '@medux/core';
+export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 var historyActions = undefined;
 var transformRoute = undefined;

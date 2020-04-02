@@ -24,10 +24,7 @@ function loadModel(moduleName, store, options) {
 
     if (isPromiseModule(result)) {
       return result.then(function (module) {
-        moduleGetter[moduleName] = function () {
-          return module;
-        };
-
+        moduleGetter[moduleName] = (0, _basic.cacheModule)(module);
         return module.default.model(store, options);
       });
     } else {

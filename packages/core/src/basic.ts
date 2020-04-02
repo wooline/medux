@@ -153,7 +153,11 @@ export interface BaseModelState<R = {[key: string]: any}> {
     [key: string]: LoadingState;
   };
 }
-
+export function cacheModule<T>(module: T) {
+  const fn = () => module;
+  fn.__module__ = module;
+  return fn;
+}
 export function isPromise(data: any): data is Promise<any> {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }

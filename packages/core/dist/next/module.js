@@ -1,5 +1,5 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { MetaData, client, config, injectActions, isPromise, reducer } from './basic';
+import { MetaData, cacheModule, client, config, injectActions, isPromise, reducer } from './basic';
 import { buildStore, loadModel as _loadModel } from './store';
 
 function clearHandlers(key, actionHandlerMap) {
@@ -11,22 +11,29 @@ function clearHandlers(key, actionHandlerMap) {
   }
 }
 
-export const modelHotReplacement = (moduleName, initState, ActionHandles) => {
+export function modelHotReplacement(moduleName, initState, ActionHandles) {
   const store = MetaData.clientStore;
   const prevInitState = store._medux_.injectedModules[moduleName];
+  initState.isModule = true;
 
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      throw 'store cannot apply update for HMR.';
-    }
-
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     const handlers = new ActionHandles(moduleName, store);
     const actions = injectActions(store, moduleName, handlers);
     handlers.actions = actions;
   }
-};
+}
+export function viewHotReplacement(moduleName, views) {
+  const moduleGetter = MetaData.moduleGetter[moduleName];
+  const module = moduleGetter['__module__'];
+
+  if (module) {
+    module.default.views = views;
+  } else {
+    throw 'views cannot apply update for HMR.';
+  }
+}
 export const exportModule = (moduleName, initState, ActionHandles, views) => {
   const model = (store, options) => {
     const hasInjected = !!store._medux_.injectedModules[moduleName];
@@ -246,8 +253,7 @@ export function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule(result)) {
     return result.then(module => {
-      moduleGetter[moduleName] = () => module;
-
+      moduleGetter[moduleName] = cacheModule(module);
       const view = module.default.views[viewName];
 
       if (MetaData.isServer) {
@@ -284,8 +290,7 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(module => {
-      moduleGetter[moduleName] = () => module;
-
+      moduleGetter[moduleName] = cacheModule(module);
       return module;
     });
   } else {

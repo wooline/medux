@@ -339,6 +339,14 @@ var ActionTypes = {
   RouteChange: "medux" + config.NSP + "RouteChange"
 };
 var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
+function cacheModule(module) {
+  var fn = function fn() {
+    return module;
+  };
+
+  fn.__module__ = module;
+  return fn;
+}
 function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
@@ -1041,10 +1049,7 @@ function loadModel(moduleName, store, options) {
 
     if (isPromiseModule(result)) {
       return result.then(function (module) {
-        moduleGetter[moduleName] = function () {
-          return module;
-        };
-
+        moduleGetter[moduleName] = cacheModule(module);
         return module.default.model(store, options);
       });
     } else {
@@ -2554,22 +2559,29 @@ function clearHandlers(key, actionHandlerMap) {
   }
 }
 
-var modelHotReplacement = function modelHotReplacement(moduleName, initState, ActionHandles) {
+function modelHotReplacement(moduleName, initState, ActionHandles) {
   var store = MetaData.clientStore;
   var prevInitState = store._medux_.injectedModules[moduleName];
+  initState.isModule = true;
 
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      throw 'store cannot apply update for HMR.';
-    }
-
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     var handlers = new ActionHandles(moduleName, store);
     var actions = injectActions(store, moduleName, handlers);
     handlers.actions = actions;
   }
-};
+}
+function viewHotReplacement(moduleName, views) {
+  var moduleGetter = MetaData.moduleGetter[moduleName];
+  var module = moduleGetter['__module__'];
+
+  if (module) {
+    module.default.views = views;
+  } else {
+    throw 'views cannot apply update for HMR.';
+  }
+}
 var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store, options) {
     var hasInjected = !!store._medux_.injectedModules[moduleName];
@@ -2799,10 +2811,7 @@ function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule$1(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = function () {
-        return module;
-      };
-
+      moduleGetter[moduleName] = cacheModule(module);
       var view = module.default.views[viewName];
 
       if (MetaData.isServer) {
@@ -2843,10 +2852,7 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule$1(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = function () {
-        return module;
-      };
-
+      moduleGetter[moduleName] = cacheModule(module);
       return module;
     });
   } else {
@@ -4491,3 +4497,4 @@ exports.loadView = loadView;
 exports.modelHotReplacement = modelHotReplacement;
 exports.reducer = reducer;
 exports.setRouteConfig = setRouteConfig;
+exports.viewHotReplacement = viewHotReplacement;

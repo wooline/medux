@@ -3,13 +3,15 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
+exports.modelHotReplacement = modelHotReplacement;
+exports.viewHotReplacement = viewHotReplacement;
 exports.isPromiseModule = isPromiseModule;
 exports.isPromiseView = isPromiseView;
 exports.exportActions = exportActions;
 exports.getView = getView;
 exports.renderApp = renderApp;
 exports.renderSSR = renderSSR;
-exports.BaseModelHandlers = exports.exportModule = exports.modelHotReplacement = void 0;
+exports.BaseModelHandlers = exports.exportModule = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
@@ -30,24 +32,30 @@ function clearHandlers(key, actionHandlerMap) {
   }
 }
 
-var modelHotReplacement = function modelHotReplacement(moduleName, initState, ActionHandles) {
+function modelHotReplacement(moduleName, initState, ActionHandles) {
   var store = _basic.MetaData.clientStore;
   var prevInitState = store._medux_.injectedModules[moduleName];
+  initState.isModule = true;
 
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      throw 'store cannot apply update for HMR.';
-    }
-
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     var handlers = new ActionHandles(moduleName, store);
     var actions = (0, _basic.injectActions)(store, moduleName, handlers);
     handlers.actions = actions;
   }
-};
+}
 
-exports.modelHotReplacement = modelHotReplacement;
+function viewHotReplacement(moduleName, views) {
+  var moduleGetter = _basic.MetaData.moduleGetter[moduleName];
+  var module = moduleGetter['__module__'];
+
+  if (module) {
+    module.default.views = views;
+  } else {
+    throw 'views cannot apply update for HMR.';
+  }
+}
 
 var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store, options) {
@@ -285,10 +293,7 @@ function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = function () {
-        return module;
-      };
-
+      moduleGetter[moduleName] = (0, _basic.cacheModule)(module);
       var view = module.default.views[viewName];
 
       if (_basic.MetaData.isServer) {
@@ -329,10 +334,7 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = function () {
-        return module;
-      };
-
+      moduleGetter[moduleName] = (0, _basic.cacheModule)(module);
       return module;
     });
   } else {

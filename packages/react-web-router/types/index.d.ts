@@ -5,7 +5,7 @@ import { Store } from 'redux';
 import React, { ReactElement } from 'react';
 import { HistoryActions, ToBrowserUrl } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer } from '@medux/core';
+export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
 export type { LoadView } from '@medux/react';

@@ -129,6 +129,10 @@ export interface BaseModelState<R = {
         [key: string]: LoadingState;
     };
 }
+export declare function cacheModule<T>(module: T): {
+    (): T;
+    __module__: T;
+};
 export declare function isPromise(data: any): data is Promise<any>;
 export declare function getClientStore(): ModelStore;
 export declare function isServer(): boolean;

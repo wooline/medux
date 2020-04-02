@@ -4,6 +4,7 @@ exports.__esModule = true;
 exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
 exports.setConfig = setConfig;
+exports.cacheModule = cacheModule;
 exports.isPromise = isPromise;
 exports.getClientStore = getClientStore;
 exports.isServer = isServer;
@@ -93,6 +94,15 @@ var ActionTypes = {
 exports.ActionTypes = ActionTypes;
 var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 exports.client = client;
+
+function cacheModule(module) {
+  var fn = function fn() {
+    return module;
+  };
+
+  fn.__module__ = module;
+  return fn;
+}
 
 function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';

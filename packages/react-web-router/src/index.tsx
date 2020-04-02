@@ -7,7 +7,7 @@ import {renderApp, renderSSR} from '@medux/react';
 import {HistoryActions, createRouter, ToBrowserUrl} from '@medux/web';
 
 export {loadView, exportModule} from '@medux/react';
-export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer} from '@medux/core';
+export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement} from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
 
 export type {Actions, RouteData, RouteViews, BaseModelState} from '@medux/core';

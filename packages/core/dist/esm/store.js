@@ -1,4 +1,4 @@
-import { ActionTypes, MetaData, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
+import { ActionTypes, MetaData, cacheModule, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { errorAction, routeChangeAction, routeParamsAction } from './actions';
 
@@ -15,10 +15,7 @@ export function loadModel(moduleName, store, options) {
 
     if (isPromiseModule(result)) {
       return result.then(function (module) {
-        moduleGetter[moduleName] = function () {
-          return module;
-        };
-
+        moduleGetter[moduleName] = cacheModule(module);
         return module.default.model(store, options);
       });
     } else {

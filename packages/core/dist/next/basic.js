@@ -55,6 +55,12 @@ export const ActionTypes = {
   RouteChange: `medux${config.NSP}RouteChange`
 };
 export const client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
+export function cacheModule(module) {
+  const fn = () => module;
+
+  fn.__module__ = module;
+  return fn;
+}
 export function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }

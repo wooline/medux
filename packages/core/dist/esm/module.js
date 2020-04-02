@@ -1,7 +1,7 @@
 import _regeneratorRuntime from "@babel/runtime/regenerator";
 import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { MetaData, client, config, injectActions, isPromise, reducer } from './basic';
+import { MetaData, cacheModule, client, config, injectActions, isPromise, reducer } from './basic';
 import { buildStore, loadModel as _loadModel } from './store';
 
 function clearHandlers(key, actionHandlerMap) {
@@ -13,22 +13,29 @@ function clearHandlers(key, actionHandlerMap) {
   }
 }
 
-export var modelHotReplacement = function modelHotReplacement(moduleName, initState, ActionHandles) {
+export function modelHotReplacement(moduleName, initState, ActionHandles) {
   var store = MetaData.clientStore;
   var prevInitState = store._medux_.injectedModules[moduleName];
+  initState.isModule = true;
 
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      throw 'store cannot apply update for HMR.';
-    }
-
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     var handlers = new ActionHandles(moduleName, store);
     var actions = injectActions(store, moduleName, handlers);
     handlers.actions = actions;
   }
-};
+}
+export function viewHotReplacement(moduleName, views) {
+  var moduleGetter = MetaData.moduleGetter[moduleName];
+  var module = moduleGetter['__module__'];
+
+  if (module) {
+    module.default.views = views;
+  } else {
+    throw 'views cannot apply update for HMR.';
+  }
+}
 export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
   var model = function model(store, options) {
     var hasInjected = !!store._medux_.injectedModules[moduleName];
@@ -258,10 +265,7 @@ export function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = function () {
-        return module;
-      };
-
+      moduleGetter[moduleName] = cacheModule(module);
       var view = module.default.views[viewName];
 
       if (MetaData.isServer) {
@@ -302,10 +306,7 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = function () {
-        return module;
-      };
-
+      moduleGetter[moduleName] = cacheModule(module);
       return module;
     });
   } else {
