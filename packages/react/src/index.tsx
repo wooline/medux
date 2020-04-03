@@ -8,34 +8,31 @@ import {Provider} from 'react-redux';
 import ReactDOM from 'react-dom';
 import {Store} from 'redux';
 
-export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  moduleGetter: M,
-  appModuleName: A,
+export function renderApp(
+  moduleGetter: ModuleGetter,
+  appModuleName: string,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions,
   container: string | Element | ((component: ReactElement<any>) => void) = 'root',
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ) {
-  return core.renderApp(
-    (
-      store,
-      appModel,
-      appViews: {
-        [key: string]: ComponentType<any>;
-      },
-      ssrInitStoreKey
-    ) => {
-      const reduxProvider = (
-        <Provider store={store}>
-          <appViews.Main />
-        </Provider>
-      );
-      if (typeof container === 'function') {
-        container(reduxProvider);
-      } else {
-        const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
-      }
+  return core.renderApp<ComponentType<any>>(
+    (store, appModel, AppView, ssrInitStoreKey) => {
+      const reRender = (View: ComponentType<any>) => {
+        const reduxProvider = (
+          <Provider store={store}>
+            <View />
+          </Provider>
+        );
+        if (typeof container === 'function') {
+          container(reduxProvider);
+        } else {
+          const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+          render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+        }
+      };
+      reRender(AppView);
+      return reRender;
     },
     moduleGetter,
     appModuleName,
@@ -45,9 +42,9 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   );
 }
 
-export function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  moduleGetter: M,
-  appModuleName: A,
+export function renderSSR(
+  moduleGetter: ModuleGetter,
+  appModuleName: string,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions = {},
   renderToStream: boolean = false,

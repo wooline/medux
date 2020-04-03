@@ -11,17 +11,22 @@ export function renderApp(moduleGetter, appModuleName, historyProxy, storeOption
     container = 'root';
   }
 
-  return core.renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
-    var reduxProvider = React.createElement(Provider, {
-      store: store
-    }, React.createElement(appViews.Main, null));
+  return core.renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
+    var reRender = function reRender(View) {
+      var reduxProvider = React.createElement(Provider, {
+        store: store
+      }, React.createElement(View, null));
 
-    if (typeof container === 'function') {
-      container(reduxProvider);
-    } else {
-      var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
-    }
+      if (typeof container === 'function') {
+        container(reduxProvider);
+      } else {
+        var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+      }
+    };
+
+    reRender(AppView);
+    return reRender;
   }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {

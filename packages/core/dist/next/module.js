@@ -24,12 +24,24 @@ export function modelHotReplacement(moduleName, initState, ActionHandles) {
     handlers.actions = actions;
   }
 }
+
+let reRender = () => void 0;
+
+let reRenderTimer = 0;
+let appView = null;
 export function viewHotReplacement(moduleName, views) {
   const moduleGetter = MetaData.moduleGetter[moduleName];
   const module = moduleGetter['__module__'];
 
   if (module) {
     module.default.views = views;
+
+    if (!reRenderTimer) {
+      reRenderTimer = setTimeout(() => {
+        reRenderTimer = 0;
+        reRender(appView);
+      }, 0);
+    }
   } else {
     throw 'views cannot apply update for HMR.';
   }
@@ -312,6 +324,11 @@ function getModuleListByNames(moduleNames, moduleGetter) {
 }
 
 export function renderApp(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
+  if (reRenderTimer) {
+    clearTimeout(reRenderTimer);
+    reRenderTimer = 0;
+  }
+
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
@@ -330,7 +347,8 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
 
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
     const initModel = appModule.default.model(reduxStore, undefined);
-    render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+    appView = appModule.default.views.Main;
+    reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
     return initModel;
   });
 }
@@ -361,5 +379,5 @@ export async function renderSSR(render, moduleGetter, appModuleName, history, st
     }
   }
 
-  return render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+  return render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
 }

@@ -7,17 +7,22 @@ import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
 export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container = 'root', beforeRender) {
-  return core.renderApp((store, appModel, appViews, ssrInitStoreKey) => {
-    const reduxProvider = React.createElement(Provider, {
-      store: store
-    }, React.createElement(appViews.Main, null));
+  return core.renderApp((store, appModel, AppView, ssrInitStoreKey) => {
+    const reRender = View => {
+      const reduxProvider = React.createElement(Provider, {
+        store: store
+      }, React.createElement(View, null));
 
-    if (typeof container === 'function') {
-      container(reduxProvider);
-    } else {
-      const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
-    }
+      if (typeof container === 'function') {
+        container(reduxProvider);
+      } else {
+        const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+      }
+    };
+
+    reRender(AppView);
+    return reRender;
   }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 export function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions = {}, renderToStream = false, beforeRender) {

@@ -28,17 +28,22 @@ function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, cont
     container = 'root';
   }
 
-  return core.renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
-    var reduxProvider = _react.default.createElement(_reactRedux.Provider, {
-      store: store
-    }, _react.default.createElement(appViews.Main, null));
+  return core.renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
+    var reRender = function reRender(View) {
+      var reduxProvider = _react.default.createElement(_reactRedux.Provider, {
+        store: store
+      }, _react.default.createElement(View, null));
 
-    if (typeof container === 'function') {
-      container(reduxProvider);
-    } else {
-      var render = window[ssrInitStoreKey] ? _reactDom.default.hydrate : _reactDom.default.render;
-      render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
-    }
+      if (typeof container === 'function') {
+        container(reduxProvider);
+      } else {
+        var render = window[ssrInitStoreKey] ? _reactDom.default.hydrate : _reactDom.default.render;
+        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+      }
+    };
+
+    reRender(AppView);
+    return reRender;
   }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
 }
 

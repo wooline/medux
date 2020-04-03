@@ -26,12 +26,26 @@ export function modelHotReplacement(moduleName, initState, ActionHandles) {
     handlers.actions = actions;
   }
 }
+
+var reRender = function reRender() {
+  return void 0;
+};
+
+var reRenderTimer = 0;
+var appView = null;
 export function viewHotReplacement(moduleName, views) {
   var moduleGetter = MetaData.moduleGetter[moduleName];
   var module = moduleGetter['__module__'];
 
   if (module) {
     module.default.views = views;
+
+    if (!reRenderTimer) {
+      reRenderTimer = setTimeout(function () {
+        reRenderTimer = 0;
+        reRender(appView);
+      }, 0);
+    }
   } else {
     throw 'views cannot apply update for HMR.';
   }
@@ -332,6 +346,11 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     storeOptions = {};
   }
 
+  if (reRenderTimer) {
+    clearTimeout(reRenderTimer);
+    reRenderTimer = 0;
+  }
+
   MetaData.appModuleName = appModuleName;
   var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   var initData = {};
@@ -353,7 +372,8 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
   return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
     var appModule = _ref[0];
     var initModel = appModule.default.model(reduxStore, undefined);
-    render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+    appView = appModule.default.views.Main;
+    reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
     return initModel;
   });
 }
@@ -413,7 +433,7 @@ function _renderSSR() {
             break;
 
           case 22:
-            return _context.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+            return _context.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey));
 
           case 23:
           case "end":

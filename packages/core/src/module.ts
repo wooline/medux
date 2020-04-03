@@ -89,11 +89,21 @@ export function modelHotReplacement(moduleName: string, initState: any, ActionHa
     (handlers as any).actions = actions;
   }
 }
+let reRender: (appView: any) => void = () => void 0;
+let reRenderTimer = 0;
+let appView: any = null;
+
 export function viewHotReplacement(moduleName: string, views: {[key: string]: any}) {
   const moduleGetter = MetaData.moduleGetter[moduleName];
   const module = moduleGetter['__module__'] as Module;
   if (module) {
     module.default.views = views;
+    if (!reRenderTimer) {
+      reRenderTimer = setTimeout(() => {
+        reRenderTimer = 0;
+        reRender(appView);
+      }, 0) as any;
+    }
   } else {
     throw 'views cannot apply update for HMR.';
   }
@@ -327,14 +337,18 @@ export interface StoreOptions {
   initData?: {[key: string]: any};
 }
 
-export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (store: Store<StoreState>, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => void,
-  moduleGetter: M,
-  appModuleName: A,
+export function renderApp<V>(
+  render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
+  moduleGetter: ModuleGetter,
+  appModuleName: string,
   history: HistoryProxy,
   storeOptions: StoreOptions = {},
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ): Promise<void> {
+  if (reRenderTimer) {
+    clearTimeout(reRenderTimer);
+    reRenderTimer = 0;
+  }
   MetaData.appModuleName = appModuleName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
@@ -350,15 +364,16 @@ export function renderApp<M extends ModuleGetter, A extends Extract<keyof M, str
   // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
   return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
     const initModel = appModule.default.model(reduxStore as any, undefined);
-    render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+    appView = appModule.default.views.Main;
+    reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
     return initModel;
   });
 }
 
-export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof M, string>>(
-  render: (store: Store<StoreState>, appModel: Model, appViews: {[key: string]: any}, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
-  moduleGetter: M,
-  appModuleName: A,
+export async function renderSSR<V>(
+  render: (store: Store<StoreState>, appModel: Model, appViews: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
+  moduleGetter: ModuleGetter,
+  appModuleName: string,
   history: HistoryProxy,
   storeOptions: StoreOptions = {},
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
@@ -383,5 +398,5 @@ export async function renderSSR<M extends ModuleGetter, A extends Extract<keyof 
       }
     }
   }
-  return render(reduxStore, appModule!.default.model, appModule!.default.views, ssrInitStoreKey);
+  return render(reduxStore, appModule!.default.model, appModule!.default.views.Main, ssrInitStoreKey);
 }
