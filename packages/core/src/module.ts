@@ -79,14 +79,15 @@ export function modelHotReplacement(moduleName: string, initState: any, ActionHa
   const prevInitState = store._medux_.injectedModules[moduleName];
   initState.isModule = true;
   if (prevInitState) {
-    // if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-    //   throw 'store cannot apply update for HMR.';
-    // }
+    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+      console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
+    }
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     const handlers = new ActionHandles(moduleName, store);
     const actions = injectActions(store, moduleName, handlers as any);
     (handlers as any).actions = actions;
+    console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
   }
 }
 let reRender: (appView: any) => void = () => void 0;
@@ -98,10 +99,13 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
   const module = moduleGetter['__module__'] as Module;
   if (module) {
     module.default.views = views;
+    console.warn(`[HMR] @medux Updated views: ${moduleName}`);
+    appView = (MetaData.moduleGetter[MetaData.appModuleName]() as Module).default.views.Main;
     if (!reRenderTimer) {
       reRenderTimer = setTimeout(() => {
         reRenderTimer = 0;
         reRender(appView);
+        console.warn(`[HMR] @medux view re rendering`);
       }, 0) as any;
     }
   } else {

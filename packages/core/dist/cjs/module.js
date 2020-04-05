@@ -38,11 +38,16 @@ function modelHotReplacement(moduleName, initState, ActionHandles) {
   initState.isModule = true;
 
   if (prevInitState) {
+    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+      console.warn("[HMR] @medux Updated model initState: " + moduleName);
+    }
+
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     var handlers = new ActionHandles(moduleName, store);
     var actions = (0, _basic.injectActions)(store, moduleName, handlers);
     handlers.actions = actions;
+    console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
   }
 }
 
@@ -59,11 +64,14 @@ function viewHotReplacement(moduleName, views) {
 
   if (module) {
     module.default.views = views;
+    console.warn("[HMR] @medux Updated views: " + moduleName);
+    appView = _basic.MetaData.moduleGetter[_basic.MetaData.appModuleName]().default.views.Main;
 
     if (!reRenderTimer) {
       reRenderTimer = setTimeout(function () {
         reRenderTimer = 0;
         reRender(appView);
+        console.warn("[HMR] @medux view re rendering");
       }, 0);
     }
   } else {
