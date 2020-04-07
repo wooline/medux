@@ -140,53 +140,110 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
     actions,
   };
 };
-
+/**
+ * ModelHandlers基类.
+ * 所有ModelHandlers必须继承此基类.
+ */
 export abstract class BaseModelHandlers<S extends BaseModelState, R extends {route: RouteState}> {
-  protected readonly actions: Actions<this> = null as any;
+  /**
+   * 引用本module的actions
+   * this.actions相当于actions[this.moduleName]
+   */
+  protected readonly actions: Actions<this>;
 
+  /**
+   * 构造函数的参数将由框架自动传入
+   * @param moduleName 模块名称，不能重复
+   * @param store 全局单例Store的引用
+   */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public constructor(protected readonly moduleName: string, protected readonly store: ModelStore) {}
+  public constructor(protected readonly moduleName: string, protected readonly store: ModelStore) {
+    this.actions = null as any;
+  }
 
+  /**
+   * 获取本Model的state
+   */
   protected get state(): S {
     return this.getState();
   }
-  //ie8不支持getter
+  /**
+   * 获取本Model的state
+   * ie8不支持getter专用
+   */
   protected getState(): S {
     return this.store._medux_.prevState[this.moduleName] as S;
   }
+  /**
+   * 获取整个store的state
+   */
   protected get rootState(): R {
     return this.getRootState();
   }
-  //ie8不支持getter
+  /**
+   * - 获取整个store的state
+   * - ie8不支持getter专用
+   */
   protected getRootState(): R {
     return this.store._medux_.prevState as any;
   }
+  /**
+   * 获取本Model的及时state
+   *
+   * currentState与state的区别是当一个action引起多个reducer执行时：
+   *
+   * state会等到所有reducer执行完成时才变化，
+   *
+   * currentState反应的是实时状态，
+   */
   protected get currentState(): S {
     return this.getCurrentState();
   }
-  //ie8不支持getter
+  /**
+   * ie8不支持getter专用
+   */
   protected getCurrentState(): S {
     return this.store._medux_.currentState[this.moduleName] as S;
   }
+  /**
+   * 获取整个store的及时state
+   * currentState与state的区别是当一个action引起多个reducer执行时：
+   * state会等到所有reducer执行完成时才变化，
+   * currentState反应的是实时状态，
+   */
   protected get currentRootState(): R {
     return this.getCurrentRootState();
   }
-  //ie8不支持getter
+  /**
+   * ie8不支持getter专用
+   */
   protected getCurrentRootState(): R {
     return this.store._medux_.currentState as any;
   }
-  protected get beforeState(): undefined | S {
-    return this.getBeforeState();
+  /**
+   * 获取本Model的上一个state状态
+   */
+  protected get prevState(): undefined | S {
+    return this.getPrevState();
   }
-  //ie8不支持getter
-  protected getBeforeState(): undefined | S {
+  /**
+   * 获取本Model的上一个state状态
+   * ie8不支持getter专用
+   */
+  protected getPrevState(): undefined | S {
     return this.store._medux_.beforeState[this.moduleName] as S;
   }
-  protected get beforeRootState(): R {
-    return this.getBeforeRootState();
+  /**
+   * 获取整个store的上一个state状态
+   */
+  protected get prevRootState(): R {
+    return this.getPrevRootState();
   }
-  //ie8不支持getter
-  protected getBeforeRootState(): R {
+  /**
+   * 获取整个store的上一个state状态
+   * ie8不支持getter专用
+   */
+  protected getPrevRootState(): R {
     return this.store._medux_.beforeState as any;
   }
   protected dispatch(action: Action): Action | Promise<void> {

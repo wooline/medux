@@ -1,7 +1,9 @@
 {
   "search.exclude": {
     "**/node_modules": true,
-    "**/dist": true
+    "**/dist": true,
+    "**/docs": true,
+    "**/types": true
   },
   "files.eol": "\n",
   "typescript.tsdk": "node_modules/typescript/lib",

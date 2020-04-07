@@ -1,8 +1,21 @@
 export const TaskCountEvent = 'TaskCountEvent';
 
+/**
+ * Loading状态，可通过effect注入.
+ * 同一时段同一分组的多个loading状态会自动合并
+ */
 export enum LoadingState {
+  /**
+   * 开始加载.
+   */
   Start = 'Start',
+  /**
+   * 加载完成.
+   */
   Stop = 'Stop',
+  /**
+   * 开始深度加载，对于加载时间超过setLoadingDepthTime设置值时将转为深度加载状态
+   */
   Depth = 'Depth',
 }
 

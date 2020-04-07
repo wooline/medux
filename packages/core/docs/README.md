@@ -81,7 +81,7 @@ ___
 
 #### Type declaration:
 
-▸ <**S**, **V**, **T**, **N**>(`moduleName`: N, `initState`: S, `ActionHandles`: object, `views`: V): *Module<Model<S>, V, Actions<T>, N>["default"]*
+▸ <**S**, **V**, **T**, **N**>(`moduleName`: N, `initState`: S, `ActionHandles`: object, `views`: V): *Module<Model&lt;S&gt;, V, Actions&lt;T&gt;, N>["default"]*
 
 **Type parameters:**
 
@@ -296,7 +296,7 @@ ___
 
 ###  isPromiseModule
 
-▸ **isPromiseModule**(`module`: [Module](interfaces/module.md) | Promise‹[Module](interfaces/module.md)›): *module is Promise<Module>*
+▸ **isPromiseModule**(`module`: [Module](interfaces/module.md) | Promise‹[Module](interfaces/module.md)›): *module is Promise&lt;Module&gt;*
 
 **Parameters:**
 
@@ -304,13 +304,13 @@ Name | Type |
 ------ | ------ |
 `module` | [Module](interfaces/module.md) &#124; Promise‹[Module](interfaces/module.md)› |
 
-**Returns:** *module is Promise<Module>*
+**Returns:** *module is Promise&lt;Module&gt;*
 
 ___
 
 ###  isPromiseView
 
-▸ **isPromiseView**<**T**>(`moduleView`: T | Promise‹T›): *moduleView is Promise<T>*
+▸ **isPromiseView**<**T**>(`moduleView`: T | Promise‹T›): *moduleView is Promise&lt;T&gt;*
 
 **Type parameters:**
 
@@ -322,7 +322,7 @@ Name | Type |
 ------ | ------ |
 `moduleView` | T &#124; Promise‹T› |
 
-**Returns:** *moduleView is Promise<T>*
+**Returns:** *moduleView is Promise&lt;T&gt;*
 
 ___
 

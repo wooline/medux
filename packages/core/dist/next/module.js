@@ -93,6 +93,8 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       this.store = store;
 
       _initialize(this);
+
+      this.actions = null;
     }
 
   }
@@ -102,11 +104,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
     d: [{
       kind: "field",
       key: "actions",
-
-      value() {
-        return null;
-      }
-
+      value: void 0
     }, {
       kind: "get",
       key: "state",
@@ -157,26 +155,26 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "get",
-      key: "beforeState",
-      value: function beforeState() {
-        return this.getBeforeState();
+      key: "prevState",
+      value: function prevState() {
+        return this.getPrevState();
       }
     }, {
       kind: "method",
-      key: "getBeforeState",
-      value: function getBeforeState() {
+      key: "getPrevState",
+      value: function getPrevState() {
         return this.store._medux_.beforeState[this.moduleName];
       }
     }, {
       kind: "get",
-      key: "beforeRootState",
-      value: function beforeRootState() {
-        return this.getBeforeRootState();
+      key: "prevRootState",
+      value: function prevRootState() {
+        return this.getPrevRootState();
       }
     }, {
       kind: "method",
-      key: "getBeforeRootState",
-      value: function getBeforeRootState() {
+      key: "getPrevRootState",
+      value: function getPrevRootState() {
         return this.store._medux_.beforeState;
       }
     }, {
