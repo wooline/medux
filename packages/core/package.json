@@ -37,7 +37,8 @@
     "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_ENV=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
-    "build": "yarn build:next & yarn build:esm & yarn build:cjs"
+    "build": "yarn build:next & yarn build:esm & yarn build:cjs",
+    "test": "jest"
   },
   "peerDependencies": {
     "@babel/runtime": "^7.0.0"

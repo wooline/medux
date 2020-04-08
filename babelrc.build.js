@@ -7,7 +7,7 @@ const cfg = {
 };
 const env = cfg[process.env.NODE_ENV];
 
-console.log('args: ', env);
+//console.log('args: ', env);
 
 module.exports = function (features = []) {
   const config = {

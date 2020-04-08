@@ -122,7 +122,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
       if (!moduleState) {
-        const params = store._medux_.prevState.route.data.params;
+        const params = store._medux_.prevState.route?.data.params || {};
         initState.isModule = true;
         const initAction = actions.Init(initState, params[moduleName], options);
         return store.dispatch(initAction) as any;
