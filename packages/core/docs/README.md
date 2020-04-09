@@ -644,7 +644,7 @@ ___
 
 ###  NSP
 
-• **NSP**: *string* = "/"
+• **NSP**: *string* = "."
 
 ###  VSP
 

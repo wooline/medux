@@ -26,12 +26,38 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
 export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];
 }
+
+/**
+ * 路由抽象代理。
+ * - 路由系统通常由宿主平台自己提供，由于各个平台的路由实现方式不同，为了支持跨平台使用，框架抽象了路由代理
+ * - 该代理用来实现medux与宿主路由系统的对接
+ */
 export interface HistoryProxy<L = any> {
+  /**
+   * 是否初始化完成了，有些平台路由自动被初始化，如web。有些平台路由需要手动代理，如app
+   */
   initialized: boolean;
+  /**
+   * 宿主路由系统的原始数据
+   */
   getLocation(): L;
-  subscribe(listener: (location: L) => void): void;
+  /**
+   * 监听宿主路由系统的变化
+   * @returns 卸载监听
+   */
+  subscribe(listener: (location: L) => void): () => void;
+  /**
+   * 宿主路由系统的原始数据转换为medux的RouteData
+   */
   locationToRouteData(location: L): RouteData;
+  /**
+   * 对比2个宿主路由系统的原始数据是否相同
+   */
   equal(a: L, b: L): boolean;
+  /**
+   * - 通常情况下，宿主路由系统的变化引起应用的路由变化
+   * - inTimeTravelling时，应用的路由变化反过来带动宿主路由系统的变化
+   */
   patch(location: L, routeData: RouteData): void;
 }
 
@@ -51,7 +77,7 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
       inTimeTravelling = false;
     }
   };
-  history.subscribe(handleLocationChange);
+  store._medux_.destroy = history.subscribe(handleLocationChange);
   store.subscribe(() => {
     if (history.initialized) {
       const storeRouteState = (store.getState() as StoreState).route;
@@ -71,6 +97,9 @@ export function buildStore(
   storeMiddlewares: Middleware[] = [],
   storeEnhancers: StoreEnhancer[] = []
 ): ModelStore {
+  if (MetaData.clientStore) {
+    MetaData.clientStore._medux_.destroy();
+  }
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
@@ -91,10 +120,13 @@ export function buildStore(
     }
     const meta = store._medux_;
     meta.prevState = rootState;
-    const currentState = {...rootState};
-    meta.currentState = currentState;
+    //const currentState = {...rootState};
+    meta.currentState = rootState;
     Object.keys(storeReducers).forEach((moduleName) => {
-      currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
+      const result = storeReducers[moduleName](rootState[moduleName], action);
+      if (result !== rootState[moduleName]) {
+        meta.currentState = {...meta.currentState, [moduleName]: result};
+      }
     });
 
     const handlersCommon = meta.reducerMap[action.type] || {};
@@ -123,13 +155,16 @@ export function buildStore(
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          currentState[moduleName] = fun(...getActionData(action));
+          const result = fun(...getActionData(action));
+          if (result !== rootState[moduleName]) {
+            meta.currentState = {...meta.currentState, [moduleName]: result};
+          }
         }
       });
     }
 
-    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some((moduleName) => rootState[moduleName] !== currentState[moduleName]);
-    meta.prevState = changed ? currentState : rootState;
+    const changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some((moduleName) => rootState[moduleName] !== meta.currentState[moduleName]);
+    meta.prevState = changed ? meta.currentState : rootState;
     return meta.prevState;
   };
   const middleware: Middleware = ({dispatch}) => (next) => (originalAction) => {
@@ -256,6 +291,7 @@ export function buildStore(
         reducerMap: {},
         effectMap: {},
         injectedModules: {},
+        destroy: () => void 0,
       };
       return newStore;
     };

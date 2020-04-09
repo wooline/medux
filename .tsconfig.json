@@ -5,15 +5,20 @@
     "moduleResolution": "node",
     "declaration": false,
     "emitDeclarationOnly": false,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "noEmit": true,
     "sourceMap": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strict": true,
     "newLine": "LF",
-    "lib": ["es2017", "dom"],
-    "types": ["jest"],
+    "lib": [
+      "es2018",
+      "dom"
+    ],
+    "types": [
+      "jest"
+    ],
     "removeComments": true,
     "jsx": "react",
     "noImplicitReturns": true,

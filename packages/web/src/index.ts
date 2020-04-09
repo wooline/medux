@@ -49,7 +49,7 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
     return this.history.location as any;
   }
   public subscribe(listener: (location: BrowserLocation) => void) {
-    this.history.listen(listener as any);
+    return this.history.listen(listener as any);
   }
   public locationToRouteData(location: BrowserLocation) {
     return location.state || this.locationToRoute(location);

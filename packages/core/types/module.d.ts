@@ -89,7 +89,7 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
         payload?: any[];
     };
     protected updateState(payload: Partial<S>): void;
-    protected loadModel(moduleName: Extract<keyof R, string>, options?: any): void | Promise<void>;
+    protected loadModel(moduleName: string, options?: any): void | Promise<void>;
     protected Init(initState: S, routeParams?: any, options?: any): S;
     protected Update(payload: S): S;
     RouteParams(payload: {

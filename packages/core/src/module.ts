@@ -141,13 +141,13 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
   };
 };
 /**
- * ModelHandlers基类.
- * 所有ModelHandlers必须继承此基类.
+ * ModelHandlers基类
+ * 所有ModelHandlers必须继承此基类
  */
 export abstract class BaseModelHandlers<S extends BaseModelState, R extends {route: RouteState}> {
   /**
-   * 引用本module的actions
-   * this.actions相当于actions[this.moduleName]
+   * - 引用本module的actions
+   * - this.actions相当于actions[this.moduleName]
    */
   protected readonly actions: Actions<this>;
 
@@ -168,7 +168,6 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     return this.getState();
   }
   /**
-   * 获取本Model的state
    * ie8不支持getter专用
    */
   protected getState(): S {
@@ -181,20 +180,15 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     return this.getRootState();
   }
   /**
-   * - 获取整个store的state
-   * - ie8不支持getter专用
+   * ie8不支持getter专用
    */
   protected getRootState(): R {
     return this.store._medux_.prevState as any;
   }
   /**
-   * 获取本Model的及时state
-   *
-   * currentState与state的区别是当一个action引起多个reducer执行时：
-   *
-   * state会等到所有reducer执行完成时才变化，
-   *
-   * currentState反应的是实时状态，
+   * - 获取本Model的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
+   * - state会等到所有模块的reducer更新完成时才变化
+   * - currentState是实时更新变化
    */
   protected get currentState(): S {
     return this.getCurrentState();
@@ -206,10 +200,9 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     return this.store._medux_.currentState[this.moduleName] as S;
   }
   /**
-   * 获取整个store的及时state
-   * currentState与state的区别是当一个action引起多个reducer执行时：
-   * state会等到所有reducer执行完成时才变化，
-   * currentState反应的是实时状态，
+   * 获取整个store的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
+   * - state会等到所有模块的reducer更新完成时才变化
+   * - currentState是实时更新变化
    */
   protected get currentRootState(): R {
     return this.getCurrentRootState();
@@ -221,55 +214,87 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     return this.store._medux_.currentState as any;
   }
   /**
-   * 获取本Model的上一个state状态
+   * 获取本Model的前state状态，通常在effect中使用，当一个action同时引起reducer和effect执行时：
+   * - 所有reducer会先执行完毕并更新rootState
+   * - 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
+   * - 使用prevState可以取到reducer变更之前的state
    */
   protected get prevState(): undefined | S {
     return this.getPrevState();
   }
   /**
-   * 获取本Model的上一个state状态
    * ie8不支持getter专用
    */
   protected getPrevState(): undefined | S {
     return this.store._medux_.beforeState[this.moduleName] as S;
   }
   /**
-   * 获取整个store的上一个state状态
+   * 获整个store的前state状态，通常在effect中使用，
+   * 当一个action同时引起reducer和effect执行时：
+   * - 所有reducer会先执行完毕并更新rootState
+   * - 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
+   * - 使用prevState可以取到reducer变更之前的state
    */
   protected get prevRootState(): R {
     return this.getPrevRootState();
   }
   /**
-   * 获取整个store的上一个state状态
    * ie8不支持getter专用
    */
   protected getPrevRootState(): R {
     return this.store._medux_.beforeState as any;
   }
+  /**
+   * store.dispatch的引用
+   */
   protected dispatch(action: Action): Action | Promise<void> {
     return this.store.dispatch(action) as any;
   }
-
+  /**
+   * 对于某些仅供本模块内部使用的action，限制非public不对外开放.
+   * 所以即使this.actions也调用不到，此时可以使用callThisAction.
+   * ```
+   * this.dispatch(this.callThisAction(this.anyPrivateHandle, args1, args2));
+   * ```
+   */
   protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; payload?: any[]} {
     const actions = MetaData.actionCreatorMap[this.moduleName];
     return actions[(handler as ActionHandler).__actionName__](...rest);
   }
+  /**
+   * 一个快捷操作，相当于
+   * ```
+   * this.dispatch(this.actions.Update({...this.state,...args}));
+   * ```
+   */
   protected updateState(payload: Partial<S>) {
     this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}));
   }
-  protected loadModel(moduleName: Extract<keyof R, string>, options?: any) {
+  /**
+   * 动态加载并初始化其他模块的model
+   */
+  protected loadModel(moduleName: string, options?: any) {
     return loadModel(moduleName, this.store, options);
   }
+  /**
+   * - 模块被加载并初始化时将触发‘moduleName.Init’的action
+   * - 此方法为该action的默认reducerHandler，通常用来注入初始化moduleState
+   */
   @reducer
   protected Init(initState: S, routeParams?: any, options?: any): S {
     return {...initState, routeParams: routeParams || initState.routeParams, ...options};
   }
-
+  /**
+   * 通用的reducerHandler，通常用来更新moduleState
+   */
   @reducer
   protected Update(payload: S): S {
     return payload;
   }
-
+  /**
+   * - 路由发生变化时如果路由中有该模块的routeParams，框架将自动为各个模块派发‘moduleName.RouteParams’的action
+   * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入路由参数
+   */
   @reducer
   public RouteParams(payload: {[key: string]: any}): S {
     const state = this.getState();
@@ -278,7 +303,10 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
       routeParams: payload,
     };
   }
-
+  /**
+   * - effect异步执行时，将自动派发‘moduleName.Loading’的action
+   * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入loading状态
+   */
   @reducer
   protected Loading(payload: {[group: string]: string}): S {
     const state = this.getState();

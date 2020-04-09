@@ -52,6 +52,7 @@ export interface ModelStore extends Store {
         beforeState: StoreState;
         prevState: StoreState;
         currentState: StoreState;
+        destroy: () => void;
     };
 }
 export interface RouteData {

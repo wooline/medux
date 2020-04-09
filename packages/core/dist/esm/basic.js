@@ -40,7 +40,7 @@ export function setLoading(item, moduleName, group) {
   return item;
 }
 export var config = {
-  NSP: '/',
+  NSP: '.',
   VSP: '.',
   MSP: ','
 };

@@ -63,7 +63,7 @@ function setLoading(item, moduleName, group) {
 }
 
 var config = {
-  NSP: '/',
+  NSP: '.',
   VSP: '.',
   MSP: ','
 };

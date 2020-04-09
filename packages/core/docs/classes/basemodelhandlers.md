@@ -2,8 +2,8 @@
 
 # Class: BaseModelHandlers <**S, R**>
 
-ModelHandlers基类.
-所有ModelHandlers必须继承此基类.
+ModelHandlers基类
+所有ModelHandlers必须继承此基类
 
 ## Type parameters
 
@@ -76,8 +76,8 @@ Name | Type | Description |
 
 • **actions**: *[Actions](../README.md#actions)‹this›*
 
-引用本module的actions
-this.actions相当于actions[this.moduleName]
+- 引用本module的actions
+- this.actions相当于actions[this.moduleName]
 
 ___
 
@@ -101,10 +101,9 @@ ___
 
 • **get currentRootState**(): *R*
 
-获取整个store的及时state
-currentState与state的区别是当一个action引起多个reducer执行时：
-state会等到所有reducer执行完成时才变化，
-currentState反应的是实时状态，
+获取整个store的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
+- state会等到所有模块的reducer更新完成时才变化
+- currentState是实时更新变化
 
 **Returns:** *R*
 
@@ -114,13 +113,9 @@ ___
 
 • **get currentState**(): *S*
 
-获取本Model的及时state
-
-currentState与state的区别是当一个action引起多个reducer执行时：
-
-state会等到所有reducer执行完成时才变化，
-
-currentState反应的是实时状态，
+- 获取本Model的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
+- state会等到所有模块的reducer更新完成时才变化
+- currentState是实时更新变化
 
 **Returns:** *S*
 
@@ -130,7 +125,11 @@ ___
 
 • **get prevRootState**(): *R*
 
-获取整个store的上一个state状态
+获整个store的前state状态，通常在effect中使用，
+当一个action同时引起reducer和effect执行时：
+- 所有reducer会先执行完毕并更新rootState
+- 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
+- 使用prevState可以取到reducer变更之前的state
 
 **Returns:** *R*
 
@@ -140,7 +139,10 @@ ___
 
 • **get prevState**(): *undefined | S*
 
-获取本Model的上一个state状态
+获取本Model的前state状态，通常在effect中使用，当一个action同时引起reducer和effect执行时：
+- 所有reducer会先执行完毕并更新rootState
+- 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
+- 使用prevState可以取到reducer变更之前的state
 
 **Returns:** *undefined | S*
 
@@ -170,6 +172,9 @@ ___
 
 ▸ **Init**(`initState`: S, `routeParams?`: any, `options?`: any): *S*
 
+- 模块被加载并初始化时将触发‘moduleName.Init’的action
+- 此方法为该action的默认reducerHandler，通常用来注入初始化moduleState
+
 **Parameters:**
 
 Name | Type |
@@ -186,6 +191,9 @@ ___
 
 ▸ **Loading**(`payload`: object): *S*
 
+- effect异步执行时，将自动派发‘moduleName.Loading’的action
+- 此方法为该action的默认reducerHandler，通常用来在moduleState中注入loading状态
+
 **Parameters:**
 
 Name | Type |
@@ -199,6 +207,9 @@ ___
 ###  RouteParams
 
 ▸ **RouteParams**(`payload`: object): *S*
+
+- 路由发生变化时如果路由中有该模块的routeParams，框架将自动为各个模块派发‘moduleName.RouteParams’的action
+- 此方法为该action的默认reducerHandler，通常用来在moduleState中注入路由参数
 
 **Parameters:**
 
@@ -214,6 +225,8 @@ ___
 
 ▸ **Update**(`payload`: S): *S*
 
+通用的reducerHandler，通常用来更新moduleState
+
 **Parameters:**
 
 Name | Type |
@@ -227,6 +240,12 @@ ___
 ### `Protected` callThisAction
 
 ▸ **callThisAction**<**T**>(`handler`: function, ...`rest`: T): *object*
+
+对于某些仅供本模块内部使用的action，限制非public不对外开放.
+所以即使this.actions也调用不到，此时可以使用callThisAction.
+```
+this.dispatch(this.callThisAction(this.anyPrivateHandle, args1, args2));
+```
 
 **Type parameters:**
 
@@ -257,6 +276,8 @@ ___
 ### `Protected` dispatch
 
 ▸ **dispatch**(`action`: [Action](../interfaces/action.md)): *[Action](../interfaces/action.md) | Promise‹void›*
+
+store.dispatch的引用
 
 **Parameters:**
 
@@ -292,7 +313,6 @@ ___
 
 ▸ **getPrevRootState**(): *R*
 
-获取整个store的上一个state状态
 ie8不支持getter专用
 
 **Returns:** *R*
@@ -303,7 +323,6 @@ ___
 
 ▸ **getPrevState**(): *undefined | S*
 
-获取本Model的上一个state状态
 ie8不支持getter专用
 
 **Returns:** *undefined | S*
@@ -314,8 +333,7 @@ ___
 
 ▸ **getRootState**(): *R*
 
-- 获取整个store的state
-- ie8不支持getter专用
+ie8不支持getter专用
 
 **Returns:** *R*
 
@@ -325,7 +343,6 @@ ___
 
 ▸ **getState**(): *S*
 
-获取本Model的state
 ie8不支持getter专用
 
 **Returns:** *S*
@@ -334,13 +351,15 @@ ___
 
 ### `Protected` loadModel
 
-▸ **loadModel**(`moduleName`: Extract‹keyof R, string›, `options?`: any): *void | Promise‹void›*
+▸ **loadModel**(`moduleName`: string, `options?`: any): *void | Promise‹void›*
+
+动态加载并初始化其他模块的model
 
 **Parameters:**
 
 Name | Type |
 ------ | ------ |
-`moduleName` | Extract‹keyof R, string› |
+`moduleName` | string |
 `options?` | any |
 
 **Returns:** *void | Promise‹void›*
@@ -350,6 +369,11 @@ ___
 ### `Protected` updateState
 
 ▸ **updateState**(`payload`: Partial‹S›): *void*
+
+一个快捷操作，相当于
+```
+this.dispatch(this.actions.Update({...this.state,...args}));
+```
 
 **Parameters:**
 

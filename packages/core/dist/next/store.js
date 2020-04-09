@@ -52,7 +52,7 @@ function bindHistory(store, history) {
     }
   };
 
-  history.subscribe(handleLocationChange);
+  store._medux_.destroy = history.subscribe(handleLocationChange);
   store.subscribe(() => {
     if (history.initialized) {
       const storeRouteState = store.getState().route;
@@ -67,6 +67,10 @@ function bindHistory(store, history) {
 }
 
 export function buildStore(history, preloadedState = {}, storeReducers = {}, storeMiddlewares = [], storeEnhancers = []) {
+  if (MetaData.clientStore) {
+    MetaData.clientStore._medux_.destroy();
+  }
+
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
@@ -92,10 +96,15 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
 
     const meta = store._medux_;
     meta.prevState = rootState;
-    const currentState = Object.assign({}, rootState);
-    meta.currentState = currentState;
+    meta.currentState = rootState;
     Object.keys(storeReducers).forEach(moduleName => {
-      currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
+      const result = storeReducers[moduleName](rootState[moduleName], action);
+
+      if (result !== rootState[moduleName]) {
+        meta.currentState = Object.assign({}, meta.currentState, {
+          [moduleName]: result
+        });
+      }
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -124,13 +133,19 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          currentState[moduleName] = fun(...getActionData(action));
+          const result = fun(...getActionData(action));
+
+          if (result !== rootState[moduleName]) {
+            meta.currentState = Object.assign({}, meta.currentState, {
+              [moduleName]: result
+            });
+          }
         }
       });
     }
 
-    const changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== currentState[moduleName]);
-    meta.prevState = changed ? currentState : rootState;
+    const changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== meta.currentState[moduleName]);
+    meta.prevState = changed ? meta.currentState : rootState;
     return meta.prevState;
   };
 
@@ -270,7 +285,8 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
         currentState: {},
         reducerMap: {},
         effectMap: {},
-        injectedModules: {}
+        injectedModules: {},
+        destroy: () => void 0
       };
       return newStore;
     };

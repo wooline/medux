@@ -41,7 +41,7 @@ export const config: {
   VSP: string; //ModuleName${VSP}ViewName用于路由
   MSP: string; //用于同时监听多个Action
 } = {
-  NSP: '/',
+  NSP: '.',
   VSP: '.',
   MSP: ',',
 };
@@ -94,6 +94,7 @@ export interface ModelStore extends Store {
     beforeState: StoreState;
     prevState: StoreState;
     currentState: StoreState;
+    destroy: () => void;
   };
 }
 export interface RouteData {
@@ -110,6 +111,20 @@ export type StoreState = {
   [moduleName: string]: BaseModelState;
 } & {route: RouteState};
 
+/**
+ * 描述当前路由展示了哪些模块的哪些view，例如：
+ * ```
+ * {
+ *    app: {
+ *        Main: true,
+ *        List: true
+ *    },
+ *    article: {
+ *        Details: true
+ *    }
+ * }
+ * ```
+ */
 export interface DisplayViews {
   [moduleName: string]: {[viewName: string]: boolean | undefined} | undefined;
 }
@@ -132,8 +147,16 @@ export interface ReducerMap extends ActionHandlerMap {
 export interface EffectMap extends ActionHandlerMap {
   [actionName: string]: {[moduleName: string]: EffectHandler};
 }
+/**
+ * Medux自动创建的action载体，比redux的action载体多一个priority属性
+ *
+ * 因为一个action可以触发多个模块的actionHandler，priority属性用来设置handlers的优先处理顺序，通常无需设置
+ */
 export interface Action {
   type: string;
+  /**
+   * priority属性用来设置handlers的优先处理顺序，值为moduleName[]
+   */
   priority?: string[];
   payload?: any[];
 }
@@ -146,9 +169,22 @@ export interface ActionHandler {
   __decoratorResults__?: any[];
   (payload?: any): any;
 }
+/**
+ * 所有ModuleState的固定属性
+ */
 export interface BaseModelState<R = {[key: string]: any}> {
+  /**
+   * 因为rootState节点下可能存在各个moduleState，也可能存在其他reducers
+   * - isModule用来标识该节点是一个moduleState，该标识由框架自动生成
+   */
   isModule?: boolean;
+  /**
+   * 由该模块抽离出的路由信息状态
+   */
   routeParams?: R;
+  /**
+   * 该模块的各种loading状态，执行effect时会自动注入loading状态
+   */
   loading?: {
     [key: string]: LoadingState;
   };
@@ -294,7 +330,7 @@ export function injectActions(store: ModelStore, moduleName: string, handlers: A
       if (handler.__isReducer__ || handler.__isEffect__) {
         handler = bindThis(handler, handlers);
         actionNames.split(config.MSP).forEach((actionName) => {
-          actionName = actionName.trim().replace(new RegExp(`^this[${config.NSP}]`), `${moduleName}${config.NSP}`);
+          actionName = actionName.trim().replace(new RegExp(`^this\[${config.NSP}]`), `${moduleName}${config.NSP}`);
           const arr = actionName.split(config.NSP);
           if (arr[1]) {
             handler.__isHandler__ = true;

@@ -66,7 +66,9 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
       handlers.actions = actions;
 
       if (!moduleState) {
-        const params = store._medux_.prevState.route.data.params;
+        var _store$_medux_$prevSt;
+
+        const params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
         initState.isModule = true;
         const initAction = actions.Init(initState, params[moduleName], options);
         return store.dispatch(initAction);

@@ -25,6 +25,7 @@ module.exports = {
   rules: {
     'no-undef': 'error',
     'react/prop-types': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

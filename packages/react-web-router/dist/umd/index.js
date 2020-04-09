@@ -2561,19 +2561,41 @@
     initState.isModule = true;
 
     if (prevInitState) {
+      if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+        console.warn("[HMR] @medux Updated model initState: " + moduleName);
+      }
+
       clearHandlers(moduleName, store._medux_.reducerMap);
       clearHandlers(moduleName, store._medux_.effectMap);
       var handlers = new ActionHandles(moduleName, store);
       var actions = injectActions(store, moduleName, handlers);
       handlers.actions = actions;
+      console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
     }
   }
+
+  var reRender = function reRender() {
+    return void 0;
+  };
+
+  var reRenderTimer = 0;
+  var appView = null;
   function viewHotReplacement(moduleName, views) {
     var moduleGetter = MetaData.moduleGetter[moduleName];
     var module = moduleGetter['__module__'];
 
     if (module) {
       module.default.views = views;
+      console.warn("[HMR] @medux Updated views: " + moduleName);
+      appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views.Main;
+
+      if (!reRenderTimer) {
+        reRenderTimer = setTimeout(function () {
+          reRenderTimer = 0;
+          reRender(appView);
+          console.warn("[HMR] @medux view re rendering");
+        }, 0);
+      }
     } else {
       throw 'views cannot apply update for HMR.';
     }
@@ -2592,7 +2614,9 @@
         handlers.actions = _actions;
 
         if (!moduleState) {
-          var params = store._medux_.prevState.route.data.params;
+          var _store$_medux_$prevSt;
+
+          var params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
           initState.isModule = true;
 
           var initAction = _actions.Init(initState, params[moduleName], options);
@@ -2620,6 +2644,8 @@
       this.store = store;
 
       _initialize(this);
+
+      this.actions = null;
     };
 
     return {
@@ -2627,9 +2653,7 @@
       d: [{
         kind: "field",
         key: "actions",
-        value: function value() {
-          return null;
-        }
+        value: void 0
       }, {
         kind: "get",
         key: "state",
@@ -2680,26 +2704,26 @@
         }
       }, {
         kind: "get",
-        key: "beforeState",
-        value: function beforeState() {
-          return this.getBeforeState();
+        key: "prevState",
+        value: function prevState() {
+          return this.getPrevState();
         }
       }, {
         kind: "method",
-        key: "getBeforeState",
-        value: function getBeforeState() {
+        key: "getPrevState",
+        value: function getPrevState() {
           return this.store._medux_.beforeState[this.moduleName];
         }
       }, {
         kind: "get",
-        key: "beforeRootState",
-        value: function beforeRootState() {
-          return this.getBeforeRootState();
+        key: "prevRootState",
+        value: function prevRootState() {
+          return this.getPrevRootState();
         }
       }, {
         kind: "method",
-        key: "getBeforeRootState",
-        value: function getBeforeRootState() {
+        key: "getPrevRootState",
+        value: function getPrevRootState() {
           return this.store._medux_.beforeState;
         }
       }, {
@@ -2874,6 +2898,11 @@
       storeOptions = {};
     }
 
+    if (reRenderTimer) {
+      clearTimeout(reRenderTimer);
+      reRenderTimer = 0;
+    }
+
     MetaData.appModuleName = appModuleName;
     var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
     var initData = {};
@@ -2895,7 +2924,8 @@
     return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
       var appModule = _ref[0];
       var initModel = appModule.default.model(reduxStore, undefined);
-      render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey);
+      appView = appModule.default.views.Main;
+      reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
       return initModel;
     });
   }
@@ -2955,7 +2985,7 @@
               break;
 
             case 22:
-              return _context.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views, ssrInitStoreKey));
+              return _context.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey));
 
             case 23:
             case "end":
@@ -4077,17 +4107,22 @@
       container = 'root';
     }
 
-    return renderApp(function (store, appModel, appViews, ssrInitStoreKey) {
-      var reduxProvider = React__default.createElement(reactRedux.Provider, {
-        store: store
-      }, React__default.createElement(appViews.Main, null));
+    return renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
+      var reRender = function reRender(View) {
+        var reduxProvider = React__default.createElement(reactRedux.Provider, {
+          store: store
+        }, React__default.createElement(View, null));
 
-      if (typeof container === 'function') {
-        container(reduxProvider);
-      } else {
-        var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
-      }
+        if (typeof container === 'function') {
+          container(reduxProvider);
+        } else {
+          var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+          render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+        }
+      };
+
+      reRender(AppView);
+      return reRender;
     }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
   }
   function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {

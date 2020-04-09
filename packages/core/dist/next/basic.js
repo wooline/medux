@@ -30,7 +30,7 @@ export function setLoading(item, moduleName = MetaData.appModuleName, group = 'g
   return item;
 }
 export const config = {
-  NSP: '/',
+  NSP: '.',
   VSP: '.',
   MSP: ','
 };
@@ -215,7 +215,7 @@ export function injectActions(store, moduleName, handlers) {
       if (handler.__isReducer__ || handler.__isEffect__) {
         handler = bindThis(handler, handlers);
         actionNames.split(config.MSP).forEach(actionName => {
-          actionName = actionName.trim().replace(new RegExp(`^this[${config.NSP}]`), `${moduleName}${config.NSP}`);
+          actionName = actionName.trim().replace(new RegExp(`^this\[${config.NSP}]`), `${moduleName}${config.NSP}`);
           const arr = actionName.split(config.NSP);
 
           if (arr[1]) {

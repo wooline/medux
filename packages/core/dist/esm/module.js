@@ -72,7 +72,9 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
       handlers.actions = _actions;
 
       if (!moduleState) {
-        var params = store._medux_.prevState.route.data.params;
+        var _store$_medux_$prevSt;
+
+        var params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
         initState.isModule = true;
 
         var initAction = _actions.Init(initState, params[moduleName], options);
