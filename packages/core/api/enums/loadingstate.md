@@ -1,4 +1,4 @@
-[@medux/core - v0.2.37](../README.md) › [LoadingState](loadingstate.md)
+[@medux/core - v0.2.38](../README.md) › [LoadingState](loadingstate.md)
 
 # Enumeration: LoadingState
 

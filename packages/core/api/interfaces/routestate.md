@@ -1,4 +1,4 @@
-[@medux/core - v0.2.37](../README.md) › [RouteState](routestate.md)
+[@medux/core - v0.2.38](../README.md) › [RouteState](routestate.md)
 
 # Interface: RouteState <**L**>
 

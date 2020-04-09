@@ -1,6 +1,6 @@
-[@medux/core - v0.2.37](README.md)
+[@medux/core - v0.2.38](README.md)
 
-# @medux/core - v0.2.37
+# @medux/core - v0.2.38
 
 ## Index
 
@@ -17,7 +17,9 @@
 * [Action](interfaces/action.md)
 * [BaseModelState](interfaces/basemodelstate.md)
 * [DisplayViews](interfaces/displayviews.md)
+* [ExportModule](interfaces/exportmodule.md)
 * [HistoryProxy](interfaces/historyproxy.md)
+* [LoadView](interfaces/loadview.md)
 * [Model](interfaces/model.md)
 * [Module](interfaces/module.md)
 * [ModuleGetter](interfaces/modulegetter.md)
@@ -28,8 +30,6 @@
 ### Type aliases
 
 * [Actions](README.md#actions)
-* [ExportModule](README.md#exportmodule)
-* [LoadView](README.md#loadview)
 * [RootState](README.md#rootstate)
 * [RouteViews](README.md#routeviews)
 * [StoreState](README.md#storestate)
@@ -76,84 +76,6 @@
 - medux中的action通常都由此Creator自动生成
 
 #### Type declaration:
-
-___
-
-###  ExportModule
-
-Ƭ **ExportModule**: *function*
-
-导出Module
-
-**`param`** 模块名，不能重复
-
-**`param`** 模块初始状态
-
-**`param`** 模块的ModelHandlers类，必须继承BaseModelHandlers
-
-**`param`** 模块需要导出给外部使用的View，若无需给外部使用可不导出
-
-**`returns`** medux定义的module标准数据结构
-
-#### Type declaration:
-
-▸ <**S**, **V**, **T**, **N**>(`moduleName`: N, `initState`: S, `ActionHandles`: object, `views`: V): *Module<Model&lt;S&gt;, V, Actions&lt;T&gt;, N>["default"]*
-
-**Type parameters:**
-
-▪ **S**: *[BaseModelState](interfaces/basemodelstate.md)*
-
-▪ **V**: *object*
-
-▪ **T**: *[BaseModelHandlers](classes/basemodelhandlers.md)‹S, any›*
-
-▪ **N**: *string*
-
-**Parameters:**
-
-▪ **moduleName**: *N*
-
-▪ **initState**: *S*
-
-▪ **ActionHandles**: *object*
-
-Name | Type |
------- | ------ |
-`constructor` |  |
-
-▪ **views**: *V*
-
-___
-
-###  LoadView
-
-Ƭ **LoadView**: *function*
-
-动态加载View，因为每种UI框架动态加载View的方式不一样，所有此处只是提供一个抽象接口
-
-**`see`** getView
-
-#### Type declaration:
-
-▸ <**M**, **V**, **N**>(`moduleName`: M, `viewName`: N, `options?`: Options, `loading?`: Comp, `error?`: Comp): *V[N]*
-
-**Type parameters:**
-
-▪ **M**: *Extract‹keyof MG, string›*
-
-▪ **V**: *ModuleViews‹ReturnModule‹MG[M]››*
-
-▪ **N**: *Extract‹keyof V, string›*
-
-**Parameters:**
-
-Name | Type |
------- | ------ |
-`moduleName` | M |
-`viewName` | N |
-`options?` | Options |
-`loading?` | Comp |
-`error?` | Comp |
 
 ___
 

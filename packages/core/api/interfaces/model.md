@@ -1,4 +1,4 @@
-[@medux/core - v0.2.37](../README.md) › [Model](model.md)
+[@medux/core - v0.2.38](../README.md) › [Model](model.md)
 
 # Interface: Model <**ModelState**>
 

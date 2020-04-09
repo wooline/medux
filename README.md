@@ -1,82 +1,144 @@
-- 本框架由 [**react-coat**](https://github.com/wooline/react-coat) 进化发展而来，去除其与 react 的捆绑，使其成为一个纯状态管理框架，更广泛的适应于各种 Javascript 运行环境和 UI 框架。
-- 本框架基于 [**redux**](https://github.com/reduxjs/redux) 理念，加入模块化方案、抽象路由、通用结构等概念，是前端组织结构的最佳实践之一
-- @medux 包括一系列的 npm 包，它们基础到上层，由抽象到具体，可插拔也可自定义，以满足不同场景下的开发需求。
-- 为 Typescript 而生，同时支持 SPA(单页应用)和 SSR(服务器渲染)、完美的支持客户端与服务端同构
+## 一站式解决方案
 
-## @medux 包含以下 Packages
+通常一个前端工程包含如下职能：
 
-- **@medux/core**：基础包，顶层抽象的状态管理框架
-- **@medux/web**：基于`@medux/core`，是其在 web 环境下的解决方案，主要体现在实现了路由接口
-- **@medux/web-route-plan-a**：基于`@medux/web`，是一套具体的路由序列化与反序列化方案
-- **@medux/react**：基于`@medux/core`，是其与 React 框架的结合
-- **@medux/react-web-router**：基于`@medux/react`、`@medux/web`、`react-router`，是 React 开发 WebApp 的方案
-- **@medux/react-native-router**：基于`@medux/react`、`react-native`、`react-navigation`，是 React-Native 的开发方案
-- **@medux/taro**：基于`@medux/core`，是其与 `@tarojs/taro`的结合（开发中...）
-- **@medux/vue**：基于`@medux/core`，是其与 Vue 框架的结合（未完成...）
+- UI 渲染框架
+- 状态管理
+- 路由管理
+- 模块化管理（包括模块的定义、加载、维护）
+- 结构化管理（如何组织各类文件与资源）
 
-> 之所以分开这么多 package，是为了让您可以根据自已的实际需要选择性使用，或者基于某些基础包定制自已的上层方案
+其中 UI 框架与宿主平台密切相关，比较独立且复杂，通常有多种不同风格的解决方案可供选择。而除此之外其它职能相对简单，基本上都可以抽象为通用跨平台的 JS 运行时。
 
-## 兼容性
+> 所以简单来说，`medux`想创建一个可以对接不同 `第三方UI框架`的通用前端框架，它包含统一的**状态管理**、**路由管理**、**模块化管理**、**结构化管理**等职能，可以广泛运行于支持 JS 运行时的平台上，这正是时下热门的`跨平台跨端`前端工程解决方案
 
-支持 IE8 及以上现代浏览器。IE11 及以下浏览器请自行加入`polyfill`，并使用 src 目录的 TS 源码重新编译。
+## 加厚的状态管理层
 
-- 对于不支持 proxy 对象的浏览器，需要手动加载 model
-- 对于 IE8 不支持 getter，请在 ModelHandlers 中请使用 this.getState()来获取 moduleState，而不是使用 this.state。
-- 对于不能同时支持转码 decorators 和 count property 的环境时，可以将 ActionType 的 module 分隔符由 "`/`" 改为 "`_`"、将多 ActionType 分隔符由 "`,`" 改为 "`$`"，从而避免使用特殊字符命名类的方法，例如：
+也许你还在犹豫是不是需要独立的状态管理层，因为把状态管理写在 UI 渲染层里似乎也挺顺手。但是在 medux 看来，你不仅需要把它们从 UI 中分离出来，而且还要尽可能的剥离多一点，因为：
 
-```JS
-  //同时监听本模块的Init和RouteChange，默认使用count property写法：
-  @effect(null)
-  protected async [`this/${ActionTypes.MInit},${ActionTypes.RouteChange}`]() {
-    ...
-  }
+- 状态层往往更抽象与稳定，UI 层更复杂与多变
+- 剥离状态管理后的 UI 更纯粹：**UI=Render(State)**
+- 不用考虑 UI 组件的生命周期以及各种钩子，状态管理也更直观
+- 不与特定 UI 相关联，便于重用与多端跨平台
 
-  //可以改为普通写法：
-  import {setConfig} from "@medux/core";
-  setConfig({ NSP: "_", MSP: "$" });
-  ...
-  @effect(null)
-  protected async this_Init$medux_RouteChange() {
-    ...
-  }
-```
+## 基于`Redux`也支持 `Mutable Data` 的另一种 Flux 框架
 
-## 部分 Demo
+- 简化 Redux 及 Action 的繁琐调用
+- State 及其一级节点强制使用 Immutable 数据结构，但次级节点（通常是一个 ModuleState）并不要求，所以如果你喜欢，也可以结合使用 Mobx 或者 VueData
+- 你不一定把它当作 Redux 来使用，但是绝对的理念是你必须显式的通过 dispatch Action 来改变状态
 
-- [medux-demo-spa](https://github.com/wooline/medux-demo-spa)：基于`@medux/react-web-router`开发的 WebApp 项目
-- [medux-demo-ssr](https://github.com/wooline/medux-demo-ssr)：基于`@medux/react-web-router`开发的 WebApp 项目，同时支持服务器渲染
+## 武装到牙齿的类型推断
 
-## 代码举例
+Medux 号称一站式的前端框架，但它绝不是简单的轮子拼凑，也不想做个松散的大杂烩，所以从一开始就使用 Typescript 编写，并且将 UI 管理、状态管理、模块化管理使用各种类型推断紧密结合起来。
 
-### 工程结构举例
+![TS Types](https://github.com/wooline/medux/blob/master/imgs/type-check.png)
+
+## 优雅的支持 SSR 同构
+
+网上很多号称`SSR同构`的解决方案（例如 nextjs），要么对 client 端有很多限制和要求，要么 client 端和 server 端差别还是很大。而 Medux `重状态管理，轻UI`的理念对 SSR 同构有着天然的支持。
+
+## 彻底的模块化
+
+一个使用 medux 的典型工程结构：
 
 ```
 src
-├── asset // 存放公共静态资源
-│       ├── css
-│       ├── imgs
-│       └── font
-├── entity // 存放业务实体TS类型定义
+├── assets // 存放公共静态资源
+├── entity // 存放业务实体类型定义
 ├── common // 存放公共代码
-├── components // 存放React公共组件
+├── components // 存放UI公共组件
 ├── modules
-│       ├── app //一个module
+│       ├── app //一个名为app的module
+│       │     ├── assets //存放该module私有的静态资源
+│       │     ├── components //存放该module私有的UI组件
 │       │     ├── views
 │       │     │     ├── TopNav
 │       │     │     ├── BottomNav
 │       │     │     └── ...
 │       │     ├── model.ts //定义本模块model
 │       │     └── index.ts //导出本模块
-│       ├── photos //一个module
-│       │     ├── views
-│       │     ├── model.ts
-│       │     └── index.ts
-│       ├── names.ts //定义模块名，使用枚举类型来保证不重复
-│       └── index.ts //导出模块的全局设置
+│       ├── photos //另一个名为photos的module
+│       │     └── ...
+│       └── index.ts //模块配置与管理
 └──index.ts 启动入口
 ```
 
-### model 定义举例
+其它网上常用的工程结构：
+
+```
+src
+├── assets // 存放公共静态资源
+├── common // 存放公共代码
+├── components // 存放UI公共组件
+├── routers // 配置路由加载器
+├── layouts // 存放各种布局版型
+│       ├── LayoutA
+│       ├── LayoutB
+│       └── ...
+├── pages // 存放各种页面
+│       ├── PageA
+│       ├── user
+│       │     ├── PageB
+│       └── ...
+├── views // 存放各种视图
+│       ├── ViewA
+│       ├── user
+│       │     ├── ViewB
+│       └── ...
+├── store // 存放模块化的状态管理
+│       ├── modules
+│       │     ├── modelA
+│       │     ├── modelB
+│       │     └── ...
+│       └── index.ts //store配置与管理
+└──index.ts 启动入口
+```
+
+对比如下：
+
+- medux 使用 module 为一级分类，module 下面再分 model、components、view、assets
+- 其它常见框架通常只对 model 部分使用模块化，而 components、view 和 assets 并未很好的模块化
+- medux 分模块依据的是**高内聚低耦合**的业务内在逻辑
+- 其它常见框架通常分模块的依据是**UI 视觉**
+- medux 将一个模块整体打包成一个 bundle，模块可以插拔与按需加载
+- 其它常见框架通常对一个 view 打包成一个 bundle，从实际业务场景出发，我们通常需要插拔的是整个业务功能模块，而不仅仅是一个 view
+- medux 对于 view 和 component 有清晰的定位与界限：component 为 UI 交互控件，只能通过 props 传值不可以直接使用 ReduxStore，而 view 是业务视图，它可以直接使用 ReduxStore
+- 其它常见框架对于 component 与 view 并无清晰的定位，通常是依据视觉上主观感受
+- medux 只强制区分 view 和 component，因为如果不能给出明确的界限就不要让用户迷茫
+- 其它常见框除此之外还定义了 layouts、routers、pages。那么问题来了:
+  - 在 single 单页应用中，page 概念已经变得很模糊，何为 page?
+  - UI 组件都支持嵌套或者 slot 插槽，layout 概念也已经变得很模糊
+  - 路由变化可以引起 UI 的加载与卸载，State 变化同样可以达到路由的效果，路由皆组件
+
+---
+
+本框架前身是我早些年写的另一个框架 [**react-coat**](https://github.com/wooline/react-coat)，它因为捆绑了 React UI 框架，变得不再纯粹。
+现在 medux 被封装成了一系列 npm 包，它们从抽象到具体，你可以选配某些包并进行二次开发，也可以直接使用终端开箱即用的平台 UI 集成包。
+
+## @medux 包含以下 Packages
+
+- **@medux/core**：顶层抽象的状态及模块管理框架。
+- **@medux/web**：让`@medux/core`具有 web 特性，主要体现在 History 管理上。
+- **@medux/route-plan-a**：实现一套基于`@medux/core`的跨平台路由方案。
+- **@medux/react**：`@medux/core`结合 `React`。
+- **@medux/react-web-router**：整合`@medux/core`、`@medux/web`、`@medux/route-plan-a`、`@medux/react`的开箱即用框架。
+
+以下是尚未完成的 Packages：
+
+- **@medux/vue-web-router**：`@medux/core`结合 `VUE`。
+- **@medux/react-native-router**：`@medux/core`结合 `ReactNative`。
+
+## 兼容性
+
+支持 IE8 及以上现代浏览器。IE11 及以下浏览器请自行加入`polyfill`，并使用 src 目录的 TS 源码重新编译。
+
+参见[具体细节](https://github.com/wooline/medux/blob/master/docs/ie8.md)
+
+## Demo
+
+- [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
+
+## model 定义举例
 
 ```JS
 // 仅需一个类，搞定 action、dispatch、reducer、effect、loading
@@ -134,27 +196,5 @@ export class ModelHandlers extends BaseModelHandlers<State, RootState> {
 Typescript 类型反射：
 
 ![TS类型反射](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
-
-## 对比 react-coat
-
-- 本框架由 [**react-coat**](https://github.com/wooline/react-coat) 进化发展而来，去除其与 react 的捆绑，使其成为一个纯状态管理框架，更广泛的适应于各种 Javascript 运行环境和 UI 框架。
-- 进一步简化 API 调用：
-  - 无需再依赖 connected-react-router
-  - 去除 module/facade 概念及文件
-  - 无需再使用 exportView() 方法导出 view
-  - 无需再使用 exportModel()方法导出 model
-  - 如无特别需求，在 SSR 时，无需手动导入 model
-- 更多区别请查看 Demo
-
-## 关于@medux/core
-
-请先阅读：[@medux/core](https://github.com/wooline/medux/tree/master/packages/core)
-
-## 学习交流
-
-- Email：[wooline@qq.com](wooline@qq.com)
-- reac-coat 学习交流 QQ 群：**929696953**，有问题可以在群里问我
-
-  ![QQ群二维码](https://github.com/wooline/react-coat/blob/master/docs/imgs/qr.jpg)
 
 - 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈

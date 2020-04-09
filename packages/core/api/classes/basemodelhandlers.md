@@ -1,4 +1,4 @@
-[@medux/core - v0.2.37](../README.md) › [BaseModelHandlers](basemodelhandlers.md)
+[@medux/core - v0.2.38](../README.md) › [BaseModelHandlers](basemodelhandlers.md)
 
 # Class: BaseModelHandlers <**S, R**>
 
