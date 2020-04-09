@@ -13,21 +13,32 @@ const loadings: {[moduleName: string]: TaskCounter} = {};
 
 let depthTime = 2;
 
+/**
+ * 设置深度加载的时间阀值
+ * @param second 超过多少秒进入深度加载，默认为2秒
+ */
 export function setLoadingDepthTime(second: number) {
   depthTime = second;
 }
-export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, group: string = 'global'): T {
+/**
+ * 手动设置Loading状态，同一个key名的loading状态将自动合并
+ * - 参见LoadingState
+ * @param item 一个Promise加载项
+ * @param moduleName moduleName+groupName合起来作为该加载项的key
+ * @param groupName moduleName+groupName合起来作为该加载项的key
+ */
+export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, groupName: string = 'global'): T {
   if (MetaData.isServer) {
     return item;
   }
-  const key = moduleName + config.NSP + group;
+  const key = moduleName + config.NSP + groupName;
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
     loadings[key].addListener(TaskCountEvent, (e) => {
       const store = MetaData.clientStore;
       if (store) {
         const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
-        const action = actions({[group]: e.data});
+        const action = actions({[groupName]: e.data});
         store.dispatch(action);
       }
     });
@@ -36,15 +47,28 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
   return item;
 }
 
+/**
+ * 可供设置的全局参数，参见setConfig
+ * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
+ * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
+ * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
+ */
 export const config: {
-  NSP: string; //ModuleName${NSP}ActionName用于ActionName
-  VSP: string; //ModuleName${VSP}ViewName用于路由
-  MSP: string; //用于同时监听多个Action
+  NSP: string;
+  VSP: string;
+  MSP: string;
 } = {
   NSP: '.',
   VSP: '.',
   MSP: ',',
 };
+/**
+ * 可供设置的全局参数
+ * @param _config 设置参数
+ * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
+ * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
+ * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
+ */
 export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.VSP && (config.VSP = _config.VSP);
@@ -65,12 +89,29 @@ export const MetaData: {
   appModuleName: null as any,
   moduleGetter: null as any,
 };
-
+/**
+ * 框架内置的几个ActionTypes
+ */
 export const ActionTypes = {
+  /**
+   * 为模块注入加载状态时使用ActionType：{moduleName}.{MLoading}
+   */
   MLoading: 'Loading',
+  /**
+   * 模块初始化时使用ActionType：{moduleName}.{MInit}
+   */
   MInit: 'Init',
+  /**
+   * 模块存放在路由中的参数发生变化时使用ActionType：{moduleName}.{MRouteParams}
+   */
   MRouteParams: 'RouteParams',
+  /**
+   * 全局捕获到错误时使用ActionType：{Error}
+   */
   Error: `medux${config.NSP}Error`,
+  /**
+   * 全局路由发生变化时使用ActionType：{RouteChange}
+   */
   RouteChange: `medux${config.NSP}RouteChange`,
 };
 export const client: Window | undefined = MetaData.isServer ? undefined : typeof window === 'undefined' ? (global as any) : window;
@@ -97,16 +138,44 @@ export interface ModelStore extends Store {
     destroy: () => void;
   };
 }
+/**
+ * 框架内部使用的路由数据结构
+ * - 用户需要通过HistoryProxy将宿主的路由数据结构转换为此数据结构
+ */
 export interface RouteData {
+  /**
+   * 表示当前路由下加载了哪些views
+   */
   views: DisplayViews;
+  /**
+   * 表示当前路由传递了哪些参数
+   */
   params: {[moduleName: string]: {[key: string]: any} | undefined};
+  /**
+   * 表示当前路由下加载views的父子嵌套关系
+   */
   paths: string[];
+  /**
+   * 如果存在多个路由栈（如APP）每个路由栈上分别保存什么数据
+   */
   stackParams: {[moduleName: string]: {[key: string]: any} | undefined}[];
 }
+/**
+ * Redux中保存的路由数据结构
+ */
 export interface RouteState<L = any> {
+  /**
+   * 宿主的原始路由数据结构
+   */
   location: L;
+  /**
+   * medux使用的路由数据结构，通常它由HistoryProxy转换而来
+   */
   data: RouteData;
 }
+/**
+ * medux使用的Store数据模型结构
+ */
 export type StoreState = {
   [moduleName: string]: BaseModelState;
 } & {route: RouteState};
@@ -197,12 +266,22 @@ export function cacheModule<T>(module: T) {
 export function isPromise(data: any): data is Promise<any> {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
+/**
+ * 在client中运行时，全局只有一个单例的Store对象，可通过该方法直接获得
+ */
 export function getClientStore() {
   return MetaData.clientStore;
 }
+/**
+ * 本框架支持ssr和client only，该方法用来判断当前环境是否为服务器环境
+ */
 export function isServer(): boolean {
   return MetaData.isServer;
 }
+/**
+ * 一个类方法的装饰器，用来指示该方法为一个reducerHandler
+ * - reducerHandler必须通过dispatch Action来触发
+ */
 export function reducer(target: any, key: string, descriptor: PropertyDescriptor) {
   if (!key && !descriptor) {
     key = target.key;
@@ -214,7 +293,18 @@ export function reducer(target: any, key: string, descriptor: PropertyDescriptor
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
 }
-
+/**
+ * 一个类方法的装饰器，用来指示该方法为一个effectHandler
+ * - effectHandler必须通过dispatch Action来触发
+ * @param loadingForGroupName 注入加载状态的分组key，默认为global，如果为null表示不注入加载状态
+ * @param loadingForModuleName 可将loading状态合并注入到其他module，默认为入口主模块
+ *
+ * ```
+ * effect(null) 不注入加载状态
+ * effect() == effect('global','app)
+ * effect('global') = effect('global',thisModuleName)
+ * ```
+ */
 export function effect(loadingForGroupName?: string | null, loadingForModuleName?: string) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
@@ -246,6 +336,12 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
     return target.descriptor === descriptor ? target : descriptor;
   };
 }
+/**
+ * 一个类方法的装饰器，用来向reducerHandler或effectHandler中注入before和after的钩子
+ * - 注意不管该handler是否执行成功，前后钩子都会强制执行
+ * @param before actionHandler执行前的钩子
+ * @param after actionHandler执行后的钩子
+ */
 export function logger(
   before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void,
   after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
@@ -262,6 +358,12 @@ export function logger(
     fun.__decorators__.push([before, after]);
   };
 }
+/**
+ * 一个类方法的装饰器，将其延迟执行
+ * - 可用来装饰effectHandler
+ * - 也可以装饰其他类
+ * @param second 延迟秒数
+ */
 export function delayPromise(second: number) {
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
     if (!key && !descriptor) {

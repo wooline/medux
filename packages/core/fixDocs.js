@@ -1,6 +1,6 @@
 const replace = require('replace-in-file');
 const options = {
-  files: 'docs/**/*.md',
+  files: 'api/**/*.md',
   from: /<(\w+)>/g,
   to: '&lt;$1&gt;',
   countMatches: true,

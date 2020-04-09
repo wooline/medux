@@ -2,6 +2,8 @@
 
 # Interface: Module <**M, VS, AS, N**>
 
+模块的数据结构，该数据由ExportModule方法自动生成
+
 ## Type parameters
 
 ▪ **M**: *[Model](model.md)*

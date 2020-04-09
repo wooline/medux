@@ -1,7 +1,7 @@
 export const TaskCountEvent = 'TaskCountEvent';
 
 /**
- * Loading状态，可通过effect注入.
+ * Loading状态，可通过effect注入，也可通过setLoading注入
  * 同一时段同一分组的多个loading状态会自动合并
  */
 export enum LoadingState {

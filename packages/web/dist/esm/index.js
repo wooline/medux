@@ -36,7 +36,7 @@ var BrowserHistoryProxy = function () {
   };
 
   _proto.subscribe = function subscribe(listener) {
-    this.history.listen(listener);
+    return this.history.listen(listener);
   };
 
   _proto.locationToRouteData = function locationToRouteData(location) {

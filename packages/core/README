@@ -1,0 +1,7 @@
+# @medux/core
+
+`@medux/core` extend `Redux`, It is an modular state management, Suitable for various JavaScript UI frameworks
+
+`@medux/core` coding with `Typescript`, support for isomorphic rendering beautifully(SSR)
+
+# [Read Documentation ON Github](https://github.com/wooline/medux)

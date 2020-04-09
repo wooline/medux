@@ -30,6 +30,8 @@ ___
 
 • **priority**? : *string[]*
 
+priority属性用来设置handlers的优先处理顺序，值为moduleName[]
+
 ___
 
 ###  type

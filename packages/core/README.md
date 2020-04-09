@@ -1,12 +1,10 @@
-最新文档：[https://github.com/wooline/medux](https://github.com/wooline/medux)
-
 ## 关于@medux
 
 请先阅读：[@medux 概述](https://github.com/wooline/medux)
 
 # 关于@medux/core
 
-本包是@medux 系列的核心基础包，它体现了本框架通用和抽象的状态管理机制。
+本包是@medux 系列的核心基础包，它本框架通用和抽象的状态管理机制。
 
 ## 兼容性
 

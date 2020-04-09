@@ -34,7 +34,7 @@ class BrowserHistoryProxy {
   }
 
   subscribe(listener) {
-    this.history.listen(listener);
+    return this.history.listen(listener);
   }
 
   locationToRouteData(location) {

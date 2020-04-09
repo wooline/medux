@@ -18,21 +18,49 @@ import {
 import {HistoryProxy, buildStore, loadModel} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 
+/**
+ * 模块Model的数据结构，该数据由ExportModule方法自动生成
+ */
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
   moduleName: string;
   initState: ModelState;
+  /**
+   * model初始化函数
+   * - model初始化时会触发dispatch moduleName.Init的action，并返回执行结果
+   * @param store Store的引用
+   * @param options 该数据将与initState合并注入model初始状态
+   * @returns 如果模块已经初始化过，不再重复初始化并返回void，否则返回Promise
+   */
   (store: ModelStore, options?: any): void | Promise<void>;
 }
 
+/**
+ * 模块的数据结构，该数据由ExportModule方法自动生成
+ */
 export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = {}, N extends string = string> {
   default: {
+    /**
+     * 模块名称
+     */
     moduleName: N;
+    /**
+     * 模块model
+     */
     model: M;
+    /**
+     * 模块供外部使用的views
+     */
     views: VS;
+    /**
+     * 模块可供调用的actionCreator
+     */
     actions: AS;
   };
 }
 
+/**
+ * 一个数据结构用来指示如何获取模块，允许同步或异步获取
+ */
 export interface ModuleGetter {
   [moduleName: string]: () => Module | Promise<Module>;
 }
@@ -46,7 +74,17 @@ type ModuleViews<M extends any> = M['default']['views'];
 type ModuleActions<M extends any> = M['default']['actions'];
 type MountViews<M extends any> = {[key in keyof M['default']['views']]?: boolean};
 
+/**
+ * 描述当前路由下展示了哪些views
+ */
 export type RouteViews<G extends ModuleGetter> = {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
+
+/**
+ * 整个Store的数据结构模型，主要分为三部分
+ * - route，路由数据
+ * - modules，各个模块的数据，可通过isModule辨别
+ * - otherReducers，其他第三方reducers生成的数据
+ */
 export type RootState<G extends ModuleGetter, L> = {
   route: {
     location: L;
@@ -58,7 +96,14 @@ export type RootState<G extends ModuleGetter, L> = {
     };
   };
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
-
+/**
+ * 导出Module
+ * @param moduleName 模块名，不能重复
+ * @param initState 模块初始状态
+ * @param ActionHandles 模块的ModelHandlers类，必须继承BaseModelHandlers
+ * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
+ * @returns medux定义的module标准数据结构
+ */
 export type ExportModule<Component> = <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>, N extends string>(
   moduleName: N,
   initState: S,
@@ -74,6 +119,11 @@ function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
     }
   }
 }
+/**
+ * 当model发生变化时，用来热更新model
+ * - 注意通常initState发生变更时不确保热更新100%有效，此时会console警告
+ * - 通常actionHandlers发生变更时热更新有效
+ */
 export function modelHotReplacement(moduleName: string, initState: any, ActionHandles: {new (moduleName: string, store: any): BaseModelHandlers<any, any>}) {
   const store = MetaData.clientStore;
   const prevInitState = store._medux_.injectedModules[moduleName];
@@ -93,7 +143,9 @@ export function modelHotReplacement(moduleName: string, initState: any, ActionHa
 let reRender: (appView: any) => void = () => void 0;
 let reRenderTimer = 0;
 let appView: any = null;
-
+/**
+ * 当view发生变化时，用来热更新UI
+ */
 export function viewHotReplacement(moduleName: string, views: {[key: string]: any}) {
   const moduleGetter = MetaData.moduleGetter[moduleName];
   const module = moduleGetter['__module__'] as Module;
@@ -112,6 +164,15 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
     throw 'views cannot apply update for HMR.';
   }
 }
+
+/**
+ * 导出Module，该方法为ExportModule接口的实现
+ * @param moduleName 模块名，不能重复
+ * @param initState 模块初始状态
+ * @param ActionHandles 模块的ModelHandlers类，必须继承BaseModelHandlers
+ * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
+ * @returns medux定义的module标准数据结构
+ */
 export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
   const model = (store: ModelStore, options?: any) => {
     const hasInjected = !!store._medux_.injectedModules[moduleName];
@@ -325,15 +386,31 @@ type Handler<F> = F extends (...args: infer P) => any
     }
   : never;
 
+/**
+ * 将ModelHandlers变成Action Creator
+ * - 该数据结构由ExportModule自动生成
+ * - medux中的action通常都由此Creator自动生成
+ */
 export type Actions<Ins> = {[K in keyof Ins]: Ins[K] extends (...args: any[]) => any ? Handler<Ins[K]> : never};
 
+/**
+ * 通过moduleGetter获得的module可能是同步的也可能是异步的，此方法用来判断
+ */
 export function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
   return typeof module['then'] === 'function';
 }
+/**
+ * 通过getView获得的view可能是同步的也可能是异步的，此方法用来判断
+ */
 export function isPromiseView<T>(moduleView: T | Promise<T>): moduleView is Promise<T> {
   return typeof moduleView['then'] === 'function';
 }
-
+/**
+ * 为所有模块的modelHanders自动生成ActionCreator
+ * - 注意如果环境不支持ES7 Proxy，将无法dispatch一个未经初始化的ModelAction，此时必须手动提前loadModel
+ * - 参见 loadModel
+ * @param moduleGetter 模块的获取方式
+ */
 export function exportActions<G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
   MetaData.moduleGetter = moduleGetter as any;
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
@@ -355,7 +432,12 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
   }, {});
   return MetaData.actionCreatorMap as any;
 }
-
+/**
+ * 动态获取View，与LoadView的区别是：
+ * - getView仅获取view，并不渲染，与UI平台无关
+ * - LoadView内部会调用getView之后会渲染View
+ * - getView会自动加载并初始化该view对应的model
+ */
 export function getView<T>(moduleName: string, viewName: string, modelOptions?: any): T | Promise<T> {
   const moduleGetter: ModuleGetter = MetaData.moduleGetter;
   const result = moduleGetter[moduleName]();
@@ -387,6 +469,10 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
   }
 }
 
+/**
+ * 动态加载View，因为每种UI框架动态加载View的方式不一样，所有此处只是提供一个抽象接口
+ * @see getView
+ */
 export type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
   moduleName: M,
   viewName: N,
@@ -418,14 +504,43 @@ function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter)
   });
   return Promise.all(preModules);
 }
+/**
+ * 创建Store时的选项，通过renderApp或renderSSR传入
+ */
 export interface StoreOptions {
+  /**
+   * ssr时使用的全局key，用来保存server输出的初始Data
+   * - 默认为'meduxInitStore'
+   */
   ssrInitStoreKey?: string;
+  /**
+   * 如果你需要独立的第三方reducers可以通过此注入
+   * - store根节点下reducers数据和module数据，可通过isModule来区分
+   */
   reducers?: ReducersMapObject;
+  /**
+   * redux中间件
+   */
   middlewares?: Middleware[];
+  /**
+   * redux增强器
+   */
   enhancers?: StoreEnhancer[];
+  /**
+   * store的初始数据
+   */
   initData?: {[key: string]: any};
 }
-
+/**
+ * 该方法用来创建并启动Client应用
+ * - 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
+ * @param render 渲染View的回调函数，该回调函数可返回一个reRender的方法用来热更新UI
+ * @param moduleGetter 模块的获取方式
+ * @param appModuleName 模块的主入口模块名称
+ * @param history 抽象的HistoryProxy实现
+ * @param storeOptions store的参数，参见StoreOptions
+ * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
+ */
 export function renderApp<V>(
   render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
   moduleGetter: ModuleGetter,
@@ -458,7 +573,16 @@ export function renderApp<V>(
     return initModel;
   });
 }
-
+/**
+ * SSR时该方法用来创建并启动Server应用
+ * - 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
+ * @param render 渲染View的回调函数
+ * @param moduleGetter 模块的获取方式
+ * @param appModuleName 模块的主入口模块名称
+ * @param history 抽象的HistoryProxy实现
+ * @param storeOptions store的参数，参见StoreOptions
+ * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
+ */
 export async function renderSSR<V>(
   render: (store: Store<StoreState>, appModel: Model, appViews: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
   moduleGetter: ModuleGetter,

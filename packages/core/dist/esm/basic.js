@@ -4,20 +4,20 @@ var depthTime = 2;
 export function setLoadingDepthTime(second) {
   depthTime = second;
 }
-export function setLoading(item, moduleName, group) {
+export function setLoading(item, moduleName, groupName) {
   if (moduleName === void 0) {
     moduleName = MetaData.appModuleName;
   }
 
-  if (group === void 0) {
-    group = 'global';
+  if (groupName === void 0) {
+    groupName = 'global';
   }
 
   if (MetaData.isServer) {
     return item;
   }
 
-  var key = moduleName + config.NSP + group;
+  var key = moduleName + config.NSP + groupName;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
@@ -29,7 +29,7 @@ export function setLoading(item, moduleName, group) {
 
         var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
 
-        var _action = actions((_actions = {}, _actions[group] = e.data, _actions));
+        var _action = actions((_actions = {}, _actions[groupName] = e.data, _actions));
 
         store.dispatch(_action);
       }

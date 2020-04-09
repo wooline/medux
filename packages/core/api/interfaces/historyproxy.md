@@ -2,6 +2,10 @@
 
 # Interface: HistoryProxy <**L**>
 
+路由抽象代理。
+- 路由系统通常由宿主平台自己提供，由于各个平台的路由实现方式不同，为了支持跨平台使用，框架抽象了路由代理
+- 该代理用来实现medux与宿主路由系统的对接
+
 ## Type parameters
 
 ▪ **L**
@@ -30,11 +34,15 @@
 
 • **initialized**: *boolean*
 
+是否初始化完成了，有些平台路由自动被初始化，如web。有些平台路由需要手动代理，如app
+
 ## Methods
 
 ###  equal
 
 ▸ **equal**(`a`: L, `b`: L): *boolean*
+
+对比2个宿主路由系统的原始数据是否相同
 
 **Parameters:**
 
@@ -51,6 +59,8 @@ ___
 
 ▸ **getLocation**(): *L*
 
+宿主路由系统的原始数据
+
 **Returns:** *L*
 
 ___
@@ -58,6 +68,8 @@ ___
 ###  locationToRouteData
 
 ▸ **locationToRouteData**(`location`: L): *[RouteData](routedata.md)*
+
+宿主路由系统的原始数据转换为medux的RouteData
 
 **Parameters:**
 
@@ -73,6 +85,9 @@ ___
 
 ▸ **patch**(`location`: L, `routeData`: [RouteData](routedata.md)): *void*
 
+- 通常情况下，宿主路由系统的变化引起应用的路由变化
+- inTimeTravelling时，应用的路由变化反过来带动宿主路由系统的变化
+
 **Parameters:**
 
 Name | Type |
@@ -86,7 +101,9 @@ ___
 
 ###  subscribe
 
-▸ **subscribe**(`listener`: function): *void*
+▸ **subscribe**(`listener`: function): *function*
+
+监听宿主路由系统的变化
 
 **Parameters:**
 
@@ -100,4 +117,8 @@ Name | Type |
 ------ | ------ |
 `location` | L |
 
-**Returns:** *void*
+**Returns:** *function*
+
+卸载监听
+
+▸ (): *void*

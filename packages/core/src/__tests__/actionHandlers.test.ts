@@ -11,7 +11,9 @@ const historyProxy: HistoryProxy = {
   getLocation() {
     return '127.0.0.1';
   },
-  subscribe(listener) {},
+  subscribe(listener) {
+    return () => void 0;
+  },
   locationToRouteData(location) {
     return {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []};
   },

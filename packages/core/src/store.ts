@@ -6,7 +6,12 @@ import {errorAction, routeChangeAction, routeParamsAction} from './actions';
 function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
   return typeof module['then'] === 'function';
 }
-
+/**
+ * 动态加载并初始化其他模块的model
+ * @param moduleName 要加载的模块名
+ * @param store 当前Store的引用
+ * @param options model初始化时可以传入的数据，参见Model接口
+ */
 export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void> {
   const hasInjected = !!store._medux_.injectedModules[moduleName];
   if (!hasInjected) {
@@ -22,7 +27,10 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
     }
   }
 }
-
+/**
+ * 从redux action上获取有效数据载体
+ * @param action redux的action
+ */
 export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];
 }

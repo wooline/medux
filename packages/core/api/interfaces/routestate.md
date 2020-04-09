@@ -2,6 +2,8 @@
 
 # Interface: RouteState <**L**>
 
+Redux中保存的路由数据结构
+
 ## Type parameters
 
 ▪ **L**
@@ -23,8 +25,12 @@
 
 • **data**: *[RouteData](routedata.md)*
 
+medux使用的路由数据结构，通常它由HistoryProxy转换而来
+
 ___
 
 ###  location
 
 • **location**: *L*
+
+宿主的原始路由数据结构

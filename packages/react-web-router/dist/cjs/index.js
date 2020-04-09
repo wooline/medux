@@ -319,7 +319,7 @@ function setLoading(item, moduleName, group) {
   return item;
 }
 var config = {
-  NSP: '/',
+  NSP: '.',
   VSP: '.',
   MSP: ','
 };
@@ -1085,7 +1085,7 @@ function bindHistory(store, history) {
     }
   };
 
-  history.subscribe(handleLocationChange);
+  store._medux_.destroy = history.subscribe(handleLocationChange);
   store.subscribe(function () {
     if (history.initialized) {
       var storeRouteState = store.getState().route;
@@ -1116,6 +1116,10 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     storeEnhancers = [];
   }
 
+  if (MetaData.clientStore) {
+    MetaData.clientStore._medux_.destroy();
+  }
+
   if (storeReducers.route) {
     throw new Error("the reducer name 'route' is not allowed");
   }
@@ -1141,10 +1145,15 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
     var meta = store._medux_;
     meta.prevState = rootState;
-    var currentState = Object.assign({}, rootState);
-    meta.currentState = currentState;
+    meta.currentState = rootState;
     Object.keys(storeReducers).forEach(function (moduleName) {
-      currentState[moduleName] = storeReducers[moduleName](currentState[moduleName], action);
+      var result = storeReducers[moduleName](rootState[moduleName], action);
+
+      if (result !== rootState[moduleName]) {
+        var _Object$assign;
+
+        meta.currentState = Object.assign({}, meta.currentState, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
+      }
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
@@ -1173,15 +1182,21 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          currentState[moduleName] = fun.apply(void 0, getActionData(action));
+          var result = fun.apply(void 0, getActionData(action));
+
+          if (result !== rootState[moduleName]) {
+            var _Object$assign2;
+
+            meta.currentState = Object.assign({}, meta.currentState, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
+          }
         }
       });
     }
 
-    var changed = Object.keys(rootState).length !== Object.keys(currentState).length || Object.keys(rootState).some(function (moduleName) {
-      return rootState[moduleName] !== currentState[moduleName];
+    var changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(function (moduleName) {
+      return rootState[moduleName] !== meta.currentState[moduleName];
     });
-    meta.prevState = changed ? currentState : rootState;
+    meta.prevState = changed ? meta.currentState : rootState;
     return meta.prevState;
   };
 
@@ -1334,7 +1349,10 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         currentState: {},
         reducerMap: {},
         effectMap: {},
-        injectedModules: {}
+        injectedModules: {},
+        destroy: function destroy() {
+          return void 0;
+        }
       };
       return newStore;
     };
@@ -4239,7 +4257,7 @@ var BrowserHistoryProxy = function () {
   };
 
   _proto.subscribe = function subscribe(listener) {
-    this.history.listen(listener);
+    return this.history.listen(listener);
   };
 
   _proto.locationToRouteData = function locationToRouteData(location) {
