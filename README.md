@@ -16,9 +16,9 @@
 
 也许你还在犹豫是不是需要独立的状态管理层，因为把状态管理写在 UI 渲染层里似乎也挺顺手。但是在 medux 看来，你不仅需要把它们从 UI 中分离出来，而且还要尽可能的剥离多一点，因为：
 
-- 状态层往往更抽象与稳定，UI 层更复杂与多变
+- 状态层往往更抽象与稳定，UI 层更复杂与多变，将稳定的东西剥离出来可以减少改动
 - 剥离状态管理后的 UI 更纯粹：**UI=Render(State)**
-- 不用考虑 UI 组件的生命周期以及各种钩子，状态管理也更直观
+- 不用考虑 UI 组件的生命周期以及各种钩子，状态管理也更简单直观
 - 不与特定 UI 相关联，便于重用与多端跨平台
 
 ## 基于`Redux`也支持 `Mutable Data` 的另一种 Flux 框架
@@ -35,7 +35,11 @@ Medux 号称一站式的前端框架，但它绝不是简单的轮子拼凑，�
 
 ## 优雅的支持 SSR 同构
 
-网上很多号称`SSR同构`的解决方案（例如 nextjs），要么对 client 端有很多限制和要求，要么 client 端和 server 端差别还是很大。而 Medux `重状态管理，轻UI`的理念对 SSR 同构有着天然的支持。
+网上很多号称`SSR同构`的解决方案（例如 nextjs），要么对 client 端有很多限制和要求，要么 client 端和 server 端差别还是很大。而 Medux `重状态管理，轻UI`的理念对 SSR 同构有着天然的支持。参见 Demo
+
+## 能静能动的模块加载机制
+
+模块可以同步加载，也可以异步按需加载。但是我们在开发过程中不能将模块的加载逻辑混入业务逻辑中，这样会让问题更复杂。medux 中的模块加载被视为一种策略可以随时更改，除了配置文件，无需更多代码变更。
 
 ## 彻底的模块化
 
@@ -117,11 +121,11 @@ src
 
 ## @medux 包含以下 Packages
 
-- **@medux/core**：顶层抽象的状态及模块管理框架。
-- **@medux/web**：让`@medux/core`具有 web 特性，主要体现在 History 管理上。
-- **@medux/route-plan-a**：实现一套基于`@medux/core`的跨平台路由方案。
-- **@medux/react**：`@medux/core`结合 `React`。
-- **@medux/react-web-router**：整合`@medux/core`、`@medux/web`、`@medux/route-plan-a`、`@medux/react`的开箱即用框架。
+- [**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：顶层抽象的状态及模块管理框架。[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
+- [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：让`@medux/core`具有 web 特性，主要体现在 History 管理上。[查看 API](https://github.com/wooline/medux/tree/master/packages/web/api)
+- [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套基于`@medux/core`的跨平台路由方案。[查看 API](https://github.com/wooline/medux/tree/master/packages/route-plan-a/api)
+- [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：`@medux/core`结合 `React`。[查看 API](https://github.com/wooline/medux/tree/master/packages/react/api)
+- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合`@medux/core`、`@medux/web`、`@medux/route-plan-a`、`@medux/react`的开箱即用框架。[查看 API](https://github.com/wooline/medux/tree/master/packages/react-web-router/api)
 
 以下是尚未完成的 Packages：
 
@@ -134,13 +138,9 @@ src
 
 参见[具体细节](https://github.com/wooline/medux/blob/master/docs/ie8.md)
 
-## Demo
+## 一个 model 的代码样例
 
-- [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
-
-## model 定义举例
-
-```JS
+```TS
 // 仅需一个类，搞定 action、dispatch、reducer、effect、loading
 export class ModelHandlers extends BaseModelHandlers<State, RootState> {
   @reducer
@@ -151,20 +151,19 @@ export class ModelHandlers extends BaseModelHandlers<State, RootState> {
   public putShowLoginPop(showLoginPop: boolean): State {
     return {...this.state, showLoginPop};
   }
-  @effect("login") // 参数login表示使用自定义loading状态
+  @effect("login") // 将loading状态注入key为login的state中
   public async login(payload: {username: string; password: string}) {
     const loginResult = await sessionService.api.login(payload);
     if (!loginResult.error) {
-      // this.updateState()是this.dispatch(this.actions.updateState(...))的快捷
-      this.updateState({curUser: loginResult.data});
+      this.dispatch(this.actions.putCurUser({curUser: loginResult.data}));
       Toast.success("欢迎您回来！");
     } else {
       Toast.fail(loginResult.error.message);
     }
   }
-  // model内错误会触发@@framework/ERROR，监听并发送给后台
-  @effect(null) // 不需要loading，设置为null
-  protected async ["@@framework/ERROR"](error: CustomError) {
+  // model内错误会触发medux.ERROR的action，监听并发送给后台
+  @effect(null) // 设置为null表示不需要跟踪loading
+  protected async ["medux.ERROR"](error: CustomError) {
     if (error.code === "401") {
       this.dispatch(this.actions.putShowLoginPop(true));
     } else if (error.code === "301" || error.code === "302") {
@@ -177,24 +176,31 @@ export class ModelHandlers extends BaseModelHandlers<State, RootState> {
   }
   // 监听自已的INIT Action，做一些异步数据请求
   @effect()
-  protected async ["this/INIT"]() {
+  protected async ["this.INIT"]() {
     const [projectConfig, curUser] = await Promise.all([
       settingsService.api.getSettings(),
       sessionService.api.getCurUser()
     ]);
-    // this.updateState()是this.dispatch(this.actions.updateState(...))的快捷
-    this.updateState({
+    this.dispatch(this.actions.updateState({
       projectConfig,
       curUser,
-    });
+    }))
   }
 }
 ```
 
-### 调用 model 举例
+## 在 view 中 dispatchAction
 
 Typescript 类型反射：
 
 ![TS类型反射](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
 
-- 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
+## Demo
+
+- [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
+
+## 开始 medux 之旅
+
+Ok，至此，相信你已经大概知道了 medux 是一个什么类型的框架，如果对它还有点兴趣，不妨在多了解一点细节->[使用指南]()
+
+## 欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈
