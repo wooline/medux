@@ -213,3 +213,13 @@ medux 将这个特殊的 RouteStore 放在 ReduxStore 的子节点 route 中：
   },
 }
 ```
+
+## 更多 API
+
+[**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：顶层抽象的状态及模块管理框架。[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
+
+---
+
+# 废话少说，直接上 Demo
+
+[medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
