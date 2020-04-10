@@ -31,7 +31,7 @@
 
 Medux 号称一站式的前端框架，但它绝不是简单的轮子拼凑，也不想做个松散的大杂烩，所以从一开始就使用 Typescript 编写，并且将 UI 管理、状态管理、模块化管理使用各种类型推断紧密结合起来。
 
-![TS Types](https://github.com/wooline/medux/blob/master/imgs/type-check.png)
+![TS Types 图片不显示多刷几次吧!!!](https://github.com/wooline/medux/blob/master/imgs/type-check.png)
 
 ## 优雅的支持 SSR 同构
 
@@ -193,7 +193,7 @@ export class ModelHandlers extends BaseModelHandlers<State, RootState> {
 
 Typescript 类型反射：
 
-![TS类型反射](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
+![TS类型反射 图片不显示多刷几次吧!!!](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
 
 ## Demo
 
