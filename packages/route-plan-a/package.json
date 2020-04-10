@@ -25,6 +25,7 @@
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types && yarn test",
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
+    "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.ts --hideSources --theme markdown && node fixDocs",
     "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_ENV=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",

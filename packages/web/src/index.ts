@@ -4,20 +4,61 @@ import {LocationToRoute, MeduxLocation, RouteConfig, RouteToLocation, TransformR
 
 export {createBrowserHistory, createMemoryHistory, createHashHistory} from 'history';
 
+/**
+ * 定义一种数据结构，根据此结构可以生成一个url
+ */
 export interface BrowserRoutePayload<P = {}> {
+  /**
+   * 可以继承一个RouteData
+   */
   extend?: RouteData;
+  /**
+   * 将和继承的RouteData合并merge
+   */
   params?: DeepPartial<P>;
+  /**
+   * 要展示的Views
+   */
   paths?: string[];
 }
 
+/**
+ * 经过封装后的HistoryAPI比浏览器自带的history更强大
+ */
 export interface HistoryActions<P = {}> {
+  /**
+   * 接受监听回调
+   */
   listen(listener: LocationListener<never>): UnregisterCallback;
+  /**
+   * 获取当前路由的原始路由数据
+   */
   getLocation(): MeduxLocation;
+  /**
+   * 获取当前路由的经过转换之后的路由数据
+   */
   getRouteData(): RouteData;
+  /**
+   * 同浏览器的history.push方法
+   * @param data 除了可以接受一个url字符串外，也可以接受medux的RouteData
+   */
   push(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
+  /**
+   * 同浏览器的history.replace
+   * @param data 除了可以接受一个url字符串外，也可以接受medux的RouteData
+   */
   replace(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
+  /**
+   * 同浏览器的history.go
+   */
   go(n: number): void;
+  /**
+   * 同浏览器的history.goBack
+   */
   goBack(): void;
+  /**
+   * 同浏览器的history.goForward
+   */
   goForward(): void;
 }
 
@@ -30,6 +71,9 @@ interface BrowserLocation {
   state: RouteData;
 }
 
+/**
+ * 将浏览器的路由数据结构转换为medux标准的RouteData
+ */
 export function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData {
   const extend: RouteData = routePayload.extend || {views: {}, paths: [], stackParams: [], params: {}};
   const stackParams = [...extend.stackParams];
@@ -61,7 +105,12 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
     this.history.push({...location, state: routeData});
   }
 }
-
+/**
+ * 创建一个路由解析器
+ * @param history 浏览器的history或其代理
+ * @param routeConfig 应用的路由配置文件
+ * @returns {transformRoute,historyProxy,historyActions,toBrowserUrl}
+ */
 export function createRouter(history: History, routeConfig: RouteConfig) {
   const transformRoute: TransformRoute = buildTransformRoute(routeConfig);
   const toBrowserUrl: ToBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
@@ -118,6 +167,9 @@ export function createRouter(history: History, routeConfig: RouteConfig) {
   };
 }
 
+/**
+ * 将一个内部RouteData序列化为一个url
+ */
 export interface ToBrowserUrl<T = {}> {
   (routeOptions: BrowserRoutePayload<T>): string;
   (pathname: string, search: string, hash: string): string;

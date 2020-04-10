@@ -33,6 +33,36 @@ Medux 号称一站式的前端框架，但它绝不是简单的轮子拼凑，�
 
 ![TS Types 图片不显示多刷几次吧!!!](https://github.com/wooline/medux/blob/master/imgs/type-check.png)
 
+## 去路由化
+
+medux 刻意弱化了路由的概念，将路由视为另一种 Store，它跟 Redux 的 Store 一样影响着 UI 的展示，在 component 中你不用刻意区分引起 UI 变化的是 ReduxStore 还是 RouteStore，它们都是一样的，严格遵循 **UI=Render(State)**
+
+所以一些我们常见的路由组件 medux 并不推荐使用，例如
+
+```HTML
+<Switch>
+  <Route exact path="/admin/home" component={AdminHome} />
+  <Route exact path="/admin/role/:listView" component={AdminRole} />
+  <Route path="/admin/member/:listView" component={AdminMember} />
+</Switch>
+```
+
+主要问题如下：
+
+- 将路由绑定到组件，render 不再纯粹，包含了外部环境的副作用
+- 将 path 硬编码到组件中，不利于后期修改
+- path 作为一个 string 类型，失去了类型推断与检查
+
+那么在 medux 中你可以这样改写为普通组件：
+
+```HTML
+<Switch>
+  {routeViews.adminHome?.Main && <AdminHome />}
+  {routeViews.adminRole?.List && <AdminRole />}
+  {routeViews.adminMember?.List && <AdminMember />}
+</Switch>
+```
+
 ## 优雅的支持 SSR 同构
 
 网上很多号称`SSR同构`的解决方案（例如 nextjs），要么对 client 端有很多限制和要求，要么 client 端和 server 端差别还是很大。而 Medux `重状态管理，轻UI`的理念对 SSR 同构有着天然的支持。参见 Demo
@@ -41,7 +71,7 @@ Medux 号称一站式的前端框架，但它绝不是简单的轮子拼凑，�
 
 模块可以同步加载，也可以异步按需加载。但是我们在开发过程中不能将模块的加载逻辑混入业务逻辑中，这样会让问题更复杂。medux 中的模块加载被视为一种策略可以随时更改，除了配置文件，无需更多代码变更。
 
-## 彻底的模块化
+## 更彻底的模块化
 
 一个使用 medux 的典型工程结构：
 
@@ -121,16 +151,16 @@ src
 
 ## @medux 包含以下 Packages
 
-- [**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：顶层抽象的状态及模块管理框架。[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
-- [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：让`@medux/core`具有 web 特性，主要体现在 History 管理上。[查看 API](https://github.com/wooline/medux/tree/master/packages/web/api)
-- [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套基于`@medux/core`的跨平台路由方案。[查看 API](https://github.com/wooline/medux/tree/master/packages/route-plan-a/api)
-- [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：`@medux/core`结合 `React`。[查看 API](https://github.com/wooline/medux/tree/master/packages/react/api)
-- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合`@medux/core`、`@medux/web`、`@medux/route-plan-a`、`@medux/react`的开箱即用框架。[查看 API](https://github.com/wooline/medux/tree/master/packages/react-web-router/api)
+- [**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：顶层抽象的状态及模块管理框架
+- [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：让`@medux/core`具有 web 特性，主要体现在 History 管理上
+- [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套基于`@medux/core`的跨平台路由方案。
+- [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：`@medux/core`结合 `React`
+- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合`@medux/core`、`@medux/web`、`@medux/route-plan-a`、`@medux/react`的开箱即用框架
 
 以下是尚未完成的 Packages：
 
-- **@medux/vue-web-router**：`@medux/core`结合 `VUE`。
-- **@medux/react-native-router**：`@medux/core`结合 `ReactNative`。
+- **@medux/vue-web-router**：`@medux/core`结合 `VUE`
+- **@medux/react-native-router**：`@medux/core`结合 `ReactNative`
 
 ## 兼容性
 
@@ -138,7 +168,7 @@ src
 
 参见[具体细节](https://github.com/wooline/medux/blob/master/docs/ie8.md)
 
-## 一个 model 的代码样例
+## model 代码风格举例
 
 ```TS
 // 仅需一个类，搞定 action、dispatch、reducer、effect、loading
@@ -195,14 +225,20 @@ Typescript 类型反射：
 
 ![TS类型反射 图片不显示多刷几次吧!!!](https://github.com/wooline/react-coat/blob/master/docs/imgs/4.png)
 
+---
+
+## 进一步学习请阅读 [>使用指南<](https://github.com/wooline/medux/blob/master/docs/guides.md)
+
+## 快速开始
+
+> @medux 是一系列 package，我应当使用哪一个？
+
+如无特殊定制要求，建议使用开箱即的包，依据你选择的 UI 框架和运行环境：
+
+- web + react 请使用 `@medux/react-web-router`
+
 ## Demo
 
 - [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
-
-## 开始 medux 之旅
-
-Ok，至此，相信你已经大概知道了 medux 是一个什么类型的框架，如果对它还有点兴趣，不妨在多了解一点细节
-
-### [>使用指南<](https://github.com/wooline/medux/blob/master/docs/guides.md)
 
 **欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**

@@ -19,7 +19,7 @@ var deepAssign = _deepExtend.default;
 exports.deepAssign = deepAssign;
 var config = {
   escape: true,
-  dateParse: true,
+  dateParse: false,
   splitKey: 'q',
   defaultRouteParams: {}
 };

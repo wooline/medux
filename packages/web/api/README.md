@@ -78,12 +78,14 @@ ___
 
 ▸ **createRouter**(`history`: History, `routeConfig`: RouteConfig): *object*
 
+创建一个路由解析器
+
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`history` | History |
-`routeConfig` | RouteConfig |
+Name | Type | Description |
+------ | ------ | ------ |
+`history` | History | 浏览器的history或其代理 |
+`routeConfig` | RouteConfig | 应用的路由配置文件 |
 
 **Returns:** *object*
 
@@ -100,6 +102,8 @@ ___
 ###  fillBrowserRouteData
 
 ▸ **fillBrowserRouteData**(`routePayload`: [BrowserRoutePayload](interfaces/browserroutepayload.md)): *RouteData*
+
+将浏览器的路由数据结构转换为medux标准的RouteData
 
 **Parameters:**
 

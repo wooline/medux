@@ -2,6 +2,8 @@
 
 # Interface: HistoryActions <**P**>
 
+经过封装后的HistoryAPI比浏览器自带的history更强大
+
 ## Type parameters
 
 ▪ **P**
@@ -29,6 +31,8 @@
 
 ▸ **getLocation**(): *MeduxLocation*
 
+获取当前路由的原始路由数据
+
 **Returns:** *MeduxLocation*
 
 ___
@@ -37,6 +41,8 @@ ___
 
 ▸ **getRouteData**(): *RouteData*
 
+获取当前路由的经过转换之后的路由数据
+
 **Returns:** *RouteData*
 
 ___
@@ -44,6 +50,8 @@ ___
 ###  go
 
 ▸ **go**(`n`: number): *void*
+
+同浏览器的history.go
 
 **Parameters:**
 
@@ -59,6 +67,8 @@ ___
 
 ▸ **goBack**(): *void*
 
+同浏览器的history.goBack
+
 **Returns:** *void*
 
 ___
@@ -67,6 +77,8 @@ ___
 
 ▸ **goForward**(): *void*
 
+同浏览器的history.goForward
+
 **Returns:** *void*
 
 ___
@@ -74,6 +86,8 @@ ___
 ###  listen
 
 ▸ **listen**(`listener`: LocationListener‹never›): *UnregisterCallback*
+
+接受监听回调
 
 **Parameters:**
 
@@ -89,11 +103,13 @@ ___
 
 ▸ **push**(`data`: [BrowserRoutePayload](browserroutepayload.md)‹P› | MeduxLocation | string): *void*
 
+同浏览器的history.push方法
+
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`data` | [BrowserRoutePayload](browserroutepayload.md)‹P› &#124; MeduxLocation &#124; string |
+Name | Type | Description |
+------ | ------ | ------ |
+`data` | [BrowserRoutePayload](browserroutepayload.md)‹P› &#124; MeduxLocation &#124; string | 除了可以接受一个url字符串外，也可以接受medux的RouteData  |
 
 **Returns:** *void*
 
@@ -103,10 +119,12 @@ ___
 
 ▸ **replace**(`data`: [BrowserRoutePayload](browserroutepayload.md)‹P› | MeduxLocation | string): *void*
 
+同浏览器的history.replace
+
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`data` | [BrowserRoutePayload](browserroutepayload.md)‹P› &#124; MeduxLocation &#124; string |
+Name | Type | Description |
+------ | ------ | ------ |
+`data` | [BrowserRoutePayload](browserroutepayload.md)‹P› &#124; MeduxLocation &#124; string | 除了可以接受一个url字符串外，也可以接受medux的RouteData  |
 
 **Returns:** *void*

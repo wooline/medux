@@ -4,7 +4,7 @@ import assignDeep from 'deep-extend';
 export var deepAssign = assignDeep;
 var config = {
   escape: true,
-  dateParse: true,
+  dateParse: false,
   splitKey: 'q',
   defaultRouteParams: {}
 };

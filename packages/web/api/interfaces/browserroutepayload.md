@@ -2,6 +2,8 @@
 
 # Interface: BrowserRoutePayload <**P**>
 
+定义一种数据结构，根据此结构可以生成一个url
+
 ## Type parameters
 
 ▪ **P**
@@ -24,14 +26,20 @@
 
 • **extend**? : *RouteData*
 
+可以继承一个RouteData
+
 ___
 
 ### `Optional` params
 
 • **params**? : *DeepPartial‹P›*
 
+将和继承的RouteData合并merge
+
 ___
 
 ### `Optional` paths
 
 • **paths**? : *string[]*
+
+要展示的Views

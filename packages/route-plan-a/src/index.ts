@@ -3,28 +3,51 @@ import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import assignDeep from 'deep-extend';
 
+/**
+ * medux内部使用的Location数据结构，比浏览器的Location相比少了state属性，所以在此路由方案中不能使用history state
+ */
 export interface MeduxLocation {
   pathname: string;
   search: string;
   hash: string;
 }
 
+/**
+ * 将medux内部使用的RouteData转换为浏览器的Location
+ */
 export type RouteToLocation = (routeData: RouteData) => MeduxLocation;
+/**
+ * 将浏览器的Location转换为medux内部使用的RouteData
+ */
 export type LocationToRoute = (location: MeduxLocation) => RouteData;
 
+/**
+ * 定义一个浏览器的Location与medux内部使用的RouteData相互转换器
+ */
 export interface TransformRoute {
   locationToRoute: LocationToRoute;
   routeToLocation: RouteToLocation;
 }
 
+/**
+ * 一个深度拷贝的方法
+ */
 export const deepAssign = assignDeep;
 
 const config = {
   escape: true,
-  dateParse: true,
+  dateParse: false,
   splitKey: 'q',
   defaultRouteParams: {},
 };
+
+/**
+ * 可以配置的参数
+ * - escape 是否对生成的url进行escape编码
+ * - dateParse 是否自动解析url中的日期格式
+ * - splitKey 使用一个key来作为数据的载体
+ * - defaultRouteParams 默认的路由参数
+ */
 export function setRouteConfig(conf: {escape?: boolean; dateParse?: boolean; splitKey?: string; defaultRouteParams?: {[moduleName: string]: any}}) {
   conf.escape !== undefined && (config.escape = conf.escape);
   conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
@@ -54,27 +77,9 @@ function excludeDefaultData(data: {[moduleName: string]: any}, def: {[moduleName
   return result;
 }
 
-// 合并默认路由参数，如果路由中某参数没传，将用默认值替代，与上面方法互逆
-// function mergeDefaultData(data: {[moduleName: string]: any}, views: {[moduleName: string]: any}) {
-//   Object.keys(views).forEach(moduleName => {
-//     if (!data[moduleName]) {
-//       data[moduleName] = {};
-//     }
-//   });
-//   Object.keys(data).forEach(moduleName => {
-//     data[moduleName] = assignDeep({}, defaultRouteParams[moduleName], data[moduleName]);
-//   });
-// }
-
-// export const mergeDefaultParamsMiddleware: Middleware = () => (next: Function) => (action: any) => {
-//   if (action.type === ActionTypes.F_ROUTE_CHANGE) {
-//     const payload = getActionData<RouteState>(action);
-//     const params = mergeDefaultData(payload.data.views, payload.data.params, defaultRouteParams);
-//     action = {...action, payload: {...payload, data: {...payload.data, params}}};
-//   }
-//   return next(action);
-// };
-
+/**
+ * 定义一个路由配置文件的结构
+ */
 export interface RouteConfig {
   [path: string]: string | [string, RouteConfig];
 }
@@ -301,6 +306,11 @@ function extractHashData(params: {[moduleName: string]: any}) {
     hash: searchStringify(hashParams),
   };
 }
+/**
+ * 创建一个浏览器的Location与medux内部使用的RouteData相互转换器
+ * @param 应用的路由配置文件
+ * @returns 转换器
+ */
 export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 
@@ -398,104 +408,6 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     routeToLocation,
   };
 }
-//web中只有单个stack
-
-// export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
-//   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
-//   const locationToRoute: LocationToRoute = location => {
-//     const paths: string[] = [];
-//     const {stackParams, params} = splitSearch(location.search);
-//     //算出paths，并将path参数提取出来并入searchParams中
-//     pathnameParse(location.pathname, routeConfig, paths, params);
-//     const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
-//       const [moduleName, viewName] = cur.split(coreConfig.VSP);
-//       if (viewName) {
-//         if (!prev[moduleName]) {
-//           prev[moduleName] = {};
-//         }
-//         prev[moduleName]![viewName] = true;
-//       }
-//       return prev;
-//     }, {});
-//     const {stackParams: hashStackParams, params: hashParams} = splitSearch(location.hash);
-//     //将hash参数并入params中
-//     assignDeep(params, hashParams);
-//     hashStackParams.forEach((item, index) => {
-//       item && assignDeep(stackParams[index], item);
-//     });
-//     mergeDefaultData(params, views);
-//     return {paths, params, views, stackParams};
-//   };
-//   const routeToLocation: RouteToLocation = routeData => {
-//     const {paths, params, stackParams} = routeData;
-//     const mainStackParams = stackParams[0] || {};
-//     let pathname = '';
-//     let args: {[moduleName: string]: {[key: string]: any} | undefined};
-//     if (paths.length > 0) {
-//       args = {};
-//       // 将args二层克隆params，因为后面可能会删除path中使用到的变量
-//       for (const moduleName in mainStackParams) {
-//         if (mainStackParams[moduleName] && mainStackParams.hasOwnProperty(moduleName)) {
-//           args[moduleName] = {...mainStackParams[moduleName]};
-//         }
-//       }
-//       paths.reduce((parentAbsoluteViewName, viewName, index) => {
-//         const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
-//         const rule = viewToRule[absoluteViewName];
-//         const moduleName = viewName.split(coreConfig.VSP)[0];
-//         //最深的一个view可以决定pathname
-//         if (index === paths.length - 1) {
-//           // const toPath = compileToPath(rule.replace(/\$$/, ''));
-//           const toPath = compileToPath(rule);
-//           pathname = toPath(params[moduleName]);
-//         }
-//         //pathname中传递的值可以不在params中重复传递
-//         const keys = ruleToKeys[rule] || [];
-//         keys.forEach(key => {
-//           if (args[moduleName]) {
-//             delete args[moduleName]![key];
-//           }
-//         });
-//         return absoluteViewName;
-//       }, '');
-//     } else {
-//       args = mainStackParams;
-//     }
-//     //将带_前缀的变量放到hashData中
-//     const searchData = {};
-//     const hashData = {};
-//     for (const moduleName in args) {
-//       if (args[moduleName] && args.hasOwnProperty(moduleName)) {
-//         const data = args[moduleName]!;
-//         const keys = Object.keys(data);
-//         if (keys.length > 0) {
-//           keys.forEach(key => {
-//             if (key.startsWith('_')) {
-//               if (!hashData[moduleName]) {
-//                 hashData[moduleName] = {};
-//               }
-//               hashData[moduleName][key] = data[key];
-//             } else {
-//               if (!searchData[moduleName]) {
-//                 searchData[moduleName] = {};
-//               }
-//               searchData[moduleName][key] = data[key];
-//             }
-//           });
-//         }
-//       }
-//     }
-//     return {
-//       pathname,
-//       search: searchStringify(excludeDefaultData(searchData, defaultRouteParams)),
-//       hash: searchStringify(excludeDefaultData(hashData, defaultRouteParams)),
-//     };
-//   };
-//   return {
-//     locationToRoute,
-//     routeToLocation,
-//   };
-// }
 
 /**
  '/:articleType/:articleId/comments/:itemId'
@@ -541,11 +453,4 @@ p={comments:{searchList:{page:2}}}
 p={}&
 p={photos:{_listkey:222222}}
 p={comments:{_listkey:222222}}
-
-
-
- location->routeData
-1.解析出paths、views、pathArgs
-2.
-
  */

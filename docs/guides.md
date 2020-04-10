@@ -163,7 +163,7 @@ effect 执行发生错误时，框架会自动 dispatch 一个 type 为 **medux.
 
 ## 路由 Store 化
 
-medux 将路由及参数视为另一种 Store，它跟 Redux 的 Store 一样影响着 UI 的展示，有时候你不用刻意区分引起 UI 变化的是 ReduxStore 还是 RouteStore，它们都是一样的。比如：
+medux 将路由及参数视为另一种 Store，它跟 Redux 的 Store 一样影响着 UI 的展示，在 component 中你不用刻意区分引起 UI 变化的是 ReduxStore 还是 RouteStore，它们都是一样的。比如：
 
 > 评论区块的展示与关闭
 
@@ -174,51 +174,70 @@ medux 将路由及参数视为另一种 Store，它跟 Redux 的 Store 一样影
 
 **你把路由当成另一个 Store 就对了**，只不过这个 RouteStore 可以任由用户在地址栏中直接修改，这和用户鼠标点击交互修改本质上是一样的。所以做好准备把 ReduxStore 中的一部分数据抽离出来放入 RouteStore 中，然后让用户通过 URL 任意修改吧...
 
-medux 将这个特殊的 RouteStore 放在 ReduxStore 的子节点 route 中：
+### RouteData
 
-```TS
-// 带路由的State数据结构举例
+通常路由解析及 history 功能由宿主平台提供，不同平台的路由方案不尽相同，medux 定义了统一通用的路由数据结构 `RouteData`，框架将自动把 `原始路由信息` 转换为 medux 使用的`RouteData`
+
+以 web 为例，假设当前 URL 是
+
+`http://location/photos/32/comments?q={comments:{listSearch:{sortBy:"datetime",page:1,pageSize:20}}}`
+
+那么宿主平台解析后的原始路由信息如下：
+
+```JS
 {
-  route: {
-    location: any; //原始路由信息
-    data: { //这便是转换之后的 RouteStore
-      paths: ["app.Main", "photos.Details", "comments.List"],
-      views: {
-        app: {Main: true},
-        photos: {Details: true},
-        comments: {List: true}
-      }
-      params: {//每个模块都可以利用路由来存放一些状态
-        // 对应moduleState中的routeParams
-        photos:{photoID: 32},
-        comments:{
-          listSearch:{sortBy: "datetime", page: 1, pageSize: 20}
-        }
-      }
-    }
+  pathname: '/photos/32/comments',
+  search: 'q={comments:{listSearch:{sortBy:"datetime",page:1,pageSize:20}}}',
+  hash: '',
+  state: null
+}
+```
+
+经过 medux 转换后的 RouteData 如下：
+
+```JS
+{
+  paths: ["app.Main", "photos.Details", "comments.List"],
+  views: {
+    app: {Main: true},
+    photos: {Details: true},
+    comments: {List: true}
   },
-  app: { //app模块的moduleState
-    routeParams: null
-    ...
-  },
-  photos: { //photos模块的moduleState
-    routeParams: {photoID: 32} //photos模块的路由状态
-    ... // photos模块的其它状态
-  },
-  comments: { //comments模块的moduleState
-    routeParams: { //comments模块的路由状态
+  params: {
+    photos:{photoID: 32},
+    comments:{
       listSearch:{sortBy: "datetime", page: 1, pageSize: 20}
     }
-    ... //comments模块的其它状态
-  },
+  }
 }
+```
+
+路由的目的就是为了变更 UI，所以不管什么路由方案，通过解析总能够得到以下信息：
+
+- 当前路由会展示哪些 view
+- 以及某些需要的选项参数
+
+medux 会自动将当前路由的 `RouteData` 注入到 ReduxStore 的 route.data 中，并且将参数注入到每个模块的 routeParams 中。**至此，你可以忘掉路由了，一切都是 state，一切都遵循 UI=Render(State)**。于是乎原来包含副作用的路由组件变成了普通组件：
+
+```HTML
+//原来需要路由组件
+<Switch>
+  <Route exact path="/admin/home" component={AdminHome} />
+  <Route exact path="/admin/role/:listView" component={AdminRole} />
+  <Route path="/admin/member/:listView" component={AdminMember} />
+</Switch>
+
+//现在直接变成普通组件
+<Switch>
+  {routeViews.adminHome?.Main && <AdminHome />}
+  {routeViews.adminRole?.List && <AdminRole />}
+  {routeViews.adminMember?.List && <AdminMember />}
+</Switch>
 ```
 
 ## 更多 API
 
 [**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：顶层抽象的状态及模块管理框架。[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
-
----
 
 # 废话少说，直接上 Demo
 
