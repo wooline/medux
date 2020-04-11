@@ -1,9 +1,7 @@
-## 关于 medux
+## 关于@medux 系列
 
-请先阅读：[medux 概述](https://github.com/wooline/medux)
+请先阅读：[@medux 系列概述](https://github.com/wooline/medux)
 
-## 关于 medux/core
+# 关于@medux/react
 
-**@medux/core**：顶层抽象的状态及模块管理框架
-
-[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
+本包是@medux/core 结合 React 的封装

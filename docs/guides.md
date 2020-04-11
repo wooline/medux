@@ -237,7 +237,7 @@ medux 会自动将当前路由的 `RouteData` 注入到 ReduxStore 的 route.dat
 
 ## 更多 API
 
-[**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：顶层抽象的状态及模块管理框架。[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
+[**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：@medux 系列的核心基础包.[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
 
 # 废话少说，直接上 Demo
 

@@ -4,4 +4,6 @@
 
 # 关于@medux/core
 
-本包是@medux 系列的核心基础包，通常不直接使用，它封装模块加载和抽象的状态管理机制。
+本包是@medux 系列的核心基础包
+
+[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)

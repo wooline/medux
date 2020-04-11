@@ -21,7 +21,7 @@
 - 不用考虑 UI 组件的生命周期以及各种钩子，状态管理也更简单直观
 - 不与特定 UI 相关联，便于重用与多端跨平台
 
-## 基于`Redux`也支持 `Mutable Data` 的另一种 Flux 框架
+## 基于 Redux 也支持 Mutable Data 的另一种 Flux 框架
 
 - 简化 Redux 及 Action 的繁琐调用
 - State 及其一级节点强制使用 Immutable 数据结构，但次级节点（通常是一个 ModuleState）并不要求，所以如果你喜欢，也可以结合使用 Mobx 或者 VueData
@@ -151,16 +151,16 @@ src
 
 ## @medux 包含以下 Packages
 
-- [**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：顶层抽象的状态及模块管理框架
-- [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：让`@medux/core`具有 web 特性，主要体现在 History 管理上
-- [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套基于`@medux/core`的跨平台路由方案。
-- [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：`@medux/core`结合 `React`
-- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合`@medux/core`、`@medux/web`、`@medux/route-plan-a`、`@medux/react`的开箱即用框架
+- [**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：核心基础包
+- [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：让 @medux/core 具有 web 特性，主要体现在 History 管理上
+- [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套基于 @medux/core 的跨平台路由方案。
+- [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：@medux/core 结合 React 的封装
+- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合@medux/core、@medux/web、@medux/route-plan-a、@medux/react, 是 web 环境下开发 reat 的开箱即用框架
 
 以下是尚未完成的 Packages：
 
-- **@medux/vue-web-router**：`@medux/core`结合 `VUE`
-- **@medux/react-native-router**：`@medux/core`结合 `ReactNative`
+- **@medux/vue-web-router**：@medux/core 结合 VUE
+- **@medux/react-native-router**：@medux/core 结合 ReactNative
 
 ## 兼容性
 
@@ -233,7 +233,7 @@ Typescript 类型反射：
 
 > @medux 是一系列 package，我应当使用哪一个？
 
-如无特殊定制要求，建议使用开箱即的包，依据你选择的 UI 框架和运行环境：
+如无特殊定制要求，建议使用开箱即用的包，依据你选择的 UI 框架和运行环境：
 
 - web + react 请使用 `@medux/react-web-router`
 

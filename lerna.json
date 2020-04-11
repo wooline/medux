@@ -2,7 +2,6 @@
   "packages": [
     "packages/core",
     "packages/react",
-    "packages/react-native-router",
     "packages/react-web-router",
     "packages/route-plan-a",
     "packages/web",

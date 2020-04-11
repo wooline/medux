@@ -97,22 +97,29 @@ export type RootState<G extends ModuleGetter, L> = {
   };
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
 
-export interface ExportModule<Component> {
-  /**
-   * 导出Module
-   * @param moduleName 模块名，不能重复
-   * @param initState 模块初始状态
-   * @param ActionHandles 模块的ModelHandlers类，必须继承BaseModelHandlers
-   * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
-   * @returns medux定义的module标准数据结构
-   */
-  <S extends BaseModelState, V extends {[key: string]: Component}, T extends BaseModelHandlers<S, any>, N extends string>(
-    moduleName: N,
-    initState: S,
-    ActionHandles: {new (moduleName: string, store: any): T},
-    views: V
-  ): Module<Model<S>, V, Actions<T>, N>['default'];
-}
+/**
+ * 导出Module
+ * @param moduleName 模块名，不能重复
+ * @param initState 模块初始状态
+ * @param ActionHandles 模块的ModelHandlers类，必须继承BaseModelHandlers
+ * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
+ * @returns medux定义的module标准数据结构
+ */
+export type ExportModule<Component> = <
+  S extends BaseModelState,
+  V extends {
+    [key: string]: Component;
+  },
+  T extends BaseModelHandlers<S, any>,
+  N extends string
+>(
+  moduleName: N,
+  initState: S,
+  ActionHandles: {
+    new (moduleName: string, store: any): T;
+  },
+  views: V
+) => Module<Model<S>, V, Actions<T>, N>['default'];
 
 function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
   for (const actionName in actionHandlerMap) {
@@ -472,19 +479,18 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
   }
 }
 
-export interface LoadView<MG extends ModuleGetter, Options = any, Comp = any> {
-  /**
-   * 动态加载View，因为每种UI框架动态加载View的方式不一样，所有此处只是提供一个抽象接口
-   * @see getView
-   */
-  <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
-    moduleName: M,
-    viewName: N,
-    options?: Options,
-    loading?: Comp,
-    error?: Comp
-  ): V[N];
-}
+/**
+ * 动态加载View，因为每种UI框架动态加载View的方式不一样，所有此处只是提供一个抽象接口
+ * @see getView
+ */
+
+export type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
+  moduleName: M,
+  viewName: N,
+  options?: Options,
+  loading?: Comp,
+  error?: Comp
+) => V[N];
 
 function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module {
   const result = moduleGetter[moduleName]();
