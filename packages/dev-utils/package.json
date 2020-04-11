@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "0.2.38",
+  "version": "0.2.39",
   "description": "Common development tools.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "author": "wooline <wooline@qq.com>",
@@ -20,7 +20,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@medux/core": "^0.2.38"
+    "@medux/core": "^0.2.39"
   },
   "peerDependencies": {
     "@types/express": "^4.0.0",
