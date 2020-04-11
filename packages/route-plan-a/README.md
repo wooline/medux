@@ -330,3 +330,13 @@ const url = toBrowserUrl({
 ```
 
 那么此时，你在 Component 里面使用 moduleState 时已经不需要思考它的来源是哪里了，也许是路由解析得出的，但也没准是内部 dispatch action 得到的呢
+
+## 继续阅读下一篇
+
+[medux 数据流](https://github.com/wooline/medux/blob/master/docs/data-flow.md)
+
+# 废话少说，直接上 Demo
+
+[medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
+
+**欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**

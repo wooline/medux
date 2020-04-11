@@ -191,7 +191,7 @@ src
 - [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：让 @medux/core 具有 web 特性，主要体现在 History 管理上
 - [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套基于 @medux/core 的跨平台路由方案，它将 web 的路由风格带入其它平台
 - [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：@medux/core 结合 React 的封装
-- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合@medux/core、@medux/web、@medux/route-plan-a、@medux/react, 是 web 环境下开发 reat 的开箱即用框架
+- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合@medux/core、@medux/web、@medux/route-plan-a、@medux/react, 是 web 环境下开发 react 的开箱即用框架
 
 以下是尚未完成的 Packages：
 

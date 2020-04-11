@@ -24,7 +24,7 @@
 
 我们可以简单的认为：store.dispatch(action)，可以触发 reducer 和 effect，看起来 action 似乎可以当作一种事件。reducer 和 effect 可以当作是该事件的观察者，所以 reducer 和 effect 统称为：**ActionHandler**
 
-### Module（模块）
+### Module
 
 我们通常以**高内聚、低偶合**的原则进行模块划分，一个 Module 是相对独立的业务功能的集合，它通常包含一个 Model(用来处理业务逻辑)和一组 View(用来展示数据与交互)，需要注意的是：不要以 UI 视觉作为划分原则
 
@@ -183,50 +183,12 @@ medux 将路由及参数视为另一种 Store，它跟 Redux 的 Store 一样影
 
 **你把路由当成另一个 Store 就对了**，只不过这个 RouteStore 可以任由用户在地址栏中直接修改，这和用户鼠标点击交互修改本质上是一样的。所以做好准备把 ReduxStore 中的一部分数据抽离出来放入 RouteStore 中，然后让用户通过 URL 任意修改吧...
 
-### RouteData
-
-通常路由解析及 history 功能由宿主平台提供，不同平台的路由方案不尽相同，medux 定义了统一通用的路由数据结构 `RouteData`，框架将自动把 `原始路由信息` 转换为 medux 使用的`RouteData`
-
-以 web 为例，假设当前 URL 是
-
-`http://location/photos/32/comments?q={comments:{listSearch:{sortBy:"datetime",page:1,pageSize:20}}}`
-
-那么宿主平台解析后的原始路由信息如下：
-
-```JS
-{
-  pathname: '/photos/32/comments',
-  search: 'q={comments:{listSearch:{sortBy:"datetime",page:1,pageSize:20}}}',
-  hash: '',
-  state: null
-}
-```
-
-经过 medux 转换后的 RouteData 如下：
-
-```JS
-{
-  paths: ["app.Main", "photos.Details", "comments.List"],
-  views: {
-    app: {Main: true},
-    photos: {Details: true},
-    comments: {List: true}
-  },
-  params: {
-    photos:{photoID: 32},
-    comments:{
-      listSearch:{sortBy: "datetime", page: 1, pageSize: 20}
-    }
-  }
-}
-```
-
-路由的目的就是为了变更 UI，所以不管什么路由方案，通过解析总能够得到以下信息：
+路由的终极目的就是为了变更 UI，所以不管什么路由方案，总能解析出以下通用信息：
 
 - 当前路由会展示哪些 view
-- 以及某些需要的选项参数
+- 以及展示这些 view 需要的参数
 
-medux 会自动将当前路由的 `RouteData` 注入到 ReduxStore 的 route.data 中，并且将参数注入到每个模块的 routeParams 中。**至此，你可以忘掉路由了，一切都是 state，一切都遵循 UI=Render(State)**。于是乎原来包含副作用的路由组件变成了普通组件：
+medux 将这些通用信息抽象成状态。**至此，你可以忘掉路由了，一切都是 state，一切都遵循 UI=Render(State)**。于是乎原来包含副作用的路由组件变成了普通组件：
 
 ```HTML
 //原来需要路由组件
@@ -244,13 +206,15 @@ medux 会自动将当前路由的 `RouteData` 注入到 ReduxStore 的 route.dat
 </Switch>
 ```
 
-## 了解路由方案之 [route-plan-a](https://github.com/wooline/medux/tree/master/packages/route-plan-a)
-
-以上只是@medux/core 中实现路由的抽象思路，具体如何把原始路由转换为 RouteData？又如何把 RouteData 转换为原始路由？方案有很多种，我实现了一种：
+具体如何提取通用信息，又如何将其转换成为状态呢？方案有很多种，我实现了一种：
 
 - [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)
 
 当然你也可以自己实现更多 plan-b、plan-c...
+
+## 继续阅读下一篇
+
+[medux 路由篇](https://github.com/wooline/medux/tree/master/packages/route-plan-a)
 
 ## Core API
 
@@ -259,3 +223,5 @@ medux 会自动将当前路由的 `RouteData` 注入到 ReduxStore 的 route.dat
 # 废话少说，直接上 Demo
 
 [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
+
+**欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**
