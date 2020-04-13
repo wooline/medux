@@ -1,6 +1,6 @@
-欢迎您开始 @medux 之旅，建议您依次阅读以下 4 篇文章，这将耗费您大约 30 分钟。
+![@medux](https://github.com/wooline/react-coat/blob/master/docs/imgs/logo2.png)
 
-> ps.为什么要看这么多？因为 medux 不只是简单的轮子拼凑或是帮助工具，它想做个有灵魂的框架
+欢迎您开始 @medux 之旅，建议您依次阅读以下 4 篇文章，这将耗费您大约 30 分钟。
 
 - [**为什么你需要 medux**](https://github.com/wooline/medux)
 - [medux 基础概念速览](https://github.com/wooline/medux/blob/master/docs/guides.md)
@@ -267,16 +267,12 @@ Typescript 类型反射：
 
 [medux 基础概念速览](https://github.com/wooline/medux/blob/master/docs/guides.md)
 
-## 快速开始
+## Core API
 
-> @medux 是一系列 package，我应当使用哪一个？
+[**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：@medux 系列的核心基础包.[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
 
-如无特殊定制要求，建议使用整合好的开箱即用的包，依据你选择的 UI 框架和运行环境：
+# 废话少说，直接上 Demo
 
-- web + react 请使用 [@medux/react-web-router](https://github.com/wooline/medux/tree/master/packages/react-web-router)
-
-## Demo
-
-- [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
+[medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
 
 **欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**

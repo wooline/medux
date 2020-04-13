@@ -1,3 +1,5 @@
+![@medux](https://github.com/wooline/react-coat/blob/master/docs/imgs/logo2.png)
+
 `@medux` is an modular state management, Suitable for various JavaScript UI frameworks
 
 `@medux` coding with `Typescript`, support for isomorphic rendering beautifully(SSR)
