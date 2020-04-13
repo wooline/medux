@@ -1,4 +1,4 @@
-![@medux](https://github.com/wooline/react-coat/blob/master/docs/imgs/logo2.png)
+![@medux](https://github.com/wooline/medux/blob/master/imgs/logo2.png)
 
 ## 关于@medux 系列
 
