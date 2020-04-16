@@ -1,7 +1,7 @@
-![@medux](https://github.com/wooline/medux/blob/master/imgs/logo2.png)
+![@medux](https://github.com/wooline/medux/blob/master/imgs/logo4.png)
 
 `@medux` is an modular state management, Suitable for various JavaScript UI frameworks
 
 `@medux` coding with `Typescript`, support for isomorphic rendering beautifully(SSR)
 
-# [Read Documentation ON Github](https://github.com/wooline/medux/tree/master/packages/react-native-router)
+# [Read Documentation ON Github](https://github.com/wooline/medux)

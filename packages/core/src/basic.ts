@@ -301,7 +301,7 @@ export function reducer(target: any, key: string, descriptor: PropertyDescriptor
  *
  * ```
  * effect(null) 不注入加载状态
- * effect() == effect('global','app)
+ * effect() == effect('global','app')
  * effect('global') = effect('global',thisModuleName)
  * ```
  */

@@ -1,12 +1,6 @@
-![@medux](https://github.com/wooline/medux/blob/master/imgs/logo2.png)
-
-## 关于@medux 系列
-
-请先阅读：[@medux 系列概述](https://github.com/wooline/medux)
-
 # 关于@medux/react-web-router
 
-本包整合了@medux/core、@medux/web、@medux/route-plan-a、@medux/react ，是 web 环境下开发 reat 的开箱即用框架
+本包整合了@medux/core、@medux/web、@medux/route-plan-a、@medux/react ，是 web 环境下开发 react 的开箱即用框架
 
 本包已经包含了上述系列框架，你只需要安装和使用本包即可，无需重复安装其它@medux 系列
 

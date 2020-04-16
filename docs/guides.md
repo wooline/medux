@@ -1,4 +1,4 @@
-![@medux](https://github.com/wooline/react-coat/blob/master/docs/imgs/logo2.png)
+![@medux](https://github.com/wooline/medux/blob/master/imgs/logo2.png)
 
 欢迎您开始 @medux 之旅，建议您依次阅读以下 4 篇文章，这将耗费您大约 30 分钟。
 
@@ -22,7 +22,7 @@
 
 ### ActionHandler
 
-我们可以简单的认为：store.dispatch(action)，可以触发 reducer 和 effect，看起来 action 似乎可以当作一种事件。reducer 和 effect 可以当作是该事件的观察者，所以 reducer 和 effect 统称为：**ActionHandler**
+我们可以简单的认为：store.dispatch(action)，可以触发 reducer 和 effect 执行，看起来 action 似乎可以当作一种事件。reducer 和 effect 可以当作是该事件的监听者，所以 reducer 和 effect 统称为：**ActionHandler**
 
 ### Module
 
@@ -50,9 +50,9 @@
 
 View 本质上还是一个 Component，它们有逻辑上的区别：
 
-- view 是 ModuleState 的视图展现，更偏重于表现特定的具体的业务逻辑，所以它的 props 可以直接用 mapStateToProps connect 到 store。
-- component 体现的是一个纯组件，它的 props 一般来源于父级传递。
-- component 通常是公共的，而 view 通常是特有的
+- View 用来展示业务，Component 用来展示交互
+- View 一定属于某个 Module，Component 可以属于某个 Module 专用，也可以属于全部 Module
+- View 通常订阅了 Store，并从 Store 中之间获得数据，Component 则只能通过 props 来进行传递
 
 ---
 
@@ -172,7 +172,7 @@ effect 执行发生错误时，框架会自动 dispatch 一个 type 为 **medux.
 
 ## 路由 Store 化
 
-medux 将路由及参数视为另一种 Store，它跟 Redux 的 Store 一样影响着 UI 的展示，在 component 中你不用刻意区分引起 UI 变化的是 ReduxStore 还是 RouteStore，它们都是一样的。比如：
+medux 将路由视为另一种 Store，它跟 Redux 的 Store 一样影响着 UI 的展示，在 Component 中你不用刻意区分引起 UI 变化的是 ReduxStore 还是 RouteStore，它们都是一样的。比如：
 
 > 评论区块的展示与关闭
 
@@ -212,16 +212,16 @@ medux 将这些通用信息抽象成状态。**至此，你可以忘掉路由了
 
 当然你也可以自己实现更多 plan-b、plan-c...
 
+## CoreAPI
+
+[查看 CoreAPI 文档](https://github.com/wooline/medux/tree/master/packages/core/api)
+
+## Demo
+
+[medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统，除了演示 medux 怎么使用，它还创造了不少独特的理念
+
 ## 继续阅读下一篇
 
 [medux 路由篇](https://github.com/wooline/medux/tree/master/packages/route-plan-a)
-
-## Core API
-
-[**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：@medux 系列的核心基础包.[查看 API](https://github.com/wooline/medux/tree/master/packages/core/api)
-
-# 废话少说，直接上 Demo
-
-[medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统。
 
 **欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**
