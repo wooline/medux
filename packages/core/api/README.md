@@ -1,6 +1,6 @@
-[@medux/core - v0.2.38](README.md)
+[@medux/core - v0.2.39](README.md)
 
-# @medux/core - v0.2.38
+# @medux/core - v0.2.39
 
 ## Index
 
@@ -216,7 +216,7 @@ ___
 Name | Type | Description |
 ------ | ------ | ------ |
 `loadingForGroupName?` | string &#124; null | 注入加载状态的分组key，默认为global，如果为null表示不注入加载状态 |
-`loadingForModuleName?` | undefined &#124; string | 可将loading状态合并注入到其他module，默认为入口主模块  ``` effect(null) 不注入加载状态 effect() == effect('global','app) effect('global') = effect('global',thisModuleName) ```  |
+`loadingForModuleName?` | undefined &#124; string | 可将loading状态合并注入到其他module，默认为入口主模块  ``` effect(null) 不注入加载状态 effect() == effect('global','app') effect('global') = effect('global',thisModuleName) ```  |
 
 **Returns:** *(Anonymous function)*
 

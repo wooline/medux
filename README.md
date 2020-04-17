@@ -1,11 +1,11 @@
-![@medux](https://github.com/wooline/medux/blob/master/imgs/logo4.png)
+![@medux](https://cdn.nlark.com/yuque/0/2020/png/1294343/1587132905898-334d9af9-7d0b-4b40-861a-45abf17bd1f8.png)
 
 欢迎您开始 @medux 之旅，建议您依次阅读以下 4 篇文章，这将耗费您大约 30 分钟。
 
-- 为什么你需要 medux [雀语](https://www.yuque.com/medux/docs/01)
-- medux 基础概念速览 [雀语](https://www.yuque.com/medux/docs/02)
-- medux 路由篇 [雀语](https://www.yuque.com/medux/docs/03)
-- medux 数据流 [雀语](https://www.yuque.com/medux/docs/04)
+- 为什么你需要 medux [语雀](https://www.yuque.com/medux/docs/01)
+- medux 基础概念速览 [语雀](https://www.yuque.com/medux/docs/02)
+- medux 路由篇 [语雀](https://www.yuque.com/medux/docs/03)
+- medux 数据流 [语雀](https://www.yuque.com/medux/docs/04)
 
 ## @medux 包含以下 Packages
 
@@ -31,3 +31,5 @@
 ---
 
 **欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**
+
+- [语雀专栏](https://www.yuque.com/medux/docs)

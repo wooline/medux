@@ -1,4 +1,4 @@
-[@medux/core - v0.2.38](../README.md) › [RouteData](routedata.md)
+[@medux/core - v0.2.39](../README.md) › [RouteData](routedata.md)
 
 # Interface: RouteData
 

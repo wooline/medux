@@ -1,4 +1,4 @@
-[@medux/core - v0.2.38](../README.md) › [BaseModelState](basemodelstate.md)
+[@medux/core - v0.2.39](../README.md) › [BaseModelState](basemodelstate.md)
 
 # Interface: BaseModelState <**R**>
 
