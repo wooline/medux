@@ -199,7 +199,11 @@ medux 将这些通用信息抽象成状态。**至此，你可以忘掉路由了
 </Switch>
 
 //现在直接变成普通组件
-<Switch> {routeViews.adminHome?.Main && <AdminHome />} {routeViews.adminRole?.List && <AdminRole />} {routeViews.adminMember?.List && <AdminMember />} </Switch>
+<Switch>
+  {routeViews.adminHome?.Main && <AdminHome />}
+  {routeViews.adminRole?.List && <AdminRole />}
+  {routeViews.adminMember?.List && <AdminMember />}
+</Switch>
 ```
 
 具体如何提取通用信息，又如何将其转换成为状态呢？方案有很多种，我实现了一种：

@@ -69,7 +69,7 @@ medux 引入独特的 actionHandler 机制，让 action 可以具有 Event 特�
 
 medux 号称一站式的前端框架，但它绝不是简单的轮子拼凑，也不想做个松散的大杂烩，所以从一开始就使用 Typescript 编写，并且将 UI 管理、状态管理、模块化管理使用各种类型推断紧密结合起来。
 
-![type-check.png](https://cdn.nlark.com/yuque/0/2020/png/1294343/1587010068641-9dec8e99-3827-46d2-8439-a2495dbf14ec.png#align=left&display=inline&height=553&margin=%5Bobject%20Object%5D&name=type-check.png&originHeight=553&originWidth=780&size=120732&status=done&style=none&width=780)
+![type-check.png](https://cdn.nlark.com/yuque/0/2020/png/1294343/1587010068641-9dec8e99-3827-46d2-8439-a2495dbf14ec.png)
 
 ## 去路由化
 
@@ -258,7 +258,7 @@ export class ModelHandlers extends BaseModelHandlers<State, RootState> {
 
 拥有丰富的 typescript 类型推断与反射是 medux 的一大特点：
 
-![4.png](https://cdn.nlark.com/yuque/0/2020/png/1294343/1587024429845-e973eb31-d157-4812-8ccf-577f86cc515c.png#align=left&display=inline&height=222&margin=%5Bobject%20Object%5D&name=4.png&originHeight=222&originWidth=952&size=52556&status=done&style=none&width=952)
+![4.png](https://cdn.nlark.com/yuque/0/2020/png/1294343/1587024429845-e973eb31-d157-4812-8ccf-577f86cc515c.png)
 
 ## CoreAPI
 

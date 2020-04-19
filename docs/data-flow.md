@@ -1,17 +1,17 @@
-![@medux](https://github.com/wooline/medux/blob/master/imgs/logo2.png)
-
 欢迎您开始 @medux 之旅，建议您依次阅读以下 4 篇文章，这将耗费您大约 30 分钟。
 
-- [为什么你需要 medux](https://github.com/wooline/medux)
-- [medux 基础概念速览](https://github.com/wooline/medux/blob/master/docs/guides.md)
-- [medux 路由篇](https://github.com/wooline/medux/tree/master/packages/route-plan-a)
-- [**medux 数据流**](https://github.com/wooline/medux/blob/master/docs/data-flow.md)
+- [为什么你需要 medux](/medux/docs/01)
+- [medux 基础概念速览](/medux/docs/02)
+- [medux 路由篇](/medux/docs/03)
+- [**medux 数据流**](/medux/docs/04)
 
 第 4 篇：medux 数据流
 
-> 首先我们看一下@medux 中的主要数据流示意图：
+[**-- Github 地址 ---**](https://github.com/wooline/medux)
 
-![@medux-data-flow 图片不显示多刷几次吧!!!](https://github.com/wooline/medux/blob/master/imgs/data-flow.png)
+## @medux 数据流示意图
+
+![data-flow.png](https://cdn.nlark.com/yuque/0/2020/png/1294343/1587048601414-277fa483-5329-41e0-a3bd-27cfa1f0faf5.png)
 
 ## 基于 Redux
 
@@ -24,9 +24,9 @@
 
 ## 模块化 Store
 
-- 每个 module 仅能通过 reducer 修改 Store 下的某个一级子节点(moduleState)，跨 module 不能直接修改。
-- 每个 module 可以读取所有 Store 的节点
-- Store 一级子节点除了 moduleState 还可以是其它 ReduxReducers 管理的节点，比如 route，它们依然遵循以上原则
+- 每个 module 仅能通过 reducer 修改 Store 下的某个一级子节点(moduleState)，跨 module 不能直接修改
+- 每个 module 可以读取所有 Store 的子节点
+- Store 一级子节点除了 moduleState 还可以是其它 ReduxReducers 管理的节点(比如 route)，它们依然遵循以上原则
 
 ## 封装 Effect
 
@@ -35,7 +35,7 @@
 - Effect 可以通过 dispatch Action 来触执行另一个 Effect
 - Effect 执行是异步的，可以使用 await 来跟踪其执行结果，比如：
 
-```JS
+```javascript
 ...
 await this.dispatch(this.action.searchList());
 this.dispatch(this.action.showPop());
@@ -43,9 +43,9 @@ this.dispatch(this.action.showPop());
 
 ## 跟踪 Effect 的执行
 
-- 你只需在定义 Effect 的装饰器中加入可控的参数既可以注入其 loading 状态到 moduleState 中
+你只需在定义 Effect 的装饰器中加入可控的参数既可注入其 loading 状态到 moduleState 中：
 
-```TS
+```typescript
 // loadingForGroupName 注入加载状态的分组key，默认为global，如果为null表示不注入加载状态
 // loadingForModuleName 可将loading状态合并注入到其他module，默认为入口主模块
 function effect(loadingForGroupName?: string | null, loadingForModuleName?: string)
@@ -57,20 +57,17 @@ public async login(username:string, password:string){
 }
 ```
 
-- 除了 loading 状态，你还可以直接编写 effect 执行前后的钩子
+除了 loading 状态，你还可以直接编写 effect 执行前后的钩子：
 
-```TS
-function logger(
-  before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void,
-  after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
-)
+```typescript
+function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void));
 ```
 
 ## 让 Action 具有 Event 性质
 
 reducer 或 effect 我们统称为 ActionHandler，当执行 store.dispatch(action)时，会触发一个目标 ActionHandler 的执行，我们称之为`主ActionHandler`。除了主 ActionHandler，还可以存在一系列`从ActionHandler`来配合执行，它们可以属于不同的 module，所以通常用来解决 module 之间的协作。
 
-从本文最开始的 Medux 数据流示意图中看出，蓝色的 Action 似乎像一条总线穿透各个 module，它的 Event 性质让整个模块变得松散起来
+从本文顶部的 medux 数据流示意图中看出，蓝色的 Action 似乎像一条总线穿透各个 module，它的 Event 性质让整个模块变得松散起来
 
 ## ActionHandler 的执行顺序
 
@@ -81,11 +78,11 @@ reducer 或 effect 我们统称为 ActionHandler，当执行 store.dispatch(acti
 - reducer 是同步的，它们总是先执行
 - effect 是异步的，它们会并发执行，除非你使用 await
 
-```TS
+```typescript
 interface Action {
-    type: string;
-    priority?: string[]; //执行优先级
-    payload?: any[];
+  type: string;
+  priority?: string[]; //执行优先级
+  payload?: any[];
 }
 ```
 
@@ -100,12 +97,12 @@ interface Action {
 
 View 本质上就是一个 Component，但是 View 用来展示业务，Component 用来展示交互。从本文最开始的 Medux 数据流示意图中看出：
 
-- View 一定属于某个 Module。Component 可以属于某个 Module 专用，也可以属于全部 Module
 - View 通常订阅了 Store，并从 Store 中之间获得数据。Component 则只能通过 props 来进行传递
+- View 一定属于某个 Module。Component 可以属于某个 Module 专用，也可以属于全部 Module
 - View 和 Component 之间可以相互嵌套
 - View 和 View 之间也可以相互嵌套，但是不能直接通过 import 另一个 view，必须通过 loadView 方法加载
 
-```JS
+```javascript
 const RoleSelector = loadView('adminRole', 'Selector');
 ```
 
@@ -119,7 +116,10 @@ const RoleSelector = loadView('adminRole', 'Selector');
 
 ## 使用 MutableData 可变数据
 
-喜欢 vue 或 mobx 的朋友可能会问，medux 是要求可变数据还是不可变数据？虽然 medux 是基于 redux 的，但是本着实用至上的原则，并不要求严格遵循 redux 模型，它是另一个 flux 框架。
+> 喜欢 vue 或 mobx 的朋友可能会问，medux 是要求可变数据还是不可变数据？
+
+虽然 medux 是基于 redux 的，但本着实用至上的原则，并不要求严格遵循 redux 模型，它是另一个 flux 框架。
+
 medux 框架内部会使用 ImmutableData 来自动生成并管理 state 及其 1 级节点，对于这个内置数据结构通常你也无需干预。而对于次级的 moduleState 你可以将它定义为 一个 MutableData，然后直接在 reducer 中修改 state 并返回它，尽管这有违 reducer 的本意，但这是对接 MutableData 最简单灵活的方案。
 
 ## CoreAPI
@@ -133,5 +133,3 @@ medux 框架内部会使用 ImmutableData 来自动生成并管理 state 及其 
 ## Demo
 
 [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统，除了演示 medux 怎么使用，它还创造了不少独特的理念
-
-**欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**
