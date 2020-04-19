@@ -2,8 +2,8 @@
 
 欢迎您开始 @medux 之旅，建议您依次阅读以下 4 篇文章，这将耗费您大约 30 分钟。
 
-- 为什么你需要 medux [语雀](https://www.yuque.com/medux/docs/01)
-- medux 基础概念速览 [语雀](https://www.yuque.com/medux/docs/02)
+- 为什么你需要 medux [掘金](https://juejin.im/post/5e9c6fc06fb9a03c8f6cba50) | [语雀](https://www.yuque.com/medux/docs/01)
+- medux 基础概念速览 [掘金](https://juejin.im/post/5e9c7b576fb9a03c341db536) | [语雀](https://www.yuque.com/medux/docs/02)
 - medux 路由篇 [语雀](https://www.yuque.com/medux/docs/03)
 - medux 数据流 [语雀](https://www.yuque.com/medux/docs/04)
 
@@ -32,4 +32,5 @@
 
 **欢迎批评指正，觉得还不错的别忘了给个`Star` >\_<，如有错误或 Bug 请反馈**
 
+- [掘金专栏](https://juejin.im/user/5e97cb9df265da47fe1dfbc8/posts)
 - [语雀专栏](https://www.yuque.com/medux/docs)
