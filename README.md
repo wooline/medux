@@ -2,10 +2,10 @@
 
 欢迎您开始 @medux 之旅，建议您依次阅读以下 4 篇文章，这将耗费您大约 30 分钟。
 
-- 为什么你需要 medux [掘金](https://juejin.im/post/5e9c6fc06fb9a03c8f6cba50) | [语雀](https://www.yuque.com/medux/docs/01)
-- medux 基础概念速览 [掘金](https://juejin.im/post/5e9c7b576fb9a03c341db536) | [语雀](https://www.yuque.com/medux/docs/02)
-- medux 路由篇 [语雀](https://www.yuque.com/medux/docs/03)
-- medux 数据流 [语雀](https://www.yuque.com/medux/docs/04)
+- 为什么你需要 medux: [掘金](https://juejin.im/post/5e9c6fc06fb9a03c8f6cba50) | [语雀](https://www.yuque.com/medux/docs/01)
+- medux 基础概念速览: [掘金](https://juejin.im/post/5e9c7b576fb9a03c341db536) | [语雀](https://www.yuque.com/medux/docs/02)
+- medux 路由篇: [掘金](https://juejin.im/post/5e9c8bebe51d4546b90d2d3a) | [语雀](https://www.yuque.com/medux/docs/03)
+- medux 数据流: [掘金](https://juejin.im/post/5e9c8ebb51882573c46792a7) | [语雀](https://www.yuque.com/medux/docs/04)
 
 ## @medux 包含以下 Packages
 

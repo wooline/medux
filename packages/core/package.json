@@ -6,6 +6,8 @@
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "keywords": [
+    "react",
+    "vue",
     "redux",
     "typescript",
     "state container",
