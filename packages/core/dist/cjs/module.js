@@ -436,7 +436,7 @@ function _renderApp() {
             break;
 
           case 23:
-            reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
+            reRender = render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
 
           case 24:
           case "end":

@@ -354,7 +354,7 @@ export async function renderApp(render, moduleGetter, appModuleName, history, st
     }
   }
 
-  reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
+  reRender = render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
 }
 export async function renderSSR(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;

@@ -589,7 +589,7 @@ export async function renderApp<V>(
       appModule = module;
     }
   }
-  reRender = render(reduxStore, appModule!.default.model, appView, ssrInitStoreKey);
+  reRender = render(reduxStore, appModule!.default.model, appModule!.default.views.Main, ssrInitStoreKey);
 }
 /**
  * SSR时该方法用来创建并启动Server应用
