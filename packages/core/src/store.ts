@@ -311,6 +311,8 @@ export function buildStore(
   }
   const store: ModelStore = createStore(combineReducers as any, preloadedState, compose(...enhancers));
   bindHistory(store, history);
-  MetaData.clientStore = store;
+  if (!MetaData.isServer) {
+    MetaData.clientStore = store;
+  }
   return store;
 }

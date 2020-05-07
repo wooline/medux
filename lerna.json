@@ -4,8 +4,7 @@
     "packages/react",
     "packages/react-web-router",
     "packages/route-plan-a",
-    "packages/web",
-    "packages/dev-utils"
+    "packages/web"
   ],
   "command": {
     "publish": {

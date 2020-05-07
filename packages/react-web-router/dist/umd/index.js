@@ -1362,7 +1362,11 @@
 
     var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
     bindHistory(store, history);
-    MetaData.clientStore = store;
+
+    if (!MetaData.isServer) {
+      MetaData.clientStore = store;
+    }
+
     return store;
   }
 

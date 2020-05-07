@@ -301,6 +301,10 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
 
   const store = createStore(combineReducers, preloadedState, compose(...enhancers));
   bindHistory(store, history);
-  MetaData.clientStore = store;
+
+  if (!MetaData.isServer) {
+    MetaData.clientStore = store;
+  }
+
   return store;
 }

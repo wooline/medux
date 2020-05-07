@@ -343,6 +343,10 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
   var store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
   bindHistory(store, history);
-  _basic.MetaData.clientStore = store;
+
+  if (!_basic.MetaData.isServer) {
+    _basic.MetaData.clientStore = store;
+  }
+
   return store;
 }
