@@ -23,6 +23,7 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
         return module.default.model(store, options);
       });
     } else {
+      cacheModule(result, moduleGetter[moduleName]);
       return result.default.model(store, options);
     }
   }

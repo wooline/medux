@@ -68,6 +68,7 @@
     "prettier": "~2.0.2",
     "rimraf": "~3.0.2",
     "source-map-loader": "~0.2.4",
+    "style-loader": "~1.2.0",
     "stylelint": "~13.2.1",
     "stylelint-config-prettier": "~8.0.1",
     "stylelint-config-standard": "~20.0.0",

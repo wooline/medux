@@ -37,8 +37,12 @@ function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, cont
       if (typeof container === 'function') {
         container(reduxProvider);
       } else {
+        var panel = typeof container === 'string' ? document.getElementById(container) : container;
+
+        _reactDom.default.unmountComponentAtNode(panel);
+
         var render = window[ssrInitStoreKey] ? _reactDom.default.hydrate : _reactDom.default.render;
-        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+        render(reduxProvider, panel);
       }
     };
 
@@ -56,12 +60,12 @@ function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, rend
     renderToStream = false;
   }
 
-  return core.renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
+  return core.renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
     var data = store.getState();
 
     var reduxProvider = _react.default.createElement(_reactRedux.Provider, {
       store: store
-    }, _react.default.createElement(appViews.Main, null));
+    }, _react.default.createElement(AppView, null));
 
     var render = renderToStream ? _server.renderToNodeStream : _server.renderToString;
     return {

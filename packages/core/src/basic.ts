@@ -258,8 +258,8 @@ export interface BaseModelState<R = {[key: string]: any}> {
     [key: string]: LoadingState;
   };
 }
-export function cacheModule<T>(module: T) {
-  const fn = () => module;
+export function cacheModule<T>(module: T, getter?: () => T) {
+  const fn: any = getter ? getter : () => module;
   fn.__module__ = module;
   return fn;
 }

@@ -55,9 +55,8 @@ export const ActionTypes = {
   RouteChange: `medux${config.NSP}RouteChange`
 };
 export const client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
-export function cacheModule(module) {
-  const fn = () => module;
-
+export function cacheModule(module, getter) {
+  const fn = getter ? getter : () => module;
   fn.__module__ = module;
   return fn;
 }

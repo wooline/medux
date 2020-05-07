@@ -339,11 +339,10 @@ var ActionTypes = {
   RouteChange: "medux" + config.NSP + "RouteChange"
 };
 var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
-function cacheModule(module) {
-  var fn = function fn() {
+function cacheModule(module, getter) {
+  var fn = getter ? getter : function () {
     return module;
   };
-
   fn.__module__ = module;
   return fn;
 }
@@ -1053,6 +1052,7 @@ function loadModel(moduleName, store, options) {
         return module.default.model(store, options);
       });
     } else {
+      cacheModule(result, moduleGetter[moduleName]);
       return result.default.model(store, options);
     }
   }
@@ -2871,6 +2871,7 @@ function getView(moduleName, viewName, modelOptions) {
       }
     });
   } else {
+    cacheModule(result, moduleGetter[moduleName]);
     var view = result.default.views[viewName];
 
     if (MetaData.isServer) {
@@ -2898,70 +2899,102 @@ function getModuleByName(moduleName, moduleGetter) {
       return module;
     });
   } else {
+    cacheModule(result, moduleGetter[moduleName]);
     return result;
   }
 }
 
-function getModuleListByNames(moduleNames, moduleGetter) {
-  var preModules = moduleNames.map(function (moduleName) {
-    var module = getModuleByName(moduleName, moduleGetter);
-
-    if (isPromiseModule$1(module)) {
-      return module;
-    } else {
-      return Promise.resolve(module);
-    }
-  });
-  return Promise.all(preModules);
+function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
+  return _renderApp.apply(this, arguments);
 }
 
-function renderApp(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
-  if (storeOptions === void 0) {
-    storeOptions = {};
-  }
-
-  if (reRenderTimer) {
-    clearTimeout(reRenderTimer);
-    reRenderTimer = 0;
-  }
-
-  MetaData.appModuleName = appModuleName;
-  var ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  var initData = {};
-
-  if (storeOptions.initData || client[ssrInitStoreKey]) {
-    initData = Object.assign({}, client[ssrInitStoreKey], {}, storeOptions.initData);
-  }
-
-  var store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  var reduxStore = beforeRender ? beforeRender(store) : store;
-  var preModuleNames = [appModuleName];
-
-  if (initData) {
-    preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) {
-      return key !== appModuleName && initData[key].isModule;
-    }));
-  }
-
-  return getModuleListByNames(preModuleNames, moduleGetter).then(function (_ref) {
-    var appModule = _ref[0];
-    var initModel = appModule.default.model(reduxStore, undefined);
-    appView = appModule.default.views.Main;
-    reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
-    return initModel;
-  });
-}
-function renderSSR(_x, _x2, _x3, _x4, _x5, _x6) {
-  return _renderSSR.apply(this, arguments);
-}
-
-function _renderSSR() {
-  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
-    var ssrInitStoreKey, store, reduxStore, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName, module;
+function _renderApp() {
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
+    var ssrInitStoreKey, initData, store, reduxStore, preModuleNames, appModule, i, k, _moduleName, module;
 
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
+          case 0:
+            if (storeOptions === void 0) {
+              storeOptions = {};
+            }
+
+            if (reRenderTimer) {
+              clearTimeout(reRenderTimer);
+              reRenderTimer = 0;
+            }
+
+            MetaData.appModuleName = appModuleName;
+            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            initData = {};
+
+            if (storeOptions.initData || client[ssrInitStoreKey]) {
+              initData = Object.assign({}, client[ssrInitStoreKey], {}, storeOptions.initData);
+            }
+
+            store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            reduxStore = beforeRender ? beforeRender(store) : store;
+            preModuleNames = [appModuleName];
+
+            if (initData) {
+              preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) {
+                return key !== appModuleName && initData[key].isModule;
+              }));
+            }
+
+            appModule = undefined;
+            i = 0, k = preModuleNames.length;
+
+          case 12:
+            if (!(i < k)) {
+              _context.next = 23;
+              break;
+            }
+
+            _moduleName = preModuleNames[i];
+            _context.next = 16;
+            return getModuleByName(_moduleName, moduleGetter);
+
+          case 16:
+            module = _context.sent;
+            _context.next = 19;
+            return module.default.model(reduxStore, undefined);
+
+          case 19:
+            if (i === 0) {
+              appModule = module;
+            }
+
+          case 20:
+            i++;
+            _context.next = 12;
+            break;
+
+          case 23:
+            reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
+
+          case 24:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _renderApp.apply(this, arguments);
+}
+
+function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
+  return _renderSSR.apply(this, arguments);
+}
+
+function _renderSSR() {
+  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
+    var ssrInitStoreKey, store, reduxStore, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName2, module;
+
+    return regenerator.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
           case 0:
             if (storeOptions === void 0) {
               storeOptions = {};
@@ -2980,20 +3013,20 @@ function _renderSSR() {
 
           case 11:
             if (!(i < k)) {
-              _context.next = 22;
+              _context2.next = 22;
               break;
             }
 
-            _paths$i$split = paths[i].split(config.VSP), _moduleName = _paths$i$split[0];
+            _paths$i$split = paths[i].split(config.VSP), _moduleName2 = _paths$i$split[0];
 
-            if (inited[_moduleName]) {
-              _context.next = 19;
+            if (inited[_moduleName2]) {
+              _context2.next = 19;
               break;
             }
 
-            inited[_moduleName] = true;
-            module = moduleGetter[_moduleName]();
-            _context.next = 18;
+            inited[_moduleName2] = true;
+            module = moduleGetter[_moduleName2]();
+            _context2.next = 18;
             return module.default.model(reduxStore, undefined);
 
           case 18:
@@ -3003,18 +3036,18 @@ function _renderSSR() {
 
           case 19:
             i++;
-            _context.next = 11;
+            _context2.next = 11;
             break;
 
           case 22:
-            return _context.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey));
+            return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey));
 
           case 23:
           case "end":
-            return _context.stop();
+            return _context2.stop();
         }
       }
-    }, _callee);
+    }, _callee2);
   }));
   return _renderSSR.apply(this, arguments);
 }
@@ -4138,8 +4171,10 @@ function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, co
       if (typeof container === 'function') {
         container(reduxProvider);
       } else {
+        var panel = typeof container === 'string' ? document.getElementById(container) : container;
+        ReactDOM.unmountComponentAtNode(panel);
         var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+        render(reduxProvider, panel);
       }
     };
 
@@ -4156,11 +4191,11 @@ function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, re
     renderToStream = false;
   }
 
-  return renderSSR(function (store, appModel, appViews, ssrInitStoreKey) {
+  return renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
     var data = store.getState();
     var reduxProvider = React__default.createElement(reactRedux.Provider, {
       store: store
-    }, React__default.createElement(appViews.Main, null));
+    }, React__default.createElement(AppView, null));
     var render = renderToStream ? server.renderToNodeStream : server.renderToString;
     return {
       store: store,

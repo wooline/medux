@@ -95,11 +95,10 @@ exports.ActionTypes = ActionTypes;
 var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 exports.client = client;
 
-function cacheModule(module) {
-  var fn = function fn() {
+function cacheModule(module, getter) {
+  var fn = getter ? getter : function () {
     return module;
   };
-
   fn.__module__ = module;
   return fn;
 }

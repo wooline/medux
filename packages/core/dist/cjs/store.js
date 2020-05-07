@@ -28,6 +28,7 @@ function loadModel(moduleName, store, options) {
         return module.default.model(store, options);
       });
     } else {
+      (0, _basic.cacheModule)(result, moduleGetter[moduleName]);
       return result.default.model(store, options);
     }
   }

@@ -19,6 +19,7 @@ export function loadModel(moduleName, store, options) {
         return module.default.model(store, options);
       });
     } else {
+      cacheModule(result, moduleGetter[moduleName]);
       return result.default.model(store, options);
     }
   }

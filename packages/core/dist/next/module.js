@@ -289,6 +289,7 @@ export function getView(moduleName, viewName, modelOptions) {
       }
     });
   } else {
+    cacheModule(result, moduleGetter[moduleName]);
     const view = result.default.views[viewName];
 
     if (MetaData.isServer) {
@@ -314,24 +315,12 @@ function getModuleByName(moduleName, moduleGetter) {
       return module;
     });
   } else {
+    cacheModule(result, moduleGetter[moduleName]);
     return result;
   }
 }
 
-function getModuleListByNames(moduleNames, moduleGetter) {
-  const preModules = moduleNames.map(moduleName => {
-    const module = getModuleByName(moduleName, moduleGetter);
-
-    if (isPromiseModule(module)) {
-      return module;
-    } else {
-      return Promise.resolve(module);
-    }
-  });
-  return Promise.all(preModules);
-}
-
-export function renderApp(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
+export async function renderApp(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
   if (reRenderTimer) {
     clearTimeout(reRenderTimer);
     reRenderTimer = 0;
@@ -353,12 +342,19 @@ export function renderApp(render, moduleGetter, appModuleName, history, storeOpt
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
   }
 
-  return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
-    const initModel = appModule.default.model(reduxStore, undefined);
-    appView = appModule.default.views.Main;
-    reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
-    return initModel;
-  });
+  let appModule = undefined;
+
+  for (let i = 0, k = preModuleNames.length; i < k; i++) {
+    const moduleName = preModuleNames[i];
+    const module = await getModuleByName(moduleName, moduleGetter);
+    await module.default.model(reduxStore, undefined);
+
+    if (i === 0) {
+      appModule = module;
+    }
+  }
+
+  reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
 }
 export async function renderSSR(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;

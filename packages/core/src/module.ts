@@ -466,6 +466,7 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
       }
     });
   } else {
+    cacheModule(result, moduleGetter[moduleName]);
     const view: T = result.default.views[viewName];
     if (MetaData.isServer) {
       return view;
@@ -501,20 +502,22 @@ function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promis
       return module;
     });
   } else {
+    cacheModule(result, moduleGetter[moduleName]);
     return result;
   }
 }
-function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter): Promise<Module[]> {
-  const preModules = moduleNames.map((moduleName) => {
-    const module = getModuleByName(moduleName, moduleGetter);
-    if (isPromiseModule(module)) {
-      return module;
-    } else {
-      return Promise.resolve(module);
-    }
-  });
-  return Promise.all(preModules);
-}
+// function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter): Promise<Module[]> {
+//   const preModules = moduleNames.map((moduleName) => {
+//     const module = getModuleByName(moduleName, moduleGetter);
+//     if (isPromiseModule(module)) {
+//       return module;
+//     } else {
+//       return Promise.resolve(module);
+//     }
+//   });
+//   return Promise.all(preModules);
+// }
+
 /**
  * 创建Store时的选项，通过renderApp或renderSSR传入
  */
@@ -552,7 +555,7 @@ export interface StoreOptions {
  * @param storeOptions store的参数，参见StoreOptions
  * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
  */
-export function renderApp<V>(
+export async function renderApp<V>(
   render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
   moduleGetter: ModuleGetter,
   appModuleName: string,
@@ -577,12 +580,16 @@ export function renderApp<V>(
     preModuleNames.push(...Object.keys(initData).filter((key) => key !== appModuleName && initData[key].isModule));
   }
   // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
-  return getModuleListByNames(preModuleNames, moduleGetter).then(([appModule]) => {
-    const initModel = appModule.default.model(reduxStore as any, undefined);
-    appView = appModule.default.views.Main;
-    reRender = render(reduxStore, appModule.default.model, appView, ssrInitStoreKey);
-    return initModel;
-  });
+  let appModule: Module | undefined = undefined;
+  for (let i = 0, k = preModuleNames.length; i < k; i++) {
+    const moduleName = preModuleNames[i];
+    const module = await getModuleByName(moduleName, moduleGetter);
+    await module.default.model(reduxStore as any, undefined);
+    if (i === 0) {
+      appModule = module;
+    }
+  }
+  reRender = render(reduxStore, appModule!.default.model, appView, ssrInitStoreKey);
 }
 /**
  * SSR时该方法用来创建并启动Server应用
@@ -595,7 +602,7 @@ export function renderApp<V>(
  * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
  */
 export async function renderSSR<V>(
-  render: (store: Store<StoreState>, appModel: Model, appViews: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
+  render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
   moduleGetter: ModuleGetter,
   appModuleName: string,
   history: HistoryProxy,

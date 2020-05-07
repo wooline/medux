@@ -124,7 +124,7 @@ export interface StoreOptions {
     };
 }
 export declare function renderApp<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleName: string, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<void>;
-export declare function renderSSR<V>(render: (store: Store<StoreState>, appModel: Model, appViews: V, ssrInitStoreKey: string) => {
+export declare function renderSSR<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => {
     html: any;
     data: any;
     ssrInitStoreKey: string;

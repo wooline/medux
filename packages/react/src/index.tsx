@@ -27,8 +27,10 @@ export function renderApp(
         if (typeof container === 'function') {
           container(reduxProvider);
         } else {
+          const panel = typeof container === 'string' ? document.getElementById(container) : container;
+          ReactDOM.unmountComponentAtNode(panel!);
           const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-          render(reduxProvider, typeof container === 'string' ? document.getElementById(container) : container);
+          render(reduxProvider, panel);
         }
       };
       reRender(AppView);
@@ -50,19 +52,12 @@ export function renderSSR(
   renderToStream: boolean = false,
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ) {
-  return core.renderSSR(
-    (
-      store,
-      appModel,
-      appViews: {
-        [key: string]: React.ComponentType;
-      },
-      ssrInitStoreKey
-    ) => {
+  return core.renderSSR<ComponentType<any>>(
+    (store, appModel, AppView, ssrInitStoreKey) => {
       const data = store.getState();
       const reduxProvider = (
         <Provider store={store}>
-          <appViews.Main />
+          <AppView />
         </Provider>
       );
       const render = renderToStream ? renderToNodeStream : renderToString;
