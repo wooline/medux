@@ -26,6 +26,13 @@ export = function middleware(
         } else {
           res.redirect(parseInt(err.code, 10), err.detail);
         }
+      } else if (err.code === '303') {
+        if (res.headersSent) {
+          res.write(htmlChunks[1].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, ``).replace(/<!--\s*{script}\s*-->/, ``));
+          res.end();
+        } else {
+          res.send(htmlChunks[0].replace(/[^>]*<!--\s*{html}\s*-->[^<]*/m, ``).replace(/<!--\s*{script}\s*-->/, ``));
+        }
       } else {
         console.error(err);
         if (res.headersSent) {
