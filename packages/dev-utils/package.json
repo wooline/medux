@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Common development tools.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "author": "wooline <wooline@qq.com>",
