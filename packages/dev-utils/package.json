@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Common development tools.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "author": "wooline <wooline@qq.com>",
@@ -29,7 +29,9 @@
     "express": "^4.0.0",
     "http-proxy-middleware": "^0.20.0",
     "json-format": "^1.0.0",
-    "micromatch": "^4.0.0"
+    "micromatch": "^4.0.0",
+    "loader-utils": "*",
+    "schema-utils": "*"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
