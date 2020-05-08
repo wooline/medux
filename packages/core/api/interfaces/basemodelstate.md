@@ -1,4 +1,4 @@
-[@medux/core - v0.2.39](../README.md) › [BaseModelState](basemodelstate.md)
+[@medux/core - v1.0.4](../README.md) › [BaseModelState](basemodelstate.md)
 
 # Interface: BaseModelState <**R**>
 
@@ -16,11 +16,20 @@
 
 ### Properties
 
+* [isHydrate](basemodelstate.md#optional-ishydrate)
 * [isModule](basemodelstate.md#optional-ismodule)
 * [loading](basemodelstate.md#optional-loading)
 * [routeParams](basemodelstate.md#optional-routeparams)
 
 ## Properties
+
+### `Optional` isHydrate
+
+• **isHydrate**? : *undefined | false | true*
+
+如果存在预置数据(SSR)，该值为true
+
+___
 
 ### `Optional` isModule
 

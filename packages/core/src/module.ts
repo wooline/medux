@@ -188,16 +188,19 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
     const hasInjected = !!store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = initState;
-      const moduleState: BaseModelState = store.getState()[moduleName];
+      let moduleState: BaseModelState = store.getState()[moduleName];
       const handlers = new ActionHandles(moduleName, store);
       const actions = injectActions(store, moduleName, handlers as any);
       (handlers as any).actions = actions;
+      const params = store._medux_.prevState.route?.data.params || {};
       if (!moduleState) {
-        const params = store._medux_.prevState.route?.data.params || {};
-        initState.isModule = true;
-        const initAction = actions.Init(initState, params[moduleName], options);
-        return store.dispatch(initAction) as any;
+        moduleState = initState;
+        moduleState.isModule = true;
+      } else {
+        moduleState = {...moduleState, isHydrate: true};
       }
+      const initAction = actions.Init(moduleState, params[moduleName], options);
+      return store.dispatch(initAction) as any;
     }
     return void 0;
   };
@@ -353,6 +356,9 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
    */
   @reducer
   protected Init(initState: S, routeParams?: any, options?: any): S {
+    if (initState.isHydrate) {
+      return initState;
+    }
     return {...initState, routeParams: routeParams || initState.routeParams, ...options};
   }
   /**

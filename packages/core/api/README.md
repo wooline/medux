@@ -1,6 +1,6 @@
-[@medux/core - v0.2.39](README.md)
+[@medux/core - v1.0.4](README.md)
 
-# @medux/core - v0.2.39
+# @medux/core - v1.0.4
 
 ## Index
 
@@ -576,7 +576,7 @@ SSR时该方法用来创建并启动Server应用
 
 渲染View的回调函数
 
-▸ (`store`: Store‹[StoreState](README.md#storestate)›, `appModel`: [Model](interfaces/model.md), `appViews`: V, `ssrInitStoreKey`: string): *object*
+▸ (`store`: Store‹[StoreState](README.md#storestate)›, `appModel`: [Model](interfaces/model.md), `appView`: V, `ssrInitStoreKey`: string): *object*
 
 **Parameters:**
 
@@ -584,7 +584,7 @@ Name | Type |
 ------ | ------ |
 `store` | Store‹[StoreState](README.md#storestate)› |
 `appModel` | [Model](interfaces/model.md) |
-`appViews` | V |
+`appView` | V |
 `ssrInitStoreKey` | string |
 
 * **data**: *any*

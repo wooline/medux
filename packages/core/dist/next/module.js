@@ -59,20 +59,26 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
     const hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
+      var _store$_medux_$prevSt;
+
       store._medux_.injectedModules[moduleName] = initState;
-      const moduleState = store.getState()[moduleName];
+      let moduleState = store.getState()[moduleName];
       const handlers = new ActionHandles(moduleName, store);
       const actions = injectActions(store, moduleName, handlers);
       handlers.actions = actions;
+      const params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
 
       if (!moduleState) {
-        var _store$_medux_$prevSt;
-
-        const params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
-        initState.isModule = true;
-        const initAction = actions.Init(initState, params[moduleName], options);
-        return store.dispatch(initAction);
+        moduleState = initState;
+        moduleState.isModule = true;
+      } else {
+        moduleState = Object.assign({}, moduleState, {
+          isHydrate: true
+        });
       }
+
+      const initAction = actions.Init(moduleState, params[moduleName], options);
+      return store.dispatch(initAction);
     }
 
     return void 0;
@@ -209,6 +215,10 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Init",
       value: function Init(initState, routeParams, options) {
+        if (initState.isHydrate) {
+          return initState;
+        }
+
         return Object.assign({}, initState, {
           routeParams: routeParams || initState.routeParams
         }, options);

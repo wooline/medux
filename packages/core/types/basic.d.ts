@@ -125,6 +125,7 @@ export interface BaseModelState<R = {
     [key: string]: any;
 }> {
     isModule?: boolean;
+    isHydrate?: boolean;
     routeParams?: R;
     loading?: {
         [key: string]: LoadingState;

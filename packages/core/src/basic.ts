@@ -248,6 +248,10 @@ export interface BaseModelState<R = {[key: string]: any}> {
    */
   isModule?: boolean;
   /**
+   * 如果存在预置数据(SSR)，该值为true
+   */
+  isHydrate?: boolean;
+  /**
    * 由该模块抽离出的路由信息状态
    */
   routeParams?: R;
