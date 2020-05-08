@@ -86,17 +86,25 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
       forwardRef = _ref.forwardRef,
       modelOptions = (0, _objectWithoutPropertiesLoose2.default)(_ref, ["forwardRef"]);
 
+  var active = true;
+
   var Loader = function ViewLoader(props) {
+    (0, _react.useEffect)(function () {
+      return function () {
+        active = false;
+      };
+    }, []);
+
     var _useState = (0, _react.useState)(function () {
       var moduleViewResult = (0, core.getView)(moduleName, viewName, modelOptions);
 
       if ((0, core.isPromiseView)(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
-          setView({
+          active && setView({
             Component: Component
           });
         }).catch(function () {
-          setView({
+          active && setView({
             Component: Error || LoadViewOnError
           });
         });

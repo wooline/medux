@@ -1,7 +1,7 @@
 import * as core from '@medux/core';
 
 import {ExportModule, HistoryProxy, ModuleGetter, StoreOptions, StoreState, getView, isPromiseView} from '@medux/core';
-import React, {ComponentType, FC, ReactElement, useState} from 'react';
+import React, {ComponentType, FC, ReactElement, useEffect, useState} from 'react';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 
 import {Provider} from 'react-redux';
@@ -83,7 +83,14 @@ const LoadViewOnError: ComponentType<any> = () => {
 };
 export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, Error) => {
   const {forwardRef, ...modelOptions} = options || {};
+  //Can't perform a React state update on an unmounted component.
+  let active = true;
   const Loader: FC<any> = function ViewLoader(props: any) {
+    useEffect(() => {
+      return () => {
+        active = false;
+      };
+    }, []);
     const [view, setView] = useState<{Component: ComponentType<any>} | null>(() => {
       const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
       if (isPromiseView<ComponentType>(moduleViewResult)) {
@@ -94,10 +101,10 @@ export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, 
             // loader.defaultProps = Component.defaultProps;
             // Object.keys(loader).forEach(key => (Component[key] = loader[key]));
             // Object.keys(Component).forEach(key => (loader[key] = Component[key]));
-            setView({Component});
+            active && setView({Component});
           })
           .catch(() => {
-            setView({Component: Error || LoadViewOnError});
+            active && setView({Component: Error || LoadViewOnError});
           });
         return null;
       } else {

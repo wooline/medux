@@ -2,7 +2,7 @@ import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import * as core from '@medux/core';
 import { getView, isPromiseView } from '@medux/core';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
@@ -64,17 +64,25 @@ export var loadView = function loadView(moduleName, viewName, options, Loading, 
       forwardRef = _ref.forwardRef,
       modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
 
+  var active = true;
+
   var Loader = function ViewLoader(props) {
+    useEffect(function () {
+      return function () {
+        active = false;
+      };
+    }, []);
+
     var _useState = useState(function () {
       var moduleViewResult = getView(moduleName, viewName, modelOptions);
 
       if (isPromiseView(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
-          setView({
+          active && setView({
             Component: Component
           });
         }).catch(function () {
-          setView({
+          active && setView({
             Component: Error || LoadViewOnError
           });
         });

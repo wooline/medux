@@ -4224,17 +4224,25 @@
         forwardRef = _ref.forwardRef,
         modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
 
+    var active = true;
+
     var Loader = function ViewLoader(props) {
+      React.useEffect(function () {
+        return function () {
+          active = false;
+        };
+      }, []);
+
       var _useState = React.useState(function () {
         var moduleViewResult = getView(moduleName, viewName, modelOptions);
 
         if (isPromiseView(moduleViewResult)) {
           moduleViewResult.then(function (Component) {
-            setView({
+            active && setView({
               Component: Component
             });
           }).catch(function () {
-            setView({
+            active && setView({
               Component: Error || LoadViewOnError
             });
           });
