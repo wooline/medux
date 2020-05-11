@@ -8,7 +8,7 @@
   ],
   "command": {
     "publish": {
-      "message": "fix warning for react: Can't perform a React state update on an unmounted component",
+      "message": "chore(release): publish %s",
       "npmClient": "npm",
       "ignoreChanges": [
         "**/*.md",
