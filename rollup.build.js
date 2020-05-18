@@ -2,6 +2,7 @@ import babel from 'rollup-plugin-babel';
 import chalk from 'chalk';
 import commonjs from '@rollup/plugin-commonjs';
 import path from 'path';
+import replace from '@rollup/plugin-replace';
 import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 
@@ -36,6 +37,7 @@ export default function (root, moduleName, globals) {
       return hit;
     },
     plugins: [
+      replace({'process.env.NODE_ENV': "'production'"}),
       resolve({extensions}),
       babel({
         exclude: 'node_modules/**',

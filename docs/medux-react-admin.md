@@ -6,6 +6,23 @@
 
 本项目主要用来展示如何将 [**@medux**](https://github.com/wooline/medux) 应用于 web 后台管理系统，你可能看不到丰富的后台 UI 控件及界面，因为这不是重点，网上这样的轮子已经很多了，本项目想着重表达的是：**通用化解题思路**
 
+## 页面列表
+
+无需登录可访问的页面：
+
+- [/login](http://medux-react-admin.80zp.com/login)
+- [/register](http://medux-react-admin.80zp.com/register)
+- [/article/home](http://medux-react-admin.80zp.com/article/home)
+- [/article/service](http://medux-react-admin.80zp.com/article/service)
+- [/article/about](http://medux-react-admin.80zp.com/article/about)
+
+需要登录才能访问的页面：
+
+- [/admin/home](http://medux-react-admin.80zp.com/admin/home)
+- [/admin/member](http://medux-react-admin.80zp.com/admin/member/list)
+- [/admin/role](http://medux-react-admin.80zp.com/admin/role/list)
+- [/admin/post](http://medux-react-admin.80zp.com/admin/post/list)
+
 ## 在定制化和标准化之间妥协
 
 通常追求极致用户体验的`UI/UE设计师`可能会让前端开发者定制各种 UI，你可能会抱怨说：这样的设计将会打乱你的模块化思想，或者让问题变得复杂化，或者失去代码重用性...然而在他们看来或许你只是想偷懒而已...无语...
@@ -14,7 +31,13 @@
 
 所以，我们需要在定制化和标准化之间做个妥协权衡，既保持很好的用户体验，又能够面向更多的通用业务场景。一个思路是将绝大多数场景与极少数场景分而治之，如果某个 UI 方案能切合 90%的业务场景，何必为了兼容少数场景而扭曲变形呢？
 
-说了这么多，只是想说明本项目的立意是为了**提供一套适合大多业务场景的通用后台**，请别吐槽你的需求不能对号入座。
+说了这么多，只是想说明本项目的立意是为了**提供一套适合大多业务场景的通用后台**。
+
+## 独立的状态管理层
+
+Medux 主张将业务逻辑尽可能的写在 Model 中，不要与特定 UI 组件的生命周期钩子耦合在一起：
+
+![code.png](https://user-gold-cdn.xitu.io/2020/5/13/1720c9541ca67b8f?w=800&h=447&f=png&s=157819)
 
 ## 通用的工程结构
 
@@ -90,7 +113,7 @@ src
 - 刷新页面当然是 100%有效的，但是可能用户体验没那么好。
 - 不刷新页面体验最好，但是你可能必须手动清理和替换一大堆失效的状态，有时这会让问题和代码变得很繁琐，而且很容易引起 Bug。那么可以牺牲一下用户体验吗？其实登录登出对同用户来说并不是一个高频的操作，刷新页面除了时间上的等待，似乎也没有太大副作用，所以还是刷新一下页面吧。
 
-  但存在一种场景：**用户在提交表单时发现 session 过期了，**此时应当弹出一个`Pop登录弹窗`让用户重新登录，重新登录后判断一下 session 过期如果只是在短时间内通常不会引起用户数据失效，此时可以不刷新页面，从而让用户填写的表单数据不至于丢失。
+  但存在一种场景：**用户在提交表单时发现 session 过期了**，此时应当弹出一个`Pop登录弹窗`让用户重新登录，重新登录后判断一下 session 过期如果只是在短时间内通常不会引起用户数据失效，此时可以不刷新页面，从而让用户填写的表单数据不至于丢失。
 
 ### synchronized
 
@@ -150,7 +173,7 @@ interface BaseListSummary {
 
 ### ListRouteParams
 
-如果你阅读过  [@medux 路由篇](/medux/docs/03)  应当知道 medux 是将路由视为 State 的，所以我们把列表的查询条件放在 RouteParams 中，这样既可以通过 redux 控制，也可用 url 控制。于是路由参数应当长这样：
+如果你阅读过  [@medux 路由篇](https://zhuanlan.zhihu.com/p/139629378)  应当知道 medux 是将路由视为 State 的，所以我们把列表的查询条件放在 RouteParams 中，这样既可以通过 redux 控制，也可用 url 控制。于是路由参数应当长这样：
 
 ```typescript
 //通用的路由参数
@@ -163,7 +186,7 @@ interface BaseRouteParams {
 
 注意到以上结构中 listSearch 还好理解，那么 listView 和\_listKey 是什么鬼？
 
-- *listKey 你可以把它理解为对当前搜索条件的一个 version 控制，如果\_listKey 发生了变化，即使搜索条件没有变化依然会强制重新搜索，类似于我们常为静态资源 URL 后加一个随机数强制更新。另外加*前缀可以将这笔数据放入 hash 中保存，参见  [@medux 路由篇](/medux/docs/03)
+- *listKey 你可以把它理解为对当前搜索条件的一个 version 控制，如果\_listKey 发生了变化，即使搜索条件没有变化依然会强制重新搜索，类似于我们常为静态资源 URL 后加一个随机数强制更新。另外加*前缀可以将这笔数据放入 hash 中保存，参见  [@medux 路由篇](https://zhuanlan.zhihu.com/p/139629378)
 - listView 指示用哪个 view 来展示列表数据，下面详细讨论一下，如下图：
 
 ![list-view-800.png](https://user-gold-cdn.xitu.io/2020/5/11/172025d3419cd29c?w=800&h=704&f=png&s=84897)
@@ -276,4 +299,4 @@ export class ModelHandlers extends CommonResourceHandlers<Resource, State, RootS
 
 ## 安装&运行请看下篇
 
-[安装&运行](/medux/docs/medux-react-admin-2)
+[安装&运行](https://zhuanlan.zhihu.com/p/139734752)
