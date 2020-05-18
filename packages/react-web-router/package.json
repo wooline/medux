@@ -27,9 +27,9 @@
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
     "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.tsx --hideSources --theme markdown && node fixDocs",
-    "build:next": "cross-env NODE_ENV=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
-    "build:esm": "cross-env NODE_ENV=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
-    "build:pkg": "cross-env NODE_ENV=pkg rollup -c",
+    "build:next": "cross-env NODE_ENV=production NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
+    "build:esm": "cross-env NODE_ENV=production NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
+    "build:pkg": "cross-env NODE_ENV=development NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c",
     "build": "yarn build:next & yarn build:esm & yarn build:pkg"
   },
   "externals": {

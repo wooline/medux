@@ -6,7 +6,8 @@ import replace from '@rollup/plugin-replace';
 import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 
-export default function (root, moduleName, globals) {
+export default function (root, moduleName, globals, replaceNodeEnv) {
+  const nodeEnv = process.env.NODE_ENV;
   const extensions = ['.js', '.ts', '.tsx'];
   const pkgResult = {include: {}, external: {}};
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -15,12 +16,16 @@ export default function (root, moduleName, globals) {
   const externals = Object.keys(pkg.externals ? pkg.externals : Object.assign({}, pkg.dependencies, pkg.peerDependencies));
   const config = {
     input: 'src/',
-    output: [
-      {file: 'dist/umd/index.js', format: 'umd', name: moduleName, globals},
-      {file: 'dist/umd/index.min.js', format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
-      {file: 'dist/cjs/index.js', format: 'cjs'},
-      {file: 'dist/cjs/index.min.js', format: 'cjs', plugins: [terser()], sourcemap: true},
-    ],
+    output:
+      nodeEnv === 'production'
+        ? [
+            {file: 'dist/umd/index.min.js', format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
+            {file: 'dist/cjs/index.min.js', format: 'cjs', plugins: [terser()], sourcemap: true},
+          ]
+        : [
+            {file: 'dist/umd/index.js', format: 'umd', name: moduleName, globals},
+            {file: 'dist/cjs/index.js', format: 'cjs'},
+          ],
     external: (id) => {
       const hit = externals.some((mod) => mod === id || id.startsWith(mod + '/'));
       if (hit) {
@@ -37,7 +42,7 @@ export default function (root, moduleName, globals) {
       return hit;
     },
     plugins: [
-      replace({'process.env.NODE_ENV': "'production'"}),
+      replaceNodeEnv && replace({'process.env.NODE_ENV': "'" + nodeEnv + "'"}),
       resolve({extensions}),
       babel({
         exclude: 'node_modules/**',
@@ -46,7 +51,7 @@ export default function (root, moduleName, globals) {
         //externalHelpers: true,
       }),
       commonjs(),
-    ],
+    ].filter(Boolean),
   };
   return config;
 }

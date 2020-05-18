@@ -285,7 +285,7 @@
   };
   var MetaData = {
     isServer: typeof global !== 'undefined' && typeof window === 'undefined',
-    isDev: 'production' !== 'production',
+    isDev: 'development' !== 'production',
     actionCreatorMap: null,
     clientStore: null,
     appModuleName: null,
@@ -831,6 +831,30 @@
       replaceReducer: replaceReducer
     }, _ref2[result] = observable, _ref2;
   }
+  /**
+   * Prints a warning in the console if it exists.
+   *
+   * @param {String} message The warning message.
+   * @returns {void}
+   */
+
+
+  function warning(message) {
+    /* eslint-disable no-console */
+    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+      console.error(message);
+    }
+    /* eslint-enable no-console */
+
+
+    try {
+      // This error was thrown as a convenience so that if you enable
+      // "break on all exceptions" in your console,
+      // it would pause the execution at this line.
+      throw new Error(message);
+    } catch (e) {} // eslint-disable-line no-empty
+
+  }
 
   function _defineProperty$1(obj, key, value) {
     if (key in obj) {
@@ -958,6 +982,17 @@
         });
       };
     };
+  }
+  /*
+   * This is a dummy function to check if the function name has been altered by minification.
+   * If the function has been minified and NODE_ENV !== 'production', warn the user.
+   */
+
+
+  function isCrushed() {}
+
+  if ( typeof isCrushed.name === 'string' && isCrushed.name !== 'isCrushed') {
+    warning('You are currently using minified code outside of NODE_ENV === "production". ' + 'This means that you are running a slower development build of Redux. ' + 'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' + 'or setting mode to production in webpack (https://webpack.js.org/concepts/mode/) ' + 'to ensure you have the correct code for your production build.');
   }
 
   function isPromiseModule(module) {
@@ -1284,6 +1319,10 @@
     };
 
     var enhancers = [].concat(storeEnhancers, [middlewareEnhancer, enhancer]);
+
+    if ( client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+      enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+    }
 
     var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
     bindHistory(store, history);

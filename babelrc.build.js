@@ -1,13 +1,12 @@
+const tag = process.env.NODE_TAG || process.env.NODE_ENV;
 const cfg = {
-  next: {code: process.env.NODE_ENV, targets: {chrome: 80}},
-  esm: {code: process.env.NODE_ENV, targets: {ie: 11}},
-  cjs: {code: process.env.NODE_ENV, targets: {ie: 11}},
-  pkg: {code: process.env.NODE_ENV, targets: {ie: 11}},
-  test: {code: process.env.NODE_ENV, targets: {ie: 11}},
+  next: {code: tag, targets: {chrome: 80}},
+  esm: {code: tag, targets: {ie: 11}},
+  cjs: {code: tag, targets: {ie: 11}},
+  pkg: {code: tag, targets: {ie: 11}},
+  test: {code: tag, targets: {ie: 11}},
 };
-const env = cfg[process.env.NODE_ENV];
-
-//console.log('args: ', env);
+const env = cfg[tag];
 
 module.exports = function (features = []) {
   const config = {

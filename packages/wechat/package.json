@@ -23,7 +23,7 @@
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
     "lint": "eslint \"./src/**/*.{ts,tsx}\"",
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
-    "build": "cross-env NODE_ENV=pkg rollup -c"
+    "build": "cross-env NODE_ENV=development NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c"
   },
   "externals": {},
   "dependencies": {
