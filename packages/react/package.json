@@ -18,6 +18,7 @@
   "types": "types/",
   "files": [
     "src/",
+    "env/",
     "types/",
     "dist/"
   ],

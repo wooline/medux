@@ -1,3 +1,4 @@
+/// <reference path="../env/global.d.ts" />
 import * as core from '@medux/core';
 import { ExportModule, HistoryProxy, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { ComponentType, ReactElement } from 'react';

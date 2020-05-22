@@ -1,21 +1,20 @@
 import {MapDispatchToProps, MapStateToProps, Props, diffData, getPrevData} from './utils';
 import {getClientStore, loadModel} from '@medux/core';
 
-import {ComponentConfig} from './env';
 import {Unsubscribe} from 'redux';
 
-export type ComponentConfigWithInjected<TInjectedProps, TInjectedMethods> = <C extends ComponentConfig>(config: C) => C & {data: TInjectedProps; methods: TInjectedMethods};
+export type ComponentConfigWithInjected<TInjectedProps, TInjectedMethods> = <C extends meduxCore.ComponentConfig>(config: C) => C & {data: TInjectedProps; methods: TInjectedMethods};
 
 export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TOwnProps = Props, TState = Props>(
   moduleName: string,
   mapStateToProps?: MapStateToProps<TInjectedProps, TOwnProps, TState>,
   mapDispatchToProps?: MapDispatchToProps<TInjectedMethods, TOwnProps>
 ): ComponentConfigWithInjected<TInjectedProps, TInjectedMethods> {
-  return <C extends ComponentConfig>(config: C) => {
+  return <C extends meduxCore.ComponentConfig>(config: C) => {
     let unsubscribe: Unsubscribe | undefined;
     let ready = false;
 
-    function onStateChange(this: ComponentConfig): void {
+    function onStateChange(this: meduxCore.ComponentConfig): void {
       if (!unsubscribe) {
         return;
       }
@@ -30,7 +29,7 @@ export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TO
     //   //loadModel(moduleName);
     //   config.lifetimes?.created?.call(this);
     // }
-    function attached(this: ComponentConfig): void {
+    function attached(this: meduxCore.ComponentConfig): void {
       loadModel(moduleName);
       if (mapStateToProps) {
         unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
@@ -39,21 +38,21 @@ export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TO
       config.lifetimes?.attached?.call(this);
       ready = true;
     }
-    function detached(this: ComponentConfig): void {
+    function detached(this: meduxCore.ComponentConfig): void {
       config.lifetimes?.detached?.call(this);
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = undefined;
       }
     }
-    function show(this: ComponentConfig): void {
+    function show(this: meduxCore.ComponentConfig): void {
       if (ready && mapStateToProps && !unsubscribe) {
         unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
         onStateChange.call(this);
       }
       config.pageLifetimes?.show?.call(this);
     }
-    function hide(this: ComponentConfig): void {
+    function hide(this: meduxCore.ComponentConfig): void {
       config.pageLifetimes?.hide?.call(this);
       if (unsubscribe) {
         unsubscribe();

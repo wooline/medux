@@ -88,10 +88,10 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var env = typeof self == 'object' && self.self === self && self || typeof global == 'object' && global.global === global && global || undefined;
-var isServerEnv = typeof global !== 'undefined' && typeof window === 'undefined';
-var client = isServerEnv ? undefined : typeof window === 'undefined' ? global : window;
+var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global;
+var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 var isDevelopmentEnv = process.env.NODE_ENV !== 'production';
+var client = isServerEnv ? undefined : env;
 
 var TaskCountEvent = 'TaskCountEvent';
 
@@ -4172,8 +4172,6 @@ function buildTransformRoute(routeConfig) {
   };
 }
 
-var env$1 = env;
-
 function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
@@ -4188,9 +4186,9 @@ function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, co
       if (typeof container === 'function') {
         container(reduxProvider);
       } else {
-        var panel = typeof container === 'string' ? env$1.document.getElementById(container) : container;
+        var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
         ReactDOM.unmountComponentAtNode(panel);
-        var render = env$1[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+        var render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
         render(reduxProvider, panel);
       }
     };

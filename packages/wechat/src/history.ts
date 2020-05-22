@@ -1,6 +1,5 @@
-import {HistoryProxy, RouteData} from '@medux/core';
+import {HistoryProxy, RouteData, env} from '@medux/core';
 import {LocationToRoute, MeduxLocation, RouteConfig, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
-import {NavigateBackOption, RouteOption, env} from './env';
 
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
@@ -25,7 +24,7 @@ interface BrowserRoutePayload<P = {}> {
   paths?: string[];
 }
 
-function isBrowserRoutePayload(data: RouteOption | BrowserRoutePayload): data is BrowserRoutePayload {
+function isBrowserRoutePayload(data: meduxCore.RouteOption | BrowserRoutePayload): data is BrowserRoutePayload {
   return !data['url'];
 }
 
@@ -47,11 +46,11 @@ function browserLocationToUrl(location: MeduxLocation): string {
 
 export interface HistoryActions<P = {}> {
   location: MeduxLocation;
-  switchTab(option: string | BrowserRoutePayload<P> | RouteOption): void;
-  reLaunch(option: string | BrowserRoutePayload<P> | RouteOption): void;
-  redirectTo(option: string | BrowserRoutePayload<P> | RouteOption): void;
-  navigateTo(option: string | BrowserRoutePayload<P> | RouteOption): void;
-  navigateBack(option: number | NavigateBackOption): void;
+  switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
+  reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
+  redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
+  navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
+  navigateBack(option: number | meduxCore.NavigateBackOption): void;
   listen(listener: LocationListener): UnregisterCallback;
 }
 
@@ -114,7 +113,7 @@ export function createRouter(routeConfig: RouteConfig) {
       this.indexLocation = this.location;
     }
 
-    private createWechatRouteOption(option: string | BrowserRoutePayload<P> | RouteOption): RouteOption {
+    private createWechatRouteOption(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): meduxCore.RouteOption {
       if (typeof option === 'string') {
         return {url: option};
       } else if (isBrowserRoutePayload(option)) {
@@ -125,7 +124,7 @@ export function createRouter(routeConfig: RouteConfig) {
         return option;
       }
     }
-    switchTab(option: string | BrowserRoutePayload<P> | RouteOption): void {
+    switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
       for (const key in this._listenList) {
@@ -136,7 +135,7 @@ export function createRouter(routeConfig: RouteConfig) {
       }
       env.wx.switchTab(routeOption);
     }
-    reLaunch(option: string | BrowserRoutePayload<P> | RouteOption): void {
+    reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
       for (const key in this._listenList) {
@@ -147,7 +146,7 @@ export function createRouter(routeConfig: RouteConfig) {
       }
       env.wx.reLaunch(routeOption);
     }
-    redirectTo(option: string | BrowserRoutePayload<P> | RouteOption): void {
+    redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
       for (const key in this._listenList) {
@@ -158,7 +157,7 @@ export function createRouter(routeConfig: RouteConfig) {
       }
       env.wx.redirectTo(routeOption);
     }
-    navigateTo(option: string | BrowserRoutePayload<P> | RouteOption): void {
+    navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
       for (const key in this._listenList) {
@@ -169,8 +168,8 @@ export function createRouter(routeConfig: RouteConfig) {
       }
       env.wx.navigateTo(routeOption);
     }
-    navigateBack(option: number | NavigateBackOption): void {
-      const routeOption: NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
+    navigateBack(option: number | meduxCore.NavigateBackOption): void {
+      const routeOption: meduxCore.NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
       const pages = env.getCurrentPages();
       const currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
 

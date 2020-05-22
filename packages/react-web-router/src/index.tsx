@@ -1,6 +1,6 @@
+/// <reference path="../env/global.d.ts" />
 import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
 import {RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews} from '@medux/core';
-import {ReadableStream} from './env';
 import {Store, Middleware} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
@@ -97,7 +97,7 @@ export function buildSSR({
   storeOptions?: StoreOptions;
   renderToStream?: boolean;
   beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
-}): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
+}): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
   setRouteConfig({defaultRouteParams});
   const [pathname, search = ''] = location.split('?');
   const history: History = {

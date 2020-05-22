@@ -1,12 +1,11 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import * as core from '@medux/core';
-import { getView, isPromiseView } from '@medux/core';
+import { env, getView, isPromiseView } from '@medux/core';
 import React, { useEffect, useState } from 'react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
-import { env } from './env';
 export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container = 'root', beforeRender) {
   return core.renderApp((store, appModel, AppView, ssrInitStoreKey) => {
     const reRender = View => {

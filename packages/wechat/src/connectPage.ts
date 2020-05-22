@@ -1,22 +1,21 @@
 import {MapDispatchToProps, MapStateToProps, Props, diffData, getPrevData} from './utils';
 import {getClientStore, loadModel} from '@medux/core';
 
-import {PageConfig} from './env';
 import {Unsubscribe} from 'redux';
 
-export type PageConfigWithInjected<TInjectedProps, TInjectedMethods> = <C extends PageConfig>(config: C) => C & TInjectedMethods & {data: TInjectedProps};
+export type PageConfigWithInjected<TInjectedProps, TInjectedMethods> = <C extends meduxCore.PageConfig>(config: C) => C & TInjectedMethods & {data: TInjectedProps};
 
 export function connectPage<TInjectedProps = Props, TInjectedMethods = Props, TOwnProps = Props, TState = Props>(
   moduleName: string,
   mapStateToProps?: MapStateToProps<TInjectedProps, TOwnProps, TState>,
   mapDispatchToProps?: MapDispatchToProps<TInjectedMethods, TOwnProps>
 ): PageConfigWithInjected<TInjectedProps, TInjectedMethods> {
-  return <C extends PageConfig>(config: C) => {
+  return <C extends meduxCore.PageConfig>(config: C) => {
     let unsubscribe: Unsubscribe | undefined;
     let ready = false;
     //let loadOption: any;
 
-    function onStateChange(this: PageConfig): void {
+    function onStateChange(this: meduxCore.PageConfig): void {
       if (!unsubscribe) {
         return;
       }
@@ -28,7 +27,7 @@ export function connectPage<TInjectedProps = Props, TInjectedMethods = Props, TO
       }
     }
 
-    function onLoad(this: PageConfig, option: any): void {
+    function onLoad(this: meduxCore.PageConfig, option: any): void {
       //loadOption = option;
       loadModel(moduleName);
       if (mapStateToProps) {
@@ -38,21 +37,21 @@ export function connectPage<TInjectedProps = Props, TInjectedMethods = Props, TO
       config.onLoad?.call(this, option);
       ready = true;
     }
-    function onUnload(this: PageConfig): void {
+    function onUnload(this: meduxCore.PageConfig): void {
       config.onUnload?.call(this);
       if (unsubscribe) {
         unsubscribe();
         unsubscribe = undefined;
       }
     }
-    function onShow(this: PageConfig): void {
+    function onShow(this: meduxCore.PageConfig): void {
       if (ready && mapStateToProps && !unsubscribe) {
         unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
         onStateChange.call(this);
       }
       config.onShow?.call(this);
     }
-    function onHide(this: PageConfig): void {
+    function onHide(this: meduxCore.PageConfig): void {
       config.onHide?.call(this);
       if (unsubscribe) {
         unsubscribe();

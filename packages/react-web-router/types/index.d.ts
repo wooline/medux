@@ -1,6 +1,6 @@
+/// <reference path="../env/global.d.ts" />
 import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';
 import { RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
-import { ReadableStream } from './env';
 import { Store } from 'redux';
 import React, { ReactElement } from 'react';
 import { History, HistoryActions, ToBrowserUrl } from '@medux/web';
@@ -51,7 +51,7 @@ export declare function buildSSR({ moduleGetter, appModuleName, location, routeC
         transformRoute: TransformRoute;
     }) => Store<StoreState>;
 }): Promise<{
-    html: string | ReadableStream;
+    html: string | meduxCore.ReadableStream;
     data: any;
     ssrInitStoreKey: string;
 }>;

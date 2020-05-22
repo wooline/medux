@@ -1,3 +1,4 @@
+import './env';
 import { Store, Dispatch } from 'redux';
 import { ExportModule, RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';

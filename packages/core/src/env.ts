@@ -1,22 +1,13 @@
-/* global self,process,global,window */
-export interface ENV {
-  setTimeout: (callback: () => void, time: number) => number;
-  clearTimeout: (timer: number) => void;
-  console: {
-    log: (msg: string) => void;
-    warn: (msg: string) => void;
-  };
-}
-export interface Client {
-  __REDUX_DEVTOOLS_EXTENSION__?: (options: any) => any;
-  __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any;
-}
+/* global process,global,window */
+/// <reference path="../env/global.d.ts" />
 
+// 微信小程序中，window为空，global存在
 // @ts-ignore
-export const env: ENV = (typeof self == 'object' && self.self === self && self) || (typeof global == 'object' && global.global === global && global) || this;
+export const env: meduxCore.ENV = (typeof window === 'object' && window.window) || (typeof global === 'object' && global.global);
+//export const env: ENV = (typeof self === 'object' && self.self === self && self) || (typeof global === 'object' && global.global === global && global) || this;
 // @ts-ignore
-export const isServerEnv: boolean = typeof global !== 'undefined' && typeof window === 'undefined';
-// @ts-ignore
-export const client: Client | undefined = (isServerEnv ? undefined : typeof window === 'undefined' ? global : window) as any;
+export const isServerEnv: boolean = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 // @ts-ignore
 export const isDevelopmentEnv: boolean = process.env.NODE_ENV !== 'production';
+
+export const client: meduxCore.ENV | undefined = isServerEnv ? undefined : env;

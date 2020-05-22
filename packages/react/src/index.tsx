@@ -1,13 +1,13 @@
+/// <reference path="../env/global.d.ts" />
 import * as core from '@medux/core';
 
-import {ExportModule, HistoryProxy, ModuleGetter, StoreOptions, StoreState, getView, isPromiseView} from '@medux/core';
+import {ExportModule, HistoryProxy, ModuleGetter, StoreOptions, StoreState, env, getView, isPromiseView} from '@medux/core';
 import React, {ComponentType, FC, ReactElement, useEffect, useState} from 'react';
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 
 import {Provider} from 'react-redux';
 import ReactDOM from 'react-dom';
 import {Store} from 'redux';
-import {env} from './env';
 
 export function renderApp(
   moduleGetter: ModuleGetter,

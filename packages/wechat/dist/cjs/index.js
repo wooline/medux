@@ -2,6 +2,14 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+global.global = {
+  wx: wx,
+  getCurrentPages: getCurrentPages,
+  setTimeout: setTimeout,
+  clearTimeout: clearTimeout,
+  console: console
+};
+
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -47,10 +55,10 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var env = typeof self == 'object' && self.self === self && self || typeof global == 'object' && global.global === global && global || undefined;
-var isServerEnv = typeof global !== 'undefined' && typeof window === 'undefined';
-var client = isServerEnv ? undefined : typeof window === 'undefined' ? global : window;
+var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global;
+var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 var isDevelopmentEnv = 'development' !== 'production';
+var client = isServerEnv ? undefined : env;
 
 var TaskCountEvent = 'TaskCountEvent';
 
@@ -4021,8 +4029,6 @@ function buildTransformRoute(routeConfig) {
   };
 }
 
-var env$1 = env;
-
 function isBrowserRoutePayload(data) {
   return !data['url'];
 }
@@ -4116,7 +4122,7 @@ function createRouter(routeConfig) {
 
       _defineProperty(this, "indexLocation", void 0);
 
-      var _env$wx$getLaunchOpti = env$1.wx.getLaunchOptionsSync(),
+      var _env$wx$getLaunchOpti = env.wx.getLaunchOptionsSync(),
           path = _env$wx$getLaunchOpti.path,
           query = _env$wx$getLaunchOpti.query;
 
@@ -4163,7 +4169,7 @@ function createRouter(routeConfig) {
         }
       }
 
-      env$1.wx.switchTab(routeOption);
+      env.wx.switchTab(routeOption);
     };
 
     _proto2.reLaunch = function reLaunch(option) {
@@ -4178,7 +4184,7 @@ function createRouter(routeConfig) {
         }
       }
 
-      env$1.wx.reLaunch(routeOption);
+      env.wx.reLaunch(routeOption);
     };
 
     _proto2.redirectTo = function redirectTo(option) {
@@ -4193,7 +4199,7 @@ function createRouter(routeConfig) {
         }
       }
 
-      env$1.wx.redirectTo(routeOption);
+      env.wx.redirectTo(routeOption);
     };
 
     _proto2.navigateTo = function navigateTo(option) {
@@ -4208,14 +4214,14 @@ function createRouter(routeConfig) {
         }
       }
 
-      env$1.wx.navigateTo(routeOption);
+      env.wx.navigateTo(routeOption);
     };
 
     _proto2.navigateBack = function navigateBack(option) {
       var routeOption = typeof option === 'number' ? {
         delta: option
       } : option;
-      var pages = env$1.getCurrentPages();
+      var pages = env.getCurrentPages();
       var currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
 
       if (currentPage) {
@@ -4243,7 +4249,7 @@ function createRouter(routeConfig) {
         }
       }
 
-      env$1.wx.navigateBack(routeOption);
+      env.wx.navigateBack(routeOption);
     };
 
     _proto2.listen = function listen(listener) {
@@ -4536,7 +4542,7 @@ function buildApp(_ref) {
 
   storeOptions.middlewares.unshift(redirectMiddleware);
   return renderApp(function () {
-    env$1.console.log('renderer....');
+    env.console.log('renderer....');
     return function () {
       return void 0;
     };

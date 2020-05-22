@@ -1,9 +1,9 @@
+import './env';
 import {Store, Middleware, Dispatch} from 'redux';
 
-import {exportModule as baseExportModule, ExportModule, RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews, renderApp} from '@medux/core';
+import {env, exportModule as baseExportModule, ExportModule, RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews, renderApp} from '@medux/core';
 import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
 import {HistoryActions, createRouter, ToBrowserUrl} from './history';
-import {env} from './env';
 export {connectView} from './connectView';
 export {connectPage} from './connectPage';
 export {
