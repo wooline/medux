@@ -1,12 +1,14 @@
-import { ActionTypes, MetaData, cacheModule, client, config, isProcessedError, isPromise, setProcessedError } from './basic';
+import { ActionTypes, MetaData, cacheModule, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { applyMiddleware, compose, createStore } from 'redux';
+import { client, isDevelopmentEnv, isServerEnv } from './env';
 import { errorAction, routeChangeAction, routeParamsAction } from './actions';
 
 function isPromiseModule(module) {
   return typeof module['then'] === 'function';
 }
 
-export function loadModel(moduleName, store, options) {
+export function loadModel(moduleName, storeInstance, options) {
+  var store = storeInstance || MetaData.clientStore;
   var hasInjected = !!store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
@@ -171,7 +173,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     var dispatch = _ref2.dispatch;
     return function (next) {
       return function (originalAction) {
-        if (MetaData.isServer) {
+        if (isServerEnv) {
           if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
             return originalAction;
           }
@@ -327,14 +329,14 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
   var enhancers = [].concat(storeEnhancers, [middlewareEnhancer, enhancer]);
 
-  if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
   var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
   bindHistory(store, history);
 
-  if (!MetaData.isServer) {
+  if (!isServerEnv) {
     MetaData.clientStore = store;
   }
 

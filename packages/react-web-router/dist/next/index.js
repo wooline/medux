@@ -2,7 +2,6 @@ import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import { setRouteConfig } from '@medux/route-plan-a';
 import { ActionTypes } from '@medux/core';
-import { createLocation } from 'history';
 import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
 import { createRouter } from '@medux/web';
@@ -99,9 +98,14 @@ export function buildSSR({
   setRouteConfig({
     defaultRouteParams
   });
+  const [pathname, search = ''] = location.split('?');
   const history = {
     listen: () => void 0,
-    location: createLocation(location)
+    location: {
+      pathname,
+      search: search && '?' + search,
+      hash: ''
+    }
   };
   const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;

@@ -9,13 +9,16 @@ var _basic = require("./basic");
 
 var _redux = require("redux");
 
+var _env = require("./env");
+
 var _actions = require("./actions");
 
 function isPromiseModule(module) {
   return typeof module['then'] === 'function';
 }
 
-function loadModel(moduleName, store, options) {
+function loadModel(moduleName, storeInstance, options) {
+  var store = storeInstance || _basic.MetaData.clientStore;
   var hasInjected = !!store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
@@ -181,7 +184,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     var dispatch = _ref2.dispatch;
     return function (next) {
       return function (originalAction) {
-        if (_basic.MetaData.isServer) {
+        if (_env.isServerEnv) {
           if (originalAction.type.split(_basic.config.NSP)[1] === _basic.ActionTypes.MLoading) {
             return originalAction;
           }
@@ -337,14 +340,14 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
   var enhancers = [].concat(storeEnhancers, [middlewareEnhancer, enhancer]);
 
-  if (_basic.MetaData.isDev && _basic.client && _basic.client.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(_basic.client.__REDUX_DEVTOOLS_EXTENSION__(_basic.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  if (_env.isDevelopmentEnv && _env.client && _env.client.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(_env.client.__REDUX_DEVTOOLS_EXTENSION__(_env.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
   var store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
   bindHistory(store, history);
 
-  if (!_basic.MetaData.isServer) {
+  if (!_env.isServerEnv) {
     _basic.MetaData.clientStore = store;
   }
 

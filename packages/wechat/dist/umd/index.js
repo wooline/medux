@@ -49,6 +49,11 @@
     return obj;
   }
 
+  var env = typeof self == 'object' && self.self === self && self || typeof global == 'object' && global.global === global && global || undefined;
+  var isServerEnv = typeof global !== 'undefined' && typeof window === 'undefined';
+  var client = isServerEnv ? undefined : typeof window === 'undefined' ? global : window;
+  var isDevelopmentEnv = 'development' !== 'production';
+
   var TaskCountEvent = 'TaskCountEvent';
 
   (function (LoadingState) {
@@ -204,7 +209,7 @@
 
         if (this.list.length === 1) {
           this.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Start));
-          this.ctimer = setTimeout(function () {
+          this.ctimer = env.setTimeout(function () {
             _this3.ctimer = null;
 
             if (_this3.list.length > 0) {
@@ -227,7 +232,7 @@
 
         if (this.list.length === 0) {
           if (this.ctimer) {
-            clearTimeout(this.ctimer);
+            env.clearTimeout(this.ctimer);
             this.ctimer = null;
           }
 
@@ -252,7 +257,7 @@
       groupName = 'global';
     }
 
-    if (MetaData.isServer) {
+    if (isServerEnv) {
       return item;
     }
 
@@ -284,8 +289,6 @@
     MSP: ','
   };
   var MetaData = {
-    isServer: typeof global !== 'undefined' && typeof window === 'undefined',
-    isDev: 'development' !== 'production',
     actionCreatorMap: null,
     clientStore: null,
     appModuleName: null,
@@ -298,7 +301,6 @@
     Error: "medux" + config.NSP + "Error",
     RouteChange: "medux" + config.NSP + "RouteChange"
   };
-  var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
   function cacheModule(module, getter) {
     var fn = getter ? getter : function () {
       return module;
@@ -308,6 +310,9 @@
   }
   function isPromise(data) {
     return typeof data === 'object' && typeof data['then'] === 'function';
+  }
+  function getClientStore() {
+    return MetaData.clientStore;
   }
   function reducer(target, key, descriptor) {
     if (!key && !descriptor) {
@@ -340,7 +345,7 @@
 
       if (loadingForGroupName) {
         var before = function before(curAction, moduleName, promiseResult) {
-          if (!MetaData.isServer) {
+          if (!isServerEnv) {
             if (!loadingForModuleName) {
               loadingForModuleName = moduleName;
             }
@@ -370,7 +375,7 @@
 
       descriptor.value = function () {
         var delay = new Promise(function (resolve) {
-          setTimeout(function () {
+          env.setTimeout(function () {
             resolve(true);
           }, second * 1000);
         });
@@ -999,7 +1004,8 @@
     return typeof module['then'] === 'function';
   }
 
-  function loadModel(moduleName, store, options) {
+  function loadModel(moduleName, storeInstance, options) {
+    var store = storeInstance || MetaData.clientStore;
     var hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
@@ -1164,7 +1170,7 @@
       var dispatch = _ref2.dispatch;
       return function (next) {
         return function (originalAction) {
-          if (MetaData.isServer) {
+          if (isServerEnv) {
             if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
               return originalAction;
             }
@@ -1327,7 +1333,7 @@
     var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
     bindHistory(store, history);
 
-    if (!MetaData.isServer) {
+    if (!isServerEnv) {
       MetaData.clientStore = store;
     }
 
@@ -2548,7 +2554,7 @@
 
     if (prevInitState) {
       if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-        console.warn("[HMR] @medux Updated model initState: " + moduleName);
+        env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
       }
 
       clearHandlers(moduleName, store._medux_.reducerMap);
@@ -2556,7 +2562,7 @@
       var handlers = new ActionHandles(moduleName, store);
       var actions = injectActions(store, moduleName, handlers);
       handlers.actions = actions;
-      console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
+      env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
     }
   }
 
@@ -2572,20 +2578,63 @@
 
     if (module) {
       module.default.views = views;
-      console.warn("[HMR] @medux Updated views: " + moduleName);
+      env.console.warn("[HMR] @medux Updated views: " + moduleName);
       appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views.Main;
 
       if (!reRenderTimer) {
-        reRenderTimer = setTimeout(function () {
+        reRenderTimer = env.setTimeout(function () {
           reRenderTimer = 0;
           reRender(appView);
-          console.warn("[HMR] @medux view re rendering");
+          env.console.warn("[HMR] @medux view re rendering");
         }, 0);
       }
     } else {
       throw 'views cannot apply update for HMR.';
     }
   }
+  var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
+    var model = function model(store, options) {
+      var hasInjected = !!store._medux_.injectedModules[moduleName];
+
+      if (!hasInjected) {
+        var _store$_medux_$prevSt;
+
+        store._medux_.injectedModules[moduleName] = initState;
+        var moduleState = store.getState()[moduleName];
+        var handlers = new ActionHandles(moduleName, store);
+
+        var _actions = injectActions(store, moduleName, handlers);
+
+        handlers.actions = _actions;
+        var params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
+
+        if (!moduleState) {
+          moduleState = initState;
+          moduleState.isModule = true;
+        } else {
+          moduleState = Object.assign({}, moduleState, {
+            isHydrate: true
+          });
+        }
+
+        var initAction = _actions.Init(moduleState, params[moduleName], options);
+
+        return store.dispatch(initAction);
+      }
+
+      return void 0;
+    };
+
+    model.moduleName = moduleName;
+    model.initState = initState;
+    var actions = {};
+    return {
+      moduleName: moduleName,
+      model: model,
+      views: views,
+      actions: actions
+    };
+  };
   var BaseModelHandlers = _decorate(null, function (_initialize) {
     var BaseModelHandlers = function BaseModelHandlers(moduleName, store) {
       this.moduleName = moduleName;
@@ -2806,7 +2855,7 @@
               }
 
               if (reRenderTimer) {
-                clearTimeout(reRenderTimer);
+                env.clearTimeout(reRenderTimer);
                 reRenderTimer = 0;
               }
 
@@ -2867,6 +2916,577 @@
       }, _callee);
     }));
     return _renderApp.apply(this, arguments);
+  }
+
+  function _createForOfIteratorHelperLoose(o) {
+    var i = 0;
+
+    if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
+      if (Array.isArray(o) || (o = _unsupportedIterableToArray$1(o))) return function () {
+        if (i >= o.length) return {
+          done: true
+        };
+        return {
+          done: false,
+          value: o[i++]
+        };
+      };
+      throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+
+    i = o[Symbol.iterator]();
+    return i.next.bind(i);
+  }
+
+  function _unsupportedIterableToArray$1(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray$1(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(n);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$1(o, minLen);
+  }
+
+  function _arrayLikeToArray$1(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+
+    for (var i = 0, arr2 = new Array(len); i < len; i++) {
+      arr2[i] = arr[i];
+    }
+
+    return arr2;
+  }
+
+  function lexer(str) {
+    var tokens = [];
+    var i = 0;
+
+    while (i < str.length) {
+      var char = str[i];
+
+      if (char === '*' || char === '+' || char === '?') {
+        tokens.push({
+          type: 'MODIFIER',
+          index: i,
+          value: str[i++]
+        });
+        continue;
+      }
+
+      if (char === '\\') {
+        tokens.push({
+          type: 'ESCAPED_CHAR',
+          index: i++,
+          value: str[i++]
+        });
+        continue;
+      }
+
+      if (char === '{') {
+        tokens.push({
+          type: 'OPEN',
+          index: i,
+          value: str[i++]
+        });
+        continue;
+      }
+
+      if (char === '}') {
+        tokens.push({
+          type: 'CLOSE',
+          index: i,
+          value: str[i++]
+        });
+        continue;
+      }
+
+      if (char === ':') {
+        var name = '';
+        var j = i + 1;
+
+        while (j < str.length) {
+          var code = str.charCodeAt(j);
+
+          if (code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code === 95 || code === 46) {
+            name += str[j++];
+            continue;
+          }
+
+          break;
+        }
+
+        if (!name) throw new TypeError("Missing parameter name at " + i);
+        tokens.push({
+          type: 'NAME',
+          index: i,
+          value: name
+        });
+        i = j;
+        continue;
+      }
+
+      if (char === '(') {
+        var count = 1;
+        var pattern = '';
+
+        var _j = i + 1;
+
+        if (str[_j] === '?') {
+          throw new TypeError("Pattern cannot start with \"?\" at " + _j);
+        }
+
+        while (_j < str.length) {
+          if (str[_j] === '\\') {
+            pattern += str[_j++] + str[_j++];
+            continue;
+          }
+
+          if (str[_j] === ')') {
+            count--;
+
+            if (count === 0) {
+              _j++;
+              break;
+            }
+          } else if (str[_j] === '(') {
+            count++;
+
+            if (str[_j + 1] !== '?') {
+              throw new TypeError("Capturing groups are not allowed at " + _j);
+            }
+          }
+
+          pattern += str[_j++];
+        }
+
+        if (count) throw new TypeError("Unbalanced pattern at " + i);
+        if (!pattern) throw new TypeError("Missing pattern at " + i);
+        tokens.push({
+          type: 'PATTERN',
+          index: i,
+          value: pattern
+        });
+        i = _j;
+        continue;
+      }
+
+      tokens.push({
+        type: 'CHAR',
+        index: i,
+        value: str[i++]
+      });
+    }
+
+    tokens.push({
+      type: 'END',
+      index: i,
+      value: ''
+    });
+    return tokens;
+  }
+
+  function parse(str, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
+    var tokens = lexer(str);
+    var _options = options,
+        _options$prefixes = _options.prefixes,
+        prefixes = _options$prefixes === void 0 ? './' : _options$prefixes;
+    var defaultPattern = "[^" + escapeString(options.delimiter || '/#?') + "]+?";
+    var result = [];
+    var key = 0;
+    var i = 0;
+    var path = '';
+
+    var tryConsume = function tryConsume(type) {
+      if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
+      return undefined;
+    };
+
+    var mustConsume = function mustConsume(type) {
+      var value = tryConsume(type);
+      if (value !== undefined) return value;
+      var _tokens$i = tokens[i],
+          nextType = _tokens$i.type,
+          index = _tokens$i.index;
+      throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
+    };
+
+    var consumeText = function consumeText() {
+      var result = '';
+      var value;
+
+      while (value = tryConsume('CHAR') || tryConsume('ESCAPED_CHAR')) {
+        result += value;
+      }
+
+      return result;
+    };
+
+    while (i < tokens.length) {
+      var char = tryConsume('CHAR');
+      var name = tryConsume('NAME');
+      var pattern = tryConsume('PATTERN');
+
+      if (name || pattern) {
+        var prefix = char || '';
+
+        if (prefixes.indexOf(prefix) === -1) {
+          path += prefix;
+          prefix = '';
+        }
+
+        if (path) {
+          result.push(path);
+          path = '';
+        }
+
+        result.push({
+          name: name || key++,
+          prefix: prefix,
+          suffix: '',
+          pattern: pattern || defaultPattern,
+          modifier: tryConsume('MODIFIER') || ''
+        });
+        continue;
+      }
+
+      var _value = char || tryConsume('ESCAPED_CHAR');
+
+      if (_value) {
+        path += _value;
+        continue;
+      }
+
+      if (path) {
+        result.push(path);
+        path = '';
+      }
+
+      var open = tryConsume('OPEN');
+
+      if (open) {
+        var _prefix = consumeText();
+
+        var _name = tryConsume('NAME') || '';
+
+        var _pattern = tryConsume('PATTERN') || '';
+
+        var suffix = consumeText();
+        mustConsume('CLOSE');
+        result.push({
+          name: _name || (_pattern ? key++ : ''),
+          pattern: _name && !_pattern ? defaultPattern : _pattern,
+          prefix: _prefix,
+          suffix: suffix,
+          modifier: tryConsume('MODIFIER') || ''
+        });
+        continue;
+      }
+
+      mustConsume('END');
+    }
+
+    return result;
+  }
+  function compile(str, options) {
+    return tokensToFunction(parse(str, options), options);
+  }
+  function tokensToFunction(tokens, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
+    var reFlags = flags(options);
+    var _options2 = options,
+        _options2$encode = _options2.encode,
+        encode = _options2$encode === void 0 ? function (x) {
+      return x;
+    } : _options2$encode,
+        _options2$validate = _options2.validate,
+        validate = _options2$validate === void 0 ? true : _options2$validate;
+    var matches = tokens.map(function (token) {
+      if (typeof token === 'object') {
+        return new RegExp("^(?:" + token.pattern + ")$", reFlags);
+      }
+
+      return undefined;
+    });
+    return function (data) {
+      var path = '';
+
+      for (var i = 0; i < tokens.length; i++) {
+        var _token = tokens[i];
+
+        if (typeof _token === 'string') {
+          path += _token;
+          continue;
+        }
+
+        var _value2 = data ? data[_token.name] : undefined;
+
+        var optional = _token.modifier === '?' || _token.modifier === '*';
+        var repeat = _token.modifier === '*' || _token.modifier === '+';
+
+        if (Array.isArray(_value2)) {
+          if (!repeat) {
+            throw new TypeError("Expected \"" + _token.name + "\" to not repeat, but got an array");
+          }
+
+          if (_value2.length === 0) {
+            if (optional) continue;
+            throw new TypeError("Expected \"" + _token.name + "\" to not be empty");
+          }
+
+          for (var j = 0; j < _value2.length; j++) {
+            var segment = encode(_value2[j], _token);
+
+            if (validate && !matches[i].test(segment)) {
+              throw new TypeError("Expected all \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + segment + "\"");
+            }
+
+            path += _token.prefix + segment + _token.suffix;
+          }
+
+          continue;
+        }
+
+        if (typeof _value2 === 'string' || typeof _value2 === 'number') {
+          var _segment = encode(String(_value2), _token);
+
+          if (validate && !matches[i].test(_segment)) {
+            throw new TypeError("Expected \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + _segment + "\"");
+          }
+
+          path += _token.prefix + _segment + _token.suffix;
+          continue;
+        }
+
+        if (optional) continue;
+        var typeOfMessage = repeat ? 'an array' : 'a string';
+        throw new TypeError("Expected \"" + _token.name + "\" to be " + typeOfMessage);
+      }
+
+      return path;
+    };
+  }
+
+  function escapeString(str) {
+    return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
+  }
+
+  function flags(options) {
+    return options && options.sensitive ? '' : 'i';
+  }
+
+  function regexpToRegexp(path, keys) {
+    if (!keys) return path;
+    var groups = path.source.match(/\((?!\?)/g);
+
+    if (groups) {
+      for (var i = 0; i < groups.length; i++) {
+        keys.push({
+          name: i,
+          prefix: '',
+          suffix: '',
+          modifier: '',
+          pattern: ''
+        });
+      }
+    }
+
+    return path;
+  }
+
+  function arrayToRegexp(paths, keys, options) {
+    var parts = paths.map(function (path) {
+      return pathToRegexp(path, keys, options).source;
+    });
+    return new RegExp("(?:" + parts.join('|') + ")", flags(options));
+  }
+
+  function stringToRegexp(path, keys, options) {
+    return tokensToRegexp(parse(path, options), keys, options);
+  }
+
+  function tokensToRegexp(tokens, keys, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
+    var _options4 = options,
+        _options4$strict = _options4.strict,
+        strict = _options4$strict === void 0 ? false : _options4$strict,
+        _options4$start = _options4.start,
+        start = _options4$start === void 0 ? true : _options4$start,
+        _options4$end = _options4.end,
+        end = _options4$end === void 0 ? true : _options4$end,
+        _options4$encode = _options4.encode,
+        encode = _options4$encode === void 0 ? function (x) {
+      return x;
+    } : _options4$encode;
+    var endsWith = "[" + escapeString(options.endsWith || '') + "]|$";
+    var delimiter = "[" + escapeString(options.delimiter || '/#?') + "]";
+    var route = start ? '^' : '';
+
+    for (var _iterator = _createForOfIteratorHelperLoose(tokens), _step; !(_step = _iterator()).done;) {
+      var _token2 = _step.value;
+
+      if (typeof _token2 === 'string') {
+        route += escapeString(encode(_token2));
+      } else {
+        var prefix = escapeString(encode(_token2.prefix));
+        var suffix = escapeString(encode(_token2.suffix));
+
+        if (_token2.pattern) {
+          if (keys) keys.push(_token2);
+
+          if (prefix || suffix) {
+            if (_token2.modifier === '+' || _token2.modifier === '*') {
+              var mod = _token2.modifier === '*' ? '?' : '';
+              route += "(?:" + prefix + "((?:" + _token2.pattern + ")(?:" + suffix + prefix + "(?:" + _token2.pattern + "))*)" + suffix + ")" + mod;
+            } else {
+              route += "(?:" + prefix + "(" + _token2.pattern + ")" + suffix + ")" + _token2.modifier;
+            }
+          } else {
+            route += "(" + _token2.pattern + ")" + _token2.modifier;
+          }
+        } else {
+          route += "(?:" + prefix + suffix + ")" + _token2.modifier;
+        }
+      }
+    }
+
+    if (end) {
+      if (!strict) route += delimiter + "?";
+      route += !options.endsWith ? '$' : "(?=" + endsWith + ")";
+    } else {
+      var endToken = tokens[tokens.length - 1];
+      var isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
+
+      if (!strict) {
+        route += "(?:" + delimiter + "(?=" + endsWith + "))?";
+      }
+
+      if (!isEndDelimited) {
+        route += "(?=" + delimiter + "|" + endsWith + ")";
+      }
+    }
+
+    return new RegExp(route, flags(options));
+  }
+  function pathToRegexp(path, keys, options) {
+    if (path instanceof RegExp) return regexpToRegexp(path, keys);
+    if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
+    return stringToRegexp(path, keys, options);
+  }
+
+  var cache = {};
+  var cacheLimit = 10000;
+  var cacheCount = 0;
+  function compileToPath(rule) {
+    if (cache[rule]) {
+      return cache[rule];
+    }
+
+    var result = compile(rule);
+
+    if (cacheCount < cacheLimit) {
+      cache[rule] = result;
+      cacheCount++;
+    }
+
+    return result;
+  }
+  function compilePath(path, options) {
+    if (options === void 0) {
+      options = {
+        end: false,
+        strict: false,
+        sensitive: false
+      };
+    }
+
+    var cacheKey = "" + options.end + options.strict + options.sensitive;
+    var pathCache = cache[cacheKey] || (cache[cacheKey] = {});
+
+    if (pathCache[path]) {
+      return pathCache[path];
+    }
+
+    var keys = [];
+    var regexp = pathToRegexp(path, keys, options);
+    var result = {
+      regexp: regexp,
+      keys: keys
+    };
+
+    if (cacheCount < cacheLimit) {
+      pathCache[path] = result;
+      cacheCount++;
+    }
+
+    return result;
+  }
+  function matchPath(pathname, options) {
+    if (options === void 0) {
+      options = {};
+    }
+
+    if (typeof options === 'string' || Array.isArray(options)) {
+      options = {
+        path: options
+      };
+    }
+
+    var _options = options,
+        path = _options.path,
+        _options$exact = _options.exact,
+        exact = _options$exact === void 0 ? false : _options$exact,
+        _options$strict = _options.strict,
+        strict = _options$strict === void 0 ? false : _options$strict,
+        _options$sensitive = _options.sensitive,
+        sensitive = _options$sensitive === void 0 ? false : _options$sensitive;
+    var paths = [].concat(path);
+    return paths.reduce(function (matched, path) {
+      if (!path) return null;
+      if (matched) return matched;
+
+      if (path === '*') {
+        return {
+          path: path,
+          url: pathname,
+          isExact: true,
+          params: {}
+        };
+      }
+
+      var _compilePath = compilePath(path, {
+        end: exact,
+        strict: strict,
+        sensitive: sensitive
+      }),
+          regexp = _compilePath.regexp,
+          keys = _compilePath.keys;
+
+      var match = regexp.exec(pathname);
+      if (!match) return null;
+      var url = match[0],
+          values = match.slice(1);
+      var isExact = pathname === url;
+      if (exact && !isExact) return null;
+      return {
+        path: path,
+        url: path === '/' && url === '' ? '/' : url,
+        isExact: isExact,
+        params: keys.reduce(function (memo, key, index) {
+          memo[key.name] = values[index];
+          return memo;
+        }, {})
+      };
+    }, null);
   }
 
   var deepExtend_1 = createCommonjsModule(function (module) {
@@ -2980,6 +3600,7 @@
   };
   });
 
+  var deepAssign = deepExtend_1;
   var config$1 = {
     escape: true,
     dateParse: false,
@@ -2993,15 +3614,963 @@
     conf.defaultRouteParams && (config$1.defaultRouteParams = conf.defaultRouteParams);
   }
 
+  function excludeDefaultData(data, def, holde, views) {
+    var result = {};
+    Object.keys(data).forEach(function (moduleName) {
+      var value = data[moduleName];
+      var defaultValue = def[moduleName];
+
+      if (value !== defaultValue) {
+        if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+          value = excludeDefaultData(value, defaultValue, !!views && !views[moduleName]);
+        }
+
+        if (value !== undefined) {
+          result[moduleName] = value;
+        }
+      }
+    });
+
+    if (Object.keys(result).length === 0 && !holde) {
+      return undefined;
+    }
+
+    return result;
+  }
+
+  var ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
+
+  function dateParse(prop, value) {
+    if (typeof value === 'string' && ISO_DATE_FORMAT.test(value)) {
+      return new Date(value);
+    }
+
+    return value;
+  }
+
+  function searchParse(search) {
+    if (!search) {
+      return {};
+    }
+
+    if (config$1.escape) {
+      search = unescape(search);
+    }
+
+    try {
+      return JSON.parse(search, config$1.dateParse ? dateParse : undefined);
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function joinSearchString(arr) {
+    var strs = [''];
+
+    for (var i = 0, k = arr.length; i < k; i++) {
+      strs.push(arr[i] || '');
+    }
+
+    return strs.join("&" + config$1.splitKey + "=");
+  }
+
+  function searchStringify(searchData) {
+    if (typeof searchData !== 'object') {
+      return '';
+    }
+
+    var str = JSON.stringify(searchData);
+
+    if (str === '{}') {
+      return '';
+    }
+
+    if (config$1.escape) {
+      return escape(str);
+    } else {
+      return str;
+    }
+  }
+
+  function splitSearch(search) {
+    var reg = new RegExp("[&?#]" + config$1.splitKey + "=[^&]*", 'g');
+    var arr = search.match(reg);
+    var stackParams = [];
+
+    if (arr) {
+      stackParams = arr.map(function (str) {
+        return searchParse(str.split('=')[1]);
+      });
+    }
+
+    return stackParams;
+  }
+
+  function checkPathArgs(params) {
+    var obj = {};
+
+    for (var _key in params) {
+      if (params.hasOwnProperty(_key)) {
+        (function () {
+          var val = params[_key];
+
+          var props = _key.split('.');
+
+          if (props.length > 1) {
+            props.reduce(function (prev, cur, index, arr) {
+              if (index === arr.length - 1) {
+                prev[cur] = val;
+              } else {
+                prev[cur] = {};
+              }
+
+              return prev[cur];
+            }, obj);
+          } else {
+            obj[_key] = val;
+          }
+        })();
+      }
+    }
+
+    return obj;
+  }
+
+  function pathnameParse(pathname, routeConfig, paths, args) {
+    for (var _rule in routeConfig) {
+      if (routeConfig.hasOwnProperty(_rule)) {
+        var item = routeConfig[_rule];
+
+        var _ref = typeof item === 'string' ? [item, null] : item,
+            _viewName = _ref[0],
+            pathConfig = _ref[1];
+
+        var match = matchPath(pathname, {
+          path: _rule.replace(/\$$/, ''),
+          exact: !pathConfig
+        });
+
+        if (match) {
+          paths.push(_viewName);
+
+          var _moduleName = _viewName.split(config.VSP)[0];
+
+          var params = match.params;
+
+          if (params && Object.keys(params).length > 0) {
+            args[_moduleName] = Object.assign({}, args[_moduleName], {}, checkPathArgs(params));
+          }
+
+          if (pathConfig) {
+            pathnameParse(pathname, pathConfig, paths, args);
+          }
+
+          return;
+        }
+      }
+    }
+  }
+
+  function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKeys) {
+    if (parentAbsoluteViewName === void 0) {
+      parentAbsoluteViewName = '';
+    }
+
+    if (viewToRule === void 0) {
+      viewToRule = {};
+    }
+
+    if (ruleToKeys === void 0) {
+      ruleToKeys = {};
+    }
+
+    for (var _rule2 in routeConfig) {
+      if (routeConfig.hasOwnProperty(_rule2)) {
+        if (!ruleToKeys[_rule2]) {
+          var _compilePath = compilePath(_rule2, {
+            end: true,
+            strict: false,
+            sensitive: false
+          }),
+              keys = _compilePath.keys;
+
+          ruleToKeys[_rule2] = keys.reduce(function (prev, cur) {
+            prev.push(cur.name);
+            return prev;
+          }, []);
+        }
+
+        var item = routeConfig[_rule2];
+
+        var _ref2 = typeof item === 'string' ? [item, null] : item,
+            _viewName2 = _ref2[0],
+            pathConfig = _ref2[1];
+
+        var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
+        viewToRule[absoluteViewName] = _rule2;
+
+        if (pathConfig) {
+          compileConfig(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
+        }
+      }
+    }
+
+    return {
+      viewToRule: viewToRule,
+      ruleToKeys: ruleToKeys
+    };
+  }
+
+  function assignRouteData(paths, stackParams, args) {
+    if (!stackParams[0]) {
+      stackParams[0] = {};
+    }
+
+    if (args) {
+      stackParams[0] = deepExtend_1({}, args, stackParams[0]);
+    }
+
+    var firstStackParams = stackParams[0];
+    var views = paths.reduce(function (prev, cur) {
+      var _cur$split = cur.split(config.VSP),
+          moduleName = _cur$split[0],
+          viewName = _cur$split[1];
+
+      if (viewName) {
+        if (!prev[moduleName]) {
+          prev[moduleName] = {};
+        }
+
+        prev[moduleName][viewName] = true;
+
+        if (!firstStackParams[moduleName]) {
+          firstStackParams[moduleName] = {};
+        }
+      }
+
+      return prev;
+    }, {});
+    Object.keys(firstStackParams).forEach(function (moduleName) {
+      firstStackParams[moduleName] = deepExtend_1({}, config$1.defaultRouteParams[moduleName], firstStackParams[moduleName]);
+    });
+    var params = deepExtend_1.apply(void 0, [{}].concat(stackParams));
+    Object.keys(params).forEach(function (moduleName) {
+      if (!firstStackParams[moduleName]) {
+        params[moduleName] = deepExtend_1({}, config$1.defaultRouteParams[moduleName], params[moduleName]);
+      }
+    });
+    return {
+      views: views,
+      paths: paths,
+      params: params,
+      stackParams: stackParams
+    };
+  }
+
+  function extractHashData(params) {
+    var searchParams = {};
+    var hashParams = {};
+
+    var _loop = function _loop(_moduleName2) {
+      if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
+        var data = params[_moduleName2];
+        var keys = Object.keys(data);
+
+        if (keys.length > 0) {
+          keys.forEach(function (key) {
+            if (key.startsWith('_')) {
+              if (!hashParams[_moduleName2]) {
+                hashParams[_moduleName2] = {};
+              }
+
+              hashParams[_moduleName2][key] = data[key];
+            } else {
+              if (!searchParams[_moduleName2]) {
+                searchParams[_moduleName2] = {};
+              }
+
+              searchParams[_moduleName2][key] = data[key];
+            }
+          });
+        } else {
+          searchParams[_moduleName2] = {};
+        }
+      }
+    };
+
+    for (var _moduleName2 in params) {
+      _loop(_moduleName2);
+    }
+
+    return {
+      search: searchStringify(searchParams),
+      hash: searchStringify(hashParams)
+    };
+  }
+
+  function buildTransformRoute(routeConfig) {
+    var _compileConfig = compileConfig(routeConfig),
+        viewToRule = _compileConfig.viewToRule,
+        ruleToKeys = _compileConfig.ruleToKeys;
+
+    var locationToRoute = function locationToRoute(location) {
+      var paths = [];
+      var pathsArgs = {};
+      pathnameParse(location.pathname, routeConfig, paths, pathsArgs);
+      var stackParams = splitSearch(location.search);
+      var hashStackParams = splitSearch(location.hash);
+      hashStackParams.forEach(function (item, index) {
+        if (item) {
+          if (!stackParams[index]) {
+            stackParams[index] = {};
+          }
+
+          deepExtend_1(stackParams[index], item);
+        }
+      });
+      return assignRouteData(paths, stackParams, pathsArgs);
+    };
+
+    var routeToLocation = function routeToLocation(routeData) {
+      var views = routeData.views,
+          paths = routeData.paths,
+          params = routeData.params,
+          stackParams = routeData.stackParams;
+      var firstStackParams = stackParams[0];
+      var pathname = '';
+      var firstStackParamsFilter;
+
+      if (paths.length > 0) {
+        firstStackParamsFilter = deepExtend_1({}, firstStackParams);
+        paths.reduce(function (parentAbsoluteViewName, viewName, index) {
+          var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+          var rule = viewToRule[absoluteViewName];
+          var moduleName = viewName.split(config.VSP)[0];
+
+          if (index === paths.length - 1) {
+            var toPath = compileToPath(rule);
+
+            var _keys = ruleToKeys[rule] || [];
+
+            var args = _keys.reduce(function (prev, cur) {
+              if (typeof cur === 'string') {
+                var props = cur.split('.');
+
+                if (props.length) {
+                  prev[cur] = props.reduce(function (p, c) {
+                    return p[c];
+                  }, params[moduleName]);
+                  return prev;
+                }
+              }
+
+              prev[cur] = params[moduleName][cur];
+              return prev;
+            }, {});
+
+            pathname = toPath(args);
+          }
+
+          var keys = ruleToKeys[rule] || [];
+          keys.forEach(function (key) {
+            if (typeof key === 'string') {
+              var props = key.split('.');
+
+              if (props.length) {
+                props.reduce(function (p, c, i) {
+                  if (i === props.length - 1) {
+                    delete p[c];
+                  }
+
+                  return p[c] || {};
+                }, firstStackParamsFilter[moduleName] || {});
+                return;
+              }
+            }
+
+            if (firstStackParamsFilter[moduleName]) {
+              delete firstStackParamsFilter[moduleName][key];
+            }
+          });
+          return absoluteViewName;
+        }, '');
+      } else {
+        firstStackParamsFilter = firstStackParams;
+      }
+
+      var arr = [].concat(stackParams);
+      arr[0] = excludeDefaultData(firstStackParamsFilter, config$1.defaultRouteParams, false, views);
+      var searchStrings = [];
+      var hashStrings = [];
+      arr.forEach(function (params, index) {
+        var _extractHashData = extractHashData(params),
+            search = _extractHashData.search,
+            hash = _extractHashData.hash;
+
+        search && (searchStrings[index] = search);
+        hash && (hashStrings[index] = hash);
+      });
+      return {
+        pathname: pathname,
+        search: '?' + joinSearchString(searchStrings).substr(1),
+        hash: '#' + joinSearchString(hashStrings).substr(1)
+      };
+    };
+
+    return {
+      locationToRoute: locationToRoute,
+      routeToLocation: routeToLocation
+    };
+  }
+
+  var env$1 = env;
+
+  function isBrowserRoutePayload(data) {
+    return !data['url'];
+  }
+
+  function urlToBrowserLocation(url) {
+    var arr = url.split(/[?#]/);
+
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+
+    var pathname = arr[0],
+        _arr$ = arr[1],
+        search = _arr$ === void 0 ? '' : _arr$,
+        _arr$2 = arr[2],
+        hash = _arr$2 === void 0 ? '' : _arr$2;
+    return {
+      pathname: pathname,
+      search: search && '?' + search,
+      hash: hash && '#' + hash
+    };
+  }
+
+  function browserLocationToUrl(location) {
+    return location.pathname + (location.search ? "?" + location.search : '') + (location.hash ? "#" + location.hash : '');
+  }
+
+  function fillBrowserRouteData(routePayload) {
+    var extend = routePayload.extend || {
+      views: {},
+      paths: [],
+      stackParams: [],
+      params: {}
+    };
+    var stackParams = [].concat(extend.stackParams);
+
+    if (routePayload.params) {
+      stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
+    }
+
+    return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  }
+
+  var BrowserHistoryProxy = function () {
+    function BrowserHistoryProxy(history, locationToRoute) {
+      this.history = history;
+      this.locationToRoute = locationToRoute;
+
+      _defineProperty(this, "initialized", true);
+    }
+
+    var _proto = BrowserHistoryProxy.prototype;
+
+    _proto.getLocation = function getLocation() {
+      return this.history.location;
+    };
+
+    _proto.subscribe = function subscribe(listener) {
+      return this.history.listen(listener);
+    };
+
+    _proto.locationToRouteData = function locationToRouteData(location) {
+      return this.locationToRoute(location);
+    };
+
+    _proto.equal = function equal(a, b) {
+      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+    };
+
+    _proto.patch = function patch(location, routeData) {
+      var url = browserLocationToUrl(location);
+      this.history.reLaunch({
+        url: url
+      });
+    };
+
+    return BrowserHistoryProxy;
+  }();
+
+  function createRouter(routeConfig) {
+    var transformRoute = buildTransformRoute(routeConfig);
+    var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+
+    var History = function () {
+      function History() {
+        _defineProperty(this, "_uid", 0);
+
+        _defineProperty(this, "_listenList", {});
+
+        _defineProperty(this, "location", void 0);
+
+        _defineProperty(this, "indexLocation", void 0);
+
+        var _env$wx$getLaunchOpti = env$1.wx.getLaunchOptionsSync(),
+            path = _env$wx$getLaunchOpti.path,
+            query = _env$wx$getLaunchOpti.query;
+
+        var search = Object.keys(query).map(function (key) {
+          return key + '=' + query[key];
+        }).join('&');
+        this.location = {
+          pathname: path,
+          search: search && '?' + search,
+          hash: ''
+        };
+        this.indexLocation = this.location;
+      }
+
+      var _proto2 = History.prototype;
+
+      _proto2.createWechatRouteOption = function createWechatRouteOption(option) {
+        if (typeof option === 'string') {
+          return {
+            url: option
+          };
+        } else if (isBrowserRoutePayload(option)) {
+          var routeData = fillBrowserRouteData(option);
+
+          var _location = transformRoute.routeToLocation(routeData);
+
+          return {
+            url: browserLocationToUrl(_location)
+          };
+        } else {
+          return option;
+        }
+      };
+
+      _proto2.switchTab = function switchTab(option) {
+        var routeOption = this.createWechatRouteOption(option);
+        this.location = urlToBrowserLocation(routeOption.url);
+
+        for (var _key in this._listenList) {
+          if (this._listenList.hasOwnProperty(_key)) {
+            var _listener = this._listenList[_key];
+
+            _listener(this.location);
+          }
+        }
+
+        env$1.wx.switchTab(routeOption);
+      };
+
+      _proto2.reLaunch = function reLaunch(option) {
+        var routeOption = this.createWechatRouteOption(option);
+        this.location = urlToBrowserLocation(routeOption.url);
+
+        for (var _key2 in this._listenList) {
+          if (this._listenList.hasOwnProperty(_key2)) {
+            var _listener2 = this._listenList[_key2];
+
+            _listener2(this.location);
+          }
+        }
+
+        env$1.wx.reLaunch(routeOption);
+      };
+
+      _proto2.redirectTo = function redirectTo(option) {
+        var routeOption = this.createWechatRouteOption(option);
+        this.location = urlToBrowserLocation(routeOption.url);
+
+        for (var _key3 in this._listenList) {
+          if (this._listenList.hasOwnProperty(_key3)) {
+            var _listener3 = this._listenList[_key3];
+
+            _listener3(this.location);
+          }
+        }
+
+        env$1.wx.redirectTo(routeOption);
+      };
+
+      _proto2.navigateTo = function navigateTo(option) {
+        var routeOption = this.createWechatRouteOption(option);
+        this.location = urlToBrowserLocation(routeOption.url);
+
+        for (var _key4 in this._listenList) {
+          if (this._listenList.hasOwnProperty(_key4)) {
+            var _listener4 = this._listenList[_key4];
+
+            _listener4(this.location);
+          }
+        }
+
+        env$1.wx.navigateTo(routeOption);
+      };
+
+      _proto2.navigateBack = function navigateBack(option) {
+        var routeOption = typeof option === 'number' ? {
+          delta: option
+        } : option;
+        var pages = env$1.getCurrentPages();
+        var currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
+
+        if (currentPage) {
+          var route = currentPage.route,
+              options = currentPage.options;
+
+          var _search = Object.keys(options).map(function (key) {
+            return key + '=' + options[key];
+          }).join('&');
+
+          this.location = {
+            pathname: route,
+            search: _search && '?' + _search,
+            hash: ''
+          };
+        } else {
+          this.location = this.indexLocation;
+        }
+
+        for (var _key5 in this._listenList) {
+          if (this._listenList.hasOwnProperty(_key5)) {
+            var _listener5 = this._listenList[_key5];
+
+            _listener5(this.location);
+          }
+        }
+
+        env$1.wx.navigateBack(routeOption);
+      };
+
+      _proto2.listen = function listen(listener) {
+        var _this = this;
+
+        this._uid++;
+        var uid = this._uid;
+        this._listenList[uid] = listener;
+        return function () {
+          delete _this._listenList[uid];
+        };
+      };
+
+      return History;
+    }();
+
+    var historyActions = new History();
+    var historyProxy = new BrowserHistoryProxy(historyActions, transformRoute.locationToRoute);
+    return {
+      transformRoute: transformRoute,
+      historyProxy: historyProxy,
+      historyActions: historyActions,
+      toBrowserUrl: toBrowserUrl
+    };
+  }
+
+  function buildToBrowserUrl(routeToLocation) {
+    function toUrl() {
+      for (var _len = arguments.length, args = new Array(_len), _key6 = 0; _key6 < _len; _key6++) {
+        args[_key6] = arguments[_key6];
+      }
+
+      if (args.length === 1) {
+        var _location2 = routeToLocation(fillBrowserRouteData(args[0]));
+
+        args = [_location2.pathname, _location2.search, _location2.hash];
+      }
+
+      var _ref = args,
+          pathname = _ref[0],
+          search = _ref[1],
+          hash = _ref[2];
+      var url = pathname;
+
+      if (search) {
+        url += search;
+      }
+
+      if (hash) {
+        url += hash;
+      }
+
+      return url;
+    }
+
+    return toUrl;
+  }
+
+  function getPrevData(next, prev) {
+    return Object.keys(next).reduce(function (result, key) {
+      result[key] = prev[key];
+      return result;
+    }, {});
+  }
+  function diffData(prev, next) {
+    var empty = true;
+    var data = Object.keys(prev).reduce(function (result, key) {
+      if (prev[key] === next[key]) {
+        return result;
+      }
+
+      empty = false;
+      result[key] = next[key];
+      return result;
+    }, {});
+
+    if (empty) {
+      return;
+    }
+
+    return data;
+  }
+
+  function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
+    return function (config) {
+      var unsubscribe;
+      var ready = false;
+
+      function onStateChange() {
+        if (!unsubscribe) {
+          return;
+        }
+
+        if (mapStateToProps) {
+          var nextState = mapStateToProps(getClientStore().getState());
+          var prevState = getPrevData(nextState, this.data);
+          var updateData = diffData(prevState, nextState);
+          updateData && this.setData(diffData);
+        }
+      }
+
+      function attached() {
+        var _config$lifetimes, _config$lifetimes$att;
+
+        loadModel(moduleName);
+
+        if (mapStateToProps) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$lifetimes = config.lifetimes) === null || _config$lifetimes === void 0 ? void 0 : (_config$lifetimes$att = _config$lifetimes.attached) === null || _config$lifetimes$att === void 0 ? void 0 : _config$lifetimes$att.call(this);
+        ready = true;
+      }
+
+      function detached() {
+        var _config$lifetimes2, _config$lifetimes2$de;
+
+        (_config$lifetimes2 = config.lifetimes) === null || _config$lifetimes2 === void 0 ? void 0 : (_config$lifetimes2$de = _config$lifetimes2.detached) === null || _config$lifetimes2$de === void 0 ? void 0 : _config$lifetimes2$de.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      function show() {
+        var _config$pageLifetimes, _config$pageLifetimes2;
+
+        if (ready && mapStateToProps && !unsubscribe) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$pageLifetimes = config.pageLifetimes) === null || _config$pageLifetimes === void 0 ? void 0 : (_config$pageLifetimes2 = _config$pageLifetimes.show) === null || _config$pageLifetimes2 === void 0 ? void 0 : _config$pageLifetimes2.call(this);
+      }
+
+      function hide() {
+        var _config$pageLifetimes3, _config$pageLifetimes4;
+
+        (_config$pageLifetimes3 = config.pageLifetimes) === null || _config$pageLifetimes3 === void 0 ? void 0 : (_config$pageLifetimes4 = _config$pageLifetimes3.hide) === null || _config$pageLifetimes4 === void 0 ? void 0 : _config$pageLifetimes4.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      var mergeConfig = Object.assign({}, config, {
+        methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch)),
+        lifetimes: Object.assign({}, config.lifetimes, {
+          attached: attached,
+          detached: detached
+        }),
+        pageLifetimes: Object.assign({}, config.pageLifetimes, {
+          show: show,
+          hide: hide
+        })
+      });
+      return mergeConfig;
+    };
+  }
+
+  function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
+    return function (config) {
+      var unsubscribe;
+      var ready = false;
+
+      function onStateChange() {
+        if (!unsubscribe) {
+          return;
+        }
+
+        if (mapStateToProps) {
+          var nextState = mapStateToProps(getClientStore().getState());
+          var prevState = getPrevData(nextState, this.data);
+          var updateData = diffData(prevState, nextState);
+          updateData && this.setData(diffData);
+        }
+      }
+
+      function onLoad(option) {
+        var _config$onLoad;
+
+        loadModel(moduleName);
+
+        if (mapStateToProps) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$onLoad = config.onLoad) === null || _config$onLoad === void 0 ? void 0 : _config$onLoad.call(this, option);
+        ready = true;
+      }
+
+      function onUnload() {
+        var _config$onUnload;
+
+        (_config$onUnload = config.onUnload) === null || _config$onUnload === void 0 ? void 0 : _config$onUnload.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      function onShow() {
+        var _config$onShow;
+
+        if (ready && mapStateToProps && !unsubscribe) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$onShow = config.onShow) === null || _config$onShow === void 0 ? void 0 : _config$onShow.call(this);
+      }
+
+      function onHide() {
+        var _config$onHide;
+
+        (_config$onHide = config.onHide) === null || _config$onHide === void 0 ? void 0 : _config$onHide.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch) : {}, {
+        onLoad: onLoad,
+        onUnload: onUnload,
+        onShow: onShow,
+        onHide: onHide
+      });
+      return mergeConfig;
+    };
+  }
+
+  var historyActions = undefined;
+  var transformRoute = undefined;
+  var toBrowserUrl = undefined;
+
+  function checkRedirect(views) {
+    if (views['@']) {
+      var url = Object.keys(views['@'])[0];
+      historyActions.navigateTo(url);
+      return true;
+    }
+
+    return false;
+  }
+
+  var redirectMiddleware = function redirectMiddleware() {
+    return function (next) {
+      return function (action) {
+        if (action.type === ActionTypes.RouteChange) {
+          var routeState = action.payload[0];
+          var views = routeState.data.views;
+
+          if (checkRedirect(views)) {
+            return;
+          }
+        }
+
+        return next(action);
+      };
+    };
+  };
+
+  function buildApp(_ref) {
+    var moduleGetter = _ref.moduleGetter,
+        appModuleName = _ref.appModuleName,
+        _ref$routeConfig = _ref.routeConfig,
+        routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
+        defaultRouteParams = _ref.defaultRouteParams,
+        _ref$storeOptions = _ref.storeOptions,
+        storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
+        beforeRender = _ref.beforeRender;
+    setRouteConfig({
+      defaultRouteParams: defaultRouteParams
+    });
+    var router = createRouter(routeConfig);
+    historyActions = router.historyActions;
+    toBrowserUrl = router.toBrowserUrl;
+    transformRoute = router.transformRoute;
+
+    if (!storeOptions.middlewares) {
+      storeOptions.middlewares = [];
+    }
+
+    storeOptions.middlewares.unshift(redirectMiddleware);
+    return renderApp(function () {
+      env$1.console.log('renderer....');
+      return function () {
+        return void 0;
+      };
+    }, moduleGetter, appModuleName, router.historyProxy, storeOptions, function (store) {
+      var storeState = store.getState();
+      var views = storeState.route.data.views;
+      checkRedirect(views);
+      return beforeRender ? beforeRender({
+        store: store,
+        historyActions: historyActions,
+        toBrowserUrl: toBrowserUrl,
+        transformRoute: transformRoute
+      }) : store;
+    });
+  }
+  var exportModule$1 = exportModule;
+
   exports.ActionTypes = ActionTypes;
   exports.BaseModelHandlers = BaseModelHandlers;
+  exports.buildApp = buildApp;
+  exports.client = client;
+  exports.connectPage = connectPage;
+  exports.connectView = connectView;
   exports.delayPromise = delayPromise;
   exports.effect = effect;
+  exports.env = env;
   exports.errorAction = errorAction;
   exports.exportActions = exportActions;
+  exports.exportModule = exportModule$1;
+  exports.isDevelopmentEnv = isDevelopmentEnv;
   exports.modelHotReplacement = modelHotReplacement;
   exports.reducer = reducer;
-  exports.renderApp = renderApp;
   exports.setRouteConfig = setRouteConfig;
   exports.viewHotReplacement = viewHotReplacement;
 

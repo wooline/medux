@@ -5,17 +5,10 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 exports.__esModule = true;
 exports.fillBrowserRouteData = fillBrowserRouteData;
 exports.createRouter = createRouter;
-exports.createHashHistory = exports.createMemoryHistory = exports.createBrowserHistory = void 0;
 
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _routePlanA = require("@medux/route-plan-a");
-
-var _history = require("history");
-
-exports.createBrowserHistory = _history.createBrowserHistory;
-exports.createMemoryHistory = _history.createMemoryHistory;
-exports.createHashHistory = _history.createHashHistory;
 
 function fillBrowserRouteData(routePayload) {
   var extend = routePayload.extend || {

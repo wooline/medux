@@ -1,9 +1,9 @@
 import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';
 import { RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
-import { History } from 'history';
+import { ReadableStream } from './env';
 import { Store } from 'redux';
 import React, { ReactElement } from 'react';
-import { HistoryActions, ToBrowserUrl } from '@medux/web';
+import { History, HistoryActions, ToBrowserUrl } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';

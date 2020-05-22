@@ -23,6 +23,8 @@ var _reactRedux = require("react-redux");
 
 var _reactDom = _interopRequireDefault(require("react-dom"));
 
+var _env = require("./env");
+
 function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
@@ -37,11 +39,11 @@ function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, cont
       if (typeof container === 'function') {
         container(reduxProvider);
       } else {
-        var panel = typeof container === 'string' ? document.getElementById(container) : container;
+        var panel = typeof container === 'string' ? _env.env.document.getElementById(container) : container;
 
         _reactDom.default.unmountComponentAtNode(panel);
 
-        var render = window[ssrInitStoreKey] ? _reactDom.default.hydrate : _reactDom.default.render;
+        var render = _env.env[ssrInitStoreKey] ? _reactDom.default.hydrate : _reactDom.default.render;
         render(reduxProvider, panel);
       }
     };

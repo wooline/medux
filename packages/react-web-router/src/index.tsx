@@ -1,10 +1,10 @@
 import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
 import {RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews} from '@medux/core';
-import {History, createLocation} from 'history';
+import {ReadableStream} from './env';
 import {Store, Middleware} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
-import {HistoryActions, createRouter, ToBrowserUrl} from '@medux/web';
+import {History, HistoryActions, createRouter, ToBrowserUrl} from '@medux/web';
 
 export {loadView, exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement} from '@medux/core';
@@ -99,7 +99,15 @@ export function buildSSR({
   beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
 }): Promise<{html: string | ReadableStream; data: any; ssrInitStoreKey: string}> {
   setRouteConfig({defaultRouteParams});
-  const history: History = {listen: () => void 0, location: createLocation(location)} as any;
+  const [pathname, search = ''] = location.split('?');
+  const history: History = {
+    listen: () => void 0,
+    location: {
+      pathname,
+      search: search && '?' + search,
+      hash: '',
+    },
+  } as any;
   const router = createRouter(history, routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;

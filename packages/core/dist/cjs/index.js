@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.viewHotReplacement = exports.modelHotReplacement = exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.loadModel = exports.getActionData = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.isServer = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.routeParamsAction = exports.routeChangeAction = exports.errorAction = void 0;
+exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.loadModel = exports.getActionData = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.routeParamsAction = exports.routeChangeAction = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -16,12 +16,12 @@ exports.reducer = _basic.reducer;
 exports.config = _basic.config;
 exports.effect = _basic.effect;
 exports.logger = _basic.logger;
-exports.isServer = _basic.isServer;
 exports.setConfig = _basic.setConfig;
 exports.getClientStore = _basic.getClientStore;
 exports.delayPromise = _basic.delayPromise;
 exports.setLoading = _basic.setLoading;
 exports.setLoadingDepthTime = _basic.setLoadingDepthTime;
+exports.isServer = _basic.isServer;
 
 var _store = require("./store");
 
@@ -44,3 +44,10 @@ exports.isPromiseView = _module.isPromiseView;
 exports.getView = _module.getView;
 exports.modelHotReplacement = _module.modelHotReplacement;
 exports.viewHotReplacement = _module.viewHotReplacement;
+
+var _env = require("./env");
+
+exports.env = _env.env;
+exports.client = _env.client;
+exports.isServerEnv = _env.isServerEnv;
+exports.isDevelopmentEnv = _env.isDevelopmentEnv;

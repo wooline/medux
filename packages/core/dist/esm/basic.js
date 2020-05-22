@@ -1,4 +1,8 @@
 import { TaskCountEvent, TaskCounter } from './sprite';
+import { env, isServerEnv } from './env';
+export function isServer() {
+  return isServerEnv;
+}
 var loadings = {};
 var depthTime = 2;
 export function setLoadingDepthTime(second) {
@@ -13,7 +17,7 @@ export function setLoading(item, moduleName, groupName) {
     groupName = 'global';
   }
 
-  if (MetaData.isServer) {
+  if (isServerEnv) {
     return item;
   }
 
@@ -50,8 +54,6 @@ export function setConfig(_config) {
   _config.MSP && (config.MSP = _config.MSP);
 }
 export var MetaData = {
-  isServer: typeof global !== 'undefined' && typeof window === 'undefined',
-  isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,
@@ -64,7 +66,6 @@ export var ActionTypes = {
   Error: "medux" + config.NSP + "Error",
   RouteChange: "medux" + config.NSP + "RouteChange"
 };
-export var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 export function cacheModule(module, getter) {
   var fn = getter ? getter : function () {
     return module;
@@ -77,9 +78,6 @@ export function isPromise(data) {
 }
 export function getClientStore() {
   return MetaData.clientStore;
-}
-export function isServer() {
-  return MetaData.isServer;
 }
 export function reducer(target, key, descriptor) {
   if (!key && !descriptor) {
@@ -112,7 +110,7 @@ export function effect(loadingForGroupName, loadingForModuleName) {
 
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
-        if (!MetaData.isServer) {
+        if (!isServerEnv) {
           if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
@@ -158,7 +156,7 @@ export function delayPromise(second) {
 
     descriptor.value = function () {
       var delay = new Promise(function (resolve) {
-        setTimeout(function () {
+        env.setTimeout(function () {
           resolve(true);
         }, second * 1000);
       });

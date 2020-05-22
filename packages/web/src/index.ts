@@ -1,8 +1,27 @@
-import {History, LocationListener, UnregisterCallback} from 'history';
 import {HistoryProxy, RouteData} from '@medux/core';
 import {LocationToRoute, MeduxLocation, RouteConfig, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
 
-export {createBrowserHistory, createMemoryHistory, createHashHistory} from 'history';
+interface BrowserLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+  state: any;
+}
+
+type UnregisterCallback = () => void;
+type LocationListener = (location: BrowserLocation) => void;
+
+export interface History {
+  location: BrowserLocation;
+  push(path: string, state?: any): void;
+  push(location: BrowserLocation): void;
+  replace(path: string, state?: any): void;
+  replace(location: BrowserLocation): void;
+  go(n: number): void;
+  goBack(): void;
+  goForward(): void;
+  listen(listener: LocationListener): UnregisterCallback;
+}
 
 /**
  * 定义一种数据结构，根据此结构可以生成一个url
@@ -29,7 +48,7 @@ export interface HistoryActions<P = {}> {
   /**
    * 接受监听回调
    */
-  listen(listener: LocationListener<never>): UnregisterCallback;
+  listen(listener: LocationListener): UnregisterCallback;
   /**
    * 获取当前路由的原始路由数据
    */
@@ -64,13 +83,6 @@ export interface HistoryActions<P = {}> {
 
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
-interface BrowserLocation {
-  pathname: string;
-  search: string;
-  hash: string;
-  state: RouteData;
-}
-
 /**
  * 将浏览器的路由数据结构转换为medux标准的RouteData
  */
@@ -90,10 +102,10 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
   public initialized = true;
   public constructor(protected history: History, protected locationToRoute: LocationToRoute) {}
   public getLocation() {
-    return this.history.location as any;
+    return this.history.location;
   }
   public subscribe(listener: (location: BrowserLocation) => void) {
-    return this.history.listen(listener as any);
+    return this.history.listen(listener);
   }
   public locationToRouteData(location: BrowserLocation) {
     return location.state || this.locationToRoute(location);
@@ -105,6 +117,7 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
     this.history.push({...location, state: routeData});
   }
 }
+
 /**
  * 创建一个路由解析器
  * @param history 浏览器的history或其代理

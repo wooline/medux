@@ -1,5 +1,7 @@
 import {MeduxLocation, TransformRoute, fillRouteData} from '../index';
 
+declare let global: any;
+
 describe('routeToLocation：', () => {
   test('/', () => {
     const transformRoute: TransformRoute = global['transformRoute'];

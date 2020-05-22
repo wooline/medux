@@ -1,4 +1,4 @@
-[@medux/core - v1.0.4](../README.md) › [ModuleGetter](modulegetter.md)
+[@medux/core - v1.0.5](../README.md) › [ModuleGetter](modulegetter.md)
 
 # Interface: ModuleGetter
 

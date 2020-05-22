@@ -9,7 +9,6 @@ import {
   RouteState,
   StoreState,
   cacheModule,
-  client,
   config,
   injectActions,
   isPromise,
@@ -17,7 +16,7 @@ import {
 } from './basic';
 import {HistoryProxy, buildStore, loadModel} from './store';
 import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
-
+import {client, env, isServerEnv} from './env';
 /**
  * 模块Model的数据结构，该数据由ExportModule方法自动生成
  */
@@ -140,14 +139,14 @@ export function modelHotReplacement(moduleName: string, initState: any, ActionHa
   initState.isModule = true;
   if (prevInitState) {
     if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
+      env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
     }
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     const handlers = new ActionHandles(moduleName, store);
     const actions = injectActions(store, moduleName, handlers as any);
     (handlers as any).actions = actions;
-    console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
+    env.console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
   }
 }
 let reRender: (appView: any) => void = () => void 0;
@@ -161,13 +160,13 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
   const module = moduleGetter['__module__'] as Module;
   if (module) {
     module.default.views = views;
-    console.warn(`[HMR] @medux Updated views: ${moduleName}`);
+    env.console.warn(`[HMR] @medux Updated views: ${moduleName}`);
     appView = (MetaData.moduleGetter[MetaData.appModuleName]() as Module).default.views.Main;
     if (!reRenderTimer) {
-      reRenderTimer = setTimeout(() => {
+      reRenderTimer = env.setTimeout(() => {
         reRenderTimer = 0;
         reRender(appView);
-        console.warn(`[HMR] @medux view re rendering`);
+        env.console.warn(`[HMR] @medux view re rendering`);
       }, 0) as any;
     }
   } else {
@@ -461,7 +460,7 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
     return result.then((module) => {
       moduleGetter[moduleName] = cacheModule(module);
       const view: T = module.default.views[viewName];
-      if (MetaData.isServer) {
+      if (isServerEnv) {
         return view;
       }
       const initModel = module.default.model(MetaData.clientStore, modelOptions);
@@ -474,7 +473,7 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
   } else {
     cacheModule(result, moduleGetter[moduleName]);
     const view: T = result.default.views[viewName];
-    if (MetaData.isServer) {
+    if (isServerEnv) {
       return view;
     }
     const initModel = result.default.model(MetaData.clientStore, modelOptions);
@@ -570,7 +569,7 @@ export async function renderApp<V>(
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ): Promise<void> {
   if (reRenderTimer) {
-    clearTimeout(reRenderTimer);
+    env.clearTimeout(reRenderTimer);
     reRenderTimer = 0;
   }
   MetaData.appModuleName = appModuleName;

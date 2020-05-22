@@ -1,13 +1,13 @@
 module.exports = {
   env: {
-    browser: true,
-    node: false,
+    // browser: true,
+    es6: true,
     jest: true,
   },
   globals: {
-    Promise: true,
-    Proxy: true,
+    // Promise: true,
     global: true,
+    console: true,
   },
   parser: '@typescript-eslint/parser',
   extends: [
@@ -24,7 +24,9 @@ module.exports = {
   },
   rules: {
     'no-undef': 'error',
+    'sort-imports': 'off',
     'react/prop-types': 'off',
+    '@typescript-eslint/ban-ts-ignore': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-use-before-define': 'off',

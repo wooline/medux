@@ -1,13 +1,13 @@
 "use strict";
 
 exports.__esModule = true;
+exports.isServer = isServer;
 exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
 exports.setConfig = setConfig;
 exports.cacheModule = cacheModule;
 exports.isPromise = isPromise;
 exports.getClientStore = getClientStore;
-exports.isServer = isServer;
 exports.reducer = reducer;
 exports.effect = effect;
 exports.logger = logger;
@@ -15,9 +15,15 @@ exports.delayPromise = delayPromise;
 exports.isProcessedError = isProcessedError;
 exports.setProcessedError = setProcessedError;
 exports.injectActions = injectActions;
-exports.client = exports.ActionTypes = exports.MetaData = exports.config = void 0;
+exports.ActionTypes = exports.MetaData = exports.config = void 0;
 
 var _sprite = require("./sprite");
+
+var _env = require("./env");
+
+function isServer() {
+  return _env.isServerEnv;
+}
 
 var loadings = {};
 var depthTime = 2;
@@ -35,7 +41,7 @@ function setLoading(item, moduleName, groupName) {
     groupName = 'global';
   }
 
-  if (MetaData.isServer) {
+  if (_env.isServerEnv) {
     return item;
   }
 
@@ -76,8 +82,6 @@ function setConfig(_config) {
 }
 
 var MetaData = {
-  isServer: typeof global !== 'undefined' && typeof window === 'undefined',
-  isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,
@@ -92,8 +96,6 @@ var ActionTypes = {
   RouteChange: "medux" + config.NSP + "RouteChange"
 };
 exports.ActionTypes = ActionTypes;
-var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
-exports.client = client;
 
 function cacheModule(module, getter) {
   var fn = getter ? getter : function () {
@@ -109,10 +111,6 @@ function isPromise(data) {
 
 function getClientStore() {
   return MetaData.clientStore;
-}
-
-function isServer() {
-  return MetaData.isServer;
 }
 
 function reducer(target, key, descriptor) {
@@ -147,7 +145,7 @@ function effect(loadingForGroupName, loadingForModuleName) {
 
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
-        if (!MetaData.isServer) {
+        if (!_env.isServerEnv) {
           if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
@@ -195,7 +193,7 @@ function delayPromise(second) {
 
     descriptor.value = function () {
       var delay = new Promise(function (resolve) {
-        setTimeout(function () {
+        _env.env.setTimeout(function () {
           resolve(true);
         }, second * 1000);
       });

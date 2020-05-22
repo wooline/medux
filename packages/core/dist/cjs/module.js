@@ -23,6 +23,8 @@ var _basic = require("./basic");
 
 var _store = require("./store");
 
+var _env = require("./env");
+
 function clearHandlers(key, actionHandlerMap) {
   for (var actionName in actionHandlerMap) {
     if (actionHandlerMap.hasOwnProperty(actionName)) {
@@ -39,7 +41,7 @@ function modelHotReplacement(moduleName, initState, ActionHandles) {
 
   if (prevInitState) {
     if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      console.warn("[HMR] @medux Updated model initState: " + moduleName);
+      _env.env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
     }
 
     clearHandlers(moduleName, store._medux_.reducerMap);
@@ -47,7 +49,8 @@ function modelHotReplacement(moduleName, initState, ActionHandles) {
     var handlers = new ActionHandles(moduleName, store);
     var actions = (0, _basic.injectActions)(store, moduleName, handlers);
     handlers.actions = actions;
-    console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
+
+    _env.env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
   }
 }
 
@@ -64,14 +67,17 @@ function viewHotReplacement(moduleName, views) {
 
   if (module) {
     module.default.views = views;
-    console.warn("[HMR] @medux Updated views: " + moduleName);
+
+    _env.env.console.warn("[HMR] @medux Updated views: " + moduleName);
+
     appView = _basic.MetaData.moduleGetter[_basic.MetaData.appModuleName]().default.views.Main;
 
     if (!reRenderTimer) {
-      reRenderTimer = setTimeout(function () {
+      reRenderTimer = _env.env.setTimeout(function () {
         reRenderTimer = 0;
         reRender(appView);
-        console.warn("[HMR] @medux view re rendering");
+
+        _env.env.console.warn("[HMR] @medux view re rendering");
       }, 0);
     }
   } else {
@@ -329,7 +335,7 @@ function getView(moduleName, viewName, modelOptions) {
       moduleGetter[moduleName] = (0, _basic.cacheModule)(module);
       var view = module.default.views[viewName];
 
-      if (_basic.MetaData.isServer) {
+      if (_env.isServerEnv) {
         return view;
       }
 
@@ -347,7 +353,7 @@ function getView(moduleName, viewName, modelOptions) {
     (0, _basic.cacheModule)(result, moduleGetter[moduleName]);
     var view = result.default.views[viewName];
 
-    if (_basic.MetaData.isServer) {
+    if (_env.isServerEnv) {
       return view;
     }
 
@@ -394,7 +400,8 @@ function _renderApp() {
             }
 
             if (reRenderTimer) {
-              clearTimeout(reRenderTimer);
+              _env.env.clearTimeout(reRenderTimer);
+
               reRenderTimer = 0;
             }
 
@@ -402,8 +409,8 @@ function _renderApp() {
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             initData = {};
 
-            if (storeOptions.initData || _basic.client[ssrInitStoreKey]) {
-              initData = Object.assign({}, _basic.client[ssrInitStoreKey], {}, storeOptions.initData);
+            if (storeOptions.initData || _env.client[ssrInitStoreKey]) {
+              initData = Object.assign({}, _env.client[ssrInitStoreKey], {}, storeOptions.initData);
             }
 
             store = (0, _store.buildStore)(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);

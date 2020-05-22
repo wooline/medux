@@ -1,4 +1,5 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+import { env } from './env';
 export const TaskCountEvent = 'TaskCountEvent';
 export let LoadingState;
 
@@ -123,7 +124,7 @@ export class TaskCounter extends PDispatcher {
 
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
-        this.ctimer = setTimeout(() => {
+        this.ctimer = env.setTimeout(() => {
           this.ctimer = null;
 
           if (this.list.length > 0) {
@@ -144,7 +145,7 @@ export class TaskCounter extends PDispatcher {
 
       if (this.list.length === 0) {
         if (this.ctimer) {
-          clearTimeout(this.ctimer);
+          env.clearTimeout(this.ctimer);
           this.ctimer = null;
         }
 

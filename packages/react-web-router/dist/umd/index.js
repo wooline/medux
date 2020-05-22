@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('history'), require('react'), require('react-dom/server'), require('react-redux'), require('react-dom')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'history', 'react', 'react-dom/server', 'react-redux', 'react-dom'], factory) :
-  (global = global || self, factory(global.MeduxRWR = {}, global.History, global.React, global.ReactDOMServer, global.ReactRedux, global.ReactDOM));
-}(this, (function (exports, history, React, server, reactRedux, ReactDOM) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('react'), require('react-dom/server'), require('react-redux'), require('react-dom')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'react', 'react-dom/server', 'react-redux', 'react-dom'], factory) :
+  (global = global || self, factory(global.MeduxRWR = {}, global.React, global.ReactDOMServer, global.ReactRedux, global.ReactDOM));
+}(this, (function (exports, React, server, reactRedux, ReactDOM) { 'use strict';
 
   var React__default = 'default' in React ? React['default'] : React;
   ReactDOM = ReactDOM && Object.prototype.hasOwnProperty.call(ReactDOM, 'default') ? ReactDOM['default'] : ReactDOM;
@@ -84,6 +84,11 @@
 
     return obj;
   }
+
+  var env = typeof self == 'object' && self.self === self && self || typeof global == 'object' && global.global === global && global || undefined;
+  var isServerEnv = typeof global !== 'undefined' && typeof window === 'undefined';
+  var client = isServerEnv ? undefined : typeof window === 'undefined' ? global : window;
+  var isDevelopmentEnv = process.env.NODE_ENV !== 'production';
 
   var TaskCountEvent = 'TaskCountEvent';
 
@@ -240,7 +245,7 @@
 
         if (this.list.length === 1) {
           this.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Start));
-          this.ctimer = setTimeout(function () {
+          this.ctimer = env.setTimeout(function () {
             _this3.ctimer = null;
 
             if (_this3.list.length > 0) {
@@ -263,7 +268,7 @@
 
         if (this.list.length === 0) {
           if (this.ctimer) {
-            clearTimeout(this.ctimer);
+            env.clearTimeout(this.ctimer);
             this.ctimer = null;
           }
 
@@ -288,7 +293,7 @@
       groupName = 'global';
     }
 
-    if (MetaData.isServer) {
+    if (isServerEnv) {
       return item;
     }
 
@@ -320,8 +325,6 @@
     MSP: ','
   };
   var MetaData = {
-    isServer: typeof global !== 'undefined' && typeof window === 'undefined',
-    isDev: process.env.NODE_ENV !== 'production',
     actionCreatorMap: null,
     clientStore: null,
     appModuleName: null,
@@ -334,7 +337,6 @@
     Error: "medux" + config.NSP + "Error",
     RouteChange: "medux" + config.NSP + "RouteChange"
   };
-  var client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
   function cacheModule(module, getter) {
     var fn = getter ? getter : function () {
       return module;
@@ -376,7 +378,7 @@
 
       if (loadingForGroupName) {
         var before = function before(curAction, moduleName, promiseResult) {
-          if (!MetaData.isServer) {
+          if (!isServerEnv) {
             if (!loadingForModuleName) {
               loadingForModuleName = moduleName;
             }
@@ -406,7 +408,7 @@
 
       descriptor.value = function () {
         var delay = new Promise(function (resolve) {
-          setTimeout(function () {
+          env.setTimeout(function () {
             resolve(true);
           }, second * 1000);
         });
@@ -1035,7 +1037,8 @@
     return typeof module['then'] === 'function';
   }
 
-  function loadModel(moduleName, store, options) {
+  function loadModel(moduleName, storeInstance, options) {
+    var store = storeInstance || MetaData.clientStore;
     var hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
@@ -1200,7 +1203,7 @@
       var dispatch = _ref2.dispatch;
       return function (next) {
         return function (originalAction) {
-          if (MetaData.isServer) {
+          if (isServerEnv) {
             if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
               return originalAction;
             }
@@ -1356,14 +1359,14 @@
 
     var enhancers = [].concat(storeEnhancers, [middlewareEnhancer, enhancer]);
 
-    if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+    if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
       enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
     }
 
     var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
     bindHistory(store, history);
 
-    if (!MetaData.isServer) {
+    if (!isServerEnv) {
       MetaData.clientStore = store;
     }
 
@@ -2584,7 +2587,7 @@
 
     if (prevInitState) {
       if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-        console.warn("[HMR] @medux Updated model initState: " + moduleName);
+        env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
       }
 
       clearHandlers(moduleName, store._medux_.reducerMap);
@@ -2592,7 +2595,7 @@
       var handlers = new ActionHandles(moduleName, store);
       var actions = injectActions(store, moduleName, handlers);
       handlers.actions = actions;
-      console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
+      env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
     }
   }
 
@@ -2608,14 +2611,14 @@
 
     if (module) {
       module.default.views = views;
-      console.warn("[HMR] @medux Updated views: " + moduleName);
+      env.console.warn("[HMR] @medux Updated views: " + moduleName);
       appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views.Main;
 
       if (!reRenderTimer) {
-        reRenderTimer = setTimeout(function () {
+        reRenderTimer = env.setTimeout(function () {
           reRenderTimer = 0;
           reRender(appView);
-          console.warn("[HMR] @medux view re rendering");
+          env.console.warn("[HMR] @medux view re rendering");
         }, 0);
       }
     } else {
@@ -2865,7 +2868,7 @@
         moduleGetter[moduleName] = cacheModule(module);
         var view = module.default.views[viewName];
 
-        if (MetaData.isServer) {
+        if (isServerEnv) {
           return view;
         }
 
@@ -2883,7 +2886,7 @@
       cacheModule(result, moduleGetter[moduleName]);
       var view = result.default.views[viewName];
 
-      if (MetaData.isServer) {
+      if (isServerEnv) {
         return view;
       }
 
@@ -2930,7 +2933,7 @@
               }
 
               if (reRenderTimer) {
-                clearTimeout(reRenderTimer);
+                env.clearTimeout(reRenderTimer);
                 reRenderTimer = 0;
               }
 
@@ -4166,6 +4169,8 @@
     };
   }
 
+  var env$1 = env;
+
   function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
     if (container === void 0) {
       container = 'root';
@@ -4180,9 +4185,9 @@
         if (typeof container === 'function') {
           container(reduxProvider);
         } else {
-          var panel = typeof container === 'string' ? document.getElementById(container) : container;
+          var panel = typeof container === 'string' ? env$1.document.getElementById(container) : container;
           ReactDOM.unmountComponentAtNode(panel);
-          var render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+          var render = env$1[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
           render(reduxProvider, panel);
         }
       };
@@ -4521,13 +4526,23 @@
     setRouteConfig({
       defaultRouteParams: defaultRouteParams
     });
-    var history$1 = {
+
+    var _location$split = location.split('?'),
+        pathname = _location$split[0],
+        _location$split$ = _location$split[1],
+        search = _location$split$ === void 0 ? '' : _location$split$;
+
+    var history = {
       listen: function listen() {
         return void 0;
       },
-      location: history.createLocation(location)
+      location: {
+        pathname: pathname,
+        search: search && '?' + search,
+        hash: ''
+      }
     };
-    var router = createRouter(history$1, routeConfig);
+    var router = createRouter(history, routeConfig);
     historyActions = router.historyActions;
     toBrowserUrl = router.toBrowserUrl;
     transformRoute = router.transformRoute;
@@ -4537,7 +4552,7 @@
       checkRedirect(views, true);
       return beforeRender ? beforeRender({
         store: store,
-        history: history$1,
+        history: history,
         historyActions: historyActions,
         toBrowserUrl: toBrowserUrl,
         transformRoute: transformRoute

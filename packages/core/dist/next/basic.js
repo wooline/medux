@@ -1,11 +1,15 @@
 import { TaskCountEvent, TaskCounter } from './sprite';
+import { env, isServerEnv } from './env';
+export function isServer() {
+  return isServerEnv;
+}
 const loadings = {};
 let depthTime = 2;
 export function setLoadingDepthTime(second) {
   depthTime = second;
 }
 export function setLoading(item, moduleName = MetaData.appModuleName, groupName = 'global') {
-  if (MetaData.isServer) {
+  if (isServerEnv) {
     return item;
   }
 
@@ -40,8 +44,6 @@ export function setConfig(_config) {
   _config.MSP && (config.MSP = _config.MSP);
 }
 export const MetaData = {
-  isServer: typeof global !== 'undefined' && typeof window === 'undefined',
-  isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,
@@ -54,7 +56,6 @@ export const ActionTypes = {
   Error: `medux${config.NSP}Error`,
   RouteChange: `medux${config.NSP}RouteChange`
 };
-export const client = MetaData.isServer ? undefined : typeof window === 'undefined' ? global : window;
 export function cacheModule(module, getter) {
   const fn = getter ? getter : () => module;
   fn.__module__ = module;
@@ -65,9 +66,6 @@ export function isPromise(data) {
 }
 export function getClientStore() {
   return MetaData.clientStore;
-}
-export function isServer() {
-  return MetaData.isServer;
 }
 export function reducer(target, key, descriptor) {
   if (!key && !descriptor) {
@@ -100,7 +98,7 @@ export function effect(loadingForGroupName, loadingForModuleName) {
 
     if (loadingForGroupName) {
       const before = (curAction, moduleName, promiseResult) => {
-        if (!MetaData.isServer) {
+        if (!isServerEnv) {
           if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
@@ -146,7 +144,7 @@ export function delayPromise(second) {
 
     descriptor.value = (...args) => {
       const delay = new Promise(resolve => {
-        setTimeout(() => {
+        env.setTimeout(() => {
           resolve(true);
         }, second * 1000);
       });

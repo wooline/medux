@@ -1,6 +1,7 @@
-import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, cacheModule, client, config, isProcessedError, isPromise, setProcessedError} from './basic';
+import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, cacheModule, config, isProcessedError, isPromise, setProcessedError} from './basic';
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 import {Module, ModuleGetter} from './module';
+import {client, isDevelopmentEnv, isServerEnv} from './env';
 import {errorAction, routeChangeAction, routeParamsAction} from './actions';
 
 function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
@@ -12,7 +13,8 @@ function isPromiseModule(module: Module | Promise<Module>): module is Promise<Mo
  * @param store 当前Store的引用
  * @param options model初始化时可以传入的数据，参见Model接口
  */
-export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore, options?: any): void | Promise<void> {
+export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, storeInstance?: ModelStore, options?: any): void | Promise<void> {
+  const store = storeInstance || MetaData.clientStore;
   const hasInjected = !!store._medux_.injectedModules[moduleName];
   if (!hasInjected) {
     const moduleGetter = MetaData.moduleGetter;
@@ -177,7 +179,7 @@ export function buildStore(
     return meta.prevState;
   };
   const middleware: Middleware = ({dispatch}) => (next) => (originalAction) => {
-    if (MetaData.isServer) {
+    if (isServerEnv) {
       if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
         return originalAction;
       }
@@ -306,12 +308,12 @@ export function buildStore(
     };
   };
   const enhancers = [...storeEnhancers, middlewareEnhancer, enhancer];
-  if (MetaData.isDev && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
   const store: ModelStore = createStore(combineReducers as any, preloadedState, compose(...enhancers));
   bindHistory(store, history);
-  if (!MetaData.isServer) {
+  if (!isServerEnv) {
     MetaData.clientStore = store;
   }
   return store;

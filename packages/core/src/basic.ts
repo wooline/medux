@@ -1,13 +1,12 @@
-/*global global:true process:true*/
 import {LoadingState, TaskCountEvent, TaskCounter} from './sprite';
+import {env, isServerEnv} from './env';
 
 import {ModuleGetter} from './module';
+import {Unsubscribe} from 'redux';
 
-// export const root: {__REDUX_DEVTOOLS_EXTENSION__?: any; __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any; onerror: any; onunhandledrejection: any} = ((typeof self == 'object' &&
-//   self.self === self &&
-//   self) ||
-//   (typeof global == 'object' && global.global === global && global) ||
-//   this) as any;
+export function isServer(): boolean {
+  return isServerEnv;
+}
 
 const loadings: {[moduleName: string]: TaskCounter} = {};
 
@@ -28,7 +27,7 @@ export function setLoadingDepthTime(second: number) {
  * @param groupName moduleName+groupName合起来作为该加载项的key
  */
 export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, groupName: string = 'global'): T {
-  if (MetaData.isServer) {
+  if (isServerEnv) {
     return item;
   }
   const key = moduleName + config.NSP + groupName;
@@ -75,15 +74,11 @@ export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
   _config.MSP && (config.MSP = _config.MSP);
 }
 export const MetaData: {
-  isServer: boolean;
-  isDev: boolean;
   actionCreatorMap: ActionCreatorMap;
   clientStore: ModelStore;
   appModuleName: string;
   moduleGetter: ModuleGetter;
 } = {
-  isServer: typeof global !== 'undefined' && typeof window === 'undefined',
-  isDev: process.env.NODE_ENV !== 'production',
   actionCreatorMap: null as any,
   clientStore: null as any,
   appModuleName: null as any,
@@ -114,7 +109,7 @@ export const ActionTypes = {
    */
   RouteChange: `medux${config.NSP}RouteChange`,
 };
-export const client: Window | undefined = MetaData.isServer ? undefined : typeof window === 'undefined' ? (global as any) : window;
+
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;
 }
@@ -125,7 +120,7 @@ export type ActionCreator = (...args: any[]) => Action;
 interface Store {
   dispatch(action: Action): Action | Promise<void>;
   getState(): {[key: string]: any};
-  subscribe(listener: () => void): void;
+  subscribe(listener: () => void): Unsubscribe;
 }
 export interface ModelStore extends Store {
   _medux_: {
@@ -276,12 +271,7 @@ export function isPromise(data: any): data is Promise<any> {
 export function getClientStore() {
   return MetaData.clientStore;
 }
-/**
- * 本框架支持ssr和client only，该方法用来判断当前环境是否为服务器环境
- */
-export function isServer(): boolean {
-  return MetaData.isServer;
-}
+
 /**
  * 一个类方法的装饰器，用来指示该方法为一个reducerHandler
  * - reducerHandler必须通过dispatch Action来触发
@@ -325,7 +315,7 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
     descriptor.enumerable = true;
     if (loadingForGroupName) {
       const before = (curAction: Action, moduleName: string, promiseResult: Promise<any>) => {
-        if (!MetaData.isServer) {
+        if (!isServerEnv) {
           if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
@@ -377,7 +367,7 @@ export function delayPromise(second: number) {
     const fun = descriptor.value;
     descriptor.value = (...args: any[]) => {
       const delay = new Promise((resolve) => {
-        setTimeout(() => {
+        env.setTimeout(() => {
           resolve(true);
         }, second * 1000);
       });

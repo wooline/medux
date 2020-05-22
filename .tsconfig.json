@@ -13,8 +13,7 @@
     "strict": true,
     "newLine": "LF",
     "lib": [
-      "es2018",
-      "dom"
+      "es2018"
     ],
     "types": [
       "jest"

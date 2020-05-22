@@ -8,6 +8,7 @@ function _createSuper(Derived) { return function () { var Super = _getPrototypeO
 
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 
+import { env } from './env';
 export var TaskCountEvent = 'TaskCountEvent';
 export var LoadingState;
 
@@ -166,7 +167,7 @@ export var TaskCounter = function (_PDispatcher) {
 
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
-        this.ctimer = setTimeout(function () {
+        this.ctimer = env.setTimeout(function () {
           _this3.ctimer = null;
 
           if (_this3.list.length > 0) {
@@ -189,7 +190,7 @@ export var TaskCounter = function (_PDispatcher) {
 
       if (this.list.length === 0) {
         if (this.ctimer) {
-          clearTimeout(this.ctimer);
+          env.clearTimeout(this.ctimer);
           this.ctimer = null;
         }
 

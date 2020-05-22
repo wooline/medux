@@ -1,6 +1,5 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { assignRouteData, buildTransformRoute, deepAssign } from '@medux/route-plan-a';
-export { createBrowserHistory, createMemoryHistory, createHashHistory } from 'history';
 export function fillBrowserRouteData(routePayload) {
   var extend = routePayload.extend || {
     views: {},

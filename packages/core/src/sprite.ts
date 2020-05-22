@@ -1,3 +1,4 @@
+import {env} from './env';
 export const TaskCountEvent = 'TaskCountEvent';
 
 /**
@@ -99,7 +100,7 @@ export class PDispatcher {
 
 export class TaskCounter extends PDispatcher {
   public readonly list: {promise: Promise<any>; note: string}[] = [];
-  private ctimer: NodeJS.Timeout | null = null;
+  private ctimer: number | null = null;
   public constructor(public deferSecond: number) {
     super();
   }
@@ -113,7 +114,7 @@ export class TaskCounter extends PDispatcher {
 
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
-        this.ctimer = setTimeout(() => {
+        this.ctimer = env.setTimeout(() => {
           this.ctimer = null;
           if (this.list.length > 0) {
             this.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
@@ -129,7 +130,7 @@ export class TaskCounter extends PDispatcher {
       this.list.splice(i, 1);
       if (this.list.length === 0) {
         if (this.ctimer) {
-          clearTimeout(this.ctimer);
+          env.clearTimeout(this.ctimer);
           this.ctimer = null;
         }
 

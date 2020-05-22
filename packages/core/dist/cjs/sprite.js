@@ -15,6 +15,8 @@ var _inheritsLoose2 = _interopRequireDefault(require("@babel/runtime/helpers/inh
 
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
+var _env = require("./env");
+
 function _createSuper(Derived) { return function () { var Super = (0, _getPrototypeOf2.default)(Derived), result; if (_isNativeReflectConstruct()) { var NewTarget = (0, _getPrototypeOf2.default)(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0, _possibleConstructorReturn2.default)(this, result); }; }
 
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
@@ -179,7 +181,7 @@ var TaskCounter = function (_PDispatcher) {
 
       if (this.list.length === 1) {
         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
-        this.ctimer = setTimeout(function () {
+        this.ctimer = _env.env.setTimeout(function () {
           _this3.ctimer = null;
 
           if (_this3.list.length > 0) {
@@ -202,7 +204,8 @@ var TaskCounter = function (_PDispatcher) {
 
       if (this.list.length === 0) {
         if (this.ctimer) {
-          clearTimeout(this.ctimer);
+          _env.env.clearTimeout(this.ctimer);
+
           this.ctimer = null;
         }
 

@@ -36,9 +36,7 @@
   },
   "dependencies": {
     "@medux/core": "^1.0.5",
-    "@medux/route-plan-a": "^1.0.5",
-    "@types/history": "~4.7.2",
-    "history": "~4.10.1"
+    "@medux/route-plan-a": "^1.0.5"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

@@ -35,8 +35,7 @@
   "externals": {
     "react": true,
     "react-dom": true,
-    "react-redux": true,
-    "history": true
+    "react-redux": true
   },
   "peerDependencies": {
     "@babel/runtime": "^7.0.0",

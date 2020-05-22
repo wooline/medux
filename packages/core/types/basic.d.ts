@@ -1,5 +1,7 @@
 import { LoadingState } from './sprite';
 import { ModuleGetter } from './module';
+import { Unsubscribe } from 'redux';
+export declare function isServer(): boolean;
 export declare function setLoadingDepthTime(second: number): void;
 export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, groupName?: string): T;
 export declare const config: {
@@ -13,8 +15,6 @@ export declare function setConfig(_config: {
     MSP?: string;
 }): void;
 export declare const MetaData: {
-    isServer: boolean;
-    isDev: boolean;
     actionCreatorMap: ActionCreatorMap;
     clientStore: ModelStore;
     appModuleName: string;
@@ -27,7 +27,6 @@ export declare const ActionTypes: {
     Error: string;
     RouteChange: string;
 };
-export declare const client: Window | undefined;
 export interface ActionCreatorMap {
     [moduleName: string]: ActionCreatorList;
 }
@@ -40,7 +39,7 @@ interface Store {
     getState(): {
         [key: string]: any;
     };
-    subscribe(listener: () => void): void;
+    subscribe(listener: () => void): Unsubscribe;
 }
 export interface ModelStore extends Store {
     _medux_: {
@@ -134,7 +133,6 @@ export interface BaseModelState<R = {
 export declare function cacheModule<T>(module: T, getter?: () => T): any;
 export declare function isPromise(data: any): data is Promise<any>;
 export declare function getClientStore(): ModelStore;
-export declare function isServer(): boolean;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;
 export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;

@@ -1,6 +1,6 @@
-[@medux/core - v1.0.4](README.md)
+[@medux/core - v1.0.5](README.md)
 
-# @medux/core - v1.0.4
+# @medux/core - v1.0.5
 
 ## Index
 
@@ -33,6 +33,13 @@
 * [RootState](README.md#rootstate)
 * [RouteViews](README.md#routeviews)
 * [StoreState](README.md#storestate)
+
+### Variables
+
+* [client](README.md#const-client)
+* [env](README.md#const-env)
+* [isDevelopmentEnv](README.md#const-isdevelopmentenv)
+* [isServerEnv](README.md#const-isserverenv)
 
 ### Functions
 
@@ -183,6 +190,30 @@ ___
 Ƭ **StoreState**: *object & object*
 
 medux使用的Store数据模型结构
+
+## Variables
+
+### `Const` client
+
+• **client**: *Client | undefined* = (isServerEnv ? undefined : typeof window === 'undefined' ? global : window) as any
+
+___
+
+### `Const` env
+
+• **env**: *ENV* = (typeof self == 'object' && self.self === self && self) || (typeof global == 'object' && global.global === global && global) || this
+
+___
+
+### `Const` isDevelopmentEnv
+
+• **isDevelopmentEnv**: *boolean* = process.env.NODE_ENV !== 'production'
+
+___
+
+### `Const` isServerEnv
+
+• **isServerEnv**: *boolean* = typeof global !== 'undefined' && typeof window === 'undefined'
 
 ## Functions
 
@@ -397,15 +428,13 @@ ___
 
 ▸ **isServer**(): *boolean*
 
-本框架支持ssr和client only，该方法用来判断当前环境是否为服务器环境
-
 **Returns:** *boolean*
 
 ___
 
 ###  loadModel
 
-▸ **loadModel**<**MG**>(`moduleName`: Extract‹keyof MG, string›, `store`: ModelStore, `options?`: any): *void | Promise‹void›*
+▸ **loadModel**<**MG**>(`moduleName`: Extract‹keyof MG, string›, `storeInstance?`: ModelStore, `options?`: any): *void | Promise‹void›*
 
 动态加载并初始化其他模块的model
 
@@ -418,7 +447,7 @@ ___
 Name | Type | Description |
 ------ | ------ | ------ |
 `moduleName` | Extract‹keyof MG, string› | 要加载的模块名 |
-`store` | ModelStore | 当前Store的引用 |
+`storeInstance?` | ModelStore | - |
 `options?` | any | model初始化时可以传入的数据，参见Model接口  |
 
 **Returns:** *void | Promise‹void›*

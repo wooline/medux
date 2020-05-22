@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
+import { env } from './env';
 export function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container = 'root', beforeRender) {
   return core.renderApp((store, appModel, AppView, ssrInitStoreKey) => {
     const reRender = View => {
@@ -16,9 +17,9 @@ export function renderApp(moduleGetter, appModuleName, historyProxy, storeOption
       if (typeof container === 'function') {
         container(reduxProvider);
       } else {
-        const panel = typeof container === 'string' ? document.getElementById(container) : container;
+        const panel = typeof container === 'string' ? env.document.getElementById(container) : container;
         ReactDOM.unmountComponentAtNode(panel);
-        const render = window[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+        const render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
         render(reduxProvider, panel);
       }
     };
