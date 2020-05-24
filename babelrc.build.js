@@ -4,7 +4,7 @@ const cfg = {
   esm: {code: tag, targets: {ie: 11}},
   cjs: {code: tag, targets: {ie: 11}},
   pkg: {code: tag, targets: {chrome: 60}},
-  test: {code: tag, targets: {chrome: 60}},
+  test: {code: tag, targets: {ie: 11}},
 };
 const env = cfg[tag];
 
@@ -33,7 +33,7 @@ module.exports = function (features = []) {
         '@babel/plugin-transform-runtime',
         {
           useESModules: env.code !== 'cjs' && env.code !== 'test',
-          version: '^7.7.2',
+          version: '~7.9.6',
         },
       ],
     ],

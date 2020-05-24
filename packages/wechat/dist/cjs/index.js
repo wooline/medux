@@ -4034,36 +4034,32 @@ function isBrowserRoutePayload(data) {
 }
 
 function urlToBrowserLocation(url) {
-  var arr = url.split(/[?#]/);
+  const arr = url.split(/[?#]/);
 
   if (arr.length === 2 && url.indexOf('?') < 0) {
     arr.splice(1, 0, '');
   }
 
-  var pathname = arr[0],
-      _arr$ = arr[1],
-      search = _arr$ === void 0 ? '' : _arr$,
-      _arr$2 = arr[2],
-      hash = _arr$2 === void 0 ? '' : _arr$2;
+  const [pathname, search = '', hash = ''] = arr;
   return {
-    pathname: pathname,
+    pathname,
     search: search && '?' + search,
     hash: hash && '#' + hash
   };
 }
 
 function browserLocationToUrl(location) {
-  return location.pathname + (location.search ? "?" + location.search : '') + (location.hash ? "#" + location.hash : '');
+  return location.pathname + (location.search ? `?${location.search}` : '') + (location.hash ? `#${location.hash}` : '');
 }
 
 function fillBrowserRouteData(routePayload) {
-  var extend = routePayload.extend || {
+  const extend = routePayload.extend || {
     views: {},
     paths: [],
     stackParams: [],
     params: {}
   };
-  var stackParams = [].concat(extend.stackParams);
+  const stackParams = [...extend.stackParams];
 
   if (routePayload.params) {
     stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
@@ -4072,48 +4068,45 @@ function fillBrowserRouteData(routePayload) {
   return assignRouteData(routePayload.paths || extend.paths, stackParams);
 }
 
-var BrowserHistoryProxy = function () {
-  function BrowserHistoryProxy(history, locationToRoute) {
+class BrowserHistoryProxy {
+  constructor(history, locationToRoute) {
     this.history = history;
     this.locationToRoute = locationToRoute;
 
     _defineProperty(this, "initialized", true);
   }
 
-  var _proto = BrowserHistoryProxy.prototype;
-
-  _proto.getLocation = function getLocation() {
+  getLocation() {
     return this.history.location;
-  };
+  }
 
-  _proto.subscribe = function subscribe(listener) {
+  subscribe(listener) {
     return this.history.listen(listener);
-  };
+  }
 
-  _proto.locationToRouteData = function locationToRouteData(location) {
+  locationToRouteData(location) {
     return this.locationToRoute(location);
-  };
+  }
 
-  _proto.equal = function equal(a, b) {
+  equal(a, b) {
     return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
-  };
+  }
 
-  _proto.patch = function patch(location, routeData) {
-    var url = browserLocationToUrl(location);
+  patch(location, routeData) {
+    const url = browserLocationToUrl(location);
     this.history.reLaunch({
-      url: url
+      url
     });
-  };
+  }
 
-  return BrowserHistoryProxy;
-}();
+}
 
 function createRouter(routeConfig) {
-  var transformRoute = buildTransformRoute(routeConfig);
-  var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+  const transformRoute = buildTransformRoute(routeConfig);
+  const toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
 
-  var History = function () {
-    function History() {
+  class History {
+    constructor() {
       _defineProperty(this, "_uid", 0);
 
       _defineProperty(this, "_listenList", {});
@@ -4122,13 +4115,11 @@ function createRouter(routeConfig) {
 
       _defineProperty(this, "indexLocation", void 0);
 
-      var _env$wx$getLaunchOpti = env.wx.getLaunchOptionsSync(),
-          path = _env$wx$getLaunchOpti.path,
-          query = _env$wx$getLaunchOpti.query;
-
-      var search = Object.keys(query).map(function (key) {
-        return key + '=' + query[key];
-      }).join('&');
+      const {
+        path,
+        query
+      } = env.wx.getLaunchOptionsSync();
+      const search = Object.keys(query).map(key => key + '=' + query[key]).join('&');
       this.location = {
         pathname: path,
         search: search && '?' + search,
@@ -4137,162 +4128,140 @@ function createRouter(routeConfig) {
       this.indexLocation = this.location;
     }
 
-    var _proto2 = History.prototype;
-
-    _proto2.createWechatRouteOption = function createWechatRouteOption(option) {
+    createWechatRouteOption(option) {
       if (typeof option === 'string') {
         return {
           url: option
         };
       } else if (isBrowserRoutePayload(option)) {
-        var routeData = fillBrowserRouteData(option);
-
-        var _location = transformRoute.routeToLocation(routeData);
-
+        const routeData = fillBrowserRouteData(option);
+        const location = transformRoute.routeToLocation(routeData);
         return {
-          url: browserLocationToUrl(_location)
+          url: browserLocationToUrl(location)
         };
       } else {
         return option;
       }
-    };
+    }
 
-    _proto2.switchTab = function switchTab(option) {
-      var routeOption = this.createWechatRouteOption(option);
+    switchTab(option) {
+      const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
 
-      for (var _key in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key)) {
-          var _listener = this._listenList[_key];
-
-          _listener(this.location);
+      for (const key in this._listenList) {
+        if (this._listenList.hasOwnProperty(key)) {
+          const listener = this._listenList[key];
+          listener(this.location);
         }
       }
 
       env.wx.switchTab(routeOption);
-    };
+    }
 
-    _proto2.reLaunch = function reLaunch(option) {
-      var routeOption = this.createWechatRouteOption(option);
+    reLaunch(option) {
+      const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
 
-      for (var _key2 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key2)) {
-          var _listener2 = this._listenList[_key2];
-
-          _listener2(this.location);
+      for (const key in this._listenList) {
+        if (this._listenList.hasOwnProperty(key)) {
+          const listener = this._listenList[key];
+          listener(this.location);
         }
       }
 
       env.wx.reLaunch(routeOption);
-    };
+    }
 
-    _proto2.redirectTo = function redirectTo(option) {
-      var routeOption = this.createWechatRouteOption(option);
+    redirectTo(option) {
+      const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
 
-      for (var _key3 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key3)) {
-          var _listener3 = this._listenList[_key3];
-
-          _listener3(this.location);
+      for (const key in this._listenList) {
+        if (this._listenList.hasOwnProperty(key)) {
+          const listener = this._listenList[key];
+          listener(this.location);
         }
       }
 
       env.wx.redirectTo(routeOption);
-    };
+    }
 
-    _proto2.navigateTo = function navigateTo(option) {
-      var routeOption = this.createWechatRouteOption(option);
+    navigateTo(option) {
+      const routeOption = this.createWechatRouteOption(option);
       this.location = urlToBrowserLocation(routeOption.url);
 
-      for (var _key4 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key4)) {
-          var _listener4 = this._listenList[_key4];
-
-          _listener4(this.location);
+      for (const key in this._listenList) {
+        if (this._listenList.hasOwnProperty(key)) {
+          const listener = this._listenList[key];
+          listener(this.location);
         }
       }
 
       env.wx.navigateTo(routeOption);
-    };
+    }
 
-    _proto2.navigateBack = function navigateBack(option) {
-      var routeOption = typeof option === 'number' ? {
+    navigateBack(option) {
+      const routeOption = typeof option === 'number' ? {
         delta: option
       } : option;
-      var pages = env.getCurrentPages();
-      var currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
+      const pages = env.getCurrentPages();
+      const currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
 
       if (currentPage) {
-        var route = currentPage.route,
-            options = currentPage.options;
-
-        var _search = Object.keys(options).map(function (key) {
-          return key + '=' + options[key];
-        }).join('&');
-
+        const {
+          route,
+          options
+        } = currentPage;
+        const search = Object.keys(options).map(key => key + '=' + options[key]).join('&');
         this.location = {
           pathname: route,
-          search: _search && '?' + _search,
+          search: search && '?' + search,
           hash: ''
         };
       } else {
         this.location = this.indexLocation;
       }
 
-      for (var _key5 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key5)) {
-          var _listener5 = this._listenList[_key5];
-
-          _listener5(this.location);
+      for (const key in this._listenList) {
+        if (this._listenList.hasOwnProperty(key)) {
+          const listener = this._listenList[key];
+          listener(this.location);
         }
       }
 
       env.wx.navigateBack(routeOption);
-    };
+    }
 
-    _proto2.listen = function listen(listener) {
-      var _this = this;
-
+    listen(listener) {
       this._uid++;
-      var uid = this._uid;
+      const uid = this._uid;
       this._listenList[uid] = listener;
-      return function () {
-        delete _this._listenList[uid];
+      return () => {
+        delete this._listenList[uid];
       };
-    };
+    }
 
-    return History;
-  }();
+  }
 
-  var historyActions = new History();
-  var historyProxy = new BrowserHistoryProxy(historyActions, transformRoute.locationToRoute);
+  const historyActions = new History();
+  const historyProxy = new BrowserHistoryProxy(historyActions, transformRoute.locationToRoute);
   return {
-    transformRoute: transformRoute,
-    historyProxy: historyProxy,
-    historyActions: historyActions,
-    toBrowserUrl: toBrowserUrl
+    transformRoute,
+    historyProxy,
+    historyActions,
+    toBrowserUrl
   };
 }
 
 function buildToBrowserUrl(routeToLocation) {
-  function toUrl() {
-    for (var _len = arguments.length, args = new Array(_len), _key6 = 0; _key6 < _len; _key6++) {
-      args[_key6] = arguments[_key6];
-    }
-
+  function toUrl(...args) {
     if (args.length === 1) {
-      var _location2 = routeToLocation(fillBrowserRouteData(args[0]));
-
-      args = [_location2.pathname, _location2.search, _location2.hash];
+      const location = routeToLocation(fillBrowserRouteData(args[0]));
+      args = [location.pathname, location.search, location.hash];
     }
 
-    var _ref = args,
-        pathname = _ref[0],
-        search = _ref[1],
-        hash = _ref[2];
-    var url = pathname;
+    const [pathname, search, hash] = args;
+    let url = pathname;
 
     if (search) {
       url += search;
@@ -4309,14 +4278,14 @@ function buildToBrowserUrl(routeToLocation) {
 }
 
 function getPrevData(next, prev) {
-  return Object.keys(next).reduce(function (result, key) {
+  return Object.keys(next).reduce((result, key) => {
     result[key] = prev[key];
     return result;
   }, {});
 }
 function diffData(prev, next) {
-  var empty = true;
-  var data = Object.keys(prev).reduce(function (result, key) {
+  let empty = true;
+  const data = Object.keys(prev).reduce((result, key) => {
     if (prev[key] === next[key]) {
       return result;
     }
@@ -4334,9 +4303,9 @@ function diffData(prev, next) {
 }
 
 function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
-  return function (config) {
-    var unsubscribe;
-    var ready = false;
+  return config => {
+    let unsubscribe;
+    let ready = false;
 
     function onStateChange() {
       if (!unsubscribe) {
@@ -4344,9 +4313,9 @@ function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
       }
 
       if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState());
-        var prevState = getPrevData(nextState, this.data);
-        var updateData = diffData(prevState, nextState);
+        const nextState = mapStateToProps(getClientStore().getState());
+        const prevState = getPrevData(nextState, this.data);
+        const updateData = diffData(prevState, nextState);
         updateData && this.setData(diffData);
       }
     }
@@ -4398,15 +4367,15 @@ function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
       }
     }
 
-    var mergeConfig = Object.assign({}, config, {
+    const mergeConfig = Object.assign({}, config, {
       methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch)),
       lifetimes: Object.assign({}, config.lifetimes, {
-        attached: attached,
-        detached: detached
+        attached,
+        detached
       }),
       pageLifetimes: Object.assign({}, config.pageLifetimes, {
-        show: show,
-        hide: hide
+        show,
+        hide
       })
     });
     return mergeConfig;
@@ -4414,9 +4383,9 @@ function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
 }
 
 function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
-  return function (config) {
-    var unsubscribe;
-    var ready = false;
+  return config => {
+    let unsubscribe;
+    let ready = false;
 
     function onStateChange() {
       if (!unsubscribe) {
@@ -4424,9 +4393,9 @@ function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
       }
 
       if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState());
-        var prevState = getPrevData(nextState, this.data);
-        var updateData = diffData(prevState, nextState);
+        const nextState = mapStateToProps(getClientStore().getState());
+        const prevState = getPrevData(nextState, this.data);
+        const updateData = diffData(prevState, nextState);
         updateData && this.setData(diffData);
       }
     }
@@ -4478,23 +4447,23 @@ function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
       }
     }
 
-    var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch) : {}, {
-      onLoad: onLoad,
-      onUnload: onUnload,
-      onShow: onShow,
-      onHide: onHide
+    const mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch) : {}, {
+      onLoad,
+      onUnload,
+      onShow,
+      onHide
     });
     return mergeConfig;
   };
 }
 
-var historyActions = undefined;
-var transformRoute = undefined;
-var toBrowserUrl = undefined;
+let historyActions = undefined;
+let transformRoute = undefined;
+let toBrowserUrl = undefined;
 
 function checkRedirect(views) {
   if (views['@']) {
-    var url = Object.keys(views['@'])[0];
+    const url = Object.keys(views['@'])[0];
     historyActions.navigateTo(url);
     return true;
   }
@@ -4502,36 +4471,33 @@ function checkRedirect(views) {
   return false;
 }
 
-var redirectMiddleware = function redirectMiddleware() {
-  return function (next) {
-    return function (action) {
-      if (action.type === ActionTypes.RouteChange) {
-        var routeState = action.payload[0];
-        var views = routeState.data.views;
+const redirectMiddleware = () => next => action => {
+  if (action.type === ActionTypes.RouteChange) {
+    const routeState = action.payload[0];
+    const {
+      views
+    } = routeState.data;
 
-        if (checkRedirect(views)) {
-          return;
-        }
-      }
+    if (checkRedirect(views)) {
+      return;
+    }
+  }
 
-      return next(action);
-    };
-  };
+  return next(action);
 };
 
-function buildApp(_ref) {
-  var moduleGetter = _ref.moduleGetter,
-      appModuleName = _ref.appModuleName,
-      _ref$routeConfig = _ref.routeConfig,
-      routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
-      defaultRouteParams = _ref.defaultRouteParams,
-      _ref$storeOptions = _ref.storeOptions,
-      storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
-      beforeRender = _ref.beforeRender;
+function buildApp({
+  moduleGetter,
+  appModuleName,
+  routeConfig = {},
+  defaultRouteParams,
+  storeOptions = {},
+  beforeRender
+}) {
   setRouteConfig({
-    defaultRouteParams: defaultRouteParams
+    defaultRouteParams
   });
-  var router = createRouter(routeConfig);
+  const router = createRouter(routeConfig);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
@@ -4541,24 +4507,24 @@ function buildApp(_ref) {
   }
 
   storeOptions.middlewares.unshift(redirectMiddleware);
-  return renderApp(function () {
+  return renderApp(() => {
     env.console.log('renderer....');
-    return function () {
-      return void 0;
-    };
-  }, moduleGetter, appModuleName, router.historyProxy, storeOptions, function (store) {
-    var storeState = store.getState();
-    var views = storeState.route.data.views;
+    return () => void 0;
+  }, moduleGetter, appModuleName, router.historyProxy, storeOptions, store => {
+    const storeState = store.getState();
+    const {
+      views
+    } = storeState.route.data;
     checkRedirect(views);
     return beforeRender ? beforeRender({
-      store: store,
+      store,
       historyActions: historyActions,
       toBrowserUrl: toBrowserUrl,
       transformRoute: transformRoute
     }) : store;
   });
 }
-var exportModule$1 = exportModule;
+const exportModule$1 = exportModule;
 
 exports.ActionTypes = ActionTypes;
 exports.BaseModelHandlers = BaseModelHandlers;
