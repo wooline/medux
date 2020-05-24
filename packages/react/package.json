@@ -33,13 +33,13 @@
     "build": "yarn build:next & yarn build:esm & yarn build:cjs"
   },
   "peerDependencies": {
-    "@babel/runtime": "^7.0.0",
     "@types/react": "^16.8.0",
     "@types/react-dom": "^16.8.0",
     "react": "^16.8.0",
     "react-dom": "^16.8.0"
   },
   "dependencies": {
+    "@babel/runtime": "~7.9.0",
     "@medux/core": "^1.0.7-alpha.1",
     "@types/react-redux": "~7.1.7",
     "react-redux": "~7.2.0"

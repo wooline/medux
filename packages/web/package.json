@@ -31,10 +31,9 @@
     "build:cjs": "cross-env NODE_ENV=production NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
     "build": "yarn build:next & yarn build:esm & yarn build:cjs"
   },
-  "peerDependencies": {
-    "@babel/runtime": "^7.0.0"
-  },
+  "peerDependencies": {},
   "dependencies": {
+    "@babel/runtime": "~7.9.0",
     "@medux/core": "^1.0.7-alpha.1",
     "@medux/route-plan-a": "^1.0.7-alpha.1"
   },

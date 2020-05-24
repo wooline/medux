@@ -24,6 +24,7 @@
   },
   "externals": {},
   "dependencies": {
+    "@babel/runtime": "~7.9.0",
     "remote-redux-devtools": "0.5.16"
   }
 }

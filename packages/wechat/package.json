@@ -28,6 +28,7 @@
   },
   "externals": {},
   "dependencies": {
+    "@babel/runtime": "~7.9.0",
     "@medux/core": "^1.0.7-alpha.1",
     "@medux/route-plan-a": "^1.0.7-alpha.1"
   },

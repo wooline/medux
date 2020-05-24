@@ -7,19 +7,13 @@ exports.TaskCounter = exports.PDispatcher = exports.PEvent = exports.LoadingStat
 
 var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
-
-var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
+var _createSuper2 = _interopRequireDefault(require("@babel/runtime/helpers/createSuper"));
 
 var _inheritsLoose2 = _interopRequireDefault(require("@babel/runtime/helpers/inheritsLoose"));
 
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _env = require("./env");
-
-function _createSuper(Derived) { return function () { var Super = (0, _getPrototypeOf2.default)(Derived), result; if (_isNativeReflectConstruct()) { var NewTarget = (0, _getPrototypeOf2.default)(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0, _possibleConstructorReturn2.default)(this, result); }; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 
 var TaskCountEvent = 'TaskCountEvent';
 exports.TaskCountEvent = TaskCountEvent;
@@ -145,7 +139,7 @@ exports.PDispatcher = PDispatcher;
 var TaskCounter = function (_PDispatcher) {
   (0, _inheritsLoose2.default)(TaskCounter, _PDispatcher);
 
-  var _super = _createSuper(TaskCounter);
+  var _super = (0, _createSuper2.default)(TaskCounter);
 
   function TaskCounter(deferSecond) {
     var _this2;

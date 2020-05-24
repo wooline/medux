@@ -33,7 +33,7 @@ module.exports = function (features = []) {
         '@babel/plugin-transform-runtime',
         {
           useESModules: env.code !== 'cjs' && env.code !== 'test',
-          version: '~7.9.6',
+          version: '~7.9.0',
         },
       ],
     ],
