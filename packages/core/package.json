@@ -1,6 +1,6 @@
 {
   "name": "@medux/core",
-  "version": "1.0.7-alpha.1",
+  "version": "1.0.7-alpha.2",
   "description": "Modular state management,Suitable for various javascript frameworks.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/core",
   "author": "wooline <wooline@qq.com>",
@@ -43,7 +43,6 @@
     "build": "yarn build:next & yarn build:esm & yarn build:cjs",
     "test": "jest"
   },
-  "peerDependencies": {},
   "dependencies": {
     "@babel/runtime": "~7.9.0",
     "redux": "~4.0.5"
