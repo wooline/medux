@@ -1,0 +1,29 @@
+{
+  "name": "@medux/wechat-redux-devtools",
+  "version": "1.0.0",
+  "description": "The practice of @medux/core in wechat.",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/wechat",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "main": "index.js",
+  "types": "types/",
+  "files": [
+    "env/",
+    "types/",
+    "dist/"
+  ],
+  "scripts": {
+    "prebuild": "rimraf ./dist",
+    "build": "cross-env NODE_ENV=development NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c"
+  },
+  "externals": {},
+  "dependencies": {
+    "remote-redux-devtools": "0.5.16"
+  }
+}
