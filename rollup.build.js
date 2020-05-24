@@ -5,8 +5,9 @@ import path from 'path';
 import replace from '@rollup/plugin-replace';
 import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
+import alias from '@rollup/plugin-alias';
 
-export default function (root, moduleName, globals, replaceNodeEnv) {
+export default function (root, moduleName, globals, replaceNodeEnv, aliasEntries) {
   const nodeEnv = process.env.NODE_ENV;
   const extensions = ['.js', '.ts', '.tsx'];
   const pkgResult = {include: {}, external: {}};
@@ -19,13 +20,10 @@ export default function (root, moduleName, globals, replaceNodeEnv) {
     output:
       nodeEnv === 'production'
         ? [
-            {file: 'dist/umd/index.min.js', format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
+            moduleName && {file: 'dist/umd/index.min.js', format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
             {file: 'dist/cjs/index.min.js', format: 'cjs', plugins: [terser()], sourcemap: true},
-          ]
-        : [
-            {file: 'dist/umd/index.js', format: 'umd', name: moduleName, globals},
-            {file: 'dist/cjs/index.js', format: 'cjs'},
-          ],
+          ].filter(Boolean)
+        : [moduleName && {file: 'dist/umd/index.js', format: 'umd', name: moduleName, globals}, {file: 'dist/cjs/index.js', format: 'cjs'}].filter(Boolean),
     external: (id) => {
       const hit = externals.some((mod) => mod === id || id.startsWith(mod + '/'));
       if (hit) {
@@ -42,6 +40,10 @@ export default function (root, moduleName, globals, replaceNodeEnv) {
       return hit;
     },
     plugins: [
+      aliasEntries &&
+        alias({
+          entries: aliasEntries,
+        }),
       replaceNodeEnv && replace({'process.env.NODE_ENV': "'" + nodeEnv + "'"}),
       resolve({extensions}),
       babel({

@@ -17,7 +17,8 @@
     "packages/react-web-router",
     "packages/route-plan-a",
     "packages/web",
-    "packages/wechat"
+    "packages/wechat",
+    "packages/wechat-redux-devtools"
   ],
   "scripts": {
     "build:core": "lerna run build --scope @medux/core",
@@ -64,6 +65,7 @@
     "@rollup/plugin-commonjs": "~11.0.2",
     "@rollup/plugin-node-resolve": "~7.1.1",
     "@rollup/plugin-replace": "~2.3.2",
+    "@rollup/plugin-alias": "~3.1.0",
     "@typescript-eslint/eslint-plugin": "~2.25.0",
     "@typescript-eslint/parser": "~2.25.0",
     "copyfiles": "~2.2.0",
