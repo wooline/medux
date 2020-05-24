@@ -3,7 +3,7 @@ const cfg = {
   next: {code: tag, targets: {chrome: 80}},
   esm: {code: tag, targets: {ie: 11}},
   cjs: {code: tag, targets: {ie: 11}},
-  pkg: {code: tag, targets: {chrome: 60}},
+  pkg: {code: tag, targets: {ie: 11}},
   test: {code: tag, targets: {ie: 11}},
 };
 const env = cfg[tag];

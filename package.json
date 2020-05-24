@@ -17,8 +17,7 @@
     "packages/react-web-router",
     "packages/route-plan-a",
     "packages/web",
-    "packages/wechat",
-    "packages/wechat-redux-devtools"
+    "packages/wechat"
   ],
   "scripts": {
     "build:core": "lerna run build --scope @medux/core",

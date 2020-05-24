@@ -1,8 +1,8 @@
 {
   "name": "@medux/wechat-redux-devtools",
   "version": "1.0.0",
-  "description": "The practice of @medux/core in wechat.",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/wechat",
+  "description": "redux devtools for wechat",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/wechat-redux-devtools",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {

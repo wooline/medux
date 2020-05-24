@@ -1,1 +1,1 @@
-export default () => 'localhost';
+export default () => void 0;

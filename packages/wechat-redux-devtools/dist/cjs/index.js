@@ -451,7 +451,9 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
         return n[i].exports;
       }
 
-      for (var u = "function" == typeof commonjsRequire && commonjsRequire, i = 0; i < t.length; i++) o(t[i]);
+      for (var u = "function" == typeof commonjsRequire && commonjsRequire, i = 0; i < t.length; i++) {
+        o(t[i]);
+      }
 
       return o;
     }
@@ -592,7 +594,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
             var arr = new Uint8Array(1);
             arr.__proto__ = {
               __proto__: Uint8Array.prototype,
-              foo: function () {
+              foo: function foo() {
                 return 42;
               }
             };
@@ -604,14 +606,14 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
 
         Object.defineProperty(Buffer.prototype, 'parent', {
           enumerable: true,
-          get: function () {
+          get: function get() {
             if (!Buffer.isBuffer(this)) return undefined;
             return this.buffer;
           }
         });
         Object.defineProperty(Buffer.prototype, 'offset', {
           enumerable: true,
-          get: function () {
+          get: function get() {
             if (!Buffer.isBuffer(this)) return undefined;
             return this.byteOffset;
           }
@@ -2386,7 +2388,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
     }, {}],
     5: [function (require, module, exports) {
 
-      var stringifyPrimitive = function (v) {
+      var stringifyPrimitive = function stringifyPrimitive(v) {
         switch (typeof v) {
           case 'string':
             return v;
@@ -2489,7 +2491,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
     }],
     8: [function (require, module, exports) {
       (function (global) {
-        var AuthEngine = function () {
+        var AuthEngine = function AuthEngine() {
           this._internalStorage = {};
           this.isLocalStorageEnabled = this._checkLocalStorageEnabled();
         };
@@ -2686,7 +2688,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
 
       var InvalidActionError = scErrors.InvalidActionError;
 
-      var Response = function (socket, id) {
+      var Response = function Response(socket, id) {
         this.socket = socket;
         this.id = id;
         this.sent = false;
@@ -2777,7 +2779,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
         var BadConnectionError = scErrors.BadConnectionError;
         var isBrowser = typeof window !== 'undefined';
 
-        var SCClientSocket = function (opts) {
+        var SCClientSocket = function SCClientSocket(opts) {
           var self = this;
           Emitter.call(this);
           this.id = null;
@@ -2800,7 +2802,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
           this._clientMap = opts.clientMap || {};
           var maxTimeout = Math.pow(2, 31) - 1;
 
-          var verifyDuration = function (propertyName) {
+          var verifyDuration = function verifyDuration(propertyName) {
             if (self[propertyName] > maxTimeout) {
               throw new InvalidArgumentsError('The ' + propertyName + ' value provided exceeded the maximum amount allowed');
             }
@@ -2916,7 +2918,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
         SCClientSocket.ignoreStatuses = scErrors.socketProtocolIgnoreStatuses;
         SCClientSocket.errorStatuses = scErrors.socketProtocolErrorStatuses;
         SCClientSocket.prototype._privateEventHandlerMap = {
-          '#publish': function (data) {
+          '#publish': function publish(data) {
             var undecoratedChannelName = this._undecorateChannelName(data.channel);
 
             var isSubscribed = this.isSubscribed(undecoratedChannelName, true);
@@ -2925,7 +2927,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
               this._channelEmitter.emit(undecoratedChannelName, data.data);
             }
           },
-          '#kickOut': function (data) {
+          '#kickOut': function kickOut(data) {
             var undecoratedChannelName = this._undecorateChannelName(data.channel);
 
             var channel = this.channels[undecoratedChannelName];
@@ -2937,11 +2939,11 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
               this._triggerChannelUnsubscribe(channel);
             }
           },
-          '#setAuthToken': function (data, response) {
+          '#setAuthToken': function setAuthToken(data, response) {
             var self = this;
 
             if (data) {
-              var triggerAuthenticate = function (err) {
+              var triggerAuthenticate = function triggerAuthenticate(err) {
                 if (err) {
                   response.error(err);
 
@@ -2958,7 +2960,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
               response.error(new InvalidMessageError('No token data provided by #setAuthToken event'));
             }
           },
-          '#removeAuthToken': function (data, response) {
+          '#removeAuthToken': function removeAuthToken(data, response) {
             var self = this;
             this.auth.removeToken(this.authTokenName, function (err, oldToken) {
               if (err) {
@@ -2974,7 +2976,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
               }
             });
           },
-          '#disconnect': function (data) {
+          '#disconnect': function disconnect(data) {
             this.transport.close(data.code, data.data);
           }
         };
@@ -3792,7 +3794,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
       var TimeoutError = scErrors.TimeoutError;
       var BadConnectionError = scErrors.BadConnectionError;
 
-      var WCTransport = function (authEngine, codecEngine, options) {
+      var WCTransport = function WCTransport(authEngine, codecEngine, options) {
         var self = this;
         this.state = this.CLOSED;
         this.auth = authEngine;
@@ -4234,21 +4236,21 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
             root = freeGlobal;
           }
 
-          var InvalidCharacterError = function (message) {
+          var InvalidCharacterError = function InvalidCharacterError(message) {
             this.message = message;
           };
 
           InvalidCharacterError.prototype = new Error();
           InvalidCharacterError.prototype.name = 'InvalidCharacterError';
 
-          var error = function (message) {
+          var error = function error(message) {
             throw new InvalidCharacterError(message);
           };
 
           var TABLE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
           var REGEX_SPACE_CHARACTERS = /[\t\n\f\r ]/g;
 
-          var decode = function (input) {
+          var decode = function decode(input) {
             input = String(input).replace(REGEX_SPACE_CHARACTERS, '');
             var length = input.length;
 
@@ -4279,7 +4281,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
             return output;
           };
 
-          var encode = function (input) {
+          var encode = function encode(input) {
             input = String(input);
 
             if (/[^\0-\xFF]/.test(input)) {
@@ -4349,7 +4351,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
           try {
             nativeMap = Map;
           } catch (_) {
-            nativeMap = function () {};
+            nativeMap = function nativeMap() {};
           }
 
           var nativeSet;
@@ -4357,7 +4359,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
           try {
             nativeSet = Set;
           } catch (_) {
-            nativeSet = function () {};
+            nativeSet = function nativeSet() {};
           }
 
           var nativePromise;
@@ -4365,7 +4367,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
           try {
             nativePromise = Promise;
           } catch (_) {
-            nativePromise = function () {};
+            nativePromise = function nativePromise() {};
           }
 
           function clone(parent, circular, depth, prototype, includeNonEnumerable) {
@@ -4518,7 +4520,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
           clone.clonePrototype = function clonePrototype(parent) {
             if (parent === null) return null;
 
-            var c = function () {};
+            var c = function c() {};
 
             c.prototype = parent;
             return new c();
@@ -4881,7 +4883,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
     18: [function (require, module, exports) {
       var Emitter = require('component-emitter');
 
-      var SCChannel = function (name, client, options) {
+      var SCChannel = function SCChannel(name, client, options) {
         Emitter.call(this);
         this.PENDING = 'pending';
         this.SUBSCRIBED = 'subscribed';
@@ -5342,7 +5344,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
         var base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         var validJSONStartRegex = /^[ \n\r\t]*[{\[]/;
 
-        var arrayBufferToBase64 = function (arraybuffer) {
+        var arrayBufferToBase64 = function arrayBufferToBase64(arraybuffer) {
           var bytes = new Uint8Array(arraybuffer);
           var len = bytes.length;
           var base64 = '';
@@ -5363,7 +5365,7 @@ var socketclusterClient = createCommonjsModule(function (module, exports) {
           return base64;
         };
 
-        var binaryToBase64Replacer = function (key, value) {
+        var binaryToBase64Replacer = function binaryToBase64Replacer(key, value) {
           if (global.ArrayBuffer && value instanceof global.ArrayBuffer) {
             return {
               base64: true,
@@ -8408,7 +8410,9 @@ var defaultSocketOptions = exports.defaultSocketOptions = {
 unwrapExports(constants);
 var constants_1 = constants.defaultSocketOptions;
 
-var _rnHostDetect = (() => 'localhost');
+var _rnHostDetect = (function () {
+  return void 0;
+});
 
 var getParams = createCommonjsModule(function (module) {
 /* global window */
