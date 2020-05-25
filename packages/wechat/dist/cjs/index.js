@@ -3523,18 +3523,12 @@ function matchPath(pathname, options) {
   }, null);
 }
 
-var deepExtend_1 = createCommonjsModule(function (module) {
-
 function isSpecificValue(val) {
-  return val instanceof Buffer || val instanceof Date || val instanceof RegExp ? true : false;
+  return val instanceof Date || val instanceof RegExp ? true : false;
 }
 
 function cloneSpecificValue(val) {
-  if (val instanceof Buffer) {
-    var x = Buffer.alloc ? Buffer.alloc(val.length) : new Buffer(val.length);
-    val.copy(x);
-    return x;
-  } else if (val instanceof Date) {
+  if (val instanceof Date) {
     return new Date(val.getTime());
   } else if (val instanceof RegExp) {
     return new RegExp(val);
@@ -3542,10 +3536,6 @@ function cloneSpecificValue(val) {
     throw new Error('Unexpected situation');
   }
 }
-/**
- * Recursive cloning array.
- */
-
 
 function deepCloneArray(arr) {
   var clone = [];
@@ -3568,20 +3558,12 @@ function deepCloneArray(arr) {
 function safeGetProperty(object, property) {
   return property === '__proto__' ? undefined : object[property];
 }
-/**
- * Extening object that entered in first argument.
- *
- * Returns extended object or false if have no target object or incorrect type.
- *
- * If you wish to clone source object (without modify it), just use empty new
- * object as first argument, like this:
- *   deepExtend({}, yourObj_1, [yourObj_N]);
- */
 
+function deepExtend() {
+  for (var _len = arguments.length, datas = new Array(_len), _key = 0; _key < _len; _key++) {
+    datas[_key] = arguments[_key];
+  }
 
-var deepExtend = module.exports = function ()
-/*obj_1, [obj_2], [obj_N]*/
-{
   if (arguments.length < 1 || typeof arguments[0] !== 'object') {
     return false;
   }
@@ -3590,40 +3572,32 @@ var deepExtend = module.exports = function ()
     return arguments[0];
   }
 
-  var target = arguments[0]; // convert arguments to array and cut off target object
-
+  var target = arguments[0];
   var args = Array.prototype.slice.call(arguments, 1);
   var val, src;
   args.forEach(function (obj) {
-    // skip argument if isn't an object, is null, or is an array
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
     }
 
     Object.keys(obj).forEach(function (key) {
-      src = safeGetProperty(target, key); // source value
-
-      val = safeGetProperty(obj, key); // new value
-      // recursion prevention
+      src = safeGetProperty(target, key);
+      val = safeGetProperty(obj, key);
 
       if (val === target) {
         return;
-        /**
-         * if new value isn't object then just overwrite by new value
-         * instead of extending.
-         */
       } else if (typeof val !== 'object' || val === null) {
         target[key] = val;
-        return; // just clone arrays (and recursive clone objects inside)
+        return;
       } else if (Array.isArray(val)) {
         target[key] = deepCloneArray(val);
-        return; // custom cloning and overwrite for specific objects
+        return;
       } else if (isSpecificValue(val)) {
         target[key] = cloneSpecificValue(val);
-        return; // overwrite by new value if source isn't object or array
+        return;
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
         target[key] = deepExtend({}, val);
-        return; // source value and new value is objects both, extending...
+        return;
       } else {
         target[key] = deepExtend(src, val);
         return;
@@ -3631,10 +3605,9 @@ var deepExtend = module.exports = function ()
     });
   });
   return target;
-};
-});
+}
 
-var deepAssign = deepExtend_1;
+var deepAssign = deepExtend;
 var config$1 = {
   escape: true,
   dateParse: false,
@@ -3861,7 +3834,7 @@ function assignRouteData(paths, stackParams, args) {
   }
 
   if (args) {
-    stackParams[0] = deepExtend_1({}, args, stackParams[0]);
+    stackParams[0] = deepExtend({}, args, stackParams[0]);
   }
 
   var firstStackParams = stackParams[0];
@@ -3885,12 +3858,12 @@ function assignRouteData(paths, stackParams, args) {
     return prev;
   }, {});
   Object.keys(firstStackParams).forEach(function (moduleName) {
-    firstStackParams[moduleName] = deepExtend_1({}, config$1.defaultRouteParams[moduleName], firstStackParams[moduleName]);
+    firstStackParams[moduleName] = deepExtend({}, config$1.defaultRouteParams[moduleName], firstStackParams[moduleName]);
   });
-  var params = deepExtend_1.apply(void 0, [{}].concat(stackParams));
+  var params = deepExtend.apply(void 0, [{}].concat(stackParams));
   Object.keys(params).forEach(function (moduleName) {
     if (!firstStackParams[moduleName]) {
-      params[moduleName] = deepExtend_1({}, config$1.defaultRouteParams[moduleName], params[moduleName]);
+      params[moduleName] = deepExtend({}, config$1.defaultRouteParams[moduleName], params[moduleName]);
     }
   });
   return {
@@ -3960,7 +3933,7 @@ function buildTransformRoute(routeConfig, pathnameMap) {
           stackParams[index] = {};
         }
 
-        deepExtend_1(stackParams[index], item);
+        deepExtend(stackParams[index], item);
       }
     });
     return assignRouteData(paths, stackParams, pathsArgs);
@@ -3976,7 +3949,7 @@ function buildTransformRoute(routeConfig, pathnameMap) {
     var firstStackParamsFilter;
 
     if (paths.length > 0) {
-      firstStackParamsFilter = deepExtend_1({}, firstStackParams);
+      firstStackParamsFilter = deepExtend({}, firstStackParams);
       paths.reduce(function (parentAbsoluteViewName, viewName, index) {
         var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
         var rule = viewToRule[absoluteViewName];

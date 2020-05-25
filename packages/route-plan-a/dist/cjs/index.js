@@ -13,7 +13,7 @@ var _core = require("@medux/core");
 
 var _matchPath = require("./matchPath");
 
-var _deepExtend = _interopRequireDefault(require("deep-extend"));
+var _deepExtend = _interopRequireDefault(require("./deep-extend"));
 
 var deepAssign = _deepExtend.default;
 exports.deepAssign = deepAssign;

@@ -1,4 +1,5 @@
 import { RouteData } from '@medux/core';
+import assignDeep from './deep-extend';
 export interface MeduxLocation {
     pathname: string;
     search: string;
@@ -10,7 +11,7 @@ export interface TransformRoute {
     locationToRoute: LocationToRoute;
     routeToLocation: RouteToLocation;
 }
-export declare const deepAssign: any;
+export declare const deepAssign: typeof assignDeep;
 export declare function setRouteConfig(conf: {
     escape?: boolean;
     dateParse?: boolean;
