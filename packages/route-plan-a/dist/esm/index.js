@@ -328,15 +328,16 @@ function extractHashData(params) {
   };
 }
 
-export function buildTransformRoute(routeConfig) {
+export function buildTransformRoute(routeConfig, pathnameMap) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
       ruleToKeys = _compileConfig.ruleToKeys;
 
   var locationToRoute = function locationToRoute(location) {
+    var pathname = pathnameMap ? pathnameMap.in(location.pathname) : location.pathname;
     var paths = [];
     var pathsArgs = {};
-    pathnameParse(location.pathname, routeConfig, paths, pathsArgs);
+    pathnameParse(pathname, routeConfig, paths, pathsArgs);
     var stackParams = splitSearch(location.search);
     var hashStackParams = splitSearch(location.hash);
     hashStackParams.forEach(function (item, index) {
@@ -431,7 +432,7 @@ export function buildTransformRoute(routeConfig) {
       hash && (hashStrings[index] = hash);
     });
     return {
-      pathname: pathname,
+      pathname: pathnameMap ? pathnameMap.out(pathname) : pathname,
       search: '?' + joinSearchString(searchStrings).substr(1),
       hash: '#' + joinSearchString(hashStrings).substr(1)
     };

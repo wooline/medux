@@ -338,7 +338,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     };
   };
 
-  var enhancers = [].concat(storeEnhancers, [middlewareEnhancer, enhancer]);
+  var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
 
   if (_env.isDevelopmentEnv && _env.client && _env.client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(_env.client.__REDUX_DEVTOOLS_EXTENSION__(_env.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));

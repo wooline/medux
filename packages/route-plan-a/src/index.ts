@@ -306,18 +306,20 @@ function extractHashData(params: {[moduleName: string]: any}) {
     hash: searchStringify(hashParams),
   };
 }
+type PathNameMap = (pathname: string) => string;
 /**
  * 创建一个浏览器的Location与medux内部使用的RouteData相互转换器
  * @param 应用的路由配置文件
  * @returns 转换器
  */
-export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
+export function buildTransformRoute(routeConfig: RouteConfig, pathnameMap?: {in: PathNameMap; out: PathNameMap}): TransformRoute {
   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 
   const locationToRoute: LocationToRoute = (location) => {
+    const pathname = pathnameMap ? pathnameMap.in(location.pathname) : location.pathname;
     const paths: string[] = [];
     const pathsArgs: {[moduleName: string]: {[key: string]: any}} = {};
-    pathnameParse(location.pathname, routeConfig, paths, pathsArgs);
+    pathnameParse(pathname, routeConfig, paths, pathsArgs);
     const stackParams = splitSearch(location.search);
     const hashStackParams = splitSearch(location.hash);
     hashStackParams.forEach((item, index) => {
@@ -398,7 +400,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
     });
 
     return {
-      pathname,
+      pathname: pathnameMap ? pathnameMap.out(pathname) : pathname,
       search: '?' + joinSearchString(searchStrings).substr(1),
       hash: '#' + joinSearchString(hashStrings).substr(1),
     };

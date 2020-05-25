@@ -307,7 +307,7 @@ export function buildStore(
       return newStore;
     };
   };
-  const enhancers = [...storeEnhancers, middlewareEnhancer, enhancer];
+  const enhancers = [middlewareEnhancer, enhancer, ...storeEnhancers];
   if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }

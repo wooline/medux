@@ -197,6 +197,23 @@ describe('routeToLocation：', () => {
       hash: '#q={"photos":{"_listKey":"sdk"}}&q={"comments":{"_listKey":"dba"}}',
     });
   });
+
+  test('shortcuts?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}#q={"photos":{"_listKey":"sdk"}}&q={"comments":{"_listKey":"dba"}}', () => {
+    const transformRoute: TransformRoute = global['transformRouteWithMap'];
+    const route = fillRouteData<{}>({
+      paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.Details'],
+      stackParams: [
+        {photos: {_listKey: 'sdk', itemId: '2', listSearch: {pageSize: 20}}, comments: {articleType: 'photos', articleId: '2'}},
+        {photos: {listSearch: {page: 2}}, comments: {_listKey: 'dba', itemId: '9'}},
+      ],
+    });
+    const location = transformRoute.routeToLocation(route);
+    expect(location).toEqual({
+      pathname: '/shortcuts',
+      search: '?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}',
+      hash: '#q={"photos":{"_listKey":"sdk"}}&q={"comments":{"_listKey":"dba"}}',
+    });
+  });
 });
 
 describe('locationToRoute：', () => {
@@ -518,6 +535,33 @@ describe('locationToRoute：', () => {
 
   test('/photos/2/comments/8/99?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf', () => {
     const transformRoute: TransformRoute = global['transformRoute'];
+    const location: MeduxLocation = {
+      pathname: '/photos/2/comments/8/99',
+      search: '?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
+      hash: '#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf',
+    };
+    const route = transformRoute.locationToRoute(location);
+    expect(route).toEqual({
+      views: {app: {Main: true}, photos: {Details: true}, comments: {Main: true, DetailsList: true}},
+      paths: ['app.Main', 'photos.Details', 'comments.Main', 'comments.DetailsList'],
+      params: {
+        photos: {_detailKey: '', _listKey: 'sdk', itemId: '2', listSearch: {title: '', page: 4, pageSize: 10}},
+        comments: {_detailKey: '', _listKey: 'bde', itemId: '8', articleType: 'photos', articleId: '2', listSearch: {isNewest: false, page: 5, pageSize: 10}},
+        app: {},
+      },
+      stackParams: [
+        {
+          photos: {_detailKey: '', _listKey: '', itemId: '2', listSearch: {title: '', page: 1, pageSize: 10}},
+          comments: {_detailKey: '', _listKey: '', itemId: '8', articleType: 'photos', articleId: '2', listSearch: {isNewest: false, page: '99', pageSize: 10}},
+          app: {},
+        },
+        {photos: {_listKey: 'sdk', listSearch: {page: 4}}, comments: {_listKey: 'bde', listSearch: {page: 5}}},
+      ],
+    });
+  });
+
+  test('/shortcuts?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}#q=&q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"bde"}}&b=swf', () => {
+    const transformRoute: TransformRoute = global['transformRouteWithMap'];
     const location: MeduxLocation = {
       pathname: '/photos/2/comments/8/99',
       search: '?q=&b=swf&q={"photos":{"listSearch":{"page":4}},"comments":{"listSearch":{"page":5}}}',
