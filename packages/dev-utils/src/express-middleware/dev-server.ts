@@ -38,7 +38,7 @@ export = function middleware(enableSSR: boolean, proxyMap: {[key: string]: any} 
     if (passUrls.some((reg) => mm.isMatch(req.url, reg))) {
       next();
     } else {
-      Promise.all([ajax.get(`${req.protocol}://${req.headers.host}/server/main.js`), ajax.get(`${req.protocol}://${req.headers.host}/index.html`)]).then(([main, tpl]) => {
+      Promise.all([ajax.get(`${req.protocol}://${req.headers.host}/server/js/main.js`), ajax.get(`${req.protocol}://${req.headers.host}/index.html`)]).then(([main, tpl]) => {
         let htmlTpl: string = tpl.data;
         const arr = htmlTpl.match(/<!--\s*{server-script}\s*-->\s*<script[^>]*>([\s\S]+?)<\/script>/m);
         if (arr) {

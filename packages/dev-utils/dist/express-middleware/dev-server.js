@@ -38,7 +38,7 @@ module.exports = function middleware(enableSSR, proxyMap, replaceTpl) {
             next();
         }
         else {
-            Promise.all([ajax.get(`${req.protocol}://${req.headers.host}/server/main.js`), ajax.get(`${req.protocol}://${req.headers.host}/index.html`)]).then(([main, tpl]) => {
+            Promise.all([ajax.get(`${req.protocol}://${req.headers.host}/server/js/main.js`), ajax.get(`${req.protocol}://${req.headers.host}/index.html`)]).then(([main, tpl]) => {
                 let htmlTpl = tpl.data;
                 const arr = htmlTpl.match(/<!--\s*{server-script}\s*-->\s*<script[^>]*>([\s\S]+?)<\/script>/m);
                 if (arr) {

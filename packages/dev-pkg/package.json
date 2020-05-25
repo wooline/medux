@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-pkg",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
   "author": "wooline <wooline@qq.com>",
@@ -14,7 +14,6 @@
   "dependencies": {
     "@babel/cli": "~7.8.4",
     "@babel/core": "~7.9.0",
-    "@babel/runtime": "~7.9.0",
     "@babel/plugin-proposal-class-properties": "~7.8.3",
     "@babel/plugin-proposal-decorators": "~7.8.3",
     "@babel/plugin-proposal-nullish-coalescing-operator": "~7.8.3",
