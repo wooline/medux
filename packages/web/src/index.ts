@@ -1,5 +1,5 @@
 import {HistoryProxy, RouteData} from '@medux/core';
-import {LocationToRoute, MeduxLocation, RouteConfig, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
+import {LocationToRoute, MeduxLocation, RouteConfig, PathnameMap, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
 
 interface BrowserLocation {
   pathname: string;
@@ -124,8 +124,8 @@ class BrowserHistoryProxy implements HistoryProxy<BrowserLocation> {
  * @param routeConfig 应用的路由配置文件
  * @returns {transformRoute,historyProxy,historyActions,toBrowserUrl}
  */
-export function createRouter(history: History, routeConfig: RouteConfig) {
-  const transformRoute: TransformRoute = buildTransformRoute(routeConfig);
+export function createRouter(history: History, routeConfig: RouteConfig, pathnameMap?: PathnameMap) {
+  const transformRoute: TransformRoute = buildTransformRoute(routeConfig, pathnameMap);
   const toBrowserUrl: ToBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   const historyProxy: HistoryProxy<BrowserLocation> = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
 

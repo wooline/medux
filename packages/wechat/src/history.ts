@@ -1,5 +1,5 @@
 import {HistoryProxy, RouteData, env} from '@medux/core';
-import {LocationToRoute, MeduxLocation, RouteConfig, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
+import {LocationToRoute, MeduxLocation, RouteConfig, PathnameMap, RouteToLocation, TransformRoute, assignRouteData, buildTransformRoute, deepAssign} from '@medux/route-plan-a';
 
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
@@ -92,8 +92,8 @@ class BrowserHistoryProxy implements HistoryProxy<MeduxLocation> {
  * @param routeConfig 应用的路由配置文件
  * @returns {transformRoute,historyProxy,historyActions,toBrowserUrl}
  */
-export function createRouter(routeConfig: RouteConfig) {
-  const transformRoute: TransformRoute = buildTransformRoute(routeConfig);
+export function createRouter(routeConfig: RouteConfig, pathnameMap?: PathnameMap) {
+  const transformRoute: TransformRoute = buildTransformRoute(routeConfig, pathnameMap);
   const toBrowserUrl: ToBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   class History<P = {}> implements HistoryActions {
     private _uid = 0;

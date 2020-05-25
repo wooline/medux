@@ -55,8 +55,8 @@ var BrowserHistoryProxy = function () {
   return BrowserHistoryProxy;
 }();
 
-export function createRouter(history, routeConfig) {
-  var transformRoute = buildTransformRoute(routeConfig);
+export function createRouter(history, routeConfig, pathnameMap) {
+  var transformRoute = buildTransformRoute(routeConfig, pathnameMap);
   var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   var historyActions = {

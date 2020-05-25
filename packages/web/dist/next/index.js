@@ -52,8 +52,8 @@ class BrowserHistoryProxy {
 
 }
 
-export function createRouter(history, routeConfig) {
-  const transformRoute = buildTransformRoute(routeConfig);
+export function createRouter(history, routeConfig, pathnameMap) {
+  const transformRoute = buildTransformRoute(routeConfig, pathnameMap);
   const toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   const historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   const historyActions = {

@@ -9,10 +9,11 @@ export { ActionTypes, delayPromise, client, env, isDevelopmentEnv, LoadingState,
 export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
 export type { RouteConfig } from '@medux/route-plan-a';
-export declare function buildApp({ moduleGetter, appModuleName, routeConfig, defaultRouteParams, storeOptions, beforeRender, }: {
+export declare function buildApp({ moduleGetter, appModuleName, routeConfig, pathnameMap, defaultRouteParams, storeOptions, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName: string;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
+    pathnameMap?: import('@medux/route-plan-a').PathnameMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };

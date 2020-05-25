@@ -4364,8 +4364,8 @@ var BrowserHistoryProxy = function () {
   return BrowserHistoryProxy;
 }();
 
-function createRouter(history, routeConfig) {
-  var transformRoute = buildTransformRoute(routeConfig);
+function createRouter(history, routeConfig, pathnameMap) {
+  var transformRoute = buildTransformRoute(routeConfig, pathnameMap);
   var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   var historyActions = {
@@ -4509,6 +4509,7 @@ function buildApp(_ref) {
       history = _ref.history,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
+      pathnameMap = _ref.pathnameMap,
       defaultRouteParams = _ref.defaultRouteParams,
       _ref$storeOptions = _ref.storeOptions,
       storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
@@ -4518,7 +4519,7 @@ function buildApp(_ref) {
   setRouteConfig({
     defaultRouteParams: defaultRouteParams
   });
-  var router = createRouter(history, routeConfig);
+  var router = createRouter(history, routeConfig, pathnameMap);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;

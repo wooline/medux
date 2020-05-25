@@ -307,12 +307,14 @@ function extractHashData(params: {[moduleName: string]: any}) {
   };
 }
 type PathNameMap = (pathname: string) => string;
+
+export type PathnameMap = {in: PathNameMap; out: PathNameMap};
 /**
  * 创建一个浏览器的Location与medux内部使用的RouteData相互转换器
  * @param 应用的路由配置文件
  * @returns 转换器
  */
-export function buildTransformRoute(routeConfig: RouteConfig, pathnameMap?: {in: PathNameMap; out: PathNameMap}): TransformRoute {
+export function buildTransformRoute(routeConfig: RouteConfig, pathnameMap?: PathnameMap): TransformRoute {
   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 
   const locationToRoute: LocationToRoute = (location) => {

@@ -54,6 +54,7 @@ export function buildApp({
   moduleGetter,
   appModuleName,
   routeConfig = {},
+  pathnameMap,
   defaultRouteParams,
   storeOptions = {},
   beforeRender,
@@ -61,12 +62,13 @@ export function buildApp({
   moduleGetter: ModuleGetter;
   appModuleName: string;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
+  pathnameMap?: import('@medux/route-plan-a').PathnameMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   beforeRender?: (data: {store: Store<StoreState>; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
 }) {
   setRouteConfig({defaultRouteParams});
-  const router = createRouter(routeConfig);
+  const router = createRouter(routeConfig, pathnameMap);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;

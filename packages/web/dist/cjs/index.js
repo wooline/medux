@@ -64,8 +64,8 @@ var BrowserHistoryProxy = function () {
   return BrowserHistoryProxy;
 }();
 
-function createRouter(history, routeConfig) {
-  var transformRoute = (0, _routePlanA.buildTransformRoute)(routeConfig);
+function createRouter(history, routeConfig, pathnameMap) {
+  var transformRoute = (0, _routePlanA.buildTransformRoute)(routeConfig, pathnameMap);
   var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   var historyActions = {
