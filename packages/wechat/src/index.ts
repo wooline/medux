@@ -25,7 +25,7 @@ export {setRouteConfig} from '@medux/route-plan-a';
 
 export type {Actions, RouteData, RouteViews, BaseModelState} from '@medux/core';
 
-export type {RouteConfig} from '@medux/route-plan-a';
+export type {RouteConfig, PathnameMap} from '@medux/route-plan-a';
 
 let historyActions: HistoryActions | undefined = undefined;
 let transformRoute: TransformRoute | undefined = undefined;

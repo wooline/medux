@@ -4374,7 +4374,7 @@ function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
 
       if (mapStateToProps) {
         var nextState = mapStateToProps(getClientStore().getState());
-        var prevState = getPrevData(nextState, this.data);
+        var prevState = getPrevData(nextState, this.data || {});
         var updateData = diffData(prevState, nextState);
         updateData && this.setData(diffData);
       }
@@ -4454,7 +4454,7 @@ function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
 
       if (mapStateToProps) {
         var nextState = mapStateToProps(getClientStore().getState());
-        var prevState = getPrevData(nextState, this.data);
+        var prevState = getPrevData(nextState, this.data || {});
         var updateData = diffData(prevState, nextState);
         updateData && this.setData(diffData);
       }

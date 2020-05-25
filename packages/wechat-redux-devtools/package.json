@@ -1,6 +1,6 @@
 {
   "name": "@medux/wechat-redux-devtools",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "redux devtools for wechat",
   "repository": "https://github.com/wooline/medux/tree/master/packages/wechat-redux-devtools",
   "author": "wooline <wooline@qq.com>",

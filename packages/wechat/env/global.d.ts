@@ -29,7 +29,7 @@ declare namespace meduxCore {
   type Props = {[key: string]: any};
   interface ComponentConfig {
     properties?: {[prop: string]: any};
-    data: Props;
+    data?: Props;
     lifetimes?: {
       created?(): void;
       attached?(): void;
@@ -40,11 +40,11 @@ declare namespace meduxCore {
       hide?(): void;
     };
     methods?: {[method: string]: Function};
-    setData(data: Props): void;
+    setData?(data: Props): void;
   }
   interface PageConfig {
-    data: Props;
-    setData(data: Props): void;
+    data?: Props;
+    setData?(data: Props): void;
     onLoad?(options: any): void;
     onUnload?(): void;
     onShow?(): void;

@@ -20,9 +20,9 @@ export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TO
       }
       if (mapStateToProps) {
         const nextState = mapStateToProps(getClientStore().getState() as any);
-        const prevState = getPrevData(nextState, this.data);
+        const prevState = getPrevData(nextState, this.data || {});
         const updateData = diffData(prevState, nextState);
-        updateData && this.setData(diffData);
+        updateData && this.setData!(diffData);
       }
     }
     // function created(this: ComponentConfig): void {
