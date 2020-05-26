@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-web-router",
-  "version": "1.0.7-alpha.4",
+  "version": "1.0.7-alpha.5",
   "description": "The practice of @medux/core in react.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-web-router",
   "author": "wooline <wooline@qq.com>",
@@ -48,8 +48,8 @@
     "@babel/runtime": "~7.9.0",
     "@medux/core": "^1.0.7-alpha.4",
     "@medux/react": "^1.0.7-alpha.4",
-    "@medux/route-plan-a": "^1.0.7-alpha.4",
-    "@medux/web": "^1.0.7-alpha.4"
+    "@medux/route-plan-a": "^1.0.7-alpha.5",
+    "@medux/web": "^1.0.7-alpha.5"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
