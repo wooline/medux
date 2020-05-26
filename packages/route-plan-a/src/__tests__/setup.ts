@@ -89,17 +89,3 @@ const defaultRouteParams = {
 setRouteConfig({escape: false, defaultRouteParams});
 
 global['transformRoute'] = buildTransformRoute(routeConfig);
-global['transformRouteWithMap'] = buildTransformRoute(routeConfig, {
-  in: (pathname) => {
-    if (pathname === '/shortcuts') {
-      return '/photos/2/comments/8/99';
-    }
-    return pathname;
-  },
-  out: (pathname) => {
-    if (pathname === '/photos/2/comments/9') {
-      return '/shortcuts';
-    }
-    return pathname;
-  },
-});

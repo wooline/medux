@@ -1,10 +1,15 @@
 import { HistoryProxy, RouteData } from '@medux/core';
-import { MeduxLocation, RouteConfig, PathnameMap, TransformRoute } from '@medux/route-plan-a';
+import { MeduxLocation, RouteConfig, TransformRoute } from '@medux/route-plan-a';
 declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
 declare type UnregisterCallback = () => void;
 declare type LocationListener = (location: MeduxLocation) => void;
+export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
+export declare type LocationMap = {
+    in: LocationToLocation;
+    out: LocationToLocation;
+};
 interface BrowserRoutePayload<P = {}> {
     extend?: RouteData;
     params?: DeepPartial<P>;
@@ -12,6 +17,7 @@ interface BrowserRoutePayload<P = {}> {
 }
 export interface HistoryActions<P = {}> {
     location: MeduxLocation;
+    getRouteData(): RouteData;
     switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
     reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
     redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
@@ -20,7 +26,7 @@ export interface HistoryActions<P = {}> {
     listen(listener: LocationListener): UnregisterCallback;
 }
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
-export declare function createRouter(routeConfig: RouteConfig, pathnameMap?: PathnameMap): {
+export declare function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap): {
     transformRoute: TransformRoute;
     historyProxy: HistoryProxy<MeduxLocation>;
     historyActions: HistoryActions<{}>;

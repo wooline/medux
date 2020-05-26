@@ -306,19 +306,27 @@ function extractHashData(params: {[moduleName: string]: any}) {
     hash: searchStringify(hashParams),
   };
 }
-type PathNameMap = (pathname: string) => string;
-
-export type PathnameMap = {in: PathNameMap; out: PathNameMap};
+function locationToUrl(location: MeduxLocation): string {
+  return location.pathname + (location.search ? `?${location.search}` : '') + (location.hash ? `#${location.hash}` : '');
+}
+const cacheData: Array<{url: string; routeData: RouteData}> = [];
 /**
  * 创建一个浏览器的Location与medux内部使用的RouteData相互转换器
  * @param 应用的路由配置文件
  * @returns 转换器
  */
-export function buildTransformRoute(routeConfig: RouteConfig, pathnameMap?: PathnameMap): TransformRoute {
+export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
   const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
 
   const locationToRoute: LocationToRoute = (location) => {
-    const pathname = pathnameMap ? pathnameMap.in(location.pathname) : location.pathname;
+    const url = locationToUrl(location);
+    const item = cacheData.find((val) => {
+      return val && val.url === url;
+    });
+    if (item) {
+      return item.routeData;
+    }
+    const pathname = location.pathname;
     const paths: string[] = [];
     const pathsArgs: {[moduleName: string]: {[key: string]: any}} = {};
     pathnameParse(pathname, routeConfig, paths, pathsArgs);
@@ -332,7 +340,10 @@ export function buildTransformRoute(routeConfig: RouteConfig, pathnameMap?: Path
         assignDeep(stackParams[index], item);
       }
     });
-    return assignRouteData(paths, stackParams, pathsArgs);
+    const routeData = assignRouteData(paths, stackParams, pathsArgs);
+    cacheData.unshift({url, routeData});
+    cacheData.length = 10;
+    return routeData;
   };
   const routeToLocation: RouteToLocation = (routeData) => {
     const {views, paths, params, stackParams} = routeData;
@@ -402,7 +413,7 @@ export function buildTransformRoute(routeConfig: RouteConfig, pathnameMap?: Path
     });
 
     return {
-      pathname: pathnameMap ? pathnameMap.out(pathname) : pathname,
+      pathname,
       search: '?' + joinSearchString(searchStrings).substr(1),
       hash: '#' + joinSearchString(hashStrings).substr(1),
     };

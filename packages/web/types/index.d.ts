@@ -1,5 +1,5 @@
 import { HistoryProxy, RouteData } from '@medux/core';
-import { MeduxLocation, RouteConfig, PathnameMap, TransformRoute } from '@medux/route-plan-a';
+import { MeduxLocation, RouteConfig, TransformRoute } from '@medux/route-plan-a';
 interface BrowserLocation {
     pathname: string;
     search: string;
@@ -8,6 +8,11 @@ interface BrowserLocation {
 }
 declare type UnregisterCallback = () => void;
 declare type LocationListener = (location: BrowserLocation) => void;
+export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
+export declare type LocationMap = {
+    in: LocationToLocation;
+    out: LocationToLocation;
+};
 export interface History {
     location: BrowserLocation;
     push(path: string, state?: any): void;
@@ -38,7 +43,7 @@ declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
-export declare function createRouter(history: History, routeConfig: RouteConfig, pathnameMap?: PathnameMap): {
+export declare function createRouter(history: History, routeConfig: RouteConfig, locationMap?: LocationMap): {
     transformRoute: TransformRoute;
     historyProxy: HistoryProxy<BrowserLocation>;
     historyActions: HistoryActions<{}>;

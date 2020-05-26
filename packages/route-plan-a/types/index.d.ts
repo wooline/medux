@@ -37,10 +37,5 @@ export declare function assignRouteData(paths: string[], stackParams: {
     [moduleName: string]: any;
 }): RouteData;
 export declare function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData;
-declare type PathNameMap = (pathname: string) => string;
-export declare type PathnameMap = {
-    in: PathNameMap;
-    out: PathNameMap;
-};
-export declare function buildTransformRoute(routeConfig: RouteConfig, pathnameMap?: PathnameMap): TransformRoute;
+export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
 export {};

@@ -20,41 +20,42 @@ function isBrowserRoutePayload(data) {
   return !data['pathname'];
 }
 
-class BrowserHistoryProxy {
-  constructor(history, locationToRoute) {
-    this.history = history;
-    this.locationToRoute = locationToRoute;
-
-    _defineProperty(this, "initialized", true);
-  }
-
-  getLocation() {
-    return this.history.location;
-  }
-
-  subscribe(listener) {
-    return this.history.listen(listener);
-  }
-
-  locationToRouteData(location) {
-    return location.state || this.locationToRoute(location);
-  }
-
-  equal(a, b) {
-    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
-  }
-
-  patch(location, routeData) {
-    this.history.push(Object.assign({}, location, {
-      state: routeData
-    }));
-  }
-
-}
-
-export function createRouter(history, routeConfig, pathnameMap) {
-  const transformRoute = buildTransformRoute(routeConfig, pathnameMap);
+export function createRouter(history, routeConfig, locationMap) {
+  const transformRoute = buildTransformRoute(routeConfig);
   const toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+
+  class BrowserHistoryProxy {
+    constructor(history, locationToRoute) {
+      this.history = history;
+      this.locationToRoute = locationToRoute;
+
+      _defineProperty(this, "initialized", true);
+    }
+
+    getLocation() {
+      return this.history.location;
+    }
+
+    subscribe(listener) {
+      return this.history.listen(listener);
+    }
+
+    locationToRouteData(location) {
+      return location.state || this.locationToRoute(locationMap ? locationMap.in(location) : location);
+    }
+
+    equal(a, b) {
+      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+    }
+
+    patch(location, routeData) {
+      this.history.push(Object.assign({}, location, {
+        state: routeData
+      }));
+    }
+
+  }
+
   const historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   const historyActions = {
     listen(listener) {
@@ -66,15 +67,26 @@ export function createRouter(history, routeConfig, pathnameMap) {
     },
 
     getRouteData() {
-      return history.location.state || transformRoute.locationToRoute(history.location);
+      return history.location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(history.location) : history.location);
     },
 
     push(data) {
       if (typeof data === 'string') {
+        if (locationMap) {
+          let location = urlToBrowserLocation(data);
+          location = locationMap.out(location);
+          data = browserLocationToUrl(location);
+        }
+
         history.push(data);
       } else if (isBrowserRoutePayload(data)) {
         const routeData = fillBrowserRouteData(data);
-        const location = transformRoute.routeToLocation(routeData);
+        let location = transformRoute.routeToLocation(routeData);
+
+        if (locationMap) {
+          location = locationMap.out(location);
+        }
+
         history.push(Object.assign({}, location, {
           state: routeData
         }));
@@ -87,10 +99,21 @@ export function createRouter(history, routeConfig, pathnameMap) {
 
     replace(data) {
       if (typeof data === 'string') {
+        if (locationMap) {
+          let location = urlToBrowserLocation(data);
+          location = locationMap.out(location);
+          data = browserLocationToUrl(location);
+        }
+
         history.replace(data);
       } else if (isBrowserRoutePayload(data)) {
         const routeData = fillBrowserRouteData(data);
-        const location = transformRoute.routeToLocation(routeData);
+        let location = transformRoute.routeToLocation(routeData);
+
+        if (locationMap) {
+          location = locationMap.out(location);
+        }
+
         history.replace(Object.assign({}, location, {
           state: routeData
         }));
@@ -114,6 +137,36 @@ export function createRouter(history, routeConfig, pathnameMap) {
     }
 
   };
+
+  function buildToBrowserUrl(routeToLocation) {
+    function toUrl(...args) {
+      if (args.length === 1) {
+        let location = routeToLocation(fillBrowserRouteData(args[0]));
+
+        if (locationMap) {
+          location = locationMap.out(location);
+        }
+
+        args = [location.pathname, location.search, location.hash];
+      }
+
+      const [pathname, search, hash] = args;
+      let url = pathname;
+
+      if (search) {
+        url += search;
+      }
+
+      if (hash) {
+        url += hash;
+      }
+
+      return url;
+    }
+
+    return toUrl;
+  }
+
   return {
     transformRoute,
     historyProxy,
@@ -122,26 +175,21 @@ export function createRouter(history, routeConfig, pathnameMap) {
   };
 }
 
-function buildToBrowserUrl(routeToLocation) {
-  function toUrl(...args) {
-    if (args.length === 1) {
-      const location = routeToLocation(fillBrowserRouteData(args[0]));
-      args = [location.pathname, location.search, location.hash];
-    }
+function browserLocationToUrl(location) {
+  return location.pathname + (location.search ? `?${location.search}` : '') + (location.hash ? `#${location.hash}` : '');
+}
 
-    const [pathname, search, hash] = args;
-    let url = pathname;
+function urlToBrowserLocation(url) {
+  const arr = url.split(/[?#]/);
 
-    if (search) {
-      url += search;
-    }
-
-    if (hash) {
-      url += hash;
-    }
-
-    return url;
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
   }
 
-  return toUrl;
+  const [pathname, search = '', hash = ''] = arr;
+  return {
+    pathname,
+    search: search && '?' + search,
+    hash: hash && '#' + hash
+  };
 }

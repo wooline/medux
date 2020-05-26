@@ -9,18 +9,19 @@ export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandle
 export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
 export type { LoadView } from '@medux/react';
-export type { RouteConfig, PathnameMap } from '@medux/route-plan-a';
+export type { RouteConfig } from '@medux/route-plan-a';
+export type { LocationMap } from '@medux/web';
 export declare type BrowserRouter<Params> = {
     transformRoute: TransformRoute;
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;
 };
-export declare function buildApp({ moduleGetter, appModuleName, history, routeConfig, pathnameMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
+export declare function buildApp({ moduleGetter, appModuleName, history, routeConfig, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName: string;
     history: History;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
-    pathnameMap?: import('@medux/route-plan-a').PathnameMap;
+    locationMap?: import('@medux/web').LocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };

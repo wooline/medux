@@ -3915,13 +3915,13 @@ function extractHashData(params) {
   };
 }
 
-function buildTransformRoute(routeConfig, pathnameMap) {
+function buildTransformRoute(routeConfig) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
       ruleToKeys = _compileConfig.ruleToKeys;
 
   var locationToRoute = function locationToRoute(location) {
-    var pathname = pathnameMap ? pathnameMap.in(location.pathname) : location.pathname;
+    var pathname = location.pathname;
     var paths = [];
     var pathsArgs = {};
     pathnameParse(pathname, routeConfig, paths, pathsArgs);
@@ -4019,7 +4019,7 @@ function buildTransformRoute(routeConfig, pathnameMap) {
       hash && (hashStrings[index] = hash);
     });
     return {
-      pathname: pathnameMap ? pathnameMap.out(pathname) : pathname,
+      pathname: pathname,
       search: '?' + joinSearchString(searchStrings).substr(1),
       hash: '#' + joinSearchString(hashStrings).substr(1)
     };
@@ -4073,46 +4073,45 @@ function fillBrowserRouteData(routePayload) {
 
   return assignRouteData(routePayload.paths || extend.paths, stackParams);
 }
-
-var BrowserHistoryProxy = function () {
-  function BrowserHistoryProxy(history, locationToRoute) {
-    this.history = history;
-    this.locationToRoute = locationToRoute;
-
-    _defineProperty(this, "initialized", true);
-  }
-
-  var _proto = BrowserHistoryProxy.prototype;
-
-  _proto.getLocation = function getLocation() {
-    return this.history.location;
-  };
-
-  _proto.subscribe = function subscribe(listener) {
-    return this.history.listen(listener);
-  };
-
-  _proto.locationToRouteData = function locationToRouteData(location) {
-    return this.locationToRoute(location);
-  };
-
-  _proto.equal = function equal(a, b) {
-    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
-  };
-
-  _proto.patch = function patch(location, routeData) {
-    var url = browserLocationToUrl(location);
-    this.history.reLaunch({
-      url: url
-    });
-  };
-
-  return BrowserHistoryProxy;
-}();
-
-function createRouter(routeConfig, pathnameMap) {
-  var transformRoute = buildTransformRoute(routeConfig, pathnameMap);
+function createRouter(routeConfig, locationMap) {
+  var transformRoute = buildTransformRoute(routeConfig);
   var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+
+  var BrowserHistoryProxy = function () {
+    function BrowserHistoryProxy(history, locationToRoute) {
+      this.history = history;
+      this.locationToRoute = locationToRoute;
+
+      _defineProperty(this, "initialized", true);
+    }
+
+    var _proto = BrowserHistoryProxy.prototype;
+
+    _proto.getLocation = function getLocation() {
+      return this.history.location;
+    };
+
+    _proto.subscribe = function subscribe(listener) {
+      return this.history.listen(listener);
+    };
+
+    _proto.locationToRouteData = function locationToRouteData(location) {
+      return this.locationToRoute(locationMap ? locationMap.in(location) : location);
+    };
+
+    _proto.equal = function equal(a, b) {
+      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+    };
+
+    _proto.patch = function patch(location, routeData) {
+      var url = browserLocationToUrl(location);
+      this.history.reLaunch({
+        url: url
+      });
+    };
+
+    return BrowserHistoryProxy;
+  }();
 
   var History = function () {
     function History() {
@@ -4141,27 +4140,72 @@ function createRouter(routeConfig, pathnameMap) {
 
     var _proto2 = History.prototype;
 
-    _proto2.createWechatRouteOption = function createWechatRouteOption(option) {
-      if (typeof option === 'string') {
+    _proto2.getRouteData = function getRouteData() {
+      return transformRoute.locationToRoute(locationMap ? locationMap.in(this.location) : this.location);
+    };
+
+    _proto2.urlToLocation = function urlToLocation(url) {
+      var location = urlToBrowserLocation(url);
+
+      if (locationMap) {
+        location = locationMap.out(location);
+        url = browserLocationToUrl(location);
+      }
+
+      return {
+        url: url,
+        location: location
+      };
+    };
+
+    _proto2.createWechatRouteOption = function createWechatRouteOption(data) {
+      if (typeof data === 'string') {
+        var _this$urlToLocation = this.urlToLocation(data),
+            url = _this$urlToLocation.url,
+            _location = _this$urlToLocation.location;
+
         return {
-          url: option
+          option: {
+            url: url
+          },
+          location: _location
         };
-      } else if (isBrowserRoutePayload(option)) {
-        var routeData = fillBrowserRouteData(option);
+      } else if (isBrowserRoutePayload(data)) {
+        var routeData = fillBrowserRouteData(data);
 
-        var _location = transformRoute.routeToLocation(routeData);
+        var _location2 = transformRoute.routeToLocation(routeData);
 
+        if (locationMap) {
+          _location2 = locationMap.out(_location2);
+        }
+
+        var _option = {
+          url: browserLocationToUrl(_location2)
+        };
         return {
-          url: browserLocationToUrl(_location)
+          option: _option,
+          location: _location2
         };
       } else {
-        return option;
+        var _this$urlToLocation2 = this.urlToLocation(data.url),
+            _url = _this$urlToLocation2.url,
+            _location3 = _this$urlToLocation2.location;
+
+        return {
+          option: Object.assign({}, data, {
+            url: _url
+          }),
+          location: _location3
+        };
       }
     };
 
-    _proto2.switchTab = function switchTab(option) {
-      var routeOption = this.createWechatRouteOption(option);
-      this.location = urlToBrowserLocation(routeOption.url);
+    _proto2.switchTab = function switchTab(args) {
+      var _this$createWechatRou = this.createWechatRouteOption(args),
+          location = _this$createWechatRou.location,
+          option = _this$createWechatRou.option;
+
+      this.location = location;
 
       for (var _key in this._listenList) {
         if (this._listenList.hasOwnProperty(_key)) {
@@ -4171,12 +4215,15 @@ function createRouter(routeConfig, pathnameMap) {
         }
       }
 
-      env.wx.switchTab(routeOption);
+      env.wx.switchTab(option);
     };
 
-    _proto2.reLaunch = function reLaunch(option) {
-      var routeOption = this.createWechatRouteOption(option);
-      this.location = urlToBrowserLocation(routeOption.url);
+    _proto2.reLaunch = function reLaunch(args) {
+      var _this$createWechatRou2 = this.createWechatRouteOption(args),
+          location = _this$createWechatRou2.location,
+          option = _this$createWechatRou2.option;
+
+      this.location = location;
 
       for (var _key2 in this._listenList) {
         if (this._listenList.hasOwnProperty(_key2)) {
@@ -4186,12 +4233,15 @@ function createRouter(routeConfig, pathnameMap) {
         }
       }
 
-      env.wx.reLaunch(routeOption);
+      env.wx.reLaunch(option);
     };
 
-    _proto2.redirectTo = function redirectTo(option) {
-      var routeOption = this.createWechatRouteOption(option);
-      this.location = urlToBrowserLocation(routeOption.url);
+    _proto2.redirectTo = function redirectTo(args) {
+      var _this$createWechatRou3 = this.createWechatRouteOption(args),
+          location = _this$createWechatRou3.location,
+          option = _this$createWechatRou3.option;
+
+      this.location = location;
 
       for (var _key3 in this._listenList) {
         if (this._listenList.hasOwnProperty(_key3)) {
@@ -4201,12 +4251,15 @@ function createRouter(routeConfig, pathnameMap) {
         }
       }
 
-      env.wx.redirectTo(routeOption);
+      env.wx.redirectTo(option);
     };
 
-    _proto2.navigateTo = function navigateTo(option) {
-      var routeOption = this.createWechatRouteOption(option);
-      this.location = urlToBrowserLocation(routeOption.url);
+    _proto2.navigateTo = function navigateTo(args) {
+      var _this$createWechatRou4 = this.createWechatRouteOption(args),
+          location = _this$createWechatRou4.location,
+          option = _this$createWechatRou4.option;
+
+      this.location = location;
 
       for (var _key4 in this._listenList) {
         if (this._listenList.hasOwnProperty(_key4)) {
@@ -4216,7 +4269,7 @@ function createRouter(routeConfig, pathnameMap) {
         }
       }
 
-      env.wx.navigateTo(routeOption);
+      env.wx.navigateTo(option);
     };
 
     _proto2.navigateBack = function navigateBack(option) {
@@ -4270,44 +4323,49 @@ function createRouter(routeConfig, pathnameMap) {
 
   var historyActions = new History();
   var historyProxy = new BrowserHistoryProxy(historyActions, transformRoute.locationToRoute);
+
+  function buildToBrowserUrl(routeToLocation) {
+    function toUrl() {
+      for (var _len = arguments.length, args = new Array(_len), _key6 = 0; _key6 < _len; _key6++) {
+        args[_key6] = arguments[_key6];
+      }
+
+      if (args.length === 1) {
+        var _location4 = routeToLocation(fillBrowserRouteData(args[0]));
+
+        if (locationMap) {
+          _location4 = locationMap.out(_location4);
+        }
+
+        args = [_location4.pathname, _location4.search, _location4.hash];
+      }
+
+      var _ref = args,
+          pathname = _ref[0],
+          search = _ref[1],
+          hash = _ref[2];
+      var url = pathname;
+
+      if (search) {
+        url += search;
+      }
+
+      if (hash) {
+        url += hash;
+      }
+
+      return url;
+    }
+
+    return toUrl;
+  }
+
   return {
     transformRoute: transformRoute,
     historyProxy: historyProxy,
     historyActions: historyActions,
     toBrowserUrl: toBrowserUrl
   };
-}
-
-function buildToBrowserUrl(routeToLocation) {
-  function toUrl() {
-    for (var _len = arguments.length, args = new Array(_len), _key6 = 0; _key6 < _len; _key6++) {
-      args[_key6] = arguments[_key6];
-    }
-
-    if (args.length === 1) {
-      var _location2 = routeToLocation(fillBrowserRouteData(args[0]));
-
-      args = [_location2.pathname, _location2.search, _location2.hash];
-    }
-
-    var _ref = args,
-        pathname = _ref[0],
-        search = _ref[1],
-        hash = _ref[2];
-    var url = pathname;
-
-    if (search) {
-      url += search;
-    }
-
-    if (hash) {
-      url += hash;
-    }
-
-    return url;
-  }
-
-  return toUrl;
 }
 
 function getPrevData(next, prev) {
@@ -4526,7 +4584,7 @@ function buildApp(_ref) {
       appModuleName = _ref.appModuleName,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
-      pathnameMap = _ref.pathnameMap,
+      locationMap = _ref.locationMap,
       defaultRouteParams = _ref.defaultRouteParams,
       _ref$storeOptions = _ref.storeOptions,
       storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
@@ -4534,7 +4592,7 @@ function buildApp(_ref) {
   setRouteConfig({
     defaultRouteParams: defaultRouteParams
   });
-  var router = createRouter(routeConfig, pathnameMap);
+  var router = createRouter(routeConfig, locationMap);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;

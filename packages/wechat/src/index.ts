@@ -25,7 +25,8 @@ export {setRouteConfig} from '@medux/route-plan-a';
 
 export type {Actions, RouteData, RouteViews, BaseModelState} from '@medux/core';
 
-export type {RouteConfig, PathnameMap} from '@medux/route-plan-a';
+export type {RouteConfig} from '@medux/route-plan-a';
+export type {LocationMap} from './history';
 
 let historyActions: HistoryActions | undefined = undefined;
 let transformRoute: TransformRoute | undefined = undefined;
@@ -54,7 +55,7 @@ export function buildApp({
   moduleGetter,
   appModuleName,
   routeConfig = {},
-  pathnameMap,
+  locationMap,
   defaultRouteParams,
   storeOptions = {},
   beforeRender,
@@ -62,13 +63,13 @@ export function buildApp({
   moduleGetter: ModuleGetter;
   appModuleName: string;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
-  pathnameMap?: import('@medux/route-plan-a').PathnameMap;
+  locationMap?: import('./history').LocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   beforeRender?: (data: {store: Store<StoreState>; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
 }) {
   setRouteConfig({defaultRouteParams});
-  const router = createRouter(routeConfig, pathnameMap);
+  const router = createRouter(routeConfig, locationMap);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;

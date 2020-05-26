@@ -4058,13 +4058,13 @@ function extractHashData(params) {
   };
 }
 
-function buildTransformRoute(routeConfig, pathnameMap) {
+function buildTransformRoute(routeConfig) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
       ruleToKeys = _compileConfig.ruleToKeys;
 
   var locationToRoute = function locationToRoute(location) {
-    var pathname = pathnameMap ? pathnameMap.in(location.pathname) : location.pathname;
+    var pathname = location.pathname;
     var paths = [];
     var pathsArgs = {};
     pathnameParse(pathname, routeConfig, paths, pathsArgs);
@@ -4162,7 +4162,7 @@ function buildTransformRoute(routeConfig, pathnameMap) {
       hash && (hashStrings[index] = hash);
     });
     return {
-      pathname: pathnameMap ? pathnameMap.out(pathname) : pathname,
+      pathname: pathname,
       search: '?' + joinSearchString(searchStrings).substr(1),
       hash: '#' + joinSearchString(hashStrings).substr(1)
     };
@@ -4302,44 +4302,45 @@ function isBrowserRoutePayload(data) {
   return !data['pathname'];
 }
 
-var BrowserHistoryProxy = function () {
-  function BrowserHistoryProxy(history, locationToRoute) {
-    this.history = history;
-    this.locationToRoute = locationToRoute;
-
-    _defineProperty(this, "initialized", true);
-  }
-
-  var _proto = BrowserHistoryProxy.prototype;
-
-  _proto.getLocation = function getLocation() {
-    return this.history.location;
-  };
-
-  _proto.subscribe = function subscribe(listener) {
-    return this.history.listen(listener);
-  };
-
-  _proto.locationToRouteData = function locationToRouteData(location) {
-    return location.state || this.locationToRoute(location);
-  };
-
-  _proto.equal = function equal(a, b) {
-    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
-  };
-
-  _proto.patch = function patch(location, routeData) {
-    this.history.push(Object.assign({}, location, {
-      state: routeData
-    }));
-  };
-
-  return BrowserHistoryProxy;
-}();
-
-function createRouter(history, routeConfig, pathnameMap) {
-  var transformRoute = buildTransformRoute(routeConfig, pathnameMap);
+function createRouter(history, routeConfig, locationMap) {
+  var transformRoute = buildTransformRoute(routeConfig);
   var toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
+
+  var BrowserHistoryProxy = function () {
+    function BrowserHistoryProxy(history, locationToRoute) {
+      this.history = history;
+      this.locationToRoute = locationToRoute;
+
+      _defineProperty(this, "initialized", true);
+    }
+
+    var _proto = BrowserHistoryProxy.prototype;
+
+    _proto.getLocation = function getLocation() {
+      return this.history.location;
+    };
+
+    _proto.subscribe = function subscribe(listener) {
+      return this.history.listen(listener);
+    };
+
+    _proto.locationToRouteData = function locationToRouteData(location) {
+      return location.state || this.locationToRoute(locationMap ? locationMap.in(location) : location);
+    };
+
+    _proto.equal = function equal(a, b) {
+      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+    };
+
+    _proto.patch = function patch(location, routeData) {
+      this.history.push(Object.assign({}, location, {
+        state: routeData
+      }));
+    };
+
+    return BrowserHistoryProxy;
+  }();
+
   var historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   var historyActions = {
     listen: function listen(listener) {
@@ -4349,17 +4350,28 @@ function createRouter(history, routeConfig, pathnameMap) {
       return history.location;
     },
     getRouteData: function getRouteData() {
-      return history.location.state || transformRoute.locationToRoute(history.location);
+      return history.location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(history.location) : history.location);
     },
     push: function push(data) {
       if (typeof data === 'string') {
+        if (locationMap) {
+          var _location = urlToBrowserLocation(data);
+
+          _location = locationMap.out(_location);
+          data = browserLocationToUrl(_location);
+        }
+
         history.push(data);
       } else if (isBrowserRoutePayload(data)) {
         var routeData = fillBrowserRouteData(data);
 
-        var _location = transformRoute.routeToLocation(routeData);
+        var _location2 = transformRoute.routeToLocation(routeData);
 
-        history.push(Object.assign({}, _location, {
+        if (locationMap) {
+          _location2 = locationMap.out(_location2);
+        }
+
+        history.push(Object.assign({}, _location2, {
           state: routeData
         }));
       } else {
@@ -4370,13 +4382,24 @@ function createRouter(history, routeConfig, pathnameMap) {
     },
     replace: function replace(data) {
       if (typeof data === 'string') {
+        if (locationMap) {
+          var _location3 = urlToBrowserLocation(data);
+
+          _location3 = locationMap.out(_location3);
+          data = browserLocationToUrl(_location3);
+        }
+
         history.replace(data);
       } else if (isBrowserRoutePayload(data)) {
         var routeData = fillBrowserRouteData(data);
 
-        var _location2 = transformRoute.routeToLocation(routeData);
+        var _location4 = transformRoute.routeToLocation(routeData);
 
-        history.replace(Object.assign({}, _location2, {
+        if (locationMap) {
+          _location4 = locationMap.out(_location4);
+        }
+
+        history.replace(Object.assign({}, _location4, {
           state: routeData
         }));
       } else {
@@ -4395,6 +4418,43 @@ function createRouter(history, routeConfig, pathnameMap) {
       history.goForward();
     }
   };
+
+  function buildToBrowserUrl(routeToLocation) {
+    function toUrl() {
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      if (args.length === 1) {
+        var _location5 = routeToLocation(fillBrowserRouteData(args[0]));
+
+        if (locationMap) {
+          _location5 = locationMap.out(_location5);
+        }
+
+        args = [_location5.pathname, _location5.search, _location5.hash];
+      }
+
+      var _ref = args,
+          pathname = _ref[0],
+          search = _ref[1],
+          hash = _ref[2];
+      var url = pathname;
+
+      if (search) {
+        url += search;
+      }
+
+      if (hash) {
+        url += hash;
+      }
+
+      return url;
+    }
+
+    return toUrl;
+  }
+
   return {
     transformRoute: transformRoute,
     historyProxy: historyProxy,
@@ -4403,36 +4463,27 @@ function createRouter(history, routeConfig, pathnameMap) {
   };
 }
 
-function buildToBrowserUrl(routeToLocation) {
-  function toUrl() {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
+function browserLocationToUrl(location) {
+  return location.pathname + (location.search ? "?" + location.search : '') + (location.hash ? "#" + location.hash : '');
+}
 
-    if (args.length === 1) {
-      var _location3 = routeToLocation(fillBrowserRouteData(args[0]));
+function urlToBrowserLocation(url) {
+  var arr = url.split(/[?#]/);
 
-      args = [_location3.pathname, _location3.search, _location3.hash];
-    }
-
-    var _ref = args,
-        pathname = _ref[0],
-        search = _ref[1],
-        hash = _ref[2];
-    var url = pathname;
-
-    if (search) {
-      url += search;
-    }
-
-    if (hash) {
-      url += hash;
-    }
-
-    return url;
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
   }
 
-  return toUrl;
+  var pathname = arr[0],
+      _arr$ = arr[1],
+      search = _arr$ === void 0 ? '' : _arr$,
+      _arr$2 = arr[2],
+      hash = _arr$2 === void 0 ? '' : _arr$2;
+  return {
+    pathname: pathname,
+    search: search && '?' + search,
+    hash: hash && '#' + hash
+  };
 }
 
 var historyActions = undefined;
@@ -4482,7 +4533,7 @@ function buildApp(_ref) {
       history = _ref.history,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
-      pathnameMap = _ref.pathnameMap,
+      locationMap = _ref.locationMap,
       defaultRouteParams = _ref.defaultRouteParams,
       _ref$storeOptions = _ref.storeOptions,
       storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
@@ -4492,7 +4543,7 @@ function buildApp(_ref) {
   setRouteConfig({
     defaultRouteParams: defaultRouteParams
   });
-  var router = createRouter(history, routeConfig, pathnameMap);
+  var router = createRouter(history, routeConfig, locationMap);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;

@@ -8,12 +8,13 @@ export { connectPage } from './connectPage';
 export { ActionTypes, delayPromise, client, env, isDevelopmentEnv, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
-export type { RouteConfig, PathnameMap } from '@medux/route-plan-a';
-export declare function buildApp({ moduleGetter, appModuleName, routeConfig, pathnameMap, defaultRouteParams, storeOptions, beforeRender, }: {
+export type { RouteConfig } from '@medux/route-plan-a';
+export type { LocationMap } from './history';
+export declare function buildApp({ moduleGetter, appModuleName, routeConfig, locationMap, defaultRouteParams, storeOptions, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName: string;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
-    pathnameMap?: import('@medux/route-plan-a').PathnameMap;
+    locationMap?: import('./history').LocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };

@@ -52,7 +52,7 @@ export function buildApp({
   appModuleName,
   history,
   routeConfig = {},
-  pathnameMap,
+  locationMap,
   defaultRouteParams,
   storeOptions = {},
   container = 'root',
@@ -61,7 +61,7 @@ export function buildApp({
   setRouteConfig({
     defaultRouteParams
   });
-  const router = createRouter(history, routeConfig, pathnameMap);
+  const router = createRouter(history, routeConfig, locationMap);
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
