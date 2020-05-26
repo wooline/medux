@@ -4058,12 +4058,26 @@ function extractHashData(params) {
   };
 }
 
+function locationToUrl(location) {
+  return location.pathname + (location.search ? "?" + location.search : '') + (location.hash ? "#" + location.hash : '');
+}
+
+var cacheData = [];
 function buildTransformRoute(routeConfig) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
       ruleToKeys = _compileConfig.ruleToKeys;
 
   var locationToRoute = function locationToRoute(location) {
+    var url = locationToUrl(location);
+    var item = cacheData.find(function (val) {
+      return val && val.url === url;
+    });
+
+    if (item) {
+      return item.routeData;
+    }
+
     var pathname = location.pathname;
     var paths = [];
     var pathsArgs = {};
@@ -4079,7 +4093,13 @@ function buildTransformRoute(routeConfig) {
         deepExtend(stackParams[index], item);
       }
     });
-    return assignRouteData(paths, stackParams, pathsArgs);
+    var routeData = assignRouteData(paths, stackParams, pathsArgs);
+    cacheData.unshift({
+      url: url,
+      routeData: routeData
+    });
+    cacheData.length = 10;
+    return routeData;
   };
 
   var routeToLocation = function routeToLocation(routeData) {
