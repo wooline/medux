@@ -3,6 +3,8 @@ import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import assignDeep from './deep-extend';
 
+export {locationToUrl, urlToLocation, checkUrl} from './utils';
+
 /**
  * medux内部使用的Location数据结构，比浏览器的Location相比少了state属性，所以在此路由方案中不能使用history state
  */

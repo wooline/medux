@@ -30,10 +30,7 @@ export declare function createRouter(routeConfig: RouteConfig, locationMap?: Loc
     transformRoute: TransformRoute;
     historyProxy: HistoryProxy<MeduxLocation>;
     historyActions: HistoryActions<{}>;
-    toBrowserUrl: ToBrowserUrl<{}>;
+    toBrowserUrl: <P = {}>(data: Partial<MeduxLocation> | BrowserRoutePayload<P>) => string;
 };
-export interface ToBrowserUrl<T = {}> {
-    (routeOptions: BrowserRoutePayload<T>): string;
-    (pathname: string, search: string, hash: string): string;
-}
+export declare type ToBrowserUrl<T = {}> = (routeOptions: BrowserRoutePayload<T> | Partial<MeduxLocation>) => string;
 export {};

@@ -1,5 +1,4 @@
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { assignRouteData, buildTransformRoute, deepAssign } from '@medux/route-plan-a';
+import { assignRouteData, buildTransformRoute, deepAssign, locationToUrl, urlToLocation, checkUrl } from '@medux/route-plan-a';
 export function fillBrowserRouteData(routePayload) {
   const extend = routePayload.extend || {
     views: {},
@@ -20,49 +19,77 @@ function isBrowserRoutePayload(data) {
   return !data['pathname'];
 }
 
+function fillLocation(location) {
+  return {
+    pathname: location.pathname || '',
+    search: location.search || '',
+    hash: location.hash || ''
+  };
+}
+
 export function createRouter(history, routeConfig, locationMap) {
   const transformRoute = buildTransformRoute(routeConfig);
-  const toBrowserUrl = buildToBrowserUrl(transformRoute.routeToLocation);
-
-  class BrowserHistoryProxy {
-    constructor(history, locationToRoute) {
-      this.history = history;
-      this.locationToRoute = locationToRoute;
-
-      _defineProperty(this, "initialized", true);
-    }
+  const historyProxy = {
+    initialized: true,
 
     getLocation() {
-      return this.history.location;
-    }
+      return history.location;
+    },
 
     subscribe(listener) {
-      return this.history.listen(listener);
-    }
+      return history.listen(listener);
+    },
 
     locationToRouteData(location) {
-      return location.state || this.locationToRoute(locationMap ? locationMap.in(location) : location);
-    }
+      return location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
+    },
 
     equal(a, b) {
       return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
-    }
+    },
 
     patch(location, routeData) {
-      this.history.push(Object.assign({}, location, {
-        state: routeData
-      }));
+      const url = locationToUrl(location);
+      history.push(url, routeData);
     }
 
+  };
+
+  function navigateTo(action, data) {
+    if (typeof data === 'string') {
+      let url = checkUrl(data, history.location.pathname);
+
+      if (url) {
+        if (locationMap) {
+          let location = urlToLocation(url);
+          location = locationMap.out(location);
+          url = checkUrl(locationToUrl(location));
+        }
+      }
+
+      history[action](url);
+    } else if (isBrowserRoutePayload(data)) {
+      const routeData = fillBrowserRouteData(data);
+      let location = transformRoute.routeToLocation(routeData);
+
+      if (locationMap) {
+        location = locationMap.out(location);
+      }
+
+      const url = checkUrl(locationToUrl(location));
+      history[action](url, routeData);
+    } else {
+      const url = checkUrl(locationToUrl(fillLocation(data)));
+      history[action](url);
+    }
   }
 
-  const historyProxy = new BrowserHistoryProxy(history, transformRoute.locationToRoute);
   const historyActions = {
     listen(listener) {
       return history.listen(listener);
     },
 
-    getLocation() {
+    get location() {
       return history.location;
     },
 
@@ -71,57 +98,11 @@ export function createRouter(history, routeConfig, locationMap) {
     },
 
     push(data) {
-      if (typeof data === 'string') {
-        if (locationMap) {
-          let location = urlToBrowserLocation(data);
-          location = locationMap.out(location);
-          data = browserLocationToUrl(location);
-        }
-
-        history.push(data);
-      } else if (isBrowserRoutePayload(data)) {
-        const routeData = fillBrowserRouteData(data);
-        let location = transformRoute.routeToLocation(routeData);
-
-        if (locationMap) {
-          location = locationMap.out(location);
-        }
-
-        history.push(Object.assign({}, location, {
-          state: routeData
-        }));
-      } else {
-        history.push(Object.assign({}, data, {
-          state: undefined
-        }));
-      }
+      navigateTo('push', data);
     },
 
     replace(data) {
-      if (typeof data === 'string') {
-        if (locationMap) {
-          let location = urlToBrowserLocation(data);
-          location = locationMap.out(location);
-          data = browserLocationToUrl(location);
-        }
-
-        history.replace(data);
-      } else if (isBrowserRoutePayload(data)) {
-        const routeData = fillBrowserRouteData(data);
-        let location = transformRoute.routeToLocation(routeData);
-
-        if (locationMap) {
-          location = locationMap.out(location);
-        }
-
-        history.replace(Object.assign({}, location, {
-          state: routeData
-        }));
-      } else {
-        history.replace(Object.assign({}, data, {
-          state: undefined
-        }));
-      }
+      navigateTo('replace', data);
     },
 
     go(n) {
@@ -138,33 +119,20 @@ export function createRouter(history, routeConfig, locationMap) {
 
   };
 
-  function buildToBrowserUrl(routeToLocation) {
-    function toUrl(...args) {
-      if (args.length === 1) {
-        let location = routeToLocation(fillBrowserRouteData(args[0]));
+  function toBrowserUrl(data) {
+    let location;
 
-        if (locationMap) {
-          location = locationMap.out(location);
-        }
-
-        args = [location.pathname, location.search, location.hash];
-      }
-
-      const [pathname, search, hash] = args;
-      let url = pathname;
-
-      if (search) {
-        url += search;
-      }
-
-      if (hash) {
-        url += hash;
-      }
-
-      return url;
+    if (isBrowserRoutePayload(data)) {
+      location = transformRoute.routeToLocation(fillBrowserRouteData(data));
+    } else {
+      location = fillLocation(data);
     }
 
-    return toUrl;
+    if (locationMap) {
+      location = locationMap.out(location);
+    }
+
+    return checkUrl(locationToUrl(location));
   }
 
   return {
@@ -172,24 +140,5 @@ export function createRouter(history, routeConfig, locationMap) {
     historyProxy,
     historyActions,
     toBrowserUrl
-  };
-}
-
-function browserLocationToUrl(location) {
-  return location.pathname + (location.search ? `?${location.search}` : '') + (location.hash ? `#${location.hash}` : '');
-}
-
-function urlToBrowserLocation(url) {
-  const arr = url.split(/[?#]/);
-
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-
-  const [pathname, search = '', hash = ''] = arr;
-  return {
-    pathname,
-    search: search && '?' + search,
-    hash: hash && '#' + hash
   };
 }

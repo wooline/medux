@@ -3,11 +3,12 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
+exports.locationToUrl = locationToUrl;
 exports.setRouteConfig = setRouteConfig;
 exports.assignRouteData = assignRouteData;
 exports.fillRouteData = fillRouteData;
 exports.buildTransformRoute = buildTransformRoute;
-exports.deepAssign = void 0;
+exports.deepAssign = exports.checkUrl = exports.urlToLocation = void 0;
 
 var _core = require("@medux/core");
 
@@ -15,6 +16,11 @@ var _matchPath = require("./matchPath");
 
 var _deepExtend = _interopRequireDefault(require("./deep-extend"));
 
+var _utils = require("./utils");
+
+exports.locationToUrl = _utils.locationToUrl;
+exports.urlToLocation = _utils.urlToLocation;
+exports.checkUrl = _utils.checkUrl;
 var deepAssign = _deepExtend.default;
 exports.deepAssign = deepAssign;
 var config = {

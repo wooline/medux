@@ -16,9 +16,7 @@ export declare type LocationMap = {
 export interface History {
     location: BrowserLocation;
     push(path: string, state?: any): void;
-    push(location: BrowserLocation): void;
     replace(path: string, state?: any): void;
-    replace(location: BrowserLocation): void;
     go(n: number): void;
     goBack(): void;
     goForward(): void;
@@ -31,10 +29,10 @@ export interface BrowserRoutePayload<P = {}> {
 }
 export interface HistoryActions<P = {}> {
     listen(listener: LocationListener): UnregisterCallback;
-    getLocation(): MeduxLocation;
+    location: MeduxLocation;
     getRouteData(): RouteData;
-    push(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
-    replace(data: BrowserRoutePayload<P> | MeduxLocation | string): void;
+    push(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
+    replace(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
     go(n: number): void;
     goBack(): void;
     goForward(): void;
@@ -47,10 +45,7 @@ export declare function createRouter(history: History, routeConfig: RouteConfig,
     transformRoute: TransformRoute;
     historyProxy: HistoryProxy<BrowserLocation>;
     historyActions: HistoryActions<{}>;
-    toBrowserUrl: ToBrowserUrl<{}>;
+    toBrowserUrl: <P = {}>(data: Partial<MeduxLocation> | BrowserRoutePayload<P>) => string;
 };
-export interface ToBrowserUrl<T = {}> {
-    (routeOptions: BrowserRoutePayload<T>): string;
-    (pathname: string, search: string, hash: string): string;
-}
+export declare type ToBrowserUrl<T = {}> = (routeOptions: BrowserRoutePayload<T> | Partial<MeduxLocation>) => string;
 export {};

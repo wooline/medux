@@ -1,5 +1,6 @@
 import { RouteData } from '@medux/core';
 import assignDeep from './deep-extend';
+export { locationToUrl, urlToLocation, checkUrl } from './utils';
 export interface MeduxLocation {
     pathname: string;
     search: string;
@@ -38,4 +39,3 @@ export declare function assignRouteData(paths: string[], stackParams: {
 }): RouteData;
 export declare function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;
-export {};

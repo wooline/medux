@@ -1,6 +1,7 @@
 import { config as coreConfig } from '@medux/core';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from './deep-extend';
+export { locationToUrl, urlToLocation, checkUrl } from './utils';
 export const deepAssign = assignDeep;
 const config = {
   escape: true,

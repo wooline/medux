@@ -6,6 +6,8 @@ import {Middleware, Store} from 'redux';
 import {actions} from './modules';
 import {moduleGetter} from './modules';
 
+declare const console: any;
+
 const historyProxy: HistoryProxy = {
   initialized: true,
   getLocation() {
