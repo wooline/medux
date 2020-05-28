@@ -1,16 +1,10 @@
-import {MapDispatchToProps, MapStateToProps, Props, diffData, getPrevData} from './utils';
-import {getClientStore, loadModel} from '@medux/core';
+import {Connect, diffData, getPrevData} from './utils';
+import {getClientStore, loadModel, env} from '@medux/core';
 
 import {Unsubscribe} from 'redux';
 
-export type ComponentConfigWithInjected<TInjectedProps, TInjectedMethods> = <C extends meduxCore.ComponentConfig>(config: C) => C & {data: TInjectedProps; methods: TInjectedMethods};
-
-export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TOwnProps = Props, TState = Props>(
-  moduleName: string,
-  mapStateToProps?: MapStateToProps<TInjectedProps, TOwnProps, TState>,
-  mapDispatchToProps?: MapDispatchToProps<TInjectedMethods, TOwnProps>
-): ComponentConfigWithInjected<TInjectedProps, TInjectedMethods> {
-  return <C extends meduxCore.ComponentConfig>(config: C) => {
+export const connectView: Connect<WechatMiniprogram.Component.Constructor> = (moduleName, mapStateToProps, mapDispatchToProps) => {
+  return (config: meduxCore.ComponentConfig) => {
     let unsubscribe: Unsubscribe | undefined;
     let ready = false;
 
@@ -19,7 +13,7 @@ export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TO
         return;
       }
       if (mapStateToProps) {
-        const nextState = mapStateToProps(getClientStore().getState() as any);
+        const nextState = mapStateToProps(getClientStore().getState() as any, this.data as any);
         const prevState = getPrevData(nextState, this.data || {});
         const updateData = diffData(prevState, nextState);
         updateData && this.setData!(diffData);
@@ -59,11 +53,11 @@ export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TO
         unsubscribe = undefined;
       }
     }
-    const mergeConfig: C = {
+    const mergeConfig: meduxCore.ComponentConfig = {
       ...config,
       methods: {
         ...config.methods,
-        ...(mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch as any)),
+        ...(mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch as any, config.data as any)),
       },
       lifetimes: {
         ...config.lifetimes,
@@ -77,6 +71,6 @@ export function connectView<TInjectedProps = Props, TInjectedMethods = Props, TO
         hide,
       },
     };
-    return mergeConfig as any;
+    return env.Component(mergeConfig);
   };
-}
+};

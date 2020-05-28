@@ -1,3 +1,11 @@
+declare namespace WechatMiniprogram {
+  namespace Page {
+    interface Constructor {}
+  }
+  namespace Component {
+    interface Constructor {}
+  }
+}
 declare namespace meduxCore {
   interface GeneralCallbackResult {
     errMsg: string;
@@ -53,6 +61,8 @@ declare namespace meduxCore {
 
   interface ENV {
     wx: WX;
+    Page: (config: any) => void;
+    Component: (config: any) => void;
     getCurrentPages: () => Array<{route: string; options: {[key: string]: string}}>;
   }
 }

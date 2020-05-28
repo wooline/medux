@@ -1,16 +1,10 @@
-import {MapDispatchToProps, MapStateToProps, Props, diffData, getPrevData} from './utils';
-import {getClientStore, loadModel} from '@medux/core';
+import {Connect, diffData, getPrevData} from './utils';
+import {getClientStore, loadModel, env} from '@medux/core';
 
 import {Unsubscribe} from 'redux';
 
-export type PageConfigWithInjected<TInjectedProps, TInjectedMethods> = <C extends meduxCore.PageConfig>(config: C) => C & TInjectedMethods & {data: TInjectedProps};
-
-export function connectPage<TInjectedProps = Props, TInjectedMethods = Props, TOwnProps = Props, TState = Props>(
-  moduleName: string,
-  mapStateToProps?: MapStateToProps<TInjectedProps, TOwnProps, TState>,
-  mapDispatchToProps?: MapDispatchToProps<TInjectedMethods, TOwnProps>
-): PageConfigWithInjected<TInjectedProps, TInjectedMethods> {
-  return <C extends meduxCore.PageConfig>(config: C) => {
+export const connectPage: Connect<WechatMiniprogram.Page.Constructor> = (moduleName, mapStateToProps, mapDispatchToProps) => {
+  return (config: meduxCore.PageConfig) => {
     let unsubscribe: Unsubscribe | undefined;
     let ready = false;
     //let loadOption: any;
@@ -20,7 +14,7 @@ export function connectPage<TInjectedProps = Props, TInjectedMethods = Props, TO
         return;
       }
       if (mapStateToProps) {
-        const nextState = mapStateToProps(getClientStore().getState() as any);
+        const nextState = mapStateToProps(getClientStore().getState() as any, this.data as any);
         const prevState = getPrevData(nextState, this.data || {});
         const updateData = diffData(prevState, nextState);
         updateData && this.setData!(diffData);
@@ -58,15 +52,15 @@ export function connectPage<TInjectedProps = Props, TInjectedMethods = Props, TO
         unsubscribe = undefined;
       }
     }
-    const mergeConfig: C = {
+    const mergeConfig: meduxCore.PageConfig = {
       ...config,
-      ...(mapDispatchToProps ? mapDispatchToProps(getClientStore()!.dispatch as any) : {}),
+      ...(mapDispatchToProps ? mapDispatchToProps(getClientStore()!.dispatch as any, config.data as any) : {}),
       onLoad,
       onUnload,
       onShow,
       onHide,
     };
 
-    return mergeConfig as any;
+    return env.Page(mergeConfig);
   };
-}
+};

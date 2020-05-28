@@ -1,8 +1,16 @@
 import {Action, Dispatch} from 'redux';
 
 export type Props = {[key: string]: any};
-export type MapStateToProps<TInjectedProps, TOwnProps, TState> = (state: TState, ownProps?: TOwnProps) => TInjectedProps;
-export type MapDispatchToProps<TInjectedMethods, TOwnProps> = (dispatch: Dispatch<Action>, ownProps?: TOwnProps) => TInjectedMethods;
+// export type MapStateToProps<TInjectedProps, TOwnProps, TState> = (state: TState, ownProps?: TOwnProps) => TInjectedProps;
+// export type MapDispatchToProps<TInjectedMethods, TOwnProps> = (dispatch: Dispatch<Action>, ownProps?: TOwnProps) => TInjectedMethods;
+
+export interface Connect<Constructor> {
+  <State = {}, InjectedProps = {}, InjectedMethods = {}, OwnProps = {}>(
+    moduleName: string,
+    mapStateToProps?: (state: State, ownProps: OwnProps) => InjectedProps,
+    mapDispatchToProps?: (dispatch: Dispatch<Action>, ownProps: OwnProps) => InjectedMethods
+  ): Constructor;
+}
 
 export function getPrevData(next: Props, prev: Props): Props {
   return Object.keys(next).reduce((result, key) => {

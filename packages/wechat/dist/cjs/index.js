@@ -7,7 +7,9 @@ global.global = {
   getCurrentPages: getCurrentPages,
   setTimeout: setTimeout,
   clearTimeout: clearTimeout,
-  console: console
+  console: console,
+  Page: Page,
+  Component: Component
 };
 
 function _assertThisInitialized(self) {
@@ -100,7 +102,7 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global;
+var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
 var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 var isDevelopmentEnv = 'development' !== 'production';
 var client = isServerEnv ? undefined : env;
@@ -4415,7 +4417,7 @@ function diffData(prev, next) {
   return data;
 }
 
-function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
+var connectView = function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
   return function (config) {
     var unsubscribe;
     var ready = false;
@@ -4426,7 +4428,7 @@ function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
       }
 
       if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState());
+        var nextState = mapStateToProps(getClientStore().getState(), this.data);
         var prevState = getPrevData(nextState, this.data || {});
         var updateData = diffData(prevState, nextState);
         updateData && this.setData(diffData);
@@ -4481,7 +4483,7 @@ function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
     }
 
     var mergeConfig = Object.assign({}, config, {
-      methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch)),
+      methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch, config.data)),
       lifetimes: Object.assign({}, config.lifetimes, {
         attached: attached,
         detached: detached
@@ -4491,11 +4493,11 @@ function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
         hide: hide
       })
     });
-    return mergeConfig;
+    return env.Component(mergeConfig);
   };
-}
+};
 
-function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
+var connectPage = function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
   return function (config) {
     var unsubscribe;
     var ready = false;
@@ -4506,7 +4508,7 @@ function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
       }
 
       if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState());
+        var nextState = mapStateToProps(getClientStore().getState(), this.data);
         var prevState = getPrevData(nextState, this.data || {});
         var updateData = diffData(prevState, nextState);
         updateData && this.setData(diffData);
@@ -4560,15 +4562,15 @@ function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
       }
     }
 
-    var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch) : {}, {
+    var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch, config.data) : {}, {
       onLoad: onLoad,
       onUnload: onUnload,
       onShow: onShow,
       onHide: onHide
     });
-    return mergeConfig;
+    return env.Page(mergeConfig);
   };
-}
+};
 
 var historyActions = undefined;
 var transformRoute = undefined;

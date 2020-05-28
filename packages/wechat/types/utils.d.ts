@@ -2,7 +2,8 @@ import { Action, Dispatch } from 'redux';
 export declare type Props = {
     [key: string]: any;
 };
-export declare type MapStateToProps<TInjectedProps, TOwnProps, TState> = (state: TState, ownProps?: TOwnProps) => TInjectedProps;
-export declare type MapDispatchToProps<TInjectedMethods, TOwnProps> = (dispatch: Dispatch<Action>, ownProps?: TOwnProps) => TInjectedMethods;
+export interface Connect<Constructor> {
+    <State = {}, InjectedProps = {}, InjectedMethods = {}, OwnProps = {}>(moduleName: string, mapStateToProps?: (state: State, ownProps: OwnProps) => InjectedProps, mapDispatchToProps?: (dispatch: Dispatch<Action>, ownProps: OwnProps) => InjectedMethods): Constructor;
+}
 export declare function getPrevData(next: Props, prev: Props): Props;
 export declare function diffData(prev: Props, next: Props): Props | undefined;
