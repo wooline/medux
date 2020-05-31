@@ -145,7 +145,7 @@ export class TaskCounter extends PDispatcher {
 
       if (this.list.length === 0) {
         if (this.ctimer) {
-          env.clearTimeout(this.ctimer);
+          env.clearTimeout.call(null, this.ctimer);
           this.ctimer = null;
         }
 

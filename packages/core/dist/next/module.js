@@ -333,7 +333,7 @@ function getModuleByName(moduleName, moduleGetter) {
 
 export async function renderApp(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
   if (reRenderTimer) {
-    env.clearTimeout(reRenderTimer);
+    env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
   }
 

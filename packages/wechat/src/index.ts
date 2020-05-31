@@ -1,10 +1,10 @@
 import './env';
 import {Store, Middleware, Dispatch} from 'redux';
 
-import {env, exportModule as baseExportModule, ExportModule, RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews, renderApp} from '@medux/core';
+import {exportModule as baseExportModule, ExportModule, RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews, renderApp} from '@medux/core';
 import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
 import {HistoryActions, createRouter, ToBrowserUrl} from './history';
-export {connectView} from './connectView';
+export {connectComponent} from './connectComponent';
 export {connectPage} from './connectPage';
 export {
   ActionTypes,
@@ -79,7 +79,6 @@ export function buildApp({
   storeOptions.middlewares.unshift(redirectMiddleware);
   return renderApp(
     () => {
-      env.console.log('renderer....');
       return () => void 0;
     },
     moduleGetter,

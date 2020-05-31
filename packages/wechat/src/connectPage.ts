@@ -17,7 +17,7 @@ export const connectPage: Connect<WechatMiniprogram.Page.Constructor> = (moduleN
         const nextState = mapStateToProps(getClientStore().getState() as any, this.data as any);
         const prevState = getPrevData(nextState, this.data || {});
         const updateData = diffData(prevState, nextState);
-        updateData && this.setData!(diffData);
+        updateData && this.setData!(updateData);
       }
     }
 

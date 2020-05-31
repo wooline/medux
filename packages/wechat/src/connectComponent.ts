@@ -1,9 +1,9 @@
 import {Connect, diffData, getPrevData} from './utils';
-import {getClientStore, loadModel, env} from '@medux/core';
+import {env, getClientStore, loadModel} from '@medux/core';
 
 import {Unsubscribe} from 'redux';
 
-export const connectView: Connect<WechatMiniprogram.Component.Constructor> = (moduleName, mapStateToProps, mapDispatchToProps) => {
+export const connectComponent: Connect<WechatMiniprogram.Component.Constructor> = (moduleName, mapStateToProps, mapDispatchToProps) => {
   return (config: meduxCore.ComponentConfig) => {
     let unsubscribe: Unsubscribe | undefined;
     let ready = false;
@@ -16,7 +16,7 @@ export const connectView: Connect<WechatMiniprogram.Component.Constructor> = (mo
         const nextState = mapStateToProps(getClientStore().getState() as any, this.data as any);
         const prevState = getPrevData(nextState, this.data || {});
         const updateData = diffData(prevState, nextState);
-        updateData && this.setData!(diffData);
+        updateData && this.setData!(updateData);
       }
     }
     // function created(this: ComponentConfig): void {

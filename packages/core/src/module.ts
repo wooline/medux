@@ -569,7 +569,7 @@ export async function renderApp<V>(
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ): Promise<void> {
   if (reRenderTimer) {
-    env.clearTimeout(reRenderTimer);
+    env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
   }
   MetaData.appModuleName = appModuleName;

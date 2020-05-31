@@ -287,7 +287,7 @@ var TaskCounter = function (_PDispatcher) {
 
       if (this.list.length === 0) {
         if (this.ctimer) {
-          env.clearTimeout(this.ctimer);
+          env.clearTimeout.call(null, this.ctimer);
           this.ctimer = null;
         }
 
@@ -2910,7 +2910,7 @@ function _renderApp() {
             }
 
             if (reRenderTimer) {
-              env.clearTimeout(reRenderTimer);
+              env.clearTimeout.call(null, reRenderTimer);
               reRenderTimer = 0;
             }
 
@@ -4417,7 +4417,7 @@ function diffData(prev, next) {
   return data;
 }
 
-var connectView = function connectView(moduleName, mapStateToProps, mapDispatchToProps) {
+var connectComponent = function connectComponent(moduleName, mapStateToProps, mapDispatchToProps) {
   return function (config) {
     var unsubscribe;
     var ready = false;
@@ -4431,7 +4431,7 @@ var connectView = function connectView(moduleName, mapStateToProps, mapDispatchT
         var nextState = mapStateToProps(getClientStore().getState(), this.data);
         var prevState = getPrevData(nextState, this.data || {});
         var updateData = diffData(prevState, nextState);
-        updateData && this.setData(diffData);
+        updateData && this.setData(updateData);
       }
     }
 
@@ -4511,7 +4511,7 @@ var connectPage = function connectPage(moduleName, mapStateToProps, mapDispatchT
         var nextState = mapStateToProps(getClientStore().getState(), this.data);
         var prevState = getPrevData(nextState, this.data || {});
         var updateData = diffData(prevState, nextState);
-        updateData && this.setData(diffData);
+        updateData && this.setData(updateData);
       }
     }
 
@@ -4627,7 +4627,6 @@ function buildApp(_ref) {
 
   storeOptions.middlewares.unshift(redirectMiddleware);
   return renderApp(function () {
-    env.console.log('renderer....');
     return function () {
       return void 0;
     };
@@ -4649,8 +4648,8 @@ exports.ActionTypes = ActionTypes;
 exports.BaseModelHandlers = BaseModelHandlers;
 exports.buildApp = buildApp;
 exports.client = client;
+exports.connectComponent = connectComponent;
 exports.connectPage = connectPage;
-exports.connectView = connectView;
 exports.delayPromise = delayPromise;
 exports.effect = effect;
 exports.env = env;

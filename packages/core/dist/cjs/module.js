@@ -400,7 +400,7 @@ function _renderApp() {
             }
 
             if (reRenderTimer) {
-              _env.env.clearTimeout(reRenderTimer);
+              _env.env.clearTimeout.call(null, reRenderTimer);
 
               reRenderTimer = 0;
             }

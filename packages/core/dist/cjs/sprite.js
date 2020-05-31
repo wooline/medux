@@ -198,7 +198,7 @@ var TaskCounter = function (_PDispatcher) {
 
       if (this.list.length === 0) {
         if (this.ctimer) {
-          _env.env.clearTimeout(this.ctimer);
+          _env.env.clearTimeout.call(null, this.ctimer);
 
           this.ctimer = null;
         }

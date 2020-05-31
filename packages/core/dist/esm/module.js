@@ -367,7 +367,7 @@ function _renderApp() {
             }
 
             if (reRenderTimer) {
-              env.clearTimeout(reRenderTimer);
+              env.clearTimeout.call(null, reRenderTimer);
               reRenderTimer = 0;
             }
 
