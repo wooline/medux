@@ -1,5 +1,5 @@
 import './env';
-import {Store, Middleware, Dispatch} from 'redux';
+import {Store, Middleware} from 'redux';
 
 import {exportModule as baseExportModule, ExportModule, RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews, renderApp} from '@medux/core';
 import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
@@ -95,7 +95,12 @@ export function buildApp({
 }
 export type RootState<G extends ModuleGetter> = BaseRootState<G, MeduxLocation>;
 export type BrowserRouter<Params> = {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>};
-export const exportModule: ExportModule<{}> = baseExportModule;
+export const exportModule: ExportModule<{__moduleName?: string}> = (moduleName, initState, ActionHandles, views) => {
+  Object.keys(views).forEach((key) => {
+    views[key].__moduleName = moduleName;
+  });
+  return baseExportModule(moduleName, initState, ActionHandles, views);
+};
 export interface DispatchProp {
-  dispatch: Dispatch;
+  dispatch?: (action: {type: string}) => any;
 }

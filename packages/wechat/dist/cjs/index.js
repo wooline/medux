@@ -4306,6 +4306,11 @@ function createRouter(routeConfig, locationMap) {
         delta: option
       } : option;
       var pages = env.getCurrentPages();
+
+      if (pages.length < 2) {
+        throw 'navigateBack:fail cannot navigate back at first page.';
+      }
+
       var currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
 
       if (currentPage) {
@@ -4417,158 +4422,182 @@ function diffData(prev, next) {
   return data;
 }
 
-var connectComponent = function connectComponent(moduleName, mapStateToProps, mapDispatchToProps) {
+var connectComponent = function connectComponent(mapStateToProps, mapDispatchToProps) {
+  var view;
   return function (config) {
-    var unsubscribe;
-    var ready = false;
+    function con(config) {
+      var unsubscribe;
+      var ready = false;
 
-    function onStateChange() {
-      if (!unsubscribe) {
-        return;
+      function onStateChange() {
+        if (!unsubscribe) {
+          return;
+        }
+
+        if (mapStateToProps) {
+          var nextState = mapStateToProps(getClientStore().getState(), this.data);
+          var prevState = getPrevData(nextState, this.data || {});
+          var updateData = diffData(prevState, nextState);
+          updateData && this.setData(updateData);
+        }
       }
 
-      if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState(), this.data);
-        var prevState = getPrevData(nextState, this.data || {});
-        var updateData = diffData(prevState, nextState);
-        updateData && this.setData(updateData);
+      function created() {
+        var _config$lifetimes, _config$lifetimes$cre;
+
+        env.console.log('created-' + view.__moduleName);
+        loadModel(view.__moduleName);
+        (_config$lifetimes = config.lifetimes) === null || _config$lifetimes === void 0 ? void 0 : (_config$lifetimes$cre = _config$lifetimes.created) === null || _config$lifetimes$cre === void 0 ? void 0 : _config$lifetimes$cre.call(this);
       }
+
+      function attached() {
+        var _config$lifetimes2, _config$lifetimes2$at;
+
+        env.console.log('attached-' + view.__moduleName);
+
+        if (mapStateToProps) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$lifetimes2 = config.lifetimes) === null || _config$lifetimes2 === void 0 ? void 0 : (_config$lifetimes2$at = _config$lifetimes2.attached) === null || _config$lifetimes2$at === void 0 ? void 0 : _config$lifetimes2$at.call(this);
+        ready = true;
+      }
+
+      function detached() {
+        var _config$lifetimes3, _config$lifetimes3$de;
+
+        (_config$lifetimes3 = config.lifetimes) === null || _config$lifetimes3 === void 0 ? void 0 : (_config$lifetimes3$de = _config$lifetimes3.detached) === null || _config$lifetimes3$de === void 0 ? void 0 : _config$lifetimes3$de.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      function show() {
+        var _config$pageLifetimes, _config$pageLifetimes2;
+
+        if (ready && mapStateToProps && !unsubscribe) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$pageLifetimes = config.pageLifetimes) === null || _config$pageLifetimes === void 0 ? void 0 : (_config$pageLifetimes2 = _config$pageLifetimes.show) === null || _config$pageLifetimes2 === void 0 ? void 0 : _config$pageLifetimes2.call(this);
+      }
+
+      function hide() {
+        var _config$pageLifetimes3, _config$pageLifetimes4;
+
+        (_config$pageLifetimes3 = config.pageLifetimes) === null || _config$pageLifetimes3 === void 0 ? void 0 : (_config$pageLifetimes4 = _config$pageLifetimes3.hide) === null || _config$pageLifetimes4 === void 0 ? void 0 : _config$pageLifetimes4.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      var mergeConfig = Object.assign({}, config, {
+        methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch, config.data), {
+          dispatch: getClientStore().dispatch
+        }),
+        lifetimes: Object.assign({}, config.lifetimes, {
+          created: created,
+          attached: attached,
+          detached: detached
+        }),
+        pageLifetimes: Object.assign({}, config.pageLifetimes, {
+          show: show,
+          hide: hide
+        })
+      });
+      return env.Component(mergeConfig);
     }
 
-    function attached() {
-      var _config$lifetimes, _config$lifetimes$att;
-
-      loadModel(moduleName);
-
-      if (mapStateToProps) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$lifetimes = config.lifetimes) === null || _config$lifetimes === void 0 ? void 0 : (_config$lifetimes$att = _config$lifetimes.attached) === null || _config$lifetimes$att === void 0 ? void 0 : _config$lifetimes$att.call(this);
-      ready = true;
-    }
-
-    function detached() {
-      var _config$lifetimes2, _config$lifetimes2$de;
-
-      (_config$lifetimes2 = config.lifetimes) === null || _config$lifetimes2 === void 0 ? void 0 : (_config$lifetimes2$de = _config$lifetimes2.detached) === null || _config$lifetimes2$de === void 0 ? void 0 : _config$lifetimes2$de.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    function show() {
-      var _config$pageLifetimes, _config$pageLifetimes2;
-
-      if (ready && mapStateToProps && !unsubscribe) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$pageLifetimes = config.pageLifetimes) === null || _config$pageLifetimes === void 0 ? void 0 : (_config$pageLifetimes2 = _config$pageLifetimes.show) === null || _config$pageLifetimes2 === void 0 ? void 0 : _config$pageLifetimes2.call(this);
-    }
-
-    function hide() {
-      var _config$pageLifetimes3, _config$pageLifetimes4;
-
-      (_config$pageLifetimes3 = config.pageLifetimes) === null || _config$pageLifetimes3 === void 0 ? void 0 : (_config$pageLifetimes4 = _config$pageLifetimes3.hide) === null || _config$pageLifetimes4 === void 0 ? void 0 : _config$pageLifetimes4.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    var mergeConfig = Object.assign({}, config, {
-      methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch, config.data)),
-      lifetimes: Object.assign({}, config.lifetimes, {
-        attached: attached,
-        detached: detached
-      }),
-      pageLifetimes: Object.assign({}, config.pageLifetimes, {
-        show: show,
-        hide: hide
-      })
-    });
-    return env.Component(mergeConfig);
+    view = con.bind(null, config);
+    return view;
   };
 };
 
-var connectPage = function connectPage(moduleName, mapStateToProps, mapDispatchToProps) {
+var connectPage = function connectPage(mapStateToProps, mapDispatchToProps) {
+  var view;
   return function (config) {
-    var unsubscribe;
-    var ready = false;
+    function con(config) {
+      var unsubscribe;
+      var ready = false;
 
-    function onStateChange() {
-      if (!unsubscribe) {
-        return;
+      function onStateChange() {
+        if (!unsubscribe) {
+          return;
+        }
+
+        if (mapStateToProps) {
+          var nextState = mapStateToProps(getClientStore().getState(), this.data);
+          var prevState = getPrevData(nextState, this.data || {});
+          var updateData = diffData(prevState, nextState);
+          updateData && this.setData(updateData);
+        }
       }
 
-      if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState(), this.data);
-        var prevState = getPrevData(nextState, this.data || {});
-        var updateData = diffData(prevState, nextState);
-        updateData && this.setData(updateData);
+      function onLoad(option) {
+        var _config$onLoad;
+
+        loadModel(view.__moduleName);
+
+        if (mapStateToProps) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$onLoad = config.onLoad) === null || _config$onLoad === void 0 ? void 0 : _config$onLoad.call(this, option);
+        ready = true;
       }
+
+      function onUnload() {
+        var _config$onUnload;
+
+        (_config$onUnload = config.onUnload) === null || _config$onUnload === void 0 ? void 0 : _config$onUnload.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      function onShow() {
+        var _config$onShow;
+
+        if (ready && mapStateToProps && !unsubscribe) {
+          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+          onStateChange.call(this);
+        }
+
+        (_config$onShow = config.onShow) === null || _config$onShow === void 0 ? void 0 : _config$onShow.call(this);
+      }
+
+      function onHide() {
+        var _config$onHide;
+
+        (_config$onHide = config.onHide) === null || _config$onHide === void 0 ? void 0 : _config$onHide.call(this);
+
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = undefined;
+        }
+      }
+
+      var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch, config.data) : {}, {
+        dispatch: getClientStore().dispatch,
+        onLoad: onLoad,
+        onUnload: onUnload,
+        onShow: onShow,
+        onHide: onHide
+      });
+      return env.Page(mergeConfig);
     }
 
-    function onLoad(option) {
-      var _config$onLoad;
-
-      loadModel(moduleName);
-
-      if (mapStateToProps) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$onLoad = config.onLoad) === null || _config$onLoad === void 0 ? void 0 : _config$onLoad.call(this, option);
-      ready = true;
-    }
-
-    function onUnload() {
-      var _config$onUnload;
-
-      (_config$onUnload = config.onUnload) === null || _config$onUnload === void 0 ? void 0 : _config$onUnload.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    function onShow() {
-      var _config$onShow;
-
-      if (ready && mapStateToProps && !unsubscribe) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$onShow = config.onShow) === null || _config$onShow === void 0 ? void 0 : _config$onShow.call(this);
-    }
-
-    function onHide() {
-      var _config$onHide;
-
-      (_config$onHide = config.onHide) === null || _config$onHide === void 0 ? void 0 : _config$onHide.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch, config.data) : {}, {
-      onLoad: onLoad,
-      onUnload: onUnload,
-      onShow: onShow,
-      onHide: onHide
-    });
-    return env.Page(mergeConfig);
+    view = con.bind(null, config);
+    return view;
   };
 };
 
@@ -4642,7 +4671,12 @@ function buildApp(_ref) {
     }) : store;
   });
 }
-var exportModule$1 = exportModule;
+var exportModule$1 = function exportModule$1(moduleName, initState, ActionHandles, views) {
+  Object.keys(views).forEach(function (key) {
+    views[key].__moduleName = moduleName;
+  });
+  return exportModule(moduleName, initState, ActionHandles, views);
+};
 
 exports.ActionTypes = ActionTypes;
 exports.BaseModelHandlers = BaseModelHandlers;

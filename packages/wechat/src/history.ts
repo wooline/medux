@@ -1,5 +1,5 @@
 import {HistoryProxy, RouteData, env} from '@medux/core';
-import {MeduxLocation, RouteConfig, TransformRoute, assignRouteData, buildTransformRoute, deepAssign, locationToUrl, urlToLocation, checkUrl} from '@medux/route-plan-a';
+import {MeduxLocation, RouteConfig, TransformRoute, assignRouteData, buildTransformRoute, checkUrl, deepAssign, locationToUrl, urlToLocation} from '@medux/route-plan-a';
 
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
@@ -162,6 +162,9 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
     navigateBack(option: number | meduxCore.NavigateBackOption): void {
       const routeOption: meduxCore.NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
       const pages = env.getCurrentPages();
+      if (pages.length < 2) {
+        throw 'navigateBack:fail cannot navigate back at first page.';
+      }
       const currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
 
       if (currentPage) {

@@ -51,6 +51,7 @@ declare namespace meduxCore {
     setData?(data: Props): void;
   }
   interface PageConfig {
+    dispatch?(action: {type: string}): any;
     data?: Props;
     setData?(data: Props): void;
     onLoad?(options: any): void;

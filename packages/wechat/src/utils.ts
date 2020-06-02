@@ -6,7 +6,6 @@ export type Props = {[key: string]: any};
 
 export interface Connect<Constructor> {
   <State = {}, InjectedProps = {}, InjectedMethods = {}, OwnProps = {}>(
-    moduleName: string,
     mapStateToProps?: (state: State, ownProps: OwnProps) => InjectedProps,
     mapDispatchToProps?: (dispatch: Dispatch<Action>, ownProps: OwnProps) => InjectedMethods
   ): Constructor;

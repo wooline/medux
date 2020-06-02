@@ -1,5 +1,5 @@
 import './env';
-import { Store, Dispatch } from 'redux';
+import { Store } from 'redux';
 import { ExportModule, RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';
 import { HistoryActions, ToBrowserUrl } from './history';
@@ -32,7 +32,11 @@ export declare type BrowserRouter<Params> = {
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;
 };
-export declare const exportModule: ExportModule<{}>;
+export declare const exportModule: ExportModule<{
+    __moduleName?: string;
+}>;
 export interface DispatchProp {
-    dispatch: Dispatch;
+    dispatch?: (action: {
+        type: string;
+    }) => any;
 }
