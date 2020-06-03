@@ -27,11 +27,11 @@ function loadModel(moduleName, storeInstance, options) {
 
     if (isPromiseModule(result)) {
       return result.then(function (module) {
-        moduleGetter[moduleName] = (0, _basic.cacheModule)(module);
+        (0, _basic.cacheModule)(module);
         return module.default.model(store, options);
       });
     } else {
-      (0, _basic.cacheModule)(result, moduleGetter[moduleName]);
+      (0, _basic.cacheModule)(result);
       return result.default.model(store, options);
     }
   }

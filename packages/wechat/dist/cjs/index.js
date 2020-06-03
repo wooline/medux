@@ -356,12 +356,21 @@ var ActionTypes = {
   Error: "medux" + config.NSP + "Error",
   RouteChange: "medux" + config.NSP + "RouteChange"
 };
-function cacheModule(module, getter) {
-  var fn = getter ? getter : function () {
-    return module;
-  };
-  fn.__module__ = module;
-  return fn;
+function cacheModule(module) {
+  var moduleName = module.default.moduleName;
+  var moduleGetter = MetaData.moduleGetter;
+  var fn = moduleGetter[moduleName];
+
+  if (fn['__module__'] === module) {
+    return fn;
+  } else {
+    fn = function fn() {
+      return module;
+    };
+
+    fn['__module__'] = module;
+    return fn;
+  }
 }
 function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
@@ -384,7 +393,7 @@ function reducer(target, key, descriptor) {
 function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName;
+    loadingForModuleName = MetaData.appModuleName || '';
   }
 
   return function (target, key, descriptor) {
@@ -401,7 +410,9 @@ function effect(loadingForGroupName, loadingForModuleName) {
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
         if (!isServerEnv) {
-          if (!loadingForModuleName) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData.appModuleName;
+          } else if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
@@ -1069,11 +1080,11 @@ function loadModel(moduleName, storeInstance, options) {
 
     if (isPromiseModule(result)) {
       return result.then(function (module) {
-        moduleGetter[moduleName] = cacheModule(module);
+        cacheModule(module);
         return module.default.model(store, options);
       });
     } else {
-      cacheModule(result, moduleGetter[moduleName]);
+      cacheModule(result);
       return result.default.model(store, options);
     }
   }
@@ -2628,8 +2639,7 @@ var reRender = function reRender() {
 var reRenderTimer = 0;
 var appView = null;
 function viewHotReplacement(moduleName, views) {
-  var moduleGetter = MetaData.moduleGetter[moduleName];
-  var module = moduleGetter['__module__'];
+  var module = MetaData.moduleGetter[moduleName]();
 
   if (module) {
     module.default.views = views;
@@ -2884,11 +2894,11 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule$1(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       return module;
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     return result;
   }
 }
@@ -4422,182 +4432,169 @@ function diffData(prev, next) {
   return data;
 }
 
-var connectComponent = function connectComponent(mapStateToProps, mapDispatchToProps) {
-  var view;
+var connectComponent = function connectComponent(module, mapStateToProps, mapDispatchToProps) {
+  cacheModule(module);
   return function (config) {
-    function con(config) {
-      var unsubscribe;
-      var ready = false;
+    var unsubscribe;
+    var ready = false;
 
-      function onStateChange() {
-        if (!unsubscribe) {
-          return;
-        }
-
-        if (mapStateToProps) {
-          var nextState = mapStateToProps(getClientStore().getState(), this.data);
-          var prevState = getPrevData(nextState, this.data || {});
-          var updateData = diffData(prevState, nextState);
-          updateData && this.setData(updateData);
-        }
+    function onStateChange() {
+      if (!unsubscribe) {
+        return;
       }
 
-      function created() {
-        var _config$lifetimes, _config$lifetimes$cre;
-
-        env.console.log('created-' + view.__moduleName);
-        loadModel(view.__moduleName);
-        (_config$lifetimes = config.lifetimes) === null || _config$lifetimes === void 0 ? void 0 : (_config$lifetimes$cre = _config$lifetimes.created) === null || _config$lifetimes$cre === void 0 ? void 0 : _config$lifetimes$cre.call(this);
+      if (mapStateToProps) {
+        var nextState = mapStateToProps(getClientStore().getState(), this.data);
+        var prevState = getPrevData(nextState, this.data || {});
+        var updateData = diffData(prevState, nextState);
+        updateData && this.setData(updateData);
       }
-
-      function attached() {
-        var _config$lifetimes2, _config$lifetimes2$at;
-
-        env.console.log('attached-' + view.__moduleName);
-
-        if (mapStateToProps) {
-          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-          onStateChange.call(this);
-        }
-
-        (_config$lifetimes2 = config.lifetimes) === null || _config$lifetimes2 === void 0 ? void 0 : (_config$lifetimes2$at = _config$lifetimes2.attached) === null || _config$lifetimes2$at === void 0 ? void 0 : _config$lifetimes2$at.call(this);
-        ready = true;
-      }
-
-      function detached() {
-        var _config$lifetimes3, _config$lifetimes3$de;
-
-        (_config$lifetimes3 = config.lifetimes) === null || _config$lifetimes3 === void 0 ? void 0 : (_config$lifetimes3$de = _config$lifetimes3.detached) === null || _config$lifetimes3$de === void 0 ? void 0 : _config$lifetimes3$de.call(this);
-
-        if (unsubscribe) {
-          unsubscribe();
-          unsubscribe = undefined;
-        }
-      }
-
-      function show() {
-        var _config$pageLifetimes, _config$pageLifetimes2;
-
-        if (ready && mapStateToProps && !unsubscribe) {
-          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-          onStateChange.call(this);
-        }
-
-        (_config$pageLifetimes = config.pageLifetimes) === null || _config$pageLifetimes === void 0 ? void 0 : (_config$pageLifetimes2 = _config$pageLifetimes.show) === null || _config$pageLifetimes2 === void 0 ? void 0 : _config$pageLifetimes2.call(this);
-      }
-
-      function hide() {
-        var _config$pageLifetimes3, _config$pageLifetimes4;
-
-        (_config$pageLifetimes3 = config.pageLifetimes) === null || _config$pageLifetimes3 === void 0 ? void 0 : (_config$pageLifetimes4 = _config$pageLifetimes3.hide) === null || _config$pageLifetimes4 === void 0 ? void 0 : _config$pageLifetimes4.call(this);
-
-        if (unsubscribe) {
-          unsubscribe();
-          unsubscribe = undefined;
-        }
-      }
-
-      var mergeConfig = Object.assign({}, config, {
-        methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch, config.data), {
-          dispatch: getClientStore().dispatch
-        }),
-        lifetimes: Object.assign({}, config.lifetimes, {
-          created: created,
-          attached: attached,
-          detached: detached
-        }),
-        pageLifetimes: Object.assign({}, config.pageLifetimes, {
-          show: show,
-          hide: hide
-        })
-      });
-      return env.Component(mergeConfig);
     }
 
-    view = con.bind(null, config);
-    return view;
+    function created() {
+      var _config$lifetimes, _config$lifetimes$cre;
+
+      loadModel(module.default.moduleName);
+      (_config$lifetimes = config.lifetimes) === null || _config$lifetimes === void 0 ? void 0 : (_config$lifetimes$cre = _config$lifetimes.created) === null || _config$lifetimes$cre === void 0 ? void 0 : _config$lifetimes$cre.call(this);
+    }
+
+    function attached() {
+      var _config$lifetimes2, _config$lifetimes2$at;
+
+      if (mapStateToProps) {
+        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+        onStateChange.call(this);
+      }
+
+      (_config$lifetimes2 = config.lifetimes) === null || _config$lifetimes2 === void 0 ? void 0 : (_config$lifetimes2$at = _config$lifetimes2.attached) === null || _config$lifetimes2$at === void 0 ? void 0 : _config$lifetimes2$at.call(this);
+      ready = true;
+    }
+
+    function detached() {
+      var _config$lifetimes3, _config$lifetimes3$de;
+
+      (_config$lifetimes3 = config.lifetimes) === null || _config$lifetimes3 === void 0 ? void 0 : (_config$lifetimes3$de = _config$lifetimes3.detached) === null || _config$lifetimes3$de === void 0 ? void 0 : _config$lifetimes3$de.call(this);
+
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = undefined;
+      }
+    }
+
+    function show() {
+      var _config$pageLifetimes, _config$pageLifetimes2;
+
+      if (ready && mapStateToProps && !unsubscribe) {
+        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+        onStateChange.call(this);
+      }
+
+      (_config$pageLifetimes = config.pageLifetimes) === null || _config$pageLifetimes === void 0 ? void 0 : (_config$pageLifetimes2 = _config$pageLifetimes.show) === null || _config$pageLifetimes2 === void 0 ? void 0 : _config$pageLifetimes2.call(this);
+    }
+
+    function hide() {
+      var _config$pageLifetimes3, _config$pageLifetimes4;
+
+      (_config$pageLifetimes3 = config.pageLifetimes) === null || _config$pageLifetimes3 === void 0 ? void 0 : (_config$pageLifetimes4 = _config$pageLifetimes3.hide) === null || _config$pageLifetimes4 === void 0 ? void 0 : _config$pageLifetimes4.call(this);
+
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = undefined;
+      }
+    }
+
+    var mergeConfig = Object.assign({}, config, {
+      methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch, config.data), {
+        dispatch: getClientStore().dispatch
+      }),
+      lifetimes: Object.assign({}, config.lifetimes, {
+        created: created,
+        attached: attached,
+        detached: detached
+      }),
+      pageLifetimes: Object.assign({}, config.pageLifetimes, {
+        show: show,
+        hide: hide
+      })
+    });
+    return env.Component(mergeConfig);
   };
 };
 
-var connectPage = function connectPage(mapStateToProps, mapDispatchToProps) {
-  var view;
+var connectPage = function connectPage(module, mapStateToProps, mapDispatchToProps) {
+  cacheModule(module);
   return function (config) {
-    function con(config) {
-      var unsubscribe;
-      var ready = false;
+    var unsubscribe;
+    var ready = false;
 
-      function onStateChange() {
-        if (!unsubscribe) {
-          return;
-        }
-
-        if (mapStateToProps) {
-          var nextState = mapStateToProps(getClientStore().getState(), this.data);
-          var prevState = getPrevData(nextState, this.data || {});
-          var updateData = diffData(prevState, nextState);
-          updateData && this.setData(updateData);
-        }
+    function onStateChange() {
+      if (!unsubscribe) {
+        return;
       }
 
-      function onLoad(option) {
-        var _config$onLoad;
-
-        loadModel(view.__moduleName);
-
-        if (mapStateToProps) {
-          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-          onStateChange.call(this);
-        }
-
-        (_config$onLoad = config.onLoad) === null || _config$onLoad === void 0 ? void 0 : _config$onLoad.call(this, option);
-        ready = true;
+      if (mapStateToProps) {
+        var nextState = mapStateToProps(getClientStore().getState(), this.data);
+        var prevState = getPrevData(nextState, this.data || {});
+        var updateData = diffData(prevState, nextState);
+        updateData && this.setData(updateData);
       }
-
-      function onUnload() {
-        var _config$onUnload;
-
-        (_config$onUnload = config.onUnload) === null || _config$onUnload === void 0 ? void 0 : _config$onUnload.call(this);
-
-        if (unsubscribe) {
-          unsubscribe();
-          unsubscribe = undefined;
-        }
-      }
-
-      function onShow() {
-        var _config$onShow;
-
-        if (ready && mapStateToProps && !unsubscribe) {
-          unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-          onStateChange.call(this);
-        }
-
-        (_config$onShow = config.onShow) === null || _config$onShow === void 0 ? void 0 : _config$onShow.call(this);
-      }
-
-      function onHide() {
-        var _config$onHide;
-
-        (_config$onHide = config.onHide) === null || _config$onHide === void 0 ? void 0 : _config$onHide.call(this);
-
-        if (unsubscribe) {
-          unsubscribe();
-          unsubscribe = undefined;
-        }
-      }
-
-      var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch, config.data) : {}, {
-        dispatch: getClientStore().dispatch,
-        onLoad: onLoad,
-        onUnload: onUnload,
-        onShow: onShow,
-        onHide: onHide
-      });
-      return env.Page(mergeConfig);
     }
 
-    view = con.bind(null, config);
-    return view;
+    function onLoad(option) {
+      var _config$onLoad;
+
+      loadModel(module.default.moduleName);
+
+      if (mapStateToProps) {
+        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+        onStateChange.call(this);
+      }
+
+      (_config$onLoad = config.onLoad) === null || _config$onLoad === void 0 ? void 0 : _config$onLoad.call(this, option);
+      ready = true;
+    }
+
+    function onUnload() {
+      var _config$onUnload;
+
+      (_config$onUnload = config.onUnload) === null || _config$onUnload === void 0 ? void 0 : _config$onUnload.call(this);
+
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = undefined;
+      }
+    }
+
+    function onShow() {
+      var _config$onShow;
+
+      if (ready && mapStateToProps && !unsubscribe) {
+        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
+        onStateChange.call(this);
+      }
+
+      (_config$onShow = config.onShow) === null || _config$onShow === void 0 ? void 0 : _config$onShow.call(this);
+    }
+
+    function onHide() {
+      var _config$onHide;
+
+      (_config$onHide = config.onHide) === null || _config$onHide === void 0 ? void 0 : _config$onHide.call(this);
+
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = undefined;
+      }
+    }
+
+    var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch, config.data) : {}, {
+      dispatch: getClientStore().dispatch,
+      onLoad: onLoad,
+      onUnload: onUnload,
+      onShow: onShow,
+      onHide: onHide
+    });
+    return env.Page(mergeConfig);
   };
 };
 
@@ -4671,12 +4668,7 @@ function buildApp(_ref) {
     }) : store;
   });
 }
-var exportModule$1 = function exportModule$1(moduleName, initState, ActionHandles, views) {
-  Object.keys(views).forEach(function (key) {
-    views[key].__moduleName = moduleName;
-  });
-  return exportModule(moduleName, initState, ActionHandles, views);
-};
+var exportModule$1 = exportModule;
 
 exports.ActionTypes = ActionTypes;
 exports.BaseModelHandlers = BaseModelHandlers;

@@ -95,12 +95,7 @@ export function buildApp({
 }
 export type RootState<G extends ModuleGetter> = BaseRootState<G, MeduxLocation>;
 export type BrowserRouter<Params> = {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>};
-export const exportModule: ExportModule<{__moduleName?: string}> = (moduleName, initState, ActionHandles, views) => {
-  Object.keys(views).forEach((key) => {
-    views[key].__moduleName = moduleName;
-  });
-  return baseExportModule(moduleName, initState, ActionHandles, views);
-};
+export const exportModule: ExportModule<any> = baseExportModule;
 export interface DispatchProp {
   dispatch?: (action: {type: string}) => any;
 }

@@ -40,8 +40,7 @@ var reRender = function reRender() {
 var reRenderTimer = 0;
 var appView = null;
 export function viewHotReplacement(moduleName, views) {
-  var moduleGetter = MetaData.moduleGetter[moduleName];
-  var module = moduleGetter['__module__'];
+  var module = MetaData.moduleGetter[moduleName]();
 
   if (module) {
     module.default.views = views;
@@ -299,7 +298,7 @@ export function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       var view = module.default.views[viewName];
 
       if (isServerEnv) {
@@ -317,7 +316,7 @@ export function getView(moduleName, viewName, modelOptions) {
       }
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     var view = result.default.views[viewName];
 
     if (isServerEnv) {
@@ -341,11 +340,11 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       return module;
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     return result;
   }
 }

@@ -62,8 +62,7 @@ var reRenderTimer = 0;
 var appView = null;
 
 function viewHotReplacement(moduleName, views) {
-  var moduleGetter = _basic.MetaData.moduleGetter[moduleName];
-  var module = moduleGetter['__module__'];
+  var module = _basic.MetaData.moduleGetter[moduleName]();
 
   if (module) {
     module.default.views = views;
@@ -332,7 +331,7 @@ function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = (0, _basic.cacheModule)(module);
+      (0, _basic.cacheModule)(module);
       var view = module.default.views[viewName];
 
       if (_env.isServerEnv) {
@@ -350,7 +349,7 @@ function getView(moduleName, viewName, modelOptions) {
       }
     });
   } else {
-    (0, _basic.cacheModule)(result, moduleGetter[moduleName]);
+    (0, _basic.cacheModule)(result);
     var view = result.default.views[viewName];
 
     if (_env.isServerEnv) {
@@ -374,11 +373,11 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = (0, _basic.cacheModule)(module);
+      (0, _basic.cacheModule)(module);
       return module;
     });
   } else {
-    (0, _basic.cacheModule)(result, moduleGetter[moduleName]);
+    (0, _basic.cacheModule)(result);
     return result;
   }
 }

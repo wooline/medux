@@ -17,11 +17,11 @@ export function loadModel(moduleName, storeInstance, options) {
 
     if (isPromiseModule(result)) {
       return result.then(module => {
-        moduleGetter[moduleName] = cacheModule(module);
+        cacheModule(module);
         return module.default.model(store, options);
       });
     } else {
-      cacheModule(result, moduleGetter[moduleName]);
+      cacheModule(result);
       return result.default.model(store, options);
     }
   }

@@ -120,6 +120,23 @@ export interface ActionHandler {
     __decoratorResults__?: any[];
     (payload?: any): any;
 }
+export interface CommonModule {
+    default: {
+        moduleName: string;
+        model: {
+            moduleName: string;
+            initState: any;
+            (store: any, options?: any): void | Promise<void>;
+        };
+        views: {
+            [key: string]: any;
+        };
+        actions: {
+            [actionName: string]: (...args: any[]) => Action;
+        };
+    };
+}
+export declare function cacheModule<T extends CommonModule>(module: T): () => T;
 export interface BaseModelState<R = {
     [key: string]: any;
 }> {
@@ -130,7 +147,6 @@ export interface BaseModelState<R = {
         [key: string]: LoadingState;
     };
 }
-export declare function cacheModule<T>(module: T, getter?: () => T): any;
 export declare function isPromise(data: any): data is Promise<any>;
 export declare function getClientStore(): ModelStore;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;

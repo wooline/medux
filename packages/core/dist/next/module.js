@@ -36,8 +36,7 @@ let reRender = () => void 0;
 let reRenderTimer = 0;
 let appView = null;
 export function viewHotReplacement(moduleName, views) {
-  const moduleGetter = MetaData.moduleGetter[moduleName];
-  const module = moduleGetter['__module__'];
+  const module = MetaData.moduleGetter[moduleName]();
 
   if (module) {
     module.default.views = views;
@@ -284,7 +283,7 @@ export function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule(result)) {
     return result.then(module => {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       const view = module.default.views[viewName];
 
       if (isServerEnv) {
@@ -300,7 +299,7 @@ export function getView(moduleName, viewName, modelOptions) {
       }
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     const view = result.default.views[viewName];
 
     if (isServerEnv) {
@@ -322,11 +321,11 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule(result)) {
     return result.then(module => {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       return module;
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     return result;
   }
 }

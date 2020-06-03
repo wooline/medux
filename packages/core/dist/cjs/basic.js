@@ -97,12 +97,21 @@ var ActionTypes = {
 };
 exports.ActionTypes = ActionTypes;
 
-function cacheModule(module, getter) {
-  var fn = getter ? getter : function () {
-    return module;
-  };
-  fn.__module__ = module;
-  return fn;
+function cacheModule(module) {
+  var moduleName = module.default.moduleName;
+  var moduleGetter = MetaData.moduleGetter;
+  var fn = moduleGetter[moduleName];
+
+  if (fn['__module__'] === module) {
+    return fn;
+  } else {
+    fn = function fn() {
+      return module;
+    };
+
+    fn['__module__'] = module;
+    return fn;
+  }
 }
 
 function isPromise(data) {
@@ -129,7 +138,7 @@ function reducer(target, key, descriptor) {
 function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName;
+    loadingForModuleName = MetaData.appModuleName || '';
   }
 
   return function (target, key, descriptor) {
@@ -146,7 +155,9 @@ function effect(loadingForGroupName, loadingForModuleName) {
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
         if (!_env.isServerEnv) {
-          if (!loadingForModuleName) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData.appModuleName;
+          } else if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 

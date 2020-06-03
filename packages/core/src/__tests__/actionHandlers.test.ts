@@ -138,35 +138,33 @@ describe('无SSR时', () => {
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
-      moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
-      moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2', loading: {global: 'Start'}},
-      moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Start'}},
+      moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Start'}},
+      moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2'},
+      moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
     });
     await result;
     //await之后effect已经执行完毕了
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
-      moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
-      moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2', loading: {global: 'Stop'}},
-      moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Stop'}},
+      moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Stop'}},
+      moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2'},
+      moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
     });
-    expect(actionLogs.join(' ')).toBe(['moduleA.setText', 'moduleB.setText', 'moduleB.Loading', 'moduleC.setText', 'moduleC.Loading', 'moduleB.Loading', 'moduleC.Loading'].join(' '));
+    expect(actionLogs.join(' ')).toBe(['moduleA.setText', 'moduleB.setText', 'moduleA.Loading', 'moduleC.setText', 'moduleA.Loading'].join(' '));
     console.log = _log;
   });
   test('moduleA触发reducerAction,moduleB、moduleC链式监听', async () => {
     const result: any = mockStore.dispatch(actions.moduleA.setTips('tips-changed'));
-    expect(actionLogs.join(' ')).toBe(['moduleA.setTips', 'moduleB.setTips', 'moduleB.Loading', 'moduleC.setTips', 'moduleC.Loading'].join(' '));
+    expect(actionLogs.join(' ')).toBe(['moduleA.setTips', 'moduleB.setTips', 'moduleA.Loading', 'moduleC.setTips'].join(' '));
     await result;
-    expect(actionLogs.join(' ')).toBe(
-      ['moduleA.setTips', 'moduleB.setTips', 'moduleB.Loading', 'moduleC.setTips', 'moduleC.Loading', 'moduleB.setMessage', 'moduleC.setMessage', 'moduleC.Loading', 'moduleB.Loading'].join(' ')
-    );
+    expect(actionLogs.join(' ')).toBe(['moduleA.setTips', 'moduleB.setTips', 'moduleA.Loading', 'moduleC.setTips', 'moduleB.setMessage', 'moduleC.setMessage', 'moduleA.Loading'].join(' '));
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
-      moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips-changed'},
-      moduleB: {isModule: true, routeParams: {id: 6}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed', loading: {global: 'Stop'}},
-      moduleC: {isModule: true, routeParams: {id: 7}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed', loading: {global: 'Stop'}},
+      moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips-changed', loading: {global: 'Stop'}},
+      moduleB: {isModule: true, routeParams: {id: 6}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed'},
+      moduleC: {isModule: true, routeParams: {id: 7}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed'},
     });
   });
 });

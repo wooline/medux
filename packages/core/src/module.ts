@@ -156,8 +156,7 @@ let appView: any = null;
  * 当view发生变化时，用来热更新UI
  */
 export function viewHotReplacement(moduleName: string, views: {[key: string]: any}) {
-  const moduleGetter = MetaData.moduleGetter[moduleName];
-  const module = moduleGetter['__module__'] as Module;
+  const module = MetaData.moduleGetter[moduleName]() as Module;
   if (module) {
     module.default.views = views;
     env.console.warn(`[HMR] @medux Updated views: ${moduleName}`);
@@ -447,6 +446,7 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
   }, {});
   return MetaData.actionCreatorMap as any;
 }
+
 /**
  * 动态获取View，与LoadView的区别是：
  * - getView仅获取view，并不渲染，与UI平台无关
@@ -458,7 +458,7 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
     return result.then((module) => {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       const view: T = module.default.views[viewName];
       if (isServerEnv) {
         return view;
@@ -471,7 +471,7 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
       }
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     const view: T = result.default.views[viewName];
     if (isServerEnv) {
       return view;
@@ -503,11 +503,11 @@ function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promis
   if (isPromiseModule(result)) {
     return result.then((module) => {
       //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       return module;
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     return result;
   }
 }

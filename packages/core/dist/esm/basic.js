@@ -66,12 +66,21 @@ export var ActionTypes = {
   Error: "medux" + config.NSP + "Error",
   RouteChange: "medux" + config.NSP + "RouteChange"
 };
-export function cacheModule(module, getter) {
-  var fn = getter ? getter : function () {
-    return module;
-  };
-  fn.__module__ = module;
-  return fn;
+export function cacheModule(module) {
+  var moduleName = module.default.moduleName;
+  var moduleGetter = MetaData.moduleGetter;
+  var fn = moduleGetter[moduleName];
+
+  if (fn['__module__'] === module) {
+    return fn;
+  } else {
+    fn = function fn() {
+      return module;
+    };
+
+    fn['__module__'] = module;
+    return fn;
+  }
 }
 export function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
@@ -94,7 +103,7 @@ export function reducer(target, key, descriptor) {
 export function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName;
+    loadingForModuleName = MetaData.appModuleName || '';
   }
 
   return function (target, key, descriptor) {
@@ -111,7 +120,9 @@ export function effect(loadingForGroupName, loadingForModuleName) {
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
         if (!isServerEnv) {
-          if (!loadingForModuleName) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData.appModuleName;
+          } else if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 

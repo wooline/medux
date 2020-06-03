@@ -32,9 +32,7 @@ export declare type BrowserRouter<Params> = {
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;
 };
-export declare const exportModule: ExportModule<{
-    __moduleName?: string;
-}>;
+export declare const exportModule: ExportModule<any>;
 export interface DispatchProp {
     dispatch?: (action: {
         type: string;

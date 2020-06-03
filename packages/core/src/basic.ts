@@ -233,6 +233,34 @@ export interface ActionHandler {
   __decoratorResults__?: any[];
   (payload?: any): any;
 }
+
+export interface CommonModule {
+  default: {
+    moduleName: string;
+    model: {
+      moduleName: string;
+      initState: any;
+      (store: any, options?: any): void | Promise<void>;
+    };
+    views: {[key: string]: any};
+    actions: {
+      [actionName: string]: (...args: any[]) => Action;
+    };
+  };
+}
+
+export function cacheModule<T extends CommonModule>(module: T): () => T {
+  const moduleName = module.default.moduleName;
+  const moduleGetter: ModuleGetter = MetaData.moduleGetter;
+  let fn = moduleGetter[moduleName] as any;
+  if (fn['__module__'] === module) {
+    return fn;
+  } else {
+    fn = () => module;
+    fn['__module__'] = module;
+    return fn;
+  }
+}
 /**
  * 所有ModuleState的固定属性
  */
@@ -257,11 +285,7 @@ export interface BaseModelState<R = {[key: string]: any}> {
     [key: string]: LoadingState;
   };
 }
-export function cacheModule<T>(module: T, getter?: () => T) {
-  const fn: any = getter ? getter : () => module;
-  fn.__module__ = module;
-  return fn;
-}
+
 export function isPromise(data: any): data is Promise<any> {
   return typeof data === 'object' && typeof data['then'] === 'function';
 }
@@ -302,7 +326,7 @@ export function reducer(target: any, key: string, descriptor: PropertyDescriptor
 export function effect(loadingForGroupName?: string | null, loadingForModuleName?: string) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName;
+    loadingForModuleName = MetaData.appModuleName || '';
   }
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
     if (!key && !descriptor) {
@@ -316,7 +340,9 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
     if (loadingForGroupName) {
       const before = (curAction: Action, moduleName: string, promiseResult: Promise<any>) => {
         if (!isServerEnv) {
-          if (!loadingForModuleName) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData.appModuleName;
+          } else if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
           setLoading(promiseResult, loadingForModuleName, loadingForGroupName as string);
