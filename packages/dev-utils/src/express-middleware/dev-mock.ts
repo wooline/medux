@@ -8,8 +8,8 @@ import mm from 'micromatch';
 import path from 'path';
 import zlib from 'zlib';
 
-function checkDir(maxNum: number) {
-  const dir = path.resolve('./mock');
+function checkDir(pathname: string, maxNum: number) {
+  const dir = path.resolve(pathname);
   const tempDir = path.join(dir, 'temp/');
   const sourceDir = dir;
   if (!fs.existsSync(dir)) {
@@ -187,6 +187,7 @@ export = function middleware(
   enable: boolean,
   proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function,
   enableRecord: boolean = false,
+  mockDir: string = './mock',
   maxNum: number = 1000,
   cacheTimeout: number = 3000
 ) {
@@ -197,7 +198,7 @@ export = function middleware(
   }
 
   const proxyUrls = getProxys(proxyMap);
-  const {tempDir, sourceDir} = checkDir(maxNum);
+  const {tempDir, sourceDir} = checkDir(mockDir, maxNum);
   const databaseMock = path.join(sourceDir, 'database.js');
   let database = {};
   if (fs.existsSync(databaseMock)) {

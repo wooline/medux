@@ -9,8 +9,8 @@ const json_format_1 = __importDefault(require("json-format"));
 const micromatch_1 = __importDefault(require("micromatch"));
 const path_1 = __importDefault(require("path"));
 const zlib_1 = __importDefault(require("zlib"));
-function checkDir(maxNum) {
-    const dir = path_1.default.resolve('./mock');
+function checkDir(pathname, maxNum) {
+    const dir = path_1.default.resolve(pathname);
     const tempDir = path_1.default.join(dir, 'temp/');
     const sourceDir = dir;
     if (!fs_1.default.existsSync(dir)) {
@@ -181,14 +181,14 @@ function hitMockFile(fileName) {
     }
     return '';
 }
-module.exports = function middleware(enable, proxyMap, enableRecord = false, maxNum = 1000, cacheTimeout = 3000) {
+module.exports = function middleware(enable, proxyMap, enableRecord = false, mockDir = './mock', maxNum = 1000, cacheTimeout = 3000) {
     if (!enable || !proxyMap) {
         return function (req, res, next) {
             next();
         };
     }
     const proxyUrls = getProxys(proxyMap);
-    const { tempDir, sourceDir } = checkDir(maxNum);
+    const { tempDir, sourceDir } = checkDir(mockDir, maxNum);
     const databaseMock = path_1.default.join(sourceDir, 'database.js');
     let database = {};
     if (fs_1.default.existsSync(databaseMock)) {
