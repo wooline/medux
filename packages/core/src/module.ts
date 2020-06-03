@@ -4,6 +4,7 @@ import {
   ActionHandler,
   ActionHandlerMap,
   BaseModelState,
+  CommonModule,
   MetaData,
   ModelStore,
   RouteState,
@@ -563,7 +564,7 @@ export interface StoreOptions {
 export async function renderApp<V>(
   render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
   moduleGetter: ModuleGetter,
-  appModuleName: string,
+  appModuleOrName: string | CommonModule,
   history: HistoryProxy,
   storeOptions: StoreOptions = {},
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
@@ -572,7 +573,11 @@ export async function renderApp<V>(
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
   }
+  const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
+  if (typeof appModuleOrName !== 'string') {
+    cacheModule(appModuleOrName);
+  }
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
   if (storeOptions.initData || client![ssrInitStoreKey]) {

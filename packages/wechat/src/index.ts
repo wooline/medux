@@ -1,7 +1,19 @@
 import './env';
 import {Store, Middleware} from 'redux';
 
-import {exportModule as baseExportModule, ExportModule, RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews, renderApp} from '@medux/core';
+import {
+  exportModule as baseExportModule,
+  CommonModule,
+  ExportModule,
+  RootState as BaseRootState,
+  RouteState,
+  ModuleGetter,
+  StoreOptions,
+  StoreState,
+  ActionTypes,
+  DisplayViews,
+  renderApp,
+} from '@medux/core';
 import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
 import {HistoryActions, createRouter, ToBrowserUrl} from './history';
 export {connectComponent} from './connectComponent';
@@ -53,7 +65,7 @@ const redirectMiddleware: Middleware = () => (next) => (action) => {
 
 export function buildApp({
   moduleGetter,
-  appModuleName,
+  appModule,
   routeConfig = {},
   locationMap,
   defaultRouteParams,
@@ -61,7 +73,7 @@ export function buildApp({
   beforeRender,
 }: {
   moduleGetter: ModuleGetter;
-  appModuleName: string;
+  appModule: CommonModule;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
   locationMap?: import('./history').LocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
@@ -82,7 +94,7 @@ export function buildApp({
       return () => void 0;
     },
     moduleGetter,
-    appModuleName,
+    appModule,
     router.historyProxy,
     storeOptions,
     (store: Store<StoreState>) => {

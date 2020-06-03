@@ -330,13 +330,19 @@ function getModuleByName(moduleName, moduleGetter) {
   }
 }
 
-export async function renderApp(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
+export async function renderApp(render, moduleGetter, appModuleOrName, history, storeOptions = {}, beforeRender) {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
   }
 
+  const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
+
+  if (typeof appModuleOrName !== 'string') {
+    cacheModule(appModuleOrName);
+  }
+
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   let initData = {};
 

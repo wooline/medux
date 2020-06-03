@@ -1,4 +1,4 @@
-import { Action, ActionCreatorList, BaseModelState, ModelStore, RouteState, StoreState } from './basic';
+import { Action, ActionCreatorList, BaseModelState, CommonModule, ModelStore, RouteState, StoreState } from './basic';
 import { HistoryProxy } from './store';
 import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
@@ -123,7 +123,7 @@ export interface StoreOptions {
         [key: string]: any;
     };
 }
-export declare function renderApp<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleName: string, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<void>;
+export declare function renderApp<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<void>;
 export declare function renderSSR<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => {
     html: any;
     data: any;

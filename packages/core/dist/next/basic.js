@@ -67,6 +67,7 @@ export function cacheModule(module) {
     fn = () => module;
 
     fn['__module__'] = module;
+    moduleGetter[moduleName] = fn;
     return fn;
   }
 }

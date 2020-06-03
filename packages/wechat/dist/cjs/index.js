@@ -369,6 +369,7 @@ function cacheModule(module) {
     };
 
     fn['__module__'] = module;
+    moduleGetter[moduleName] = fn;
     return fn;
   }
 }
@@ -2908,8 +2909,8 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 }
 
 function _renderApp() {
-  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
-    var ssrInitStoreKey, initData, store, reduxStore, preModuleNames, appModule, i, k, _moduleName, module;
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, history, storeOptions, beforeRender) {
+    var appModuleName, ssrInitStoreKey, initData, store, reduxStore, preModuleNames, appModule, i, k, _moduleName, module;
 
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
@@ -2924,7 +2925,13 @@ function _renderApp() {
               reRenderTimer = 0;
             }
 
+            appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
             MetaData.appModuleName = appModuleName;
+
+            if (typeof appModuleOrName !== 'string') {
+              cacheModule(appModuleOrName);
+            }
+
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             initData = {};
 
@@ -2945,35 +2952,35 @@ function _renderApp() {
             appModule = undefined;
             i = 0, k = preModuleNames.length;
 
-          case 12:
+          case 14:
             if (!(i < k)) {
-              _context.next = 23;
+              _context.next = 25;
               break;
             }
 
             _moduleName = preModuleNames[i];
-            _context.next = 16;
+            _context.next = 18;
             return getModuleByName(_moduleName, moduleGetter);
 
-          case 16:
+          case 18:
             module = _context.sent;
-            _context.next = 19;
+            _context.next = 21;
             return module.default.model(reduxStore, undefined);
 
-          case 19:
+          case 21:
             if (i === 0) {
               appModule = module;
             }
 
-          case 20:
+          case 22:
             i++;
-            _context.next = 12;
+            _context.next = 14;
             break;
 
-          case 23:
+          case 25:
             reRender = render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
 
-          case 24:
+          case 26:
           case "end":
             return _context.stop();
         }
@@ -4631,7 +4638,7 @@ var redirectMiddleware = function redirectMiddleware() {
 
 function buildApp(_ref) {
   var moduleGetter = _ref.moduleGetter,
-      appModuleName = _ref.appModuleName,
+      appModule = _ref.appModule,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
       locationMap = _ref.locationMap,
@@ -4656,7 +4663,7 @@ function buildApp(_ref) {
     return function () {
       return void 0;
     };
-  }, moduleGetter, appModuleName, router.historyProxy, storeOptions, function (store) {
+  }, moduleGetter, appModule, router.historyProxy, storeOptions, function (store) {
     var storeState = store.getState();
     var views = storeState.route.data.views;
     checkRedirect(views);

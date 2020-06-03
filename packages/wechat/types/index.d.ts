@@ -1,6 +1,6 @@
 import './env';
 import { Store } from 'redux';
-import { ExportModule, RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
+import { CommonModule, ExportModule, RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';
 import { HistoryActions, ToBrowserUrl } from './history';
 export { connectComponent } from './connectComponent';
@@ -10,9 +10,9 @@ export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
 export type { RouteConfig } from '@medux/route-plan-a';
 export type { LocationMap } from './history';
-export declare function buildApp({ moduleGetter, appModuleName, routeConfig, locationMap, defaultRouteParams, storeOptions, beforeRender, }: {
+export declare function buildApp({ moduleGetter, appModule, routeConfig, locationMap, defaultRouteParams, storeOptions, beforeRender, }: {
     moduleGetter: ModuleGetter;
-    appModuleName: string;
+    appModule: CommonModule;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
     locationMap?: import('./history').LocationMap;
     defaultRouteParams?: {

@@ -258,6 +258,7 @@ export function cacheModule<T extends CommonModule>(module: T): () => T {
   } else {
     fn = () => module;
     fn['__module__'] = module;
+    moduleGetter[moduleName] = fn;
     return fn;
   }
 }
