@@ -1,3 +1,3 @@
-# 关于@medux/route-plan-a
+# 关于@medux/wechat
 
-本包实现一套基于 @medux/core 的跨平台路由方案，它可以将 web 的路由风格带入其它平台
+整合封装了@medux/core、@medux/route-plan-a，是开发微信小程序的利器
