@@ -1,15 +1,16 @@
 import {Action, Dispatch} from 'redux';
 
 import {CommonModule} from '@medux/core';
+
 export type Props = {[key: string]: any};
 // export type MapStateToProps<TInjectedProps, TOwnProps, TState> = (state: TState, ownProps?: TOwnProps) => TInjectedProps;
 // export type MapDispatchToProps<TInjectedMethods, TOwnProps> = (dispatch: Dispatch<Action>, ownProps?: TOwnProps) => TInjectedMethods;
 
 export interface Connect<Constructor> {
-  <State = {}, InjectedProps = {}, InjectedMethods = {}, OwnProps = {}>(
+  <State = {}, InjectedProps = {}, InjectedMethods = {}, Data = {}>(
     module: CommonModule,
-    mapStateToProps?: (state: State, ownProps: OwnProps) => InjectedProps,
-    mapDispatchToProps?: (dispatch: Dispatch<Action>, ownProps: OwnProps) => InjectedMethods
+    mapStateToProps?: (state: State, data: Data) => InjectedProps,
+    mapDispatchToProps?: (dispatch: Dispatch<Action>, data: Data) => InjectedMethods
   ): Constructor;
 }
 

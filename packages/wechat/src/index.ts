@@ -32,6 +32,10 @@ export {
   errorAction,
   reducer,
   viewHotReplacement,
+  setLoading,
+  setConfig,
+  logger,
+  setLoadingDepthTime,
 } from '@medux/core';
 export {setRouteConfig} from '@medux/route-plan-a';
 

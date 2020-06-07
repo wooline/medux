@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.loadModel = exports.getActionData = exports.cacheModule = exports.CommonModule = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.routeParamsAction = exports.routeChangeAction = exports.errorAction = void 0;
+exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.getView = exports.isPromiseView = exports.isPromiseModule = exports.exportModule = exports.BaseModelHandlers = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.loadModel = exports.getActionData = exports.cacheModule = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.getClientStore = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.routeParamsAction = exports.routeChangeAction = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -22,7 +22,6 @@ exports.delayPromise = _basic.delayPromise;
 exports.setLoading = _basic.setLoading;
 exports.setLoadingDepthTime = _basic.setLoadingDepthTime;
 exports.isServer = _basic.isServer;
-exports.CommonModule = _basic.CommonModule;
 exports.cacheModule = _basic.cacheModule;
 
 var _store = require("./store");

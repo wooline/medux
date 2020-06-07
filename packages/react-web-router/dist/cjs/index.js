@@ -133,7 +133,7 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global;
+var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
 var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 var isDevelopmentEnv = process.env.NODE_ENV !== 'production';
 var client = isServerEnv ? undefined : env;
@@ -318,7 +318,7 @@ var TaskCounter = function (_PDispatcher) {
 
       if (this.list.length === 0) {
         if (this.ctimer) {
-          env.clearTimeout(this.ctimer);
+          env.clearTimeout.call(null, this.ctimer);
           this.ctimer = null;
         }
 
@@ -334,6 +334,9 @@ var TaskCounter = function (_PDispatcher) {
 
 var loadings = {};
 var depthTime = 2;
+function setLoadingDepthTime(second) {
+  depthTime = second;
+}
 function setLoading(item, moduleName, groupName) {
   if (moduleName === void 0) {
     moduleName = MetaData.appModuleName;
@@ -374,6 +377,11 @@ var config = {
   VSP: '.',
   MSP: ','
 };
+function setConfig(_config) {
+  _config.NSP && (config.NSP = _config.NSP);
+  _config.VSP && (config.VSP = _config.VSP);
+  _config.MSP && (config.MSP = _config.MSP);
+}
 var MetaData = {
   actionCreatorMap: null,
   clientStore: null,
@@ -387,12 +395,22 @@ var ActionTypes = {
   Error: "medux" + config.NSP + "Error",
   RouteChange: "medux" + config.NSP + "RouteChange"
 };
-function cacheModule(module, getter) {
-  var fn = getter ? getter : function () {
-    return module;
-  };
-  fn.__module__ = module;
-  return fn;
+function cacheModule(module) {
+  var moduleName = module.default.moduleName;
+  var moduleGetter = MetaData.moduleGetter;
+  var fn = moduleGetter[moduleName];
+
+  if (fn['__module__'] === module) {
+    return fn;
+  } else {
+    fn = function fn() {
+      return module;
+    };
+
+    fn['__module__'] = module;
+    moduleGetter[moduleName] = fn;
+    return fn;
+  }
 }
 function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
@@ -412,7 +430,7 @@ function reducer(target, key, descriptor) {
 function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName;
+    loadingForModuleName = MetaData.appModuleName || '';
   }
 
   return function (target, key, descriptor) {
@@ -429,7 +447,9 @@ function effect(loadingForGroupName, loadingForModuleName) {
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
         if (!isServerEnv) {
-          if (!loadingForModuleName) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData.appModuleName;
+          } else if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
@@ -445,6 +465,22 @@ function effect(loadingForGroupName, loadingForModuleName) {
     }
 
     return target.descriptor === descriptor ? target : descriptor;
+  };
+}
+function logger(before, after) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+
+    if (!fun.__decorators__) {
+      fun.__decorators__ = [];
+    }
+
+    fun.__decorators__.push([before, after]);
   };
 }
 function delayPromise(second) {
@@ -1097,11 +1133,11 @@ function loadModel(moduleName, storeInstance, options) {
 
     if (isPromiseModule(result)) {
       return result.then(function (module) {
-        moduleGetter[moduleName] = cacheModule(module);
+        cacheModule(module);
         return module.default.model(store, options);
       });
     } else {
-      cacheModule(result, moduleGetter[moduleName]);
+      cacheModule(result);
       return result.default.model(store, options);
     }
   }
@@ -2656,8 +2692,7 @@ var reRender = function reRender() {
 var reRenderTimer = 0;
 var appView = null;
 function viewHotReplacement(moduleName, views) {
-  var moduleGetter = MetaData.moduleGetter[moduleName];
-  var module = moduleGetter['__module__'];
+  var module = MetaData.moduleGetter[moduleName]();
 
   if (module) {
     module.default.views = views;
@@ -2915,7 +2950,7 @@ function getView(moduleName, viewName, modelOptions) {
 
   if (isPromiseModule$1(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       var view = module.default.views[viewName];
 
       if (isServerEnv) {
@@ -2933,7 +2968,7 @@ function getView(moduleName, viewName, modelOptions) {
       }
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     var view = result.default.views[viewName];
 
     if (isServerEnv) {
@@ -2957,11 +2992,11 @@ function getModuleByName(moduleName, moduleGetter) {
 
   if (isPromiseModule$1(result)) {
     return result.then(function (module) {
-      moduleGetter[moduleName] = cacheModule(module);
+      cacheModule(module);
       return module;
     });
   } else {
-    cacheModule(result, moduleGetter[moduleName]);
+    cacheModule(result);
     return result;
   }
 }
@@ -2971,8 +3006,8 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 }
 
 function _renderApp() {
-  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
-    var ssrInitStoreKey, initData, store, reduxStore, preModuleNames, appModule, i, k, _moduleName, module;
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, history, storeOptions, beforeRender) {
+    var appModuleName, ssrInitStoreKey, initData, store, reduxStore, preModuleNames, appModule, i, k, _moduleName, module;
 
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
@@ -2983,11 +3018,17 @@ function _renderApp() {
             }
 
             if (reRenderTimer) {
-              env.clearTimeout(reRenderTimer);
+              env.clearTimeout.call(null, reRenderTimer);
               reRenderTimer = 0;
             }
 
+            appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
             MetaData.appModuleName = appModuleName;
+
+            if (typeof appModuleOrName !== 'string') {
+              cacheModule(appModuleOrName);
+            }
+
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             initData = {};
 
@@ -3008,35 +3049,35 @@ function _renderApp() {
             appModule = undefined;
             i = 0, k = preModuleNames.length;
 
-          case 12:
+          case 14:
             if (!(i < k)) {
-              _context.next = 23;
+              _context.next = 25;
               break;
             }
 
             _moduleName = preModuleNames[i];
-            _context.next = 16;
+            _context.next = 18;
             return getModuleByName(_moduleName, moduleGetter);
 
-          case 16:
+          case 18:
             module = _context.sent;
-            _context.next = 19;
+            _context.next = 21;
             return module.default.model(reduxStore, undefined);
 
-          case 19:
+          case 21:
             if (i === 0) {
               appModule = module;
             }
 
-          case 20:
+          case 22:
             i++;
-            _context.next = 12;
+            _context.next = 14;
             break;
 
-          case 23:
+          case 25:
             reRender = render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
 
-          case 24:
+          case 26:
           case "end":
             return _context.stop();
         }
@@ -4677,7 +4718,11 @@ exports.errorAction = errorAction;
 exports.exportActions = exportActions;
 exports.exportModule = exportModule$1;
 exports.loadView = loadView;
+exports.logger = logger;
 exports.modelHotReplacement = modelHotReplacement;
 exports.reducer = reducer;
+exports.setConfig = setConfig;
+exports.setLoading = setLoading;
+exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setRouteConfig = setRouteConfig;
 exports.viewHotReplacement = viewHotReplacement;

@@ -5,7 +5,7 @@ import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';
 import { HistoryActions, ToBrowserUrl } from './history';
 export { connectComponent } from './connectComponent';
 export { connectPage } from './connectPage';
-export { ActionTypes, delayPromise, client, env, isDevelopmentEnv, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, } from '@medux/core';
+export { ActionTypes, delayPromise, client, env, isDevelopmentEnv, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
 export type { RouteConfig } from '@medux/route-plan-a';

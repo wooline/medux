@@ -303,6 +303,9 @@ var TaskCounter = function (_PDispatcher) {
 
 var loadings = {};
 var depthTime = 2;
+function setLoadingDepthTime(second) {
+  depthTime = second;
+}
 function setLoading(item, moduleName, groupName) {
   if (moduleName === void 0) {
     moduleName = MetaData.appModuleName;
@@ -343,6 +346,11 @@ var config = {
   VSP: '.',
   MSP: ','
 };
+function setConfig(_config) {
+  _config.NSP && (config.NSP = _config.NSP);
+  _config.VSP && (config.VSP = _config.VSP);
+  _config.MSP && (config.MSP = _config.MSP);
+}
 var MetaData = {
   actionCreatorMap: null,
   clientStore: null,
@@ -429,6 +437,22 @@ function effect(loadingForGroupName, loadingForModuleName) {
     }
 
     return target.descriptor === descriptor ? target : descriptor;
+  };
+}
+function logger(before, after) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+
+    if (!fun.__decorators__) {
+      fun.__decorators__ = [];
+    }
+
+    fun.__decorators__.push([before, after]);
   };
 }
 function delayPromise(second) {
@@ -4690,7 +4714,11 @@ exports.errorAction = errorAction;
 exports.exportActions = exportActions;
 exports.exportModule = exportModule$1;
 exports.isDevelopmentEnv = isDevelopmentEnv;
+exports.logger = logger;
 exports.modelHotReplacement = modelHotReplacement;
 exports.reducer = reducer;
+exports.setConfig = setConfig;
+exports.setLoading = setLoading;
+exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setRouteConfig = setRouteConfig;
 exports.viewHotReplacement = viewHotReplacement;
