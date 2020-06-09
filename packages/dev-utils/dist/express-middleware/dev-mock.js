@@ -195,8 +195,8 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, moc
         const content = fs_1.default.readFileSync(path_1.default.join(sourceDir, 'database.js'), 'utf-8');
         if (content) {
             try {
-                const fun = new Function('require', content);
-                database = fun(require);
+                const fun = new Function('require', '__dirname', content);
+                database = fun(require, sourceDir);
             }
             catch (err) {
                 console.error(err, 'database.js');
