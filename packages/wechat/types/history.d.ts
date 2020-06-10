@@ -24,6 +24,7 @@ export interface HistoryActions<P = {}> {
     navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
     navigateBack(option: number | meduxCore.NavigateBackOption): void;
     listen(listener: LocationListener): UnregisterCallback;
+    _dispatch(location: MeduxLocation): void;
 }
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
 export declare function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap): {

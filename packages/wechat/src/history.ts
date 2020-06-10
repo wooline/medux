@@ -1,4 +1,4 @@
-import {HistoryProxy, RouteData, env} from '@medux/core';
+import {HistoryProxy, RouteData, env, getClientStore} from '@medux/core';
 import {MeduxLocation, RouteConfig, TransformRoute, assignRouteData, buildTransformRoute, checkUrl, deepAssign, locationToUrl, urlToLocation} from '@medux/route-plan-a';
 
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
@@ -49,6 +49,7 @@ export interface HistoryActions<P = {}> {
   navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
   navigateBack(option: number | meduxCore.NavigateBackOption): void;
   listen(listener: LocationListener): UnregisterCallback;
+  _dispatch(location: MeduxLocation): void;
 }
 
 /**
@@ -117,46 +118,22 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
     }
     switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this.location = location;
-      for (const key in this._listenList) {
-        if (this._listenList.hasOwnProperty(key)) {
-          const listener = this._listenList[key];
-          listener(this.location);
-        }
-      }
+      this._dispatch(location);
       env.wx.switchTab(option);
     }
     reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this.location = location;
-      for (const key in this._listenList) {
-        if (this._listenList.hasOwnProperty(key)) {
-          const listener = this._listenList[key];
-          listener(this.location);
-        }
-      }
+      this._dispatch(location);
       env.wx.reLaunch(option);
     }
     redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this.location = location;
-      for (const key in this._listenList) {
-        if (this._listenList.hasOwnProperty(key)) {
-          const listener = this._listenList[key];
-          listener(this.location);
-        }
-      }
+      this._dispatch(location);
       env.wx.redirectTo(option);
     }
     navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this.location = location;
-      for (const key in this._listenList) {
-        if (this._listenList.hasOwnProperty(key)) {
-          const listener = this._listenList[key];
-          listener(this.location);
-        }
-      }
+      this._dispatch(location);
       env.wx.navigateTo(option);
     }
     navigateBack(option: number | meduxCore.NavigateBackOption): void {
@@ -166,24 +143,28 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
         throw 'navigateBack:fail cannot navigate back at first page.';
       }
       const currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
-
+      let location: MeduxLocation;
       if (currentPage) {
         const {route, options} = currentPage;
         const search = Object.keys(options)
           .map((key) => key + '=' + options[key])
           .join('&');
         const url = checkUrl(route + '?' + search);
-        this.location = urlToLocation(url)!;
+        location = urlToLocation(url)!;
       } else {
-        this.location = this.indexLocation;
+        location = this.indexLocation;
       }
+      this._dispatch(location);
+      env.wx.navigateBack(routeOption);
+    }
+    _dispatch(location: MeduxLocation) {
+      this.location = location;
       for (const key in this._listenList) {
         if (this._listenList.hasOwnProperty(key)) {
           const listener = this._listenList[key];
           listener(this.location);
         }
       }
-      env.wx.navigateBack(routeOption);
     }
     listen(listener: LocationListener): UnregisterCallback {
       this._uid++;
@@ -228,6 +209,21 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
     }
     return checkUrl(locationToUrl(location));
   }
+
+  env.wx.onAppRoute(function (res) {
+    if (res.openType === 'navigateBack') {
+      const curLocation: MeduxLocation = getClientStore().getState().route.location;
+      const path = ('/' + res.path).replace('//', '/');
+      const search = Object.keys(res.query)
+        .map((key) => key + '=' + res.query[key])
+        .join('&');
+      if (path !== curLocation.pathname || search !== curLocation.search) {
+        const url = checkUrl(path + '?' + search);
+        const location = urlToLocation(url)!;
+        historyActions._dispatch(location);
+      }
+    }
+  });
 
   return {
     transformRoute,

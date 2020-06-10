@@ -25,7 +25,13 @@ declare namespace meduxCore {
     fail?: RouteCallback;
     success?: RouteCallback;
   }
+  interface RouteChangeEvent {
+    path: string;
+    query: {[key: string]: string};
+    openType: string;
+  }
   interface WX {
+    onAppRoute(callback: (e: RouteChangeEvent) => void): void;
     getLaunchOptionsSync(): {path: string; query: {[key: string]: string}};
     switchTab(option: RouteOption): void;
     reLaunch(option: RouteOption): void;

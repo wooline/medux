@@ -414,10 +414,12 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
       hash && (hashStrings[index] = hash);
     });
 
+    const search = joinSearchString(searchStrings).substr(1);
+    const hash = joinSearchString(hashStrings).substr(1);
     return {
       pathname,
-      search: '?' + joinSearchString(searchStrings).substr(1),
-      hash: '#' + joinSearchString(hashStrings).substr(1),
+      search: search ? '?' + search : '',
+      hash: hash ? '#' + hash : '',
     };
   };
   return {

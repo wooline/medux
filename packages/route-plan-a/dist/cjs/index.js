@@ -477,10 +477,12 @@ function buildTransformRoute(routeConfig) {
       search && (searchStrings[index] = search);
       hash && (hashStrings[index] = hash);
     });
+    var search = joinSearchString(searchStrings).substr(1);
+    var hash = joinSearchString(hashStrings).substr(1);
     return {
       pathname: pathname,
-      search: '?' + joinSearchString(searchStrings).substr(1),
-      hash: '#' + joinSearchString(hashStrings).substr(1)
+      search: search ? '?' + search : '',
+      hash: hash ? '#' + hash : ''
     };
   };
 

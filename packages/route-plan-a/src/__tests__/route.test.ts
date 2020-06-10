@@ -1,4 +1,5 @@
-import {TransformRoute, fillRouteData, RouteConfig, buildTransformRoute, setRouteConfig} from '../index';
+import {RouteConfig, TransformRoute, buildTransformRoute, fillRouteData, setRouteConfig} from '../index';
+
 import {MeduxLocation} from '../utils';
 
 enum ViewNames {
@@ -95,8 +96,8 @@ describe('routeToLocation：', () => {
     const location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/',
-      search: '?',
-      hash: '#',
+      search: '',
+      hash: '',
     });
   });
   test('/?q={"photos":{}}', () => {
@@ -105,7 +106,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/',
       search: '?q={"photos":{}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/?q={"photos":{"listSearch":{"page":2}}}', () => {
@@ -114,7 +115,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/photos?q={"photos":{"listSearch":{"page":2}}}', () => {
@@ -123,7 +124,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/photos/2', () => {
@@ -131,8 +132,8 @@ describe('routeToLocation：', () => {
     const location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2',
-      search: '?',
-      hash: '#',
+      search: '',
+      hash: '',
     });
   });
   test('/photos/2?q={"photos":{"listSearch":{"page":2}}}', () => {
@@ -141,7 +142,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos/2',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/photos/2/comments', () => {
@@ -152,8 +153,8 @@ describe('routeToLocation：', () => {
     const location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments',
-      search: '?',
-      hash: '#',
+      search: '',
+      hash: '',
     });
   });
   test('/photos/2/comments?q={"photos":{"listSearch":{"page":2}},"comments":{"listSearch":{"page":3}}}', () => {
@@ -165,7 +166,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos/2/comments',
       search: '?q={"photos":{"listSearch":{"page":2}},"comments":{"listSearch":{"page":3}}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/photos/2/comments/8', () => {
@@ -176,8 +177,8 @@ describe('routeToLocation：', () => {
     const location = transformRoute.routeToLocation(route);
     expect(location).toEqual({
       pathname: '/photos/2/comments/8',
-      search: '?',
-      hash: '#',
+      search: '',
+      hash: '',
     });
   });
   test('/photos/2/comments/8?q=&q={"photos":{"listSearch":{"page":2}}}', () => {
@@ -189,7 +190,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos/2/comments/8',
       search: '?q=&q={"photos":{"listSearch":{"page":2}}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/photos/2/comments/9?q=&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}', () => {
@@ -204,7 +205,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos/2/comments/9',
       search: '?q=&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/photos/2/comments/9?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}', () => {
@@ -219,7 +220,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos/2/comments/9',
       search: '?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}',
-      hash: '#',
+      hash: '',
     });
   });
   test('/photos/2/comments/9/99?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9","listSearch":{"page":99}}}', () => {
@@ -234,7 +235,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos/2/comments/9/99',
       search: '?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9","listSearch":{"page":99}}}',
-      hash: '#',
+      hash: '',
     });
   });
 
@@ -250,7 +251,7 @@ describe('routeToLocation：', () => {
     expect(location).toEqual({
       pathname: '/photos/2/comments/9/99',
       search: '?q={"photos":{"listSearch":{"pageSize":20}}}&q={"photos":{"listSearch":{"page":2}},"comments":{"itemId":"9"}}',
-      hash: '#',
+      hash: '',
     });
   });
 

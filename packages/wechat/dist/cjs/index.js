@@ -4137,10 +4137,12 @@ function buildTransformRoute(routeConfig) {
       search && (searchStrings[index] = search);
       hash && (hashStrings[index] = hash);
     });
+    var search = joinSearchString(searchStrings).substr(1);
+    var hash = joinSearchString(hashStrings).substr(1);
     return {
       pathname: pathname,
-      search: '?' + joinSearchString(searchStrings).substr(1),
-      hash: '#' + joinSearchString(hashStrings).substr(1)
+      search: search ? '?' + search : '',
+      hash: hash ? '#' + hash : ''
     };
   };
 
@@ -4275,15 +4277,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou.location,
           option = _this$createWechatRou.option;
 
-      this.location = location;
-
-      for (var _key in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key)) {
-          var _listener = this._listenList[_key];
-
-          _listener(this.location);
-        }
-      }
+      this._dispatch(location);
 
       env.wx.switchTab(option);
     };
@@ -4293,15 +4287,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou2.location,
           option = _this$createWechatRou2.option;
 
-      this.location = location;
-
-      for (var _key2 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key2)) {
-          var _listener2 = this._listenList[_key2];
-
-          _listener2(this.location);
-        }
-      }
+      this._dispatch(location);
 
       env.wx.reLaunch(option);
     };
@@ -4311,15 +4297,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou3.location,
           option = _this$createWechatRou3.option;
 
-      this.location = location;
-
-      for (var _key3 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key3)) {
-          var _listener3 = this._listenList[_key3];
-
-          _listener3(this.location);
-        }
-      }
+      this._dispatch(location);
 
       env.wx.redirectTo(option);
     };
@@ -4329,15 +4307,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou4.location,
           option = _this$createWechatRou4.option;
 
-      this.location = location;
-
-      for (var _key4 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key4)) {
-          var _listener4 = this._listenList[_key4];
-
-          _listener4(this.location);
-        }
-      }
+      this._dispatch(location);
 
       env.wx.navigateTo(option);
     };
@@ -4353,6 +4323,7 @@ function createRouter(routeConfig, locationMap) {
       }
 
       var currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
+      var location;
 
       if (currentPage) {
         var route = currentPage.route,
@@ -4361,20 +4332,26 @@ function createRouter(routeConfig, locationMap) {
           return key + '=' + options[key];
         }).join('&');
         var url = checkUrl(route + '?' + search);
-        this.location = urlToLocation(url);
+        location = urlToLocation(url);
       } else {
-        this.location = this.indexLocation;
+        location = this.indexLocation;
       }
 
-      for (var _key5 in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key5)) {
-          var _listener5 = this._listenList[_key5];
-
-          _listener5(this.location);
-        }
-      }
+      this._dispatch(location);
 
       env.wx.navigateBack(routeOption);
+    };
+
+    _proto._dispatch = function _dispatch(location) {
+      this.location = location;
+
+      for (var _key in this._listenList) {
+        if (this._listenList.hasOwnProperty(_key)) {
+          var _listener = this._listenList[_key];
+
+          _listener(this.location);
+        }
+      }
     };
 
     _proto.listen = function listen(listener) {
@@ -4430,6 +4407,23 @@ function createRouter(routeConfig, locationMap) {
     return checkUrl(locationToUrl(location));
   }
 
+  env.wx.onAppRoute(function (res) {
+    if (res.openType === 'navigateBack') {
+      var curLocation = getClientStore().getState().route.location;
+      var path = ('/' + res.path).replace('//', '/');
+      var search = Object.keys(res.query).map(function (key) {
+        return key + '=' + res.query[key];
+      }).join('&');
+
+      if (path !== curLocation.pathname || search !== curLocation.search) {
+        var url = checkUrl(path + '?' + search);
+
+        var _location4 = urlToLocation(url);
+
+        historyActions._dispatch(_location4);
+      }
+    }
+  });
   return {
     transformRoute: transformRoute,
     historyProxy: historyProxy,
