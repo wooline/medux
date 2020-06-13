@@ -5,6 +5,7 @@ export interface MeduxLocation {
     pathname: string;
     search: string;
     hash: string;
+    action?: string;
 }
 export declare type RouteToLocation = (routeData: RouteData) => MeduxLocation;
 export declare type LocationToRoute = (location: MeduxLocation) => RouteData;
@@ -31,11 +32,12 @@ export interface RoutePayload<P> {
     extend?: RouteData;
     stackParams?: DeepPartial<P>[];
     paths?: string[];
+    action?: string;
 }
 export declare function assignRouteData(paths: string[], stackParams: {
     [moduleName: string]: any;
 }[], args?: {
     [moduleName: string]: any;
-}): RouteData;
+}, action?: string): RouteData;
 export declare function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData;
 export declare function buildTransformRoute(routeConfig: RouteConfig): TransformRoute;

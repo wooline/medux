@@ -6,12 +6,13 @@ import assignDeep from './deep-extend';
 export {locationToUrl, urlToLocation, checkUrl} from './utils';
 
 /**
- * medux内部使用的Location数据结构，比浏览器的Location相比少了state属性，所以在此路由方案中不能使用history state
+ * medux内部使用的Location数据结构，比浏览器的Location相比多了action属性，少了state属性，所以在此路由方案中不能使用history state
  */
 export interface MeduxLocation {
   pathname: string;
   search: string;
   hash: string;
+  action?: string;
 }
 
 /**
@@ -230,9 +231,10 @@ export interface RoutePayload<P> {
   extend?: RouteData;
   stackParams?: DeepPartial<P>[];
   paths?: string[];
+  action?: string;
 }
 
-export function assignRouteData(paths: string[], stackParams: {[moduleName: string]: any}[], args?: {[moduleName: string]: any}): RouteData {
+export function assignRouteData(paths: string[], stackParams: {[moduleName: string]: any}[], args?: {[moduleName: string]: any}, action?: string): RouteData {
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
@@ -262,7 +264,7 @@ export function assignRouteData(paths: string[], stackParams: {[moduleName: stri
       params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
     }
   });
-  return {views, paths, params, stackParams};
+  return {views, paths, params, stackParams, action};
 }
 
 export function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData {
@@ -275,7 +277,7 @@ export function fillRouteData<R>(routePayload: RoutePayload<R>): RouteData {
       }
     });
   }
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 function extractHashData(params: {[moduleName: string]: any}) {
   const searchParams: {[moduleName: string]: any} = {};
@@ -342,7 +344,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
         assignDeep(stackParams[index], item);
       }
     });
-    const routeData = assignRouteData(paths, stackParams, pathsArgs);
+    const routeData = assignRouteData(paths, stackParams, pathsArgs, location.action);
     cacheData.unshift({url, routeData});
     cacheData.length = 10;
     return routeData;
@@ -420,6 +422,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
       pathname,
       search: search ? '?' + search : '',
       hash: hash ? '#' + hash : '',
+      action: routeData.action,
     };
   };
   return {

@@ -234,7 +234,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
-      value: function RouteParams(payload) {
+      value: function RouteParams(payload, action) {
         const state = this.getState();
         return Object.assign({}, state, {
           routeParams: payload

@@ -67,6 +67,7 @@ export interface RouteData {
             [key: string]: any;
         } | undefined;
     }[];
+    action?: string;
 }
 export interface RouteState<L = any> {
     location: L;

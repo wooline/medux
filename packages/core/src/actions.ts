@@ -25,9 +25,9 @@ export function routeChangeAction(route: RouteState) {
  * @param moduleName 模块名称
  * @param params 存放在路由上的数据
  */
-export function routeParamsAction(moduleName: string, params: any) {
+export function routeParamsAction(moduleName: string, params: any, action?: string) {
   return {
     type: `${moduleName}${config.NSP}${ActionTypes.MRouteParams}`,
-    payload: [params],
+    payload: [params, action],
   };
 }

@@ -21,9 +21,9 @@ function routeChangeAction(route) {
   };
 }
 
-function routeParamsAction(moduleName, params) {
+function routeParamsAction(moduleName, params, action) {
   return {
     type: "" + moduleName + _basic.config.NSP + _basic.ActionTypes.MRouteParams,
-    payload: [params]
+    payload: [params, action]
   };
 }

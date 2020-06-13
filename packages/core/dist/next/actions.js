@@ -11,9 +11,9 @@ export function routeChangeAction(route) {
     payload: [route]
   };
 }
-export function routeParamsAction(moduleName, params) {
+export function routeParamsAction(moduleName, params, action) {
   return {
     type: `${moduleName}${config.NSP}${ActionTypes.MRouteParams}`,
-    payload: [params]
+    payload: [params, action]
   };
 }

@@ -195,12 +195,13 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         var action = next(originalAction);
 
         if (action.type === _basic.ActionTypes.RouteChange) {
-          var rootRouteParams = meta.prevState.route.data.params;
+          var _routeData = meta.prevState.route.data;
+          var rootRouteParams = _routeData.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
             var routeParams = rootRouteParams[moduleName];
 
             if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch((0, _actions.routeParamsAction)(moduleName, routeParams));
+              dispatch((0, _actions.routeParamsAction)(moduleName, routeParams, _routeData.action));
             }
           });
         }

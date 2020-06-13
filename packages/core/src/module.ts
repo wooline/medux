@@ -372,7 +372,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
    * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入路由参数
    */
   @reducer
-  public RouteParams(payload: {[key: string]: any}): S {
+  public RouteParams(payload: {[key: string]: any}, action?: string): S {
     const state = this.getState();
     return {
       ...state,

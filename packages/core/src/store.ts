@@ -188,11 +188,12 @@ export function buildStore(
     meta.beforeState = meta.prevState;
     const action: Action = next(originalAction);
     if (action.type === ActionTypes.RouteChange) {
-      const rootRouteParams = meta.prevState.route.data.params;
+      const routeData = meta.prevState.route.data;
+      const rootRouteParams = routeData.params;
       Object.keys(rootRouteParams).forEach((moduleName) => {
         const routeParams = rootRouteParams[moduleName];
         if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-          dispatch(routeParamsAction(moduleName, routeParams));
+          dispatch(routeParamsAction(moduleName, routeParams, routeData.action));
         }
       });
     }

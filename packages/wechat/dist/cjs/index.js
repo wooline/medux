@@ -578,10 +578,10 @@ function routeChangeAction(route) {
     payload: [route]
   };
 }
-function routeParamsAction(moduleName, params) {
+function routeParamsAction(moduleName, params, action) {
   return {
     type: "" + moduleName + config.NSP + ActionTypes.MRouteParams,
-    payload: [params]
+    payload: [params, action]
   };
 }
 
@@ -1272,12 +1272,13 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         var action = next(originalAction);
 
         if (action.type === ActionTypes.RouteChange) {
-          var rootRouteParams = meta.prevState.route.data.params;
+          var _routeData = meta.prevState.route.data;
+          var rootRouteParams = _routeData.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
             var routeParams = rootRouteParams[moduleName];
 
             if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch(routeParamsAction(moduleName, routeParams));
+              dispatch(routeParamsAction(moduleName, routeParams, _routeData.action));
             }
           });
         }
@@ -2867,7 +2868,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
-      value: function RouteParams(payload) {
+      value: function RouteParams(payload, action) {
         var state = this.getState();
         return Object.assign({}, state, {
           routeParams: payload
@@ -3927,7 +3928,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   };
 }
 
-function assignRouteData(paths, stackParams, args) {
+function assignRouteData(paths, stackParams, args, action) {
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
@@ -3969,7 +3970,8 @@ function assignRouteData(paths, stackParams, args) {
     views: views,
     paths: paths,
     params: params,
-    stackParams: stackParams
+    stackParams: stackParams,
+    action: action
   };
 }
 
@@ -4049,7 +4051,7 @@ function buildTransformRoute(routeConfig) {
         deepExtend(stackParams[index], item);
       }
     });
-    var routeData = assignRouteData(paths, stackParams, pathsArgs);
+    var routeData = assignRouteData(paths, stackParams, pathsArgs, location.action);
     cacheData.unshift({
       url: url,
       routeData: routeData
@@ -4142,7 +4144,8 @@ function buildTransformRoute(routeConfig) {
     return {
       pathname: pathname,
       search: search ? '?' + search : '',
-      hash: hash ? '#' + hash : ''
+      hash: hash ? '#' + hash : '',
+      action: routeData.action
     };
   };
 
@@ -4164,7 +4167,8 @@ function fillLocation(location) {
   return {
     pathname: location.pathname || '',
     search: location.search || '',
-    hash: location.hash || ''
+    hash: location.hash || '',
+    action: location.action
   };
 }
 
@@ -4181,7 +4185,7 @@ function fillBrowserRouteData(routePayload) {
     stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
   }
 
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 function createRouter(routeConfig, locationMap) {
   var transformRoute = buildTransformRoute(routeConfig);
@@ -4209,6 +4213,10 @@ function createRouter(routeConfig, locationMap) {
     }
 
     var _proto = History.prototype;
+
+    _proto.getLocation = function getLocation() {
+      return this.location;
+    };
 
     _proto.getRouteData = function getRouteData() {
       return transformRoute.locationToRoute(locationMap ? locationMap.in(this.location) : this.location);
@@ -4277,7 +4285,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou.location,
           option = _this$createWechatRou.option;
 
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
 
       env.wx.switchTab(option);
     };
@@ -4287,7 +4295,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou2.location,
           option = _this$createWechatRou2.option;
 
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
 
       env.wx.reLaunch(option);
     };
@@ -4297,7 +4305,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou3.location,
           option = _this$createWechatRou3.option;
 
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
 
       env.wx.redirectTo(option);
     };
@@ -4307,7 +4315,7 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou4.location,
           option = _this$createWechatRou4.option;
 
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
 
       env.wx.navigateTo(option);
     };
@@ -4337,13 +4345,15 @@ function createRouter(routeConfig, locationMap) {
         location = this.indexLocation;
       }
 
-      this._dispatch(location);
+      this._dispatch(location, 'POP');
 
       env.wx.navigateBack(routeOption);
     };
 
-    _proto._dispatch = function _dispatch(location) {
-      this.location = location;
+    _proto._dispatch = function _dispatch(location, action) {
+      this.location = Object.assign({}, location, {
+        action: action
+      });
 
       for (var _key in this._listenList) {
         if (this._listenList.hasOwnProperty(_key)) {
@@ -4372,7 +4382,7 @@ function createRouter(routeConfig, locationMap) {
   var historyProxy = {
     initialized: true,
     getLocation: function getLocation() {
-      return historyActions.location;
+      return historyActions.getLocation();
     },
     subscribe: function subscribe(listener) {
       return historyActions.listen(listener);
@@ -4381,9 +4391,9 @@ function createRouter(routeConfig, locationMap) {
       return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
     },
     equal: function equal(a, b) {
-      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+      return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
     },
-    patch: function patch(location, routeData) {
+    patch: function patch(location) {
       var url = locationToUrl(location);
       historyActions.reLaunch({
         url: url
@@ -4420,7 +4430,7 @@ function createRouter(routeConfig, locationMap) {
 
         var _location4 = urlToLocation(url);
 
-        historyActions._dispatch(_location4);
+        historyActions._dispatch(_location4, 'POP');
       }
     }
   });

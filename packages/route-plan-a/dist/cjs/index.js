@@ -244,7 +244,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   };
 }
 
-function assignRouteData(paths, stackParams, args) {
+function assignRouteData(paths, stackParams, args, action) {
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
@@ -288,7 +288,8 @@ function assignRouteData(paths, stackParams, args) {
     views: views,
     paths: paths,
     params: params,
-    stackParams: stackParams
+    stackParams: stackParams,
+    action: action
   };
 }
 
@@ -309,7 +310,7 @@ function fillRouteData(routePayload) {
     });
   }
 
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 
 function extractHashData(params) {
@@ -389,7 +390,7 @@ function buildTransformRoute(routeConfig) {
         (0, _deepExtend.default)(stackParams[index], item);
       }
     });
-    var routeData = assignRouteData(paths, stackParams, pathsArgs);
+    var routeData = assignRouteData(paths, stackParams, pathsArgs, location.action);
     cacheData.unshift({
       url: url,
       routeData: routeData
@@ -482,7 +483,8 @@ function buildTransformRoute(routeConfig) {
     return {
       pathname: pathname,
       search: search ? '?' + search : '',
-      hash: hash ? '#' + hash : ''
+      hash: hash ? '#' + hash : '',
+      action: routeData.action
     };
   };
 

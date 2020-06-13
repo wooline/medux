@@ -1,27 +1,27 @@
 import {HistoryProxy, RouteData} from '@medux/core';
-import {MeduxLocation, RouteConfig, TransformRoute, assignRouteData, buildTransformRoute, deepAssign, locationToUrl, urlToLocation, checkUrl} from '@medux/route-plan-a';
+import {MeduxLocation, RouteConfig, TransformRoute, assignRouteData, buildTransformRoute, checkUrl, deepAssign, locationToUrl, urlToLocation} from '@medux/route-plan-a';
 
+type UnregisterCallback = () => void;
 interface BrowserLocation {
   pathname: string;
   search: string;
   hash: string;
-  state: any;
 }
 
-type UnregisterCallback = () => void;
-type LocationListener = (location: BrowserLocation) => void;
+type MeduxLocationListener = (location: MeduxLocation) => void;
 
 export type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
 
 export interface History {
   location: BrowserLocation;
-  push(path: string, state?: any): void;
-  replace(path: string, state?: any): void;
+  action: string;
+  push(path: string): void;
+  replace(path: string): void;
   go(n: number): void;
   goBack(): void;
   goForward(): void;
-  listen(listener: LocationListener): UnregisterCallback;
+  listen(listener: (location: BrowserLocation, action: string) => void): UnregisterCallback;
 }
 
 /**
@@ -40,6 +40,10 @@ export interface BrowserRoutePayload<P = {}> {
    * 要展示的Views
    */
   paths?: string[];
+  /**
+   * 当前路由的打开方式 POP/PUSH/REPLACE
+   */
+  action?: string;
 }
 
 /**
@@ -49,11 +53,11 @@ export interface HistoryActions<P = {}> {
   /**
    * 接受监听回调
    */
-  listen(listener: LocationListener): UnregisterCallback;
+  listen(listener: MeduxLocationListener): UnregisterCallback;
   /**
    * 获取当前路由的原始路由数据
    */
-  location: MeduxLocation;
+  getLocation(): MeduxLocation;
   /**
    * 获取当前路由的经过转换之后的路由数据
    */
@@ -93,7 +97,7 @@ export function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteDa
   if (routePayload.params) {
     stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
   }
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 
 function isBrowserRoutePayload(data: Partial<MeduxLocation> | BrowserRoutePayload): data is BrowserRoutePayload {
@@ -104,6 +108,7 @@ function fillLocation(location: Partial<MeduxLocation>): MeduxLocation {
     pathname: location.pathname || '',
     search: location.search || '',
     hash: location.hash || '',
+    action: location.action,
   };
 }
 /**
@@ -115,23 +120,26 @@ function fillLocation(location: Partial<MeduxLocation>): MeduxLocation {
 export function createRouter(history: History, routeConfig: RouteConfig, locationMap?: LocationMap) {
   const transformRoute: TransformRoute = buildTransformRoute(routeConfig);
 
-  const historyProxy: HistoryProxy<BrowserLocation> = {
+  const historyProxy: HistoryProxy<MeduxLocation> = {
     initialized: true,
     getLocation() {
-      return history.location;
+      return {...history.location, action: history.action};
     },
     subscribe(listener) {
-      return history.listen(listener);
+      const unlink = history.listen((location, action) => {
+        listener({...location, action});
+      });
+      return unlink;
     },
     locationToRouteData(location) {
-      return location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
+      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
     },
     equal(a, b) {
-      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+      return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
     },
-    patch(location, routeData): void {
+    patch(location): void {
       const url = locationToUrl(location);
-      history.push(url, routeData);
+      history.push(url);
     },
   };
 
@@ -153,7 +161,7 @@ export function createRouter(history: History, routeConfig: RouteConfig, locatio
         location = locationMap.out(location);
       }
       const url = checkUrl(locationToUrl(location));
-      history[action](url, routeData);
+      history[action](url);
     } else {
       const url = checkUrl(locationToUrl(fillLocation(data)));
       history[action](url);
@@ -162,13 +170,17 @@ export function createRouter(history: History, routeConfig: RouteConfig, locatio
 
   const historyActions: HistoryActions = {
     listen(listener) {
-      return history.listen(listener as any);
+      const unlink = history.listen((location, action) => {
+        listener({...location, action});
+      });
+      return unlink;
     },
-    get location() {
-      return history.location;
+    getLocation() {
+      return {...history.location, action: history.action};
     },
     getRouteData() {
-      return (history.location.state as any) || transformRoute.locationToRoute(locationMap ? locationMap.in(history.location) : history.location);
+      const location = this.getLocation();
+      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
     },
     push(data) {
       navigateTo('push', data);

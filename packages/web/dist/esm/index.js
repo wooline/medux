@@ -1,4 +1,4 @@
-import { assignRouteData, buildTransformRoute, deepAssign, locationToUrl, urlToLocation, checkUrl } from '@medux/route-plan-a';
+import { assignRouteData, buildTransformRoute, checkUrl, deepAssign, locationToUrl, urlToLocation } from '@medux/route-plan-a';
 export function fillBrowserRouteData(routePayload) {
   var extend = routePayload.extend || {
     views: {},
@@ -12,7 +12,7 @@ export function fillBrowserRouteData(routePayload) {
     stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
   }
 
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 
 function isBrowserRoutePayload(data) {
@@ -23,7 +23,8 @@ function fillLocation(location) {
   return {
     pathname: location.pathname || '',
     search: location.search || '',
-    hash: location.hash || ''
+    hash: location.hash || '',
+    action: location.action
   };
 }
 
@@ -32,20 +33,27 @@ export function createRouter(history, routeConfig, locationMap) {
   var historyProxy = {
     initialized: true,
     getLocation: function getLocation() {
-      return history.location;
+      return Object.assign({}, history.location, {
+        action: history.action
+      });
     },
     subscribe: function subscribe(listener) {
-      return history.listen(listener);
+      var unlink = history.listen(function (location, action) {
+        listener(Object.assign({}, location, {
+          action: action
+        }));
+      });
+      return unlink;
     },
     locationToRouteData: function locationToRouteData(location) {
-      return location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
+      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
     },
     equal: function equal(a, b) {
-      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+      return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
     },
-    patch: function patch(location, routeData) {
+    patch: function patch(location) {
       var url = locationToUrl(location);
-      history.push(url, routeData);
+      history.push(url);
     }
   };
 
@@ -74,7 +82,7 @@ export function createRouter(history, routeConfig, locationMap) {
 
       var _url = checkUrl(locationToUrl(_location2));
 
-      history[action](_url, routeData);
+      history[action](_url);
     } else {
       var _url2 = checkUrl(locationToUrl(fillLocation(data)));
 
@@ -84,15 +92,21 @@ export function createRouter(history, routeConfig, locationMap) {
 
   var historyActions = {
     listen: function listen(listener) {
-      return history.listen(listener);
+      var unlink = history.listen(function (location, action) {
+        listener(Object.assign({}, location, {
+          action: action
+        }));
+      });
+      return unlink;
     },
-
-    get location() {
-      return history.location;
+    getLocation: function getLocation() {
+      return Object.assign({}, history.location, {
+        action: history.action
+      });
     },
-
     getRouteData: function getRouteData() {
-      return history.location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(history.location) : history.location);
+      var location = this.getLocation();
+      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
     },
     push: function push(data) {
       navigateTo('push', data);

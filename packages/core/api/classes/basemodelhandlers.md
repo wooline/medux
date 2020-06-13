@@ -1,4 +1,4 @@
-[@medux/core - v1.0.5](../README.md) › [BaseModelHandlers](basemodelhandlers.md)
+[@medux/core - v1.0.7-alpha.12](../README.md) › [BaseModelHandlers](basemodelhandlers.md)
 
 # Class: BaseModelHandlers <**S, R**>
 
@@ -206,7 +206,7 @@ ___
 
 ###  RouteParams
 
-▸ **RouteParams**(`payload`: object): *S*
+▸ **RouteParams**(`payload`: object, `action?`: undefined | string): *S*
 
 - 路由发生变化时如果路由中有该模块的routeParams，框架将自动为各个模块派发‘moduleName.RouteParams’的action
 - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入路由参数
@@ -216,6 +216,7 @@ ___
 Name | Type |
 ------ | ------ |
 `payload` | object |
+`action?` | undefined &#124; string |
 
 **Returns:** *S*
 

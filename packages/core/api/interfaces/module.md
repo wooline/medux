@@ -1,4 +1,4 @@
-[@medux/core - v1.0.5](../README.md) › [Module](module.md)
+[@medux/core - v1.0.7-alpha.12](../README.md) › [Module](module.md)
 
 # Interface: Module <**M, VS, AS, N**>
 

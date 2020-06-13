@@ -1,4 +1,4 @@
-[@medux/core - v1.0.5](../README.md) › [RouteData](routedata.md)
+[@medux/core - v1.0.7-alpha.12](../README.md) › [RouteData](routedata.md)
 
 # Interface: RouteData
 
@@ -13,12 +13,21 @@
 
 ### Properties
 
+* [action](routedata.md#optional-action)
 * [params](routedata.md#params)
 * [paths](routedata.md#paths)
 * [stackParams](routedata.md#stackparams)
 * [views](routedata.md#views)
 
 ## Properties
+
+### `Optional` action
+
+• **action**? : *undefined | string*
+
+路由的打开方式
+
+___
 
 ###  params
 

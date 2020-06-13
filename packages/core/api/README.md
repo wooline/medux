@@ -1,6 +1,6 @@
-[@medux/core - v1.0.5](README.md)
+[@medux/core - v1.0.7-alpha.12](README.md)
 
-# @medux/core - v1.0.5
+# @medux/core - v1.0.7-alpha.12
 
 ## Index
 
@@ -16,6 +16,7 @@
 
 * [Action](interfaces/action.md)
 * [BaseModelState](interfaces/basemodelstate.md)
+* [CommonModule](interfaces/commonmodule.md)
 * [DisplayViews](interfaces/displayviews.md)
 * [HistoryProxy](interfaces/historyproxy.md)
 * [Model](interfaces/model.md)
@@ -43,6 +44,7 @@
 
 ### Functions
 
+* [cacheModule](README.md#cachemodule)
 * [delayPromise](README.md#delaypromise)
 * [effect](README.md#effect)
 * [errorAction](README.md#erroraction)
@@ -195,13 +197,13 @@ medux使用的Store数据模型结构
 
 ### `Const` client
 
-• **client**: *Client | undefined* = (isServerEnv ? undefined : typeof window === 'undefined' ? global : window) as any
+• **client**: *ENV | undefined* = isServerEnv ? undefined : env
 
 ___
 
 ### `Const` env
 
-• **env**: *ENV* = (typeof self == 'object' && self.self === self && self) || (typeof global == 'object' && global.global === global && global) || this
+• **env**: *ENV* = (typeof window === 'object' && window.window) || (typeof global === 'object' && global.global) || global
 
 ___
 
@@ -213,9 +215,29 @@ ___
 
 ### `Const` isServerEnv
 
-• **isServerEnv**: *boolean* = typeof global !== 'undefined' && typeof window === 'undefined'
+• **isServerEnv**: *boolean* = typeof window === 'undefined' && typeof global === 'object' && global.global === global
 
 ## Functions
+
+###  cacheModule
+
+▸ **cacheModule**<**T**>(`module`: T): *function*
+
+**Type parameters:**
+
+▪ **T**: *[CommonModule](interfaces/commonmodule.md)*
+
+**Parameters:**
+
+Name | Type |
+------ | ------ |
+`module` | T |
+
+**Returns:** *function*
+
+▸ (): *T*
+
+___
 
 ###  delayPromise
 
@@ -530,7 +552,7 @@ ___
 
 ###  renderApp
 
-▸ **renderApp**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹void›*
+▸ **renderApp**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleOrName`: string | [CommonModule](interfaces/commonmodule.md), `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹void›*
 
 该方法用来创建并启动Client应用
 - 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
@@ -568,9 +590,7 @@ Name | Type |
 
 模块的获取方式
 
-▪ **appModuleName**: *string*
-
-模块的主入口模块名称
+▪ **appModuleOrName**: *string | [CommonModule](interfaces/commonmodule.md)*
 
 ▪ **history**: *[HistoryProxy](interfaces/historyproxy.md)*
 
@@ -670,7 +690,7 @@ ___
 
 ###  routeParamsAction
 
-▸ **routeParamsAction**(`moduleName`: string, `params`: any): *object*
+▸ **routeParamsAction**(`moduleName`: string, `params`: any, `action?`: undefined | string): *object*
 
 当路由发生变化时，通过该action触发相关模块的状态发生变化
 
@@ -680,10 +700,11 @@ Name | Type | Description |
 ------ | ------ | ------ |
 `moduleName` | string | 模块名称 |
 `params` | any | 存放在路由上的数据  |
+`action?` | undefined &#124; string | - |
 
 **Returns:** *object*
 
-* **payload**: *any[]* = [params]
+* **payload**: *any[]* = [params, action]
 
 * **type**: *string* = `${moduleName}${config.NSP}${ActionTypes.MRouteParams}`
 

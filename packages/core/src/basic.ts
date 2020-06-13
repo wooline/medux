@@ -154,6 +154,10 @@ export interface RouteData {
    * 如果存在多个路由栈（如APP）每个路由栈上分别保存什么数据
    */
   stackParams: {[moduleName: string]: {[key: string]: any} | undefined}[];
+  /**
+   * 路由的打开方式
+   */
+  action?: string;
 }
 /**
  * Redux中保存的路由数据结构

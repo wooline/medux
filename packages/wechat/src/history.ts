@@ -25,6 +25,10 @@ interface BrowserRoutePayload<P = {}> {
    * 要展示的Views
    */
   paths?: string[];
+  /**
+   * 当前路由的打开方式 POP/PUSH
+   */
+  action?: string;
 }
 
 function isBrowserRoutePayload(data: meduxCore.RouteOption | BrowserRoutePayload): data is BrowserRoutePayload {
@@ -38,10 +42,11 @@ function fillLocation(location: Partial<MeduxLocation>): MeduxLocation {
     pathname: location.pathname || '',
     search: location.search || '',
     hash: location.hash || '',
+    action: location.action,
   };
 }
 export interface HistoryActions<P = {}> {
-  location: MeduxLocation;
+  getLocation(): MeduxLocation;
   getRouteData(): RouteData;
   switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
   reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
@@ -49,7 +54,7 @@ export interface HistoryActions<P = {}> {
   navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
   navigateBack(option: number | meduxCore.NavigateBackOption): void;
   listen(listener: LocationListener): UnregisterCallback;
-  _dispatch(location: MeduxLocation): void;
+  _dispatch(location: MeduxLocation, action: string): void;
 }
 
 /**
@@ -61,7 +66,7 @@ export function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteDa
   if (routePayload.params) {
     stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
   }
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 
 /**
@@ -86,6 +91,9 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       const url = checkUrl(path + '?' + search);
       this.location = urlToLocation(url)!;
       this.indexLocation = this.location;
+    }
+    getLocation() {
+      return this.location;
     }
     getRouteData() {
       return transformRoute.locationToRoute(locationMap ? locationMap.in(this.location) : this.location);
@@ -118,22 +126,22 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
     }
     switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
       env.wx.switchTab(option);
     }
     reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
       env.wx.reLaunch(option);
     }
     redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
       env.wx.redirectTo(option);
     }
     navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location);
+      this._dispatch(location, 'PUSH');
       env.wx.navigateTo(option);
     }
     navigateBack(option: number | meduxCore.NavigateBackOption): void {
@@ -154,11 +162,11 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       } else {
         location = this.indexLocation;
       }
-      this._dispatch(location);
+      this._dispatch(location, 'POP');
       env.wx.navigateBack(routeOption);
     }
-    _dispatch(location: MeduxLocation) {
-      this.location = location;
+    _dispatch(location: MeduxLocation, action: string) {
+      this.location = {...location, action};
       for (const key in this._listenList) {
         if (this._listenList.hasOwnProperty(key)) {
           const listener = this._listenList[key];
@@ -180,7 +188,7 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
   const historyProxy: HistoryProxy<MeduxLocation> = {
     initialized: true,
     getLocation() {
-      return historyActions.location;
+      return historyActions.getLocation();
     },
     subscribe(listener) {
       return historyActions.listen(listener);
@@ -189,9 +197,9 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
     },
     equal(a, b) {
-      return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+      return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
     },
-    patch(location, routeData: RouteData): void {
+    patch(location): void {
       const url = locationToUrl(location);
       historyActions.reLaunch({url});
     },
@@ -220,7 +228,7 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       if (path !== curLocation.pathname || search !== curLocation.search) {
         const url = checkUrl(path + '?' + search);
         const location = urlToLocation(url)!;
-        historyActions._dispatch(location);
+        historyActions._dispatch(location, 'POP');
       }
     }
   });

@@ -200,7 +200,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName = '', viewToRule = {}
   };
 }
 
-export function assignRouteData(paths, stackParams, args) {
+export function assignRouteData(paths, stackParams, args, action) {
   if (!stackParams[0]) {
     stackParams[0] = {};
   }
@@ -240,7 +240,8 @@ export function assignRouteData(paths, stackParams, args) {
     views,
     paths,
     params,
-    stackParams
+    stackParams,
+    action
   };
 }
 export function fillRouteData(routePayload) {
@@ -260,7 +261,7 @@ export function fillRouteData(routePayload) {
     });
   }
 
-  return assignRouteData(routePayload.paths || extend.paths, stackParams);
+  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 
 function extractHashData(params) {
@@ -336,7 +337,7 @@ export function buildTransformRoute(routeConfig) {
         assignDeep(stackParams[index], item);
       }
     });
-    const routeData = assignRouteData(paths, stackParams, pathsArgs);
+    const routeData = assignRouteData(paths, stackParams, pathsArgs, location.action);
     cacheData.unshift({
       url,
       routeData
@@ -428,7 +429,8 @@ export function buildTransformRoute(routeConfig) {
     return {
       pathname,
       search: search ? '?' + search : '',
-      hash: hash ? '#' + hash : ''
+      hash: hash ? '#' + hash : '',
+      action: routeData.action
     };
   };
 

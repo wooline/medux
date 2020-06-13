@@ -14,9 +14,10 @@ interface BrowserRoutePayload<P = {}> {
     extend?: RouteData;
     params?: DeepPartial<P>;
     paths?: string[];
+    action?: string;
 }
 export interface HistoryActions<P = {}> {
-    location: MeduxLocation;
+    getLocation(): MeduxLocation;
     getRouteData(): RouteData;
     switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
     reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
@@ -24,7 +25,7 @@ export interface HistoryActions<P = {}> {
     navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
     navigateBack(option: number | meduxCore.NavigateBackOption): void;
     listen(listener: LocationListener): UnregisterCallback;
-    _dispatch(location: MeduxLocation): void;
+    _dispatch(location: MeduxLocation, action: string): void;
 }
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
 export declare function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap): {

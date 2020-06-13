@@ -7,7 +7,7 @@ export declare function routeChangeAction(route: RouteState): {
     type: string;
     payload: RouteState<any>[];
 };
-export declare function routeParamsAction(moduleName: string, params: any): {
+export declare function routeParamsAction(moduleName: string, params: any, action?: string): {
     type: string;
     payload: any[];
 };

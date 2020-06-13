@@ -1,13 +1,12 @@
 import { HistoryProxy, RouteData } from '@medux/core';
 import { MeduxLocation, RouteConfig, TransformRoute } from '@medux/route-plan-a';
+declare type UnregisterCallback = () => void;
 interface BrowserLocation {
     pathname: string;
     search: string;
     hash: string;
-    state: any;
 }
-declare type UnregisterCallback = () => void;
-declare type LocationListener = (location: BrowserLocation) => void;
+declare type MeduxLocationListener = (location: MeduxLocation) => void;
 export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export declare type LocationMap = {
     in: LocationToLocation;
@@ -15,21 +14,23 @@ export declare type LocationMap = {
 };
 export interface History {
     location: BrowserLocation;
-    push(path: string, state?: any): void;
-    replace(path: string, state?: any): void;
+    action: string;
+    push(path: string): void;
+    replace(path: string): void;
     go(n: number): void;
     goBack(): void;
     goForward(): void;
-    listen(listener: LocationListener): UnregisterCallback;
+    listen(listener: (location: BrowserLocation, action: string) => void): UnregisterCallback;
 }
 export interface BrowserRoutePayload<P = {}> {
     extend?: RouteData;
     params?: DeepPartial<P>;
     paths?: string[];
+    action?: string;
 }
 export interface HistoryActions<P = {}> {
-    listen(listener: LocationListener): UnregisterCallback;
-    location: MeduxLocation;
+    listen(listener: MeduxLocationListener): UnregisterCallback;
+    getLocation(): MeduxLocation;
     getRouteData(): RouteData;
     push(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
     replace(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
@@ -43,7 +44,7 @@ declare type DeepPartial<T> = {
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
 export declare function createRouter(history: History, routeConfig: RouteConfig, locationMap?: LocationMap): {
     transformRoute: TransformRoute;
-    historyProxy: HistoryProxy<BrowserLocation>;
+    historyProxy: HistoryProxy<MeduxLocation>;
     historyActions: HistoryActions<{}>;
     toBrowserUrl: <P = {}>(data: Partial<MeduxLocation> | BrowserRoutePayload<P>) => string;
 };

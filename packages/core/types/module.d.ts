@@ -94,7 +94,7 @@ export declare abstract class BaseModelHandlers<S extends BaseModelState, R exte
     protected Update(payload: S): S;
     RouteParams(payload: {
         [key: string]: any;
-    }): S;
+    }, action?: string): S;
     protected Loading(payload: {
         [group: string]: string;
     }): S;
