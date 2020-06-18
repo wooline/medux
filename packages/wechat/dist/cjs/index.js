@@ -4498,12 +4498,22 @@ function createRouter(routeConfig, locationMap) {
         return key + '=' + res.query[key];
       }).join('&');
 
+      if (search) {
+        search = '?' + search;
+      }
+
       if (path !== curLocation.pathname || search !== curLocation.search) {
         var url = checkUrl(path + '?' + search);
 
         var _location4 = urlToLocation(url);
 
-        historyActions._dispatch(_location4, 'POP');
+        historyActions._dispatch(_location4, 'POP').then(function (success) {
+          if (!success) {
+            env.wx.navigateTo({
+              url: curLocation.pathname + curLocation.search
+            });
+          }
+        });
       }
     }
   });

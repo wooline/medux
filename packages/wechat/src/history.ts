@@ -56,7 +56,7 @@ export interface HistoryActions<P = {}> {
   navigateBack(option: number | meduxCore.NavigateBackOption): void;
   listen(listener: LocationListener): UnregisterCallback;
   block(blocker: LocationBlocker): UnregisterCallback;
-  _dispatch(location: MeduxLocation, action: string): void;
+  _dispatch(location: MeduxLocation, action: string): Promise<boolean>;
 }
 
 /**
@@ -249,13 +249,20 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
     if (res.openType === 'navigateBack') {
       const curLocation: MeduxLocation = getClientStore().getState().route.location;
       const path = ('/' + res.path).replace('//', '/');
-      const search = Object.keys(res.query)
+      let search = Object.keys(res.query)
         .map((key) => key + '=' + res.query[key])
         .join('&');
+      if (search) {
+        search = '?' + search;
+      }
       if (path !== curLocation.pathname || search !== curLocation.search) {
         const url = checkUrl(path + '?' + search);
         const location = urlToLocation(url)!;
-        historyActions._dispatch(location, 'POP');
+        historyActions._dispatch(location, 'POP').then((success) => {
+          if (!success) {
+            env.wx.navigateTo({url: curLocation.pathname + curLocation.search});
+          }
+        });
       }
     }
   });

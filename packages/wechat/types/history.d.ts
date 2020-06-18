@@ -27,7 +27,7 @@ export interface HistoryActions<P = {}> {
     navigateBack(option: number | meduxCore.NavigateBackOption): void;
     listen(listener: LocationListener): UnregisterCallback;
     block(blocker: LocationBlocker): UnregisterCallback;
-    _dispatch(location: MeduxLocation, action: string): void;
+    _dispatch(location: MeduxLocation, action: string): Promise<boolean>;
 }
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
 export declare function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap): {
