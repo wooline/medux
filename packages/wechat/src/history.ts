@@ -5,7 +5,7 @@ type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 type UnregisterCallback = () => void;
 type LocationListener = (location: MeduxLocation) => void;
-type LocationBlocker = (location: MeduxLocation, action: string) => boolean | Promise<boolean>;
+type LocationBlocker = (location: MeduxLocation, curLocation: MeduxLocation) => boolean | Promise<boolean>;
 
 export type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
@@ -175,16 +175,17 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       });
     }
     async _dispatch(location: MeduxLocation, action: string) {
-      this.location = {...location, action};
+      const newLocation = {...location, action};
       for (const key in this._blockerList) {
         if (this._blockerList.hasOwnProperty(key)) {
           const blocker = this._blockerList[key];
-          const result = await blocker(this.location, action);
+          const result = await blocker(newLocation, this.location);
           if (!result) {
             throw {code: '2', message: `route blocked:${location.pathname}`};
           }
         }
       }
+      this.location = {...location, action};
       for (const key in this._listenList) {
         if (this._listenList.hasOwnProperty(key)) {
           const listener = this._listenList[key];

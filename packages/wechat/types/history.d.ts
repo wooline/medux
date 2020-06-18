@@ -5,7 +5,7 @@ declare type DeepPartial<T> = {
 };
 declare type UnregisterCallback = () => void;
 declare type LocationListener = (location: MeduxLocation) => void;
-declare type LocationBlocker = (location: MeduxLocation, action: string) => boolean | Promise<boolean>;
+declare type LocationBlocker = (location: MeduxLocation, curLocation: MeduxLocation) => boolean | Promise<boolean>;
 export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export declare type LocationMap = {
     in: LocationToLocation;

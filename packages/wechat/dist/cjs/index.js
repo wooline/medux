@@ -4358,13 +4358,13 @@ function createRouter(routeConfig, locationMap) {
 
     _proto._dispatch = function () {
       var _dispatch2 = _asyncToGenerator(regenerator.mark(function _callee(location, action) {
-        var _key, _blocker, result, _key2, _listener;
+        var newLocation, _key, _blocker, result, _key2, _listener;
 
         return regenerator.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                this.location = Object.assign({}, location, {
+                newLocation = Object.assign({}, location, {
                   action: action
                 });
                 _context.t0 = regenerator.keys(this._blockerList);
@@ -4384,7 +4384,7 @@ function createRouter(routeConfig, locationMap) {
 
                 _blocker = this._blockerList[_key];
                 _context.next = 8;
-                return _blocker(this.location, action);
+                return _blocker(newLocation, this.location);
 
               case 8:
                 result = _context.sent;
@@ -4404,6 +4404,10 @@ function createRouter(routeConfig, locationMap) {
                 break;
 
               case 13:
+                this.location = Object.assign({}, location, {
+                  action: action
+                });
+
                 for (_key2 in this._listenList) {
                   if (this._listenList.hasOwnProperty(_key2)) {
                     _listener = this._listenList[_key2];
@@ -4412,7 +4416,7 @@ function createRouter(routeConfig, locationMap) {
                   }
                 }
 
-              case 14:
+              case 15:
               case "end":
                 return _context.stop();
             }
@@ -4493,7 +4497,7 @@ function createRouter(routeConfig, locationMap) {
 
   env.wx.onAppRoute(function (res) {
     if (res.openType === 'navigateBack') {
-      var curLocation = getClientStore().getState().route.location;
+      var _curLocation = getClientStore().getState().route.location;
       var path = ('/' + res.path).replace('//', '/');
       var search = Object.keys(res.query).map(function (key) {
         return key + '=' + res.query[key];
@@ -4503,14 +4507,14 @@ function createRouter(routeConfig, locationMap) {
         search = '?' + search;
       }
 
-      if (path !== curLocation.pathname || search !== curLocation.search) {
+      if (path !== _curLocation.pathname || search !== _curLocation.search) {
         var url = checkUrl(path + '?' + search);
 
         var _location4 = urlToLocation(url);
 
         historyActions._dispatch(_location4, 'POP').catch(function () {
           env.wx.navigateTo({
-            url: curLocation.pathname + curLocation.search
+            url: _curLocation.pathname + _curLocation.search
           });
         });
       }
