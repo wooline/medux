@@ -5,6 +5,7 @@ type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 type UnregisterCallback = () => void;
 type LocationListener = (location: MeduxLocation) => void;
+type LocationBlocker = (location: MeduxLocation) => boolean | Promise<boolean>;
 
 export type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
@@ -54,6 +55,7 @@ export interface HistoryActions<P = {}> {
   navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
   navigateBack(option: number | meduxCore.NavigateBackOption): void;
   listen(listener: LocationListener): UnregisterCallback;
+  block(blocker: LocationBlocker): UnregisterCallback;
   _dispatch(location: MeduxLocation, action: string): void;
 }
 
@@ -81,6 +83,8 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
   class History<P = {}> implements HistoryActions {
     private _uid = 0;
     private _listenList: {[key: string]: LocationListener} = {};
+    private _blockerList: {[key: string]: LocationBlocker} = {};
+
     public location: MeduxLocation;
     public readonly indexLocation: MeduxLocation;
     constructor() {
@@ -126,29 +130,33 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
     }
     switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH');
-      env.wx.switchTab(option);
+      this._dispatch(location, 'PUSH').then((success) => {
+        success && env.wx.switchTab(option);
+      });
     }
     reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH');
-      env.wx.reLaunch(option);
+      this._dispatch(location, 'PUSH').then((success) => {
+        success && env.wx.reLaunch(option);
+      });
     }
     redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH');
-      env.wx.redirectTo(option);
+      this._dispatch(location, 'PUSH').then((success) => {
+        success && env.wx.redirectTo(option);
+      });
     }
     navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH');
-      env.wx.navigateTo(option);
+      this._dispatch(location, 'PUSH').then((success) => {
+        success && env.wx.navigateTo(option);
+      });
     }
     navigateBack(option: number | meduxCore.NavigateBackOption): void {
       const routeOption: meduxCore.NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
       const pages = env.getCurrentPages();
       if (pages.length < 2) {
-        throw 'navigateBack:fail cannot navigate back at first page.';
+        throw {code: '1', message: 'navigateBack:fail cannot navigate back at first page.'};
       }
       const currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
       let location: MeduxLocation;
@@ -162,17 +170,28 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       } else {
         location = this.indexLocation;
       }
-      this._dispatch(location, 'POP');
-      env.wx.navigateBack(routeOption);
+      this._dispatch(location, 'POP').then((success) => {
+        success && env.wx.navigateBack(routeOption);
+      });
     }
-    _dispatch(location: MeduxLocation, action: string) {
+    async _dispatch(location: MeduxLocation, action: string) {
       this.location = {...location, action};
+      for (const key in this._blockerList) {
+        if (this._blockerList.hasOwnProperty(key)) {
+          const blocker = this._blockerList[key];
+          const result = await blocker(this.location);
+          if (!result) {
+            return false;
+          }
+        }
+      }
       for (const key in this._listenList) {
         if (this._listenList.hasOwnProperty(key)) {
           const listener = this._listenList[key];
           listener(this.location);
         }
       }
+      return true;
     }
     listen(listener: LocationListener): UnregisterCallback {
       this._uid++;
@@ -180,6 +199,14 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       this._listenList[uid] = listener;
       return () => {
         delete this._listenList[uid];
+      };
+    }
+    block(listener: LocationBlocker): UnregisterCallback {
+      this._uid++;
+      const uid = this._uid;
+      this._blockerList[uid] = listener;
+      return () => {
+        delete this._blockerList[uid];
       };
     }
   }

@@ -328,6 +328,7 @@ export function buildTransformRoute(routeConfig: RouteConfig): TransformRoute {
       return val && val.url === url;
     });
     if (item) {
+      item.routeData.action = location.action;
       return item.routeData;
     }
     const pathname = location.pathname;

@@ -4196,6 +4196,8 @@ function createRouter(routeConfig, locationMap) {
 
       _defineProperty(this, "_listenList", {});
 
+      _defineProperty(this, "_blockerList", {});
+
       _defineProperty(this, "location", void 0);
 
       _defineProperty(this, "indexLocation", void 0);
@@ -4285,9 +4287,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou.location,
           option = _this$createWechatRou.option;
 
-      this._dispatch(location, 'PUSH');
-
-      env.wx.switchTab(option);
+      this._dispatch(location, 'PUSH').then(function (success) {
+        success && env.wx.switchTab(option);
+      });
     };
 
     _proto.reLaunch = function reLaunch(args) {
@@ -4295,9 +4297,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou2.location,
           option = _this$createWechatRou2.option;
 
-      this._dispatch(location, 'PUSH');
-
-      env.wx.reLaunch(option);
+      this._dispatch(location, 'PUSH').then(function (success) {
+        success && env.wx.reLaunch(option);
+      });
     };
 
     _proto.redirectTo = function redirectTo(args) {
@@ -4305,9 +4307,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou3.location,
           option = _this$createWechatRou3.option;
 
-      this._dispatch(location, 'PUSH');
-
-      env.wx.redirectTo(option);
+      this._dispatch(location, 'PUSH').then(function (success) {
+        success && env.wx.redirectTo(option);
+      });
     };
 
     _proto.navigateTo = function navigateTo(args) {
@@ -4315,9 +4317,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou4.location,
           option = _this$createWechatRou4.option;
 
-      this._dispatch(location, 'PUSH');
-
-      env.wx.navigateTo(option);
+      this._dispatch(location, 'PUSH').then(function (success) {
+        success && env.wx.navigateTo(option);
+      });
     };
 
     _proto.navigateBack = function navigateBack(option) {
@@ -4327,7 +4329,10 @@ function createRouter(routeConfig, locationMap) {
       var pages = env.getCurrentPages();
 
       if (pages.length < 2) {
-        throw 'navigateBack:fail cannot navigate back at first page.';
+        throw {
+          code: '1',
+          message: 'navigateBack:fail cannot navigate back at first page.'
+        };
       }
 
       var currentPage = pages[pages.length - 1 - (routeOption.delta || 1)];
@@ -4345,24 +4350,80 @@ function createRouter(routeConfig, locationMap) {
         location = this.indexLocation;
       }
 
-      this._dispatch(location, 'POP');
-
-      env.wx.navigateBack(routeOption);
-    };
-
-    _proto._dispatch = function _dispatch(location, action) {
-      this.location = Object.assign({}, location, {
-        action: action
+      this._dispatch(location, 'POP').then(function (success) {
+        success && env.wx.navigateBack(routeOption);
       });
-
-      for (var _key in this._listenList) {
-        if (this._listenList.hasOwnProperty(_key)) {
-          var _listener = this._listenList[_key];
-
-          _listener(this.location);
-        }
-      }
     };
+
+    _proto._dispatch = function () {
+      var _dispatch2 = _asyncToGenerator(regenerator.mark(function _callee(location, action) {
+        var _key, _blocker, result, _key2, _listener;
+
+        return regenerator.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                this.location = Object.assign({}, location, {
+                  action: action
+                });
+                _context.t0 = regenerator.keys(this._blockerList);
+
+              case 2:
+                if ((_context.t1 = _context.t0()).done) {
+                  _context.next = 13;
+                  break;
+                }
+
+                _key = _context.t1.value;
+
+                if (!this._blockerList.hasOwnProperty(_key)) {
+                  _context.next = 11;
+                  break;
+                }
+
+                _blocker = this._blockerList[_key];
+                _context.next = 8;
+                return _blocker(this.location);
+
+              case 8:
+                result = _context.sent;
+
+                if (result) {
+                  _context.next = 11;
+                  break;
+                }
+
+                return _context.abrupt("return", false);
+
+              case 11:
+                _context.next = 2;
+                break;
+
+              case 13:
+                for (_key2 in this._listenList) {
+                  if (this._listenList.hasOwnProperty(_key2)) {
+                    _listener = this._listenList[_key2];
+
+                    _listener(this.location);
+                  }
+                }
+
+                return _context.abrupt("return", true);
+
+              case 15:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function _dispatch(_x, _x2) {
+        return _dispatch2.apply(this, arguments);
+      }
+
+      return _dispatch;
+    }();
 
     _proto.listen = function listen(listener) {
       var _this = this;
@@ -4372,6 +4433,17 @@ function createRouter(routeConfig, locationMap) {
       this._listenList[uid] = listener;
       return function () {
         delete _this._listenList[uid];
+      };
+    };
+
+    _proto.block = function block(listener) {
+      var _this2 = this;
+
+      this._uid++;
+      var uid = this._uid;
+      this._blockerList[uid] = listener;
+      return function () {
+        delete _this2._blockerList[uid];
       };
     };
 

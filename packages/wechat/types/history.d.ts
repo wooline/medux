@@ -5,6 +5,7 @@ declare type DeepPartial<T> = {
 };
 declare type UnregisterCallback = () => void;
 declare type LocationListener = (location: MeduxLocation) => void;
+declare type LocationBlocker = (location: MeduxLocation) => boolean | Promise<boolean>;
 export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export declare type LocationMap = {
     in: LocationToLocation;
@@ -25,6 +26,7 @@ export interface HistoryActions<P = {}> {
     navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
     navigateBack(option: number | meduxCore.NavigateBackOption): void;
     listen(listener: LocationListener): UnregisterCallback;
+    block(blocker: LocationBlocker): UnregisterCallback;
     _dispatch(location: MeduxLocation, action: string): void;
 }
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
