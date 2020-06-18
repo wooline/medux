@@ -5,7 +5,7 @@ declare type DeepPartial<T> = {
 };
 declare type UnregisterCallback = () => void;
 declare type LocationListener = (location: MeduxLocation) => void;
-declare type LocationBlocker = (location: MeduxLocation) => boolean | Promise<boolean>;
+declare type LocationBlocker = (location: MeduxLocation, action: string) => boolean | Promise<boolean>;
 export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export declare type LocationMap = {
     in: LocationToLocation;
@@ -20,14 +20,14 @@ interface BrowserRoutePayload<P = {}> {
 export interface HistoryActions<P = {}> {
     getLocation(): MeduxLocation;
     getRouteData(): RouteData;
-    switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-    reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-    redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-    navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-    navigateBack(option: number | meduxCore.NavigateBackOption): Promise<boolean>;
+    switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+    reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+    redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+    navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+    navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void>;
     listen(listener: LocationListener): UnregisterCallback;
     block(blocker: LocationBlocker): UnregisterCallback;
-    _dispatch(location: MeduxLocation, action: string): Promise<boolean>;
+    _dispatch(location: MeduxLocation, action: string): Promise<void>;
 }
 export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
 export declare function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap): {

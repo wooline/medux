@@ -5,7 +5,7 @@ type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 type UnregisterCallback = () => void;
 type LocationListener = (location: MeduxLocation) => void;
-type LocationBlocker = (location: MeduxLocation) => boolean | Promise<boolean>;
+type LocationBlocker = (location: MeduxLocation, action: string) => boolean | Promise<boolean>;
 
 export type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
@@ -49,14 +49,14 @@ function fillLocation(location: Partial<MeduxLocation>): MeduxLocation {
 export interface HistoryActions<P = {}> {
   getLocation(): MeduxLocation;
   getRouteData(): RouteData;
-  switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-  reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-  redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-  navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
-  navigateBack(option: number | meduxCore.NavigateBackOption): Promise<boolean>;
+  switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+  reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+  redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+  navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
+  navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void>;
   listen(listener: LocationListener): UnregisterCallback;
   block(blocker: LocationBlocker): UnregisterCallback;
-  _dispatch(location: MeduxLocation, action: string): Promise<boolean>;
+  _dispatch(location: MeduxLocation, action: string): Promise<void>;
 }
 
 /**
@@ -128,35 +128,31 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
         return {option: {...data, url}, location};
       }
     }
-    switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
+    switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then((success) => {
-        success && env.wx.switchTab(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(() => {
+        env.wx.switchTab(option);
       });
     }
-    reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
+    reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then((success) => {
-        success && env.wx.reLaunch(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(() => {
+        env.wx.reLaunch(option);
       });
     }
-    redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
+    redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then((success) => {
-        success && env.wx.redirectTo(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(() => {
+        env.wx.redirectTo(option);
       });
     }
-    navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
+    navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then((success) => {
-        success && env.wx.navigateTo(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(() => {
+        env.wx.navigateTo(option);
       });
     }
-    navigateBack(option: number | meduxCore.NavigateBackOption): Promise<boolean> {
+    navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void> {
       const routeOption: meduxCore.NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
       const pages = env.getCurrentPages();
       if (pages.length < 2) {
@@ -174,9 +170,8 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       } else {
         location = this.indexLocation;
       }
-      return this._dispatch(location, 'POP').then((success) => {
-        success && env.wx.navigateBack(routeOption);
-        return success;
+      return this._dispatch(location, 'POP').then(() => {
+        env.wx.navigateBack(routeOption);
       });
     }
     async _dispatch(location: MeduxLocation, action: string) {
@@ -184,9 +179,9 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       for (const key in this._blockerList) {
         if (this._blockerList.hasOwnProperty(key)) {
           const blocker = this._blockerList[key];
-          const result = await blocker(this.location);
+          const result = await blocker(this.location, action);
           if (!result) {
-            return false;
+            throw {code: '2', message: `route blocked:${location.pathname}`};
           }
         }
       }
@@ -196,7 +191,6 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
           listener(this.location);
         }
       }
-      return true;
     }
     listen(listener: LocationListener): UnregisterCallback {
       this._uid++;
@@ -263,10 +257,8 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       if (path !== curLocation.pathname || search !== curLocation.search) {
         const url = checkUrl(path + '?' + search);
         const location = urlToLocation(url)!;
-        historyActions._dispatch(location, 'POP').then((success) => {
-          if (!success) {
-            env.wx.navigateTo({url: curLocation.pathname + curLocation.search});
-          }
+        historyActions._dispatch(location, 'POP').catch(() => {
+          env.wx.navigateTo({url: curLocation.pathname + curLocation.search});
         });
       }
     }

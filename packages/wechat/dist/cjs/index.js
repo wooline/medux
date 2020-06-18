@@ -4288,9 +4288,8 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou.location,
           option = _this$createWechatRou.option;
 
-      return this._dispatch(location, 'PUSH').then(function (success) {
-        success && env.wx.switchTab(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(function () {
+        env.wx.switchTab(option);
       });
     };
 
@@ -4299,9 +4298,8 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou2.location,
           option = _this$createWechatRou2.option;
 
-      return this._dispatch(location, 'PUSH').then(function (success) {
-        success && env.wx.reLaunch(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(function () {
+        env.wx.reLaunch(option);
       });
     };
 
@@ -4310,9 +4308,8 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou3.location,
           option = _this$createWechatRou3.option;
 
-      return this._dispatch(location, 'PUSH').then(function (success) {
-        success && env.wx.redirectTo(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(function () {
+        env.wx.redirectTo(option);
       });
     };
 
@@ -4321,9 +4318,8 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou4.location,
           option = _this$createWechatRou4.option;
 
-      return this._dispatch(location, 'PUSH').then(function (success) {
-        success && env.wx.navigateTo(option);
-        return success;
+      return this._dispatch(location, 'PUSH').then(function () {
+        env.wx.navigateTo(option);
       });
     };
 
@@ -4355,9 +4351,8 @@ function createRouter(routeConfig, locationMap) {
         location = this.indexLocation;
       }
 
-      return this._dispatch(location, 'POP').then(function (success) {
-        success && env.wx.navigateBack(routeOption);
-        return success;
+      return this._dispatch(location, 'POP').then(function () {
+        env.wx.navigateBack(routeOption);
       });
     };
 
@@ -4389,7 +4384,7 @@ function createRouter(routeConfig, locationMap) {
 
                 _blocker = this._blockerList[_key];
                 _context.next = 8;
-                return _blocker(this.location);
+                return _blocker(this.location, action);
 
               case 8:
                 result = _context.sent;
@@ -4399,7 +4394,10 @@ function createRouter(routeConfig, locationMap) {
                   break;
                 }
 
-                return _context.abrupt("return", false);
+                throw {
+                  code: '2',
+                  message: "route blocked:" + location.pathname
+                };
 
               case 11:
                 _context.next = 2;
@@ -4414,9 +4412,7 @@ function createRouter(routeConfig, locationMap) {
                   }
                 }
 
-                return _context.abrupt("return", true);
-
-              case 15:
+              case 14:
               case "end":
                 return _context.stop();
             }
@@ -4512,12 +4508,10 @@ function createRouter(routeConfig, locationMap) {
 
         var _location4 = urlToLocation(url);
 
-        historyActions._dispatch(_location4, 'POP').then(function (success) {
-          if (!success) {
-            env.wx.navigateTo({
-              url: curLocation.pathname + curLocation.search
-            });
-          }
+        historyActions._dispatch(_location4, 'POP').catch(function () {
+          env.wx.navigateTo({
+            url: curLocation.pathname + curLocation.search
+          });
         });
       }
     }
