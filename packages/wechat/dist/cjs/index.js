@@ -4288,8 +4288,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou.location,
           option = _this$createWechatRou.option;
 
-      this._dispatch(location, 'PUSH').then(function (success) {
+      return this._dispatch(location, 'PUSH').then(function (success) {
         success && env.wx.switchTab(option);
+        return success;
       });
     };
 
@@ -4298,8 +4299,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou2.location,
           option = _this$createWechatRou2.option;
 
-      this._dispatch(location, 'PUSH').then(function (success) {
+      return this._dispatch(location, 'PUSH').then(function (success) {
         success && env.wx.reLaunch(option);
+        return success;
       });
     };
 
@@ -4308,8 +4310,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou3.location,
           option = _this$createWechatRou3.option;
 
-      this._dispatch(location, 'PUSH').then(function (success) {
+      return this._dispatch(location, 'PUSH').then(function (success) {
         success && env.wx.redirectTo(option);
+        return success;
       });
     };
 
@@ -4318,8 +4321,9 @@ function createRouter(routeConfig, locationMap) {
           location = _this$createWechatRou4.location,
           option = _this$createWechatRou4.option;
 
-      this._dispatch(location, 'PUSH').then(function (success) {
+      return this._dispatch(location, 'PUSH').then(function (success) {
         success && env.wx.navigateTo(option);
+        return success;
       });
     };
 
@@ -4351,8 +4355,9 @@ function createRouter(routeConfig, locationMap) {
         location = this.indexLocation;
       }
 
-      this._dispatch(location, 'POP').then(function (success) {
+      return this._dispatch(location, 'POP').then(function (success) {
         success && env.wx.navigateBack(routeOption);
+        return success;
       });
     };
 

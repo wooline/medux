@@ -20,11 +20,11 @@ interface BrowserRoutePayload<P = {}> {
 export interface HistoryActions<P = {}> {
     getLocation(): MeduxLocation;
     getRouteData(): RouteData;
-    switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-    reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-    redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-    navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-    navigateBack(option: number | meduxCore.NavigateBackOption): void;
+    switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+    reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+    redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+    navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+    navigateBack(option: number | meduxCore.NavigateBackOption): Promise<boolean>;
     listen(listener: LocationListener): UnregisterCallback;
     block(blocker: LocationBlocker): UnregisterCallback;
     _dispatch(location: MeduxLocation, action: string): Promise<boolean>;

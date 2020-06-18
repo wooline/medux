@@ -49,11 +49,11 @@ function fillLocation(location: Partial<MeduxLocation>): MeduxLocation {
 export interface HistoryActions<P = {}> {
   getLocation(): MeduxLocation;
   getRouteData(): RouteData;
-  switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-  reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-  redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-  navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void;
-  navigateBack(option: number | meduxCore.NavigateBackOption): void;
+  switchTab(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+  reLaunch(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+  redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+  navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean>;
+  navigateBack(option: number | meduxCore.NavigateBackOption): Promise<boolean>;
   listen(listener: LocationListener): UnregisterCallback;
   block(blocker: LocationBlocker): UnregisterCallback;
   _dispatch(location: MeduxLocation, action: string): Promise<boolean>;
@@ -128,31 +128,35 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
         return {option: {...data, url}, location};
       }
     }
-    switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
+    switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH').then((success) => {
+      return this._dispatch(location, 'PUSH').then((success) => {
         success && env.wx.switchTab(option);
+        return success;
       });
     }
-    reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
+    reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH').then((success) => {
+      return this._dispatch(location, 'PUSH').then((success) => {
         success && env.wx.reLaunch(option);
+        return success;
       });
     }
-    redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
+    redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH').then((success) => {
+      return this._dispatch(location, 'PUSH').then((success) => {
         success && env.wx.redirectTo(option);
+        return success;
       });
     }
-    navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): void {
+    navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<boolean> {
       const {location, option} = this.createWechatRouteOption(args);
-      this._dispatch(location, 'PUSH').then((success) => {
+      return this._dispatch(location, 'PUSH').then((success) => {
         success && env.wx.navigateTo(option);
+        return success;
       });
     }
-    navigateBack(option: number | meduxCore.NavigateBackOption): void {
+    navigateBack(option: number | meduxCore.NavigateBackOption): Promise<boolean> {
       const routeOption: meduxCore.NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
       const pages = env.getCurrentPages();
       if (pages.length < 2) {
@@ -170,8 +174,9 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       } else {
         location = this.indexLocation;
       }
-      this._dispatch(location, 'POP').then((success) => {
+      return this._dispatch(location, 'POP').then((success) => {
         success && env.wx.navigateBack(routeOption);
+        return success;
       });
     }
     async _dispatch(location: MeduxLocation, action: string) {
