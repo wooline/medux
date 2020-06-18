@@ -1,6 +1,6 @@
 {
   "name": "@medux/wechat",
-  "version": "1.0.7-alpha.15",
+  "version": "1.0.7-alpha.16",
   "description": "The practice of @medux/core in wechat.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/wechat",
   "author": "wooline <wooline@qq.com>",
