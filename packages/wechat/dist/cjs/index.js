@@ -4033,6 +4033,7 @@ function buildTransformRoute(routeConfig) {
     });
 
     if (item) {
+      item.routeData.action = location.action;
       return item.routeData;
     }
 
