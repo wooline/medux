@@ -12,7 +12,6 @@
       "message": "chore(release): publish %s",
       "npmClient": "npm",
       "ignoreChanges": [
-        "**/*.md",
         "**/test/**",
         "**/dist/**",
         "**/__test__/**"
