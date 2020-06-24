@@ -4356,6 +4356,15 @@ function createRouter(routeConfig, locationMap) {
       });
     };
 
+    _proto.refresh = function refresh(method) {
+      var option = {
+        url: this.location.pathname + this.location.search
+      };
+      return this._dispatch(this.location, 'PUSH').then(function () {
+        env.wx[method](option);
+      });
+    };
+
     _proto._dispatch = function () {
       var _dispatch2 = _asyncToGenerator(regenerator.mark(function _callee(location, action) {
         var newLocation, _key, _blocker, result, _key2, _listener;

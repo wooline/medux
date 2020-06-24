@@ -1,4 +1,4 @@
-[@medux/core - v1.0.7-alpha.12](../README.md) › [Action](action.md)
+[@medux/core - v1.0.7-alpha.14](../README.md) › [Action](action.md)
 
 # Interface: Action
 

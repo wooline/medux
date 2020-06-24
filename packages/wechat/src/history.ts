@@ -54,6 +54,7 @@ export interface HistoryActions<P = {}> {
   redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
   navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
   navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void>;
+  refresh(method: 'switchTab' | 'reLaunch' | 'redirectTo' | 'navigateTo'): Promise<void>;
   listen(listener: LocationListener): UnregisterCallback;
   block(blocker: LocationBlocker): UnregisterCallback;
   _dispatch(location: MeduxLocation, action: string): Promise<void>;
@@ -172,6 +173,12 @@ export function createRouter(routeConfig: RouteConfig, locationMap?: LocationMap
       }
       return this._dispatch(location, 'POP').then(() => {
         env.wx.navigateBack(routeOption);
+      });
+    }
+    refresh(method: 'switchTab' | 'reLaunch' | 'redirectTo' | 'navigateTo') {
+      const option: meduxCore.RouteOption = {url: this.location.pathname + this.location.search};
+      return this._dispatch(this.location, 'PUSH').then(() => {
+        env.wx[method](option);
       });
     }
     async _dispatch(location: MeduxLocation, action: string) {

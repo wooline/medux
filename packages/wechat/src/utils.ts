@@ -7,10 +7,10 @@ export type Props = {[key: string]: any};
 // export type MapDispatchToProps<TInjectedMethods, TOwnProps> = (dispatch: Dispatch<Action>, ownProps?: TOwnProps) => TInjectedMethods;
 
 export interface Connect<Constructor> {
-  <State = {}, InjectedProps = {}, InjectedMethods = {}, Data = {}>(
+  <StoreState = {}, StoreProps = {}, DispatchMethods = {}, Data = {}>(
     module: CommonModule,
-    mapStateToProps?: (state: State, data: Data) => InjectedProps,
-    mapDispatchToProps?: (dispatch: Dispatch<Action>, data: Data) => InjectedMethods
+    mapStateToProps?: (state: StoreState, data: Data) => StoreProps,
+    mapDispatchToProps?: (dispatch: Dispatch<Action>, initData: Data) => DispatchMethods
   ): Constructor;
 }
 

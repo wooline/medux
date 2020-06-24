@@ -25,6 +25,7 @@ export interface HistoryActions<P = {}> {
     redirectTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
     navigateTo(option: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void>;
     navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void>;
+    refresh(method: 'switchTab' | 'reLaunch' | 'redirectTo' | 'navigateTo'): Promise<void>;
     listen(listener: LocationListener): UnregisterCallback;
     block(blocker: LocationBlocker): UnregisterCallback;
     _dispatch(location: MeduxLocation, action: string): Promise<void>;
