@@ -1,6 +1,6 @@
 {
   "name": "@medux/web",
-  "version": "1.1.0",
+  "version": "1.1.1-alpha.0",
   "description": "The practice of @medux/core in web app.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web",
   "author": "wooline <wooline@qq.com>",
