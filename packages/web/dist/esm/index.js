@@ -117,10 +117,10 @@ export function createRouter(history, routeConfig, locationMap) {
     go: function go(n) {
       history.go(n);
     },
-    goBack: function goBack() {
+    back: function back() {
       history.goBack();
     },
-    goForward: function goForward() {
+    forward: function forward() {
       history.goForward();
     }
   };

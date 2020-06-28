@@ -1,8 +1,8 @@
 {
-  "name": "@medux/wechat",
+  "name": "@medux/react-taro",
   "version": "1.1.0",
-  "description": "The practice of @medux/core in wechat.",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/wechat",
+  "description": "The practice of @medux/core in taro",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/react-taro",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -26,9 +26,17 @@
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
     "build": "cross-env NODE_ENV=development NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c"
   },
-  "externals": {},
+  "externals": {
+    "@tarojs/taro": true,
+    "react": true,
+    "react-redux": true
+  },
   "peerDependencies": {
-    "miniprogram-api-typings": "~2.11.0"
+    "@tarojs/taro": "^3.0.0",
+    "@types/react": "^16.8.0",
+    "@types/react-redux": "^7.0.0",
+    "react": "^16.8.0",
+    "react-redux": "^7.0.0"
   },
   "dependencies": {
     "@babel/runtime": "~7.9.0",

@@ -13,11 +13,13 @@
   "keywords": [],
   "workspaces": [
     "packages/core",
+    "packages/mini-program",
     "packages/react",
     "packages/react-web-router",
     "packages/route-plan-a",
     "packages/web",
-    "packages/wechat"
+    "packages/wechat",
+    "packages/react-taro"
   ],
   "scripts": {
     "build:core": "lerna run build --scope @medux/core",
@@ -35,6 +37,7 @@
     "@types/node": "~12.12.31",
     "@types/react": "~16.9.25",
     "@types/react-dom": "~16.9.4",
+    "@types/react-redux": "~7.1.9",
     "@types/react-native": "~0.61.23",
     "@babel/runtime": "~7.9.0",
     "axios": "~0.19.0",
@@ -47,6 +50,7 @@
     "mockjs": "~1.1.0",
     "react": "~16.13.1",
     "react-dom": "~16.13.1",
+    "react-redux": "~7.2.0",
     "react-native": "~0.61.4",
     "react-navigation": "~4.3.3"
   },

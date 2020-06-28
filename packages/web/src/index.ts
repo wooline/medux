@@ -19,8 +19,8 @@ export interface History {
   push(path: string): void;
   replace(path: string): void;
   go(n: number): void;
-  goBack(): void;
-  goForward(): void;
+  back(): void;
+  forward(): void;
   listen(listener: (location: BrowserLocation, action: string) => void): UnregisterCallback;
 }
 
@@ -79,11 +79,11 @@ export interface HistoryActions<P = {}> {
   /**
    * 同浏览器的history.goBack
    */
-  goBack(): void;
+  back(): void;
   /**
    * 同浏览器的history.goForward
    */
-  goForward(): void;
+  forward(): void;
 }
 
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
@@ -191,11 +191,11 @@ export function createRouter(history: History, routeConfig: RouteConfig, locatio
     go(n: number) {
       history.go(n);
     },
-    goBack() {
-      history.goBack();
+    back() {
+      history.back();
     },
-    goForward() {
-      history.goForward();
+    forward() {
+      history.forward();
     },
   };
 

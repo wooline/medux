@@ -35,8 +35,8 @@ export interface HistoryActions<P = {}> {
     push(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
     replace(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
     go(n: number): void;
-    goBack(): void;
-    goForward(): void;
+    back(): void;
+    forward(): void;
 }
 declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;

@@ -125,11 +125,11 @@ export function createRouter(history, routeConfig, locationMap) {
       history.go(n);
     },
 
-    goBack() {
+    back() {
       history.goBack();
     },
 
-    goForward() {
+    forward() {
       history.goForward();
     }
 

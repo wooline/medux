@@ -2,21 +2,61 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var Taro = _interopDefault(require('@tarojs/taro'));
+var React = _interopDefault(require('react'));
+var reactRedux = require('react-redux');
+
+function _extends() {
+  _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+
+    return target;
+  };
+
+  return _extends.apply(this, arguments);
+}
+
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
+
 global.global = {
-  getLaunchOptionsSync: wx.getLaunchOptionsSync,
-  onAppRoute: wx.onAppRoute,
-  switchTab: wx.switchTab,
-  reLaunch: wx.reLaunch,
-  redirectTo: wx.redirectTo,
-  navigateTo: wx.navigateTo,
-  navigateBack: wx.navigateBack,
-  getCurrentPages: getCurrentPages,
+  getLaunchOptionsSync: Taro.getLaunchOptionsSync,
+  switchTab: Taro.switchTab,
+  reLaunch: Taro.reLaunch,
+  redirectTo: Taro.redirectTo,
+  navigateTo: Taro.navigateTo,
+  navigateBack: Taro.navigateBack,
+  getCurrentPages: Taro.getCurrentPages,
   setTimeout: setTimeout,
   clearTimeout: clearTimeout,
-  console: console,
-  Page: Page,
-  Component: Component
+  console: console
 };
+
+if (process.env.TARO_ENV === 'weapp') {
+  global.global.onAppRoute = wx.onAppRoute;
+}
 
 function _assertThisInitialized(self) {
   if (self === void 0) {
@@ -389,9 +429,6 @@ function cacheModule(module) {
 }
 function isPromise(data) {
   return typeof data === 'object' && typeof data['then'] === 'function';
-}
-function getClientStore() {
-  return MetaData.clientStore;
 }
 function reducer(target, key, descriptor) {
   if (!key && !descriptor) {
@@ -4614,197 +4651,6 @@ function initApp(_ref) {
   };
 }
 
-function getPrevData(next, prev) {
-  return Object.keys(next).reduce(function (result, key) {
-    result[key] = prev[key];
-    return result;
-  }, {});
-}
-function diffData(prev, next) {
-  var empty = true;
-  var data = Object.keys(prev).reduce(function (result, key) {
-    if (prev[key] === next[key]) {
-      return result;
-    }
-
-    empty = false;
-    result[key] = next[key];
-    return result;
-  }, {});
-
-  if (empty) {
-    return;
-  }
-
-  return data;
-}
-
-var connectComponent = function connectComponent(module, mapStateToProps, mapDispatchToProps) {
-  cacheModule(module);
-  return function (config) {
-    var unsubscribe;
-    var ready = false;
-
-    function onStateChange() {
-      if (!unsubscribe) {
-        return;
-      }
-
-      if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState(), this.data);
-        var prevState = getPrevData(nextState, this.data || {});
-        var updateData = diffData(prevState, nextState);
-        updateData && this.setData(updateData);
-      }
-    }
-
-    function created() {
-      var _config$lifetimes, _config$lifetimes$cre;
-
-      loadModel(module.default.moduleName);
-      (_config$lifetimes = config.lifetimes) === null || _config$lifetimes === void 0 ? void 0 : (_config$lifetimes$cre = _config$lifetimes.created) === null || _config$lifetimes$cre === void 0 ? void 0 : _config$lifetimes$cre.call(this);
-    }
-
-    function attached() {
-      var _config$lifetimes2, _config$lifetimes2$at;
-
-      if (mapStateToProps) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$lifetimes2 = config.lifetimes) === null || _config$lifetimes2 === void 0 ? void 0 : (_config$lifetimes2$at = _config$lifetimes2.attached) === null || _config$lifetimes2$at === void 0 ? void 0 : _config$lifetimes2$at.call(this);
-      ready = true;
-    }
-
-    function detached() {
-      var _config$lifetimes3, _config$lifetimes3$de;
-
-      (_config$lifetimes3 = config.lifetimes) === null || _config$lifetimes3 === void 0 ? void 0 : (_config$lifetimes3$de = _config$lifetimes3.detached) === null || _config$lifetimes3$de === void 0 ? void 0 : _config$lifetimes3$de.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    function show() {
-      var _config$pageLifetimes, _config$pageLifetimes2;
-
-      if (ready && mapStateToProps && !unsubscribe) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$pageLifetimes = config.pageLifetimes) === null || _config$pageLifetimes === void 0 ? void 0 : (_config$pageLifetimes2 = _config$pageLifetimes.show) === null || _config$pageLifetimes2 === void 0 ? void 0 : _config$pageLifetimes2.call(this);
-    }
-
-    function hide() {
-      var _config$pageLifetimes3, _config$pageLifetimes4;
-
-      (_config$pageLifetimes3 = config.pageLifetimes) === null || _config$pageLifetimes3 === void 0 ? void 0 : (_config$pageLifetimes4 = _config$pageLifetimes3.hide) === null || _config$pageLifetimes4 === void 0 ? void 0 : _config$pageLifetimes4.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    var mergeConfig = Object.assign({}, config, {
-      methods: Object.assign({}, config.methods, {}, mapDispatchToProps && mapDispatchToProps(getClientStore().dispatch, config.data), {
-        dispatch: getClientStore().dispatch
-      }),
-      lifetimes: Object.assign({}, config.lifetimes, {
-        created: created,
-        attached: attached,
-        detached: detached
-      }),
-      pageLifetimes: Object.assign({}, config.pageLifetimes, {
-        show: show,
-        hide: hide
-      })
-    });
-    return env.Component(mergeConfig);
-  };
-};
-
-var connectPage = function connectPage(module, mapStateToProps, mapDispatchToProps) {
-  cacheModule(module);
-  return function (config) {
-    var unsubscribe;
-    var ready = false;
-
-    function onStateChange() {
-      if (!unsubscribe) {
-        return;
-      }
-
-      if (mapStateToProps) {
-        var nextState = mapStateToProps(getClientStore().getState(), this.data);
-        var prevState = getPrevData(nextState, this.data || {});
-        var updateData = diffData(prevState, nextState);
-        updateData && this.setData(updateData);
-      }
-    }
-
-    function onLoad(option) {
-      var _config$onLoad;
-
-      loadModel(module.default.moduleName);
-
-      if (mapStateToProps) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$onLoad = config.onLoad) === null || _config$onLoad === void 0 ? void 0 : _config$onLoad.call(this, option);
-      ready = true;
-    }
-
-    function onUnload() {
-      var _config$onUnload;
-
-      (_config$onUnload = config.onUnload) === null || _config$onUnload === void 0 ? void 0 : _config$onUnload.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    function onShow() {
-      var _config$onShow;
-
-      if (ready && mapStateToProps && !unsubscribe) {
-        unsubscribe = getClientStore().subscribe(onStateChange.bind(this));
-        onStateChange.call(this);
-      }
-
-      (_config$onShow = config.onShow) === null || _config$onShow === void 0 ? void 0 : _config$onShow.call(this);
-    }
-
-    function onHide() {
-      var _config$onHide;
-
-      (_config$onHide = config.onHide) === null || _config$onHide === void 0 ? void 0 : _config$onHide.call(this);
-
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = undefined;
-      }
-    }
-
-    var mergeConfig = Object.assign({}, config, {}, mapDispatchToProps ? mapDispatchToProps(getClientStore().dispatch, config.data) : {}, {
-      dispatch: getClientStore().dispatch,
-      onLoad: onLoad,
-      onUnload: onUnload,
-      onShow: onShow,
-      onHide: onHide
-    });
-    return env.Page(mergeConfig);
-  };
-};
-
 function toUrl(pathname, query) {
   pathname = ('/' + pathname).replace('//', '/');
   var search = Object.keys(query).map(function (key) {
@@ -4833,27 +4679,70 @@ function buildApp(options) {
   var result = initApp(Object.assign({}, options, {
     startupUrl: pathname + search
   }));
-  env.onAppRoute(function (res) {
-    var _toUrl2 = toUrl(res.path, res.query),
-        pathname = _toUrl2.pathname,
-        search = _toUrl2.search;
 
-    result.historyActions.passive({
-      pathname: pathname,
-      search: search,
-      hash: '',
-      action: 'PUSH'
+  if (process.env.TARO_ENV === 'h5') {
+    var _require = require('@tarojs/router'),
+        history = _require.history;
+
+    history.listen(function (location, action) {
+      result.historyActions.passive(Object.assign({}, location, {
+        action: action
+      }));
     });
-  });
+  } else {
+    env.onAppRoute(function (res) {
+      var _toUrl2 = toUrl(res.path, res.query),
+          pathname = _toUrl2.pathname,
+          search = _toUrl2.search;
+
+      result.historyActions.passive({
+        pathname: pathname,
+        search: search,
+        hash: '',
+        action: 'PUSH'
+      });
+    });
+  }
+
   return result;
 }
+var connectView = function connectView(module, useForwardRef) {
+  cacheModule(module);
+
+  for (var _len = arguments.length, rest = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    rest[_key - 2] = arguments[_key];
+  }
+
+  var connectedComponent = reactRedux.connect.apply(void 0, rest);
+  return function () {
+    var Raw = connectedComponent.apply(void 0, arguments);
+
+    var Loader = function ViewLoader(props) {
+      loadModel(module.default.moduleName);
+
+      var forwardRef = props.forwardRef,
+          other = _objectWithoutPropertiesLoose(props, ["forwardRef"]);
+
+      var ref = forwardRef ? {
+        ref: forwardRef
+      } : {};
+      return React.createElement(Raw, _extends({}, other, ref));
+    };
+
+    var Component = useForwardRef ? React.forwardRef(function (props, ref) {
+      return React.createElement(Loader, _extends({}, props, {
+        forwardRef: ref
+      }));
+    }) : Loader;
+    return Component;
+  };
+};
 
 exports.ActionTypes = ActionTypes;
 exports.BaseModelHandlers = BaseModelHandlers;
 exports.buildApp = buildApp;
 exports.client = client;
-exports.connectComponent = connectComponent;
-exports.connectPage = connectPage;
+exports.connectView = connectView;
 exports.delayPromise = delayPromise;
 exports.effect = effect;
 exports.env = env;

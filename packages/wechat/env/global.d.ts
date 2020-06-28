@@ -7,39 +7,6 @@ declare namespace WechatMiniprogram {
   }
 }
 declare namespace meduxCore {
-  interface GeneralCallbackResult {
-    errMsg: string;
-  }
-
-  type RouteCallback = (res: GeneralCallbackResult) => void;
-
-  interface RouteOption {
-    url: string;
-    complete?: RouteCallback;
-    fail?: RouteCallback;
-    success?: RouteCallback;
-  }
-  interface NavigateBackOption {
-    delta?: number;
-    complete?: RouteCallback;
-    fail?: RouteCallback;
-    success?: RouteCallback;
-  }
-  interface RouteChangeEvent {
-    path: string;
-    query: {[key: string]: string};
-    openType: string;
-  }
-  interface WX {
-    onAppRoute(callback: (e: RouteChangeEvent) => void): void;
-    getLaunchOptionsSync(): {path: string; query: {[key: string]: string}};
-    switchTab(option: RouteOption): void;
-    reLaunch(option: RouteOption): void;
-    redirectTo(option: RouteOption): void;
-    navigateTo(option: RouteOption): void;
-    navigateBack(option: NavigateBackOption): void;
-  }
-
   type Props = {[key: string]: any};
   interface ComponentConfig {
     properties?: {[prop: string]: any};
@@ -66,10 +33,15 @@ declare namespace meduxCore {
     onHide?(): void;
   }
 
+  interface RouteChangeEvent {
+    path: string;
+    query: {[key: string]: string};
+    openType: string;
+  }
   interface ENV {
-    wx: WX;
+    onAppRoute(callback: (e: RouteChangeEvent) => void): void;
+    getLaunchOptionsSync(): {path: string; query: {[key: string]: string}};
     Page: (config: any) => void;
     Component: (config: any) => void;
-    getCurrentPages: () => Array<{route: string; options: {[key: string]: string}}>;
   }
 }
