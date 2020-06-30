@@ -10,12 +10,14 @@
 ## @medux 包含以下 Packages
 
 - [**@medux/core**](https://github.com/wooline/medux/tree/master/packages/core)：核心基础包
-- [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：让 @medux/core 具有 web 特性，主要体现在 History 管理上
-- [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套基于 @medux/core 的跨平台路由方案，它将 web 的路由风格带入其它平台
-- [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：@medux/core 结合 React 的封装
-- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合封装了@medux/core、@medux/web、@medux/route-plan-a、@medux/react, 是 web 环境下开发 react 的开箱即用框架
-- [**@medux/wechat**](https://github.com/wooline/medux/tree/master/packages/wechat)：整合封装了@medux/core、@medux/route-plan-a，是开发微信小程序的利器
+- [**@medux/web**](https://github.com/wooline/medux/tree/master/packages/web)：适配 web 开发，主要体现在 History 管理上
+- [**@medux/route-plan-a**](https://github.com/wooline/medux/tree/master/packages/route-plan-a)：实现一套web风格的跨平台路由方案
+- [**@medux/react**](https://github.com/wooline/medux/tree/master/packages/react)：适配 React 开发
+- [**@medux/react-web-router**](https://github.com/wooline/medux/tree/master/packages/react-web-router)：整合封装了@medux/core、@medux/web、@medux/route-plan-a、@medux/react
+- [**@medux/mini-program**](https://github.com/wooline/medux/tree/master/packages/mini-program)：适配各种小程序的基础包
+- [**@medux/wechat**](https://github.com/wooline/medux/tree/master/packages/wechat)：整合封装了@medux/core、@medux/route-plan-a、@medux/mini-program，用来开发原生微信小程序
 - [**@medux/wechat-redux-devtools**](https://github.com/wooline/medux/tree/master/packages/wechat-redux-devtools)：在微信小程序环境下使用 redux-devtools
+- [**@medux/react-taro**](https://github.com/wooline/medux/tree/master/packages/react-taro)：整合封装了@medux/core、@medux/route-plan-a、@medux/mini-program，适配Taro开发框架
 
 以下是尚未完成的 Packages：
 
@@ -26,11 +28,12 @@
 
 [查看 CoreAPI 文档](https://github.com/wooline/medux/tree/master/packages/core/api)
 
-## Demo
+## Demo及案例
 
-[medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统，除了演示 medux 怎么使用，它还创造了不少独特的理念
-
-[medux-react-ssr](https://github.com/wooline/medux-react-ssr)：Fork 自 `medux-react-admin`，将其改造为服务器同构渲染，你可以看到如何将一个 SinglePage(单页应用) 快速转换为支持 SEO 的多页应用。
+- [medux-react-admin](https://github.com/wooline/medux-react-admin)：基于`@medux/react-web-router`和最新的`ANTD 4.x`开发的通用后台管理系统，除了演示 medux 怎么使用，它还创造了不少独特的理念
+- [medux-react-ssr](https://github.com/wooline/medux-react-ssr)：Fork自以上medux-react-admin，将其改造为**服务器同构渲染**，你可以看到如何将一个 SinglePage(`单页应用`)快速转换为支持 SEO 的多页应用。
+- [medux-wechat-native](https://github.com/wooline/medux-wechat-native)：基于@medux/wechat，用原生语言开发微信小程序
+- [medux-taro-react](https://github.com/wooline/medux-taro-react)：基于@medux/react-taro，用taro3.0+react开发多端小程序
 
 ---
 
