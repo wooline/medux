@@ -4668,22 +4668,31 @@ function toUrl(pathname, query) {
 }
 
 function buildApp(options) {
-  var _env$getLaunchOptions = env.getLaunchOptionsSync(),
-      path = _env$getLaunchOptions.path,
-      query = _env$getLaunchOptions.query;
-
-  var _toUrl = toUrl(path, query),
-      pathname = _toUrl.pathname,
-      search = _toUrl.search;
-
-  var result = initApp(Object.assign({}, options, {
-    startupUrl: pathname + search
-  }));
+  var history = undefined;
+  var startupUrl = '';
 
   if (process.env.TARO_ENV === 'h5') {
-    var _require = require('@tarojs/router'),
-        history = _require.history;
+    var taroRouter = require('@tarojs/router');
 
+    history = taroRouter.history;
+    startupUrl = history.location.pathname + history.location.search;
+  } else {
+    var _env$getLaunchOptions = env.getLaunchOptionsSync(),
+        path = _env$getLaunchOptions.path,
+        query = _env$getLaunchOptions.query;
+
+    var _toUrl = toUrl(path, query),
+        pathname = _toUrl.pathname,
+        search = _toUrl.search;
+
+    startupUrl = pathname + search;
+  }
+
+  var result = initApp(Object.assign({}, options, {
+    startupUrl: startupUrl
+  }));
+
+  if (history) {
     history.listen(function (location, action) {
       result.historyActions.passive(Object.assign({}, location, {
         action: action

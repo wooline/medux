@@ -1,6 +1,6 @@
-[@medux/core - v1.0.7-alpha.14](README.md)
+[@medux/core - v1.1.0](README.md)
 
-# @medux/core - v1.0.7-alpha.14
+# @medux/core - v1.1.0
 
 ## Index
 
@@ -552,7 +552,7 @@ ___
 
 ###  renderApp
 
-▸ **renderApp**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleOrName`: string | [CommonModule](interfaces/commonmodule.md), `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹void›*
+▸ **renderApp**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleOrName`: string | [CommonModule](interfaces/commonmodule.md), `appViewName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹void›*
 
 该方法用来创建并启动Client应用
 - 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
@@ -592,6 +592,8 @@ Name | Type |
 
 ▪ **appModuleOrName**: *string | [CommonModule](interfaces/commonmodule.md)*
 
+▪ **appViewName**: *string*
+
 ▪ **history**: *[HistoryProxy](interfaces/historyproxy.md)*
 
 抽象的HistoryProxy实现
@@ -610,7 +612,7 @@ ___
 
 ###  renderSSR
 
-▸ **renderSSR**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹object›*
+▸ **renderSSR**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleName`: string, `appViewName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹object›*
 
 SSR时该方法用来创建并启动Server应用
 - 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
@@ -651,6 +653,8 @@ Name | Type |
 ▪ **appModuleName**: *string*
 
 模块的主入口模块名称
+
+▪ **appViewName**: *string*
 
 ▪ **history**: *[HistoryProxy](interfaces/historyproxy.md)*
 

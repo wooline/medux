@@ -61,7 +61,8 @@ const redirectMiddleware: Middleware = () => (next) => (action) => {
 
 export function buildApp({
   moduleGetter,
-  appModuleName,
+  appModuleName = 'app',
+  appViewName = 'main',
   history,
   routeConfig = {},
   locationMap,
@@ -71,7 +72,8 @@ export function buildApp({
   beforeRender,
 }: {
   moduleGetter: ModuleGetter;
-  appModuleName: string;
+  appModuleName?: string;
+  appViewName?: string;
   history: History;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
   locationMap?: import('@medux/web').LocationMap;
@@ -89,7 +91,7 @@ export function buildApp({
     storeOptions.middlewares = [];
   }
   storeOptions.middlewares.unshift(redirectMiddleware);
-  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, (store) => {
+  return renderApp(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, container, (store) => {
     const storeState = store.getState();
     const {views} = storeState.route.data;
     checkRedirect(views);
@@ -99,7 +101,8 @@ export function buildApp({
 
 export function buildSSR({
   moduleGetter,
-  appModuleName,
+  appModuleName = 'app',
+  appViewName = 'main',
   location,
   routeConfig = {},
   defaultRouteParams,
@@ -108,7 +111,8 @@ export function buildSSR({
   beforeRender,
 }: {
   moduleGetter: ModuleGetter;
-  appModuleName: string;
+  appModuleName?: string;
+  appViewName?: string;
   location: string;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
   defaultRouteParams?: {[moduleName: string]: any};
@@ -130,7 +134,7 @@ export function buildSSR({
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, (store) => {
+  return renderSSR(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, renderToStream, (store) => {
     const storeState = store.getState();
     const {views} = storeState.route.data;
     checkRedirect(views, true);

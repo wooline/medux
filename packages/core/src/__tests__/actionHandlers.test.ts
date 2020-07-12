@@ -43,6 +43,7 @@ describe('无SSR时', () => {
       },
       moduleGetter,
       'moduleA',
+      'Main',
       historyProxy,
       {middlewares: [logerMiddleware], initData: {thirdParty: 123}},
       (store) => {

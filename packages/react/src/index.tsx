@@ -12,6 +12,7 @@ import {Store} from 'redux';
 export function renderApp(
   moduleGetter: ModuleGetter,
   appModuleName: string,
+  appViewName: string,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions,
   container: string | Element | ((component: ReactElement<any>) => void) = 'root',
@@ -39,6 +40,7 @@ export function renderApp(
     },
     moduleGetter,
     appModuleName,
+    appViewName,
     historyProxy,
     storeOptions,
     beforeRender
@@ -48,6 +50,7 @@ export function renderApp(
 export function renderSSR(
   moduleGetter: ModuleGetter,
   appModuleName: string,
+  appViewName: string,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions = {},
   renderToStream: boolean = false,
@@ -71,6 +74,7 @@ export function renderSSR(
     },
     moduleGetter,
     appModuleName,
+    appViewName,
     historyProxy,
     storeOptions,
     beforeRender

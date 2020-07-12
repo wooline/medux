@@ -23,7 +23,7 @@ var _reactRedux = require("react-redux");
 
 var _reactDom = _interopRequireDefault(require("react-dom"));
 
-function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
+function renderApp(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
   }
@@ -48,10 +48,10 @@ function renderApp(moduleGetter, appModuleName, historyProxy, storeOptions, cont
 
     reRender(AppView);
     return reRender;
-  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
 }
 
-function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {
+function renderSSR(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, renderToStream, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -74,7 +74,7 @@ function renderSSR(moduleGetter, appModuleName, historyProxy, storeOptions, rend
       data: data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
 }
 
 var LoadViewOnError = function LoadViewOnError() {

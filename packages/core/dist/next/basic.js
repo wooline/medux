@@ -44,6 +44,7 @@ export function setConfig(_config) {
   _config.MSP && (config.MSP = _config.MSP);
 }
 export const MetaData = {
+  appViewName: null,
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,

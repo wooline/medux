@@ -380,6 +380,7 @@
     _config.MSP && (config.MSP = _config.MSP);
   }
   var MetaData = {
+    appViewName: null,
     actionCreatorMap: null,
     clientStore: null,
     appModuleName: null,
@@ -603,10 +604,10 @@
       payload: [route]
     };
   }
-  function routeParamsAction(moduleName, params) {
+  function routeParamsAction(moduleName, params, action) {
     return {
       type: "" + moduleName + config.NSP + ActionTypes.MRouteParams,
-      payload: [params]
+      payload: [params, action]
     };
   }
 
@@ -1297,12 +1298,13 @@
           var action = next(originalAction);
 
           if (action.type === ActionTypes.RouteChange) {
-            var rootRouteParams = meta.prevState.route.data.params;
+            var _routeData = meta.prevState.route.data;
+            var rootRouteParams = _routeData.params;
             Object.keys(rootRouteParams).forEach(function (moduleName) {
               var routeParams = rootRouteParams[moduleName];
 
               if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-                dispatch(routeParamsAction(moduleName, routeParams));
+                dispatch(routeParamsAction(moduleName, routeParams, _routeData.action));
               }
             });
           }
@@ -2694,7 +2696,7 @@
     if (module) {
       module.default.views = views;
       env.console.warn("[HMR] @medux Updated views: " + moduleName);
-      appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views.Main;
+      appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views[MetaData.appViewName];
 
       if (!reRenderTimer) {
         reRenderTimer = env.setTimeout(function () {
@@ -2892,7 +2894,7 @@
         kind: "method",
         decorators: [reducer],
         key: "RouteParams",
-        value: function RouteParams(payload) {
+        value: function RouteParams(payload, action) {
           var state = this.getState();
           return Object.assign({}, state, {
             routeParams: payload
@@ -2998,12 +3000,12 @@
     }
   }
 
-  function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
+  function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
     return _renderApp.apply(this, arguments);
   }
 
   function _renderApp() {
-    _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, history, storeOptions, beforeRender) {
+    _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, history, storeOptions, beforeRender) {
       var appModuleName, ssrInitStoreKey, initData, store, reduxStore, preModuleNames, appModule, i, k, _moduleName, module;
 
       return regenerator.wrap(function _callee$(_context) {
@@ -3021,6 +3023,7 @@
 
               appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
               MetaData.appModuleName = appModuleName;
+              MetaData.appViewName = appViewName;
 
               if (typeof appModuleOrName !== 'string') {
                 cacheModule(appModuleOrName);
@@ -3046,35 +3049,35 @@
               appModule = undefined;
               i = 0, k = preModuleNames.length;
 
-            case 14:
+            case 15:
               if (!(i < k)) {
-                _context.next = 25;
+                _context.next = 26;
                 break;
               }
 
               _moduleName = preModuleNames[i];
-              _context.next = 18;
+              _context.next = 19;
               return getModuleByName(_moduleName, moduleGetter);
 
-            case 18:
+            case 19:
               module = _context.sent;
-              _context.next = 21;
+              _context.next = 22;
               return module.default.model(reduxStore, undefined);
 
-            case 21:
+            case 22:
               if (i === 0) {
                 appModule = module;
               }
 
-            case 22:
+            case 23:
               i++;
-              _context.next = 14;
+              _context.next = 15;
               break;
 
-            case 25:
-              reRender = render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
-
             case 26:
+              reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+
+            case 27:
             case "end":
               return _context.stop();
           }
@@ -3084,12 +3087,12 @@
     return _renderApp.apply(this, arguments);
   }
 
-  function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
+  function renderSSR(_x8, _x9, _x10, _x11, _x12, _x13, _x14) {
     return _renderSSR.apply(this, arguments);
   }
 
   function _renderSSR() {
-    _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, history, storeOptions, beforeRender) {
+    _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, history, storeOptions, beforeRender) {
       var ssrInitStoreKey, store, reduxStore, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName2, module;
 
       return regenerator.wrap(function _callee2$(_context2) {
@@ -3101,6 +3104,7 @@
               }
 
               MetaData.appModuleName = appModuleName;
+              MetaData.appViewName = appViewName;
               ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
               store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
               reduxStore = beforeRender ? beforeRender(store) : store;
@@ -3111,38 +3115,38 @@
               inited = {};
               i = 0, k = paths.length;
 
-            case 11:
+            case 12:
               if (!(i < k)) {
-                _context2.next = 22;
+                _context2.next = 23;
                 break;
               }
 
               _paths$i$split = paths[i].split(config.VSP), _moduleName2 = _paths$i$split[0];
 
               if (inited[_moduleName2]) {
-                _context2.next = 19;
+                _context2.next = 20;
                 break;
               }
 
               inited[_moduleName2] = true;
               module = moduleGetter[_moduleName2]();
-              _context2.next = 18;
+              _context2.next = 19;
               return module.default.model(reduxStore, undefined);
 
-            case 18:
+            case 19:
               if (i === 0) {
                 appModule = module;
               }
 
-            case 19:
+            case 20:
               i++;
-              _context2.next = 11;
+              _context2.next = 12;
               break;
 
-            case 22:
-              return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey));
-
             case 23:
+              return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
+
+            case 24:
             case "end":
               return _context2.stop();
           }
@@ -4065,7 +4069,7 @@
     };
   }
 
-  function assignRouteData(paths, stackParams, args) {
+  function assignRouteData(paths, stackParams, args, action) {
     if (!stackParams[0]) {
       stackParams[0] = {};
     }
@@ -4107,7 +4111,8 @@
       views: views,
       paths: paths,
       params: params,
-      stackParams: stackParams
+      stackParams: stackParams,
+      action: action
     };
   }
 
@@ -4169,6 +4174,7 @@
       });
 
       if (item) {
+        item.routeData.action = location.action;
         return item.routeData;
       }
 
@@ -4187,7 +4193,7 @@
           deepExtend(stackParams[index], item);
         }
       });
-      var routeData = assignRouteData(paths, stackParams, pathsArgs);
+      var routeData = assignRouteData(paths, stackParams, pathsArgs, location.action);
       cacheData.unshift({
         url: url,
         routeData: routeData
@@ -4280,7 +4286,8 @@
       return {
         pathname: pathname,
         search: search ? '?' + search : '',
-        hash: hash ? '#' + hash : ''
+        hash: hash ? '#' + hash : '',
+        action: routeData.action
       };
     };
 
@@ -4290,7 +4297,7 @@
     };
   }
 
-  function renderApp$1(moduleGetter, appModuleName, historyProxy, storeOptions, container, beforeRender) {
+  function renderApp$1(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, container, beforeRender) {
     if (container === void 0) {
       container = 'root';
     }
@@ -4313,9 +4320,9 @@
 
       reRender(AppView);
       return reRender;
-    }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
+    }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
   }
-  function renderSSR$1(moduleGetter, appModuleName, historyProxy, storeOptions, renderToStream, beforeRender) {
+  function renderSSR$1(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, renderToStream, beforeRender) {
     if (storeOptions === void 0) {
       storeOptions = {};
     }
@@ -4336,7 +4343,7 @@
         data: data,
         html: render(reduxProvider)
       };
-    }, moduleGetter, appModuleName, historyProxy, storeOptions, beforeRender);
+    }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
   }
 
   var LoadViewOnError = function LoadViewOnError() {
@@ -4411,7 +4418,7 @@
       stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
     }
 
-    return assignRouteData(routePayload.paths || extend.paths, stackParams);
+    return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
   }
 
   function isBrowserRoutePayload(data) {
@@ -4422,7 +4429,8 @@
     return {
       pathname: location.pathname || '',
       search: location.search || '',
-      hash: location.hash || ''
+      hash: location.hash || '',
+      action: location.action
     };
   }
 
@@ -4431,20 +4439,27 @@
     var historyProxy = {
       initialized: true,
       getLocation: function getLocation() {
-        return history.location;
+        return Object.assign({}, history.location, {
+          action: history.action
+        });
       },
       subscribe: function subscribe(listener) {
-        return history.listen(listener);
+        var unlink = history.listen(function (location, action) {
+          listener(Object.assign({}, location, {
+            action: action
+          }));
+        });
+        return unlink;
       },
       locationToRouteData: function locationToRouteData(location) {
-        return location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
+        return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
       },
       equal: function equal(a, b) {
-        return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash;
+        return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
       },
-      patch: function patch(location, routeData) {
+      patch: function patch(location) {
         var url = locationToUrl(location);
-        history.push(url, routeData);
+        history.push(url);
       }
     };
 
@@ -4473,7 +4488,7 @@
 
         var _url = checkUrl(locationToUrl(_location2));
 
-        history[action](_url, routeData);
+        history[action](_url);
       } else {
         var _url2 = checkUrl(locationToUrl(fillLocation(data)));
 
@@ -4483,15 +4498,21 @@
 
     var historyActions = {
       listen: function listen(listener) {
-        return history.listen(listener);
+        var unlink = history.listen(function (location, action) {
+          listener(Object.assign({}, location, {
+            action: action
+          }));
+        });
+        return unlink;
       },
-
-      get location() {
-        return history.location;
+      getLocation: function getLocation() {
+        return Object.assign({}, history.location, {
+          action: history.action
+        });
       },
-
       getRouteData: function getRouteData() {
-        return history.location.state || transformRoute.locationToRoute(locationMap ? locationMap.in(history.location) : history.location);
+        var location = this.getLocation();
+        return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
       },
       push: function push(data) {
         navigateTo('push', data);
@@ -4502,10 +4523,10 @@
       go: function go(n) {
         history.go(n);
       },
-      goBack: function goBack() {
+      back: function back() {
         history.goBack();
       },
-      goForward: function goForward() {
+      forward: function forward() {
         history.goForward();
       }
     };
@@ -4577,7 +4598,10 @@
 
   function buildApp(_ref) {
     var moduleGetter = _ref.moduleGetter,
-        appModuleName = _ref.appModuleName,
+        _ref$appModuleName = _ref.appModuleName,
+        appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
+        _ref$appViewName = _ref.appViewName,
+        appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
         history = _ref.history,
         _ref$routeConfig = _ref.routeConfig,
         routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
@@ -4601,7 +4625,7 @@
     }
 
     storeOptions.middlewares.unshift(redirectMiddleware);
-    return renderApp$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, function (store) {
+    return renderApp$1(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, container, function (store) {
       var storeState = store.getState();
       var views = storeState.route.data.views;
       checkRedirect(views);
@@ -4616,7 +4640,10 @@
   }
   function buildSSR(_ref2) {
     var moduleGetter = _ref2.moduleGetter,
-        appModuleName = _ref2.appModuleName,
+        _ref2$appModuleName = _ref2.appModuleName,
+        appModuleName = _ref2$appModuleName === void 0 ? 'app' : _ref2$appModuleName,
+        _ref2$appViewName = _ref2.appViewName,
+        appViewName = _ref2$appViewName === void 0 ? 'main' : _ref2$appViewName,
         location = _ref2.location,
         _ref2$routeConfig = _ref2.routeConfig,
         routeConfig = _ref2$routeConfig === void 0 ? {} : _ref2$routeConfig,
@@ -4649,7 +4676,7 @@
     historyActions = router.historyActions;
     toBrowserUrl = router.toBrowserUrl;
     transformRoute = router.transformRoute;
-    return renderSSR$1(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, function (store) {
+    return renderSSR$1(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, renderToStream, function (store) {
       var storeState = store.getState();
       var views = storeState.route.data.views;
       checkRedirect(views, true);

@@ -50,12 +50,13 @@ export interface InitAppOptions {
   startupUrl: string;
   moduleGetter: ModuleGetter;
   appModule: CommonModule;
+  appViewName?: string;
   routeConfig?: import('@medux/route-plan-a').RouteConfig;
   locationMap?: import('./history').LocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
 }
-export function initApp({startupUrl, moduleGetter, appModule, routeConfig = {}, locationMap, defaultRouteParams, storeOptions = {}}: InitAppOptions) {
+export function initApp({startupUrl, moduleGetter, appModule, appViewName = 'main', routeConfig = {}, locationMap, defaultRouteParams, storeOptions = {}}: InitAppOptions) {
   setRouteConfig({defaultRouteParams});
   const router = createRouter(routeConfig, startupUrl, locationMap);
   historyActions = router.historyActions;
@@ -72,6 +73,7 @@ export function initApp({startupUrl, moduleGetter, appModule, routeConfig = {}, 
     },
     moduleGetter,
     appModule,
+    appViewName,
     router.historyProxy,
     storeOptions,
     (store: Store<StoreState>) => {

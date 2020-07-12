@@ -123,13 +123,13 @@ export interface StoreOptions {
         [key: string]: any;
     };
 }
-export declare function renderApp<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<void>;
+export declare function renderApp<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<void>;
 export declare function renderSSR<V>(render: (store: Store<StoreState>, appModel: Model, appView: V, ssrInitStoreKey: string) => {
     html: any;
     data: any;
     ssrInitStoreKey: string;
     store: Store;
-}, moduleGetter: ModuleGetter, appModuleName: string, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<{
+}, moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, history: HistoryProxy, storeOptions?: StoreOptions, beforeRender?: (store: Store<StoreState>) => Store<StoreState>): Promise<{
     html: any;
     data: any;
     ssrInitStoreKey: string;

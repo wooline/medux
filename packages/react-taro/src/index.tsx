@@ -54,13 +54,20 @@ function toUrl(pathname: string, query: {[key: string]: string}) {
   return {pathname, search};
 }
 export function buildApp(options: Omit<InitAppOptions, 'startupUrl'>) {
-  const {path, query} = env.getLaunchOptionsSync();
-  const {pathname, search} = toUrl(path, query);
-
-  const result = initApp({...options, startupUrl: pathname + search});
+  let history: meduxCore.History | undefined = undefined;
+  let startupUrl: string = '';
   if (process.env.TARO_ENV === 'h5') {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const {history}: {history: meduxCore.History} = require('@tarojs/router');
+    const taroRouter: {history: meduxCore.History} = require('@tarojs/router');
+    history = taroRouter.history;
+    startupUrl = history.location.pathname + history.location.search;
+  } else {
+    const {path, query} = env.getLaunchOptionsSync();
+    const {pathname, search} = toUrl(path, query);
+    startupUrl = pathname + search;
+  }
+  const result = initApp({...options, startupUrl});
+  if (history) {
     history.listen((location, action) => {
       result.historyActions.passive({...location, action});
     });

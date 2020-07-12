@@ -16,6 +16,7 @@ export interface InitAppOptions {
     startupUrl: string;
     moduleGetter: ModuleGetter;
     appModule: CommonModule;
+    appViewName?: string;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
     locationMap?: import('./history').LocationMap;
     defaultRouteParams?: {
@@ -23,7 +24,7 @@ export interface InitAppOptions {
     };
     storeOptions?: StoreOptions;
 }
-export declare function initApp({ startupUrl, moduleGetter, appModule, routeConfig, locationMap, defaultRouteParams, storeOptions }: InitAppOptions): {
+export declare function initApp({ startupUrl, moduleGetter, appModule, appViewName, routeConfig, locationMap, defaultRouteParams, storeOptions }: InitAppOptions): {
     store: Store<any, import("redux").AnyAction>;
     historyActions: HistoryActions<{}>;
     toBrowserUrl: ToBrowserUrl<{}>;

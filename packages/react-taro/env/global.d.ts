@@ -7,6 +7,7 @@ declare namespace meduxCore {
   }
   type UnregisterCallback = () => void;
   interface History {
+    location: BrowserLocation;
     listen(listener: (location: BrowserLocation, action: HistoryAcion) => void): UnregisterCallback;
   }
   interface RouteChangeEvent {

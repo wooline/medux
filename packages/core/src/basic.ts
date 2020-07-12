@@ -77,8 +77,10 @@ export const MetaData: {
   actionCreatorMap: ActionCreatorMap;
   clientStore: ModelStore;
   appModuleName: string;
+  appViewName: string;
   moduleGetter: ModuleGetter;
 } = {
+  appViewName: null as any,
   actionCreatorMap: null as any,
   clientStore: null as any,
   appModuleName: null as any,

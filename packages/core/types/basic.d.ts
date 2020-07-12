@@ -18,6 +18,7 @@ export declare const MetaData: {
     actionCreatorMap: ActionCreatorMap;
     clientStore: ModelStore;
     appModuleName: string;
+    appViewName: string;
     moduleGetter: ModuleGetter;
 };
 export declare const ActionTypes: {

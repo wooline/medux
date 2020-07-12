@@ -51,7 +51,10 @@ var redirectMiddleware = function redirectMiddleware() {
 
 export function buildApp(_ref) {
   var moduleGetter = _ref.moduleGetter,
-      appModuleName = _ref.appModuleName,
+      _ref$appModuleName = _ref.appModuleName,
+      appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
+      _ref$appViewName = _ref.appViewName,
+      appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
       history = _ref.history,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
@@ -75,7 +78,7 @@ export function buildApp(_ref) {
   }
 
   storeOptions.middlewares.unshift(redirectMiddleware);
-  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, function (store) {
+  return renderApp(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, container, function (store) {
     var storeState = store.getState();
     var views = storeState.route.data.views;
     checkRedirect(views);
@@ -90,7 +93,10 @@ export function buildApp(_ref) {
 }
 export function buildSSR(_ref2) {
   var moduleGetter = _ref2.moduleGetter,
-      appModuleName = _ref2.appModuleName,
+      _ref2$appModuleName = _ref2.appModuleName,
+      appModuleName = _ref2$appModuleName === void 0 ? 'app' : _ref2$appModuleName,
+      _ref2$appViewName = _ref2.appViewName,
+      appViewName = _ref2$appViewName === void 0 ? 'main' : _ref2$appViewName,
       location = _ref2.location,
       _ref2$routeConfig = _ref2.routeConfig,
       routeConfig = _ref2$routeConfig === void 0 ? {} : _ref2$routeConfig,
@@ -123,7 +129,7 @@ export function buildSSR(_ref2) {
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, function (store) {
+  return renderSSR(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, renderToStream, function (store) {
     var storeState = store.getState();
     var views = storeState.route.data.views;
     checkRedirect(views, true);

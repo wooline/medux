@@ -16,9 +16,10 @@ export declare type BrowserRouter<Params> = {
     historyActions: HistoryActions<Params>;
     toUrl: ToBrowserUrl<Params>;
 };
-export declare function buildApp({ moduleGetter, appModuleName, history, routeConfig, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
+export declare function buildApp({ moduleGetter, appModuleName, appViewName, history, routeConfig, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
     moduleGetter: ModuleGetter;
-    appModuleName: string;
+    appModuleName?: string;
+    appViewName?: string;
     history: History;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
     locationMap?: import('@medux/web').LocationMap;
@@ -35,9 +36,10 @@ export declare function buildApp({ moduleGetter, appModuleName, history, routeCo
         transformRoute: TransformRoute;
     }) => Store<StoreState>;
 }): Promise<void>;
-export declare function buildSSR({ moduleGetter, appModuleName, location, routeConfig, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
+export declare function buildSSR({ moduleGetter, appModuleName, appViewName, location, routeConfig, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
     moduleGetter: ModuleGetter;
-    appModuleName: string;
+    appModuleName?: string;
+    appViewName?: string;
     location: string;
     routeConfig?: import('@medux/route-plan-a').RouteConfig;
     defaultRouteParams?: {

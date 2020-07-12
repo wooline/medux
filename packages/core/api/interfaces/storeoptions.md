@@ -1,4 +1,4 @@
-[@medux/core - v1.0.7-alpha.14](../README.md) › [StoreOptions](storeoptions.md)
+[@medux/core - v1.1.0](../README.md) › [StoreOptions](storeoptions.md)
 
 # Interface: StoreOptions
 

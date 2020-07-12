@@ -1,4 +1,4 @@
-[@medux/core - v1.0.7-alpha.14](../README.md) › [CommonModule](commonmodule.md)
+[@medux/core - v1.1.0](../README.md) › [CommonModule](commonmodule.md)
 
 # Interface: CommonModule
 

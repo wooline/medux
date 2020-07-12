@@ -49,7 +49,8 @@ const redirectMiddleware = () => next => action => {
 
 export function buildApp({
   moduleGetter,
-  appModuleName,
+  appModuleName = 'app',
+  appViewName = 'main',
   history,
   routeConfig = {},
   locationMap,
@@ -71,7 +72,7 @@ export function buildApp({
   }
 
   storeOptions.middlewares.unshift(redirectMiddleware);
-  return renderApp(moduleGetter, appModuleName, router.historyProxy, storeOptions, container, store => {
+  return renderApp(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, container, store => {
     const storeState = store.getState();
     const {
       views
@@ -88,7 +89,8 @@ export function buildApp({
 }
 export function buildSSR({
   moduleGetter,
-  appModuleName,
+  appModuleName = 'app',
+  appViewName = 'main',
   location,
   routeConfig = {},
   defaultRouteParams,
@@ -112,7 +114,7 @@ export function buildSSR({
   historyActions = router.historyActions;
   toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderSSR(moduleGetter, appModuleName, router.historyProxy, storeOptions, renderToStream, store => {
+  return renderSSR(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, renderToStream, store => {
     const storeState = store.getState();
     const {
       views

@@ -82,6 +82,7 @@ function setConfig(_config) {
 }
 
 var MetaData = {
+  appViewName: null,
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,

@@ -38,6 +38,8 @@ export function initApp(_ref) {
   var startupUrl = _ref.startupUrl,
       moduleGetter = _ref.moduleGetter,
       appModule = _ref.appModule,
+      _ref$appViewName = _ref.appViewName,
+      appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
       locationMap = _ref.locationMap,
@@ -62,7 +64,7 @@ export function initApp(_ref) {
     return function () {
       return void 0;
     };
-  }, moduleGetter, appModule, router.historyProxy, storeOptions, function (store) {
+  }, moduleGetter, appModule, appViewName, router.historyProxy, storeOptions, function (store) {
     var storeState = store.getState();
     var views = storeState.route.data.views;
     checkRedirect(views);

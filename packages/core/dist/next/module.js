@@ -41,7 +41,7 @@ export function viewHotReplacement(moduleName, views) {
   if (module) {
     module.default.views = views;
     env.console.warn(`[HMR] @medux Updated views: ${moduleName}`);
-    appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views.Main;
+    appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views[MetaData.appViewName];
 
     if (!reRenderTimer) {
       reRenderTimer = env.setTimeout(() => {
@@ -330,7 +330,7 @@ function getModuleByName(moduleName, moduleGetter) {
   }
 }
 
-export async function renderApp(render, moduleGetter, appModuleOrName, history, storeOptions = {}, beforeRender) {
+export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, history, storeOptions = {}, beforeRender) {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -338,6 +338,7 @@ export async function renderApp(render, moduleGetter, appModuleOrName, history, 
 
   const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
+  MetaData.appViewName = appViewName;
 
   if (typeof appModuleOrName !== 'string') {
     cacheModule(appModuleOrName);
@@ -370,10 +371,11 @@ export async function renderApp(render, moduleGetter, appModuleOrName, history, 
     }
   }
 
-  reRender = render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
+  reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }
-export async function renderSSR(render, moduleGetter, appModuleName, history, storeOptions = {}, beforeRender) {
+export async function renderSSR(render, moduleGetter, appModuleName, appViewName, history, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;
+  MetaData.appViewName = appViewName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const reduxStore = beforeRender ? beforeRender(store) : store;
@@ -399,5 +401,5 @@ export async function renderSSR(render, moduleGetter, appModuleName, history, st
     }
   }
 
-  return render(reduxStore, appModule.default.model, appModule.default.views.Main, ssrInitStoreKey);
+  return render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }

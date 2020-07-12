@@ -36,6 +36,7 @@ export function initApp({
   startupUrl,
   moduleGetter,
   appModule,
+  appViewName = 'main',
   routeConfig = {},
   locationMap,
   defaultRouteParams,
@@ -57,7 +58,7 @@ export function initApp({
   let reduxStore = undefined;
   renderApp(() => {
     return () => void 0;
-  }, moduleGetter, appModule, router.historyProxy, storeOptions, store => {
+  }, moduleGetter, appModule, appViewName, router.historyProxy, storeOptions, store => {
     const storeState = store.getState();
     const {
       views
