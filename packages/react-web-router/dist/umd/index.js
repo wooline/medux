@@ -40,6 +40,21 @@
     return target;
   }
 
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
+
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -113,21 +128,6 @@
     subClass.prototype = Object.create(superClass.prototype);
     subClass.prototype.constructor = subClass;
     subClass.__proto__ = superClass;
-  }
-
-  function _defineProperty(obj, key, value) {
-    if (key in obj) {
-      Object.defineProperty(obj, key, {
-        value: value,
-        enumerable: true,
-        configurable: true,
-        writable: true
-      });
-    } else {
-      obj[key] = value;
-    }
-
-    return obj;
   }
 
   var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
@@ -1168,7 +1168,8 @@
       }
     };
 
-    store._medux_.destroy = history.subscribe(handleLocationChange);
+    history.subscribe(handleLocationChange);
+    store._medux_.destroy = history.destroy;
     store.subscribe(function () {
       if (history.initialized) {
         var storeRouteState = store.getState().route;
@@ -3156,6 +3157,82 @@
     return _renderSSR.apply(this, arguments);
   }
 
+  function checkPathname(pathname, curPathname) {
+    curPathname = ('/' + curPathname).replace('//', '/').replace(/\/$/, '');
+
+    if (pathname.startsWith('./')) {
+      pathname = curPathname + pathname.replace('./', '/');
+    } else if (pathname.startsWith('../')) {
+      var _pathname$match;
+
+      var n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
+      var arr = curPathname.split('/');
+      arr.length = arr.length - n;
+      pathname = arr.join('/') + '/' + pathname.replace(/\.\.\//g, '');
+    } else {
+      pathname = ('/' + pathname).replace('//', '/');
+    }
+
+    return pathname;
+  }
+  function checkLocation(location, curPathname) {
+    var data = Object.assign({}, location);
+    data.pathname = checkPathname(data.pathname || '/', curPathname);
+    data.search = ('?' + (data.search || '')).replace('??', '?');
+    data.hash = ('#' + (data.hash || '')).replace('##', '#');
+
+    if (data.search === '?') {
+      data.search = '';
+    }
+
+    if (data.hash === '#') {
+      data.hash = '';
+    }
+
+    return data;
+  }
+  function safelocationToUrl(safeLocation) {
+    return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+  }
+  function checkUrl(url, curPathname) {
+    if (curPathname === void 0) {
+      curPathname = '';
+    }
+
+    if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
+      return '/';
+    }
+
+    url = checkPathname(url, curPathname);
+    return url.replace(/\/(?=[?#]|$)/, '');
+  }
+  function safeurlToLocation(safeurl) {
+    if (!safeurl) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: ''
+      };
+    }
+
+    var arr = safeurl.split(/[?#]/);
+
+    if (arr.length === 2 && safeurl.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+
+    var pathname = arr[0],
+        _arr$ = arr[1],
+        search = _arr$ === void 0 ? '' : _arr$,
+        _arr$2 = arr[2],
+        hash = _arr$2 === void 0 ? '' : _arr$2;
+    return {
+      pathname: pathname,
+      search: search && '?' + search,
+      hash: hash && '#' + hash
+    };
+  }
+
   function _createForOfIteratorHelperLoose(o) {
     var i = 0;
 
@@ -3792,63 +3869,9 @@
     return target;
   }
 
-  function checkUrl(url, curPathname) {
-    if (curPathname === void 0) {
-      curPathname = '';
-    }
-
-    if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
-      return '';
-    }
-
-    curPathname = ('/' + curPathname).replace('//', '/').replace(/\/$/, '');
-
-    if (url.startsWith('./')) {
-      url = curPathname + url.replace('./', '/');
-    } else if (url.startsWith('../')) {
-      var _url$match;
-
-      var n = ((_url$match = url.match(/\.\.\//g)) === null || _url$match === void 0 ? void 0 : _url$match.length) || 0;
-      var arr = curPathname.split('/');
-      arr.length = arr.length - n;
-      url = arr.join('/') + '/' + url.replace(/\.\.\//g, '');
-    } else {
-      url = ('/' + url).replace('//', '/');
-    }
-
-    return url.replace(/\/(?=[?#]|$)/, '');
+  function dataIsLocation(data) {
+    return !!data['pathname'];
   }
-  function urlToLocation(url) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: ''
-      };
-    }
-
-    var arr = url.split(/[?#]/);
-
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-
-    var pathname = arr[0],
-        _arr$ = arr[1],
-        search = _arr$ === void 0 ? '' : _arr$,
-        _arr$2 = arr[2],
-        hash = _arr$2 === void 0 ? '' : _arr$2;
-    return {
-      pathname: pathname,
-      search: search && '?' + search,
-      hash: hash && '#' + hash
-    };
-  }
-  function locationToUrl(location) {
-    return location.pathname + location.search + location.hash;
-  }
-
-  var deepAssign = deepExtend;
   var config$1 = {
     escape: true,
     dateParse: false,
@@ -3912,16 +3935,6 @@
     }
   }
 
-  function joinSearchString(arr) {
-    var strs = [''];
-
-    for (var i = 0, k = arr.length; i < k; i++) {
-      strs.push(arr[i] || '');
-    }
-
-    return strs.join("&" + config$1.splitKey + "=");
-  }
-
   function searchStringify(searchData) {
     if (typeof searchData !== 'object') {
       return '';
@@ -3941,17 +3954,14 @@
   }
 
   function splitSearch(search) {
-    var reg = new RegExp("[&?#]" + config$1.splitKey + "=[^&]*", 'g');
+    var reg = new RegExp("[?&#]" + config$1.splitKey + "=([^&]+)");
     var arr = search.match(reg);
-    var stackParams = [];
 
     if (arr) {
-      stackParams = arr.map(function (str) {
-        return searchParse(str.split('=')[1]);
-      });
+      return searchParse(arr[1]);
+    } else {
+      return {};
     }
-
-    return stackParams;
   }
 
   function checkPathArgs(params) {
@@ -4003,10 +4013,10 @@
 
           var _moduleName = _viewName.split(config.VSP)[0];
 
-          var params = match.params;
+          var _params = match.params;
 
-          if (params && Object.keys(params).length > 0) {
-            args[_moduleName] = Object.assign({}, args[_moduleName], {}, checkPathArgs(params));
+          if (_params && Object.keys(_params).length > 0) {
+            args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(_params));
           }
 
           if (pathConfig) {
@@ -4034,6 +4044,12 @@
 
     for (var _rule2 in routeConfig) {
       if (routeConfig.hasOwnProperty(_rule2)) {
+        var item = routeConfig[_rule2];
+
+        var _ref2 = typeof item === 'string' ? [item, null] : item,
+            _viewName2 = _ref2[0],
+            pathConfig = _ref2[1];
+
         if (!ruleToKeys[_rule2]) {
           var _compilePath = compilePath(_rule2, {
             end: true,
@@ -4047,12 +4063,6 @@
             return prev;
           }, []);
         }
-
-        var item = routeConfig[_rule2];
-
-        var _ref2 = typeof item === 'string' ? [item, null] : item,
-            _viewName2 = _ref2[0],
-            pathConfig = _ref2[1];
 
         var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
         viewToRule[absoluteViewName] = _rule2;
@@ -4069,49 +4079,33 @@
     };
   }
 
-  function assignRouteData(paths, stackParams, args, action) {
-    if (!stackParams[0]) {
-      stackParams[0] = {};
-    }
-
-    if (args) {
-      stackParams[0] = deepExtend({}, args, stackParams[0]);
-    }
-
-    var firstStackParams = stackParams[0];
+  function assignRouteData(paths, params, action) {
     var views = paths.reduce(function (prev, cur) {
       var _cur$split = cur.split(config.VSP),
           moduleName = _cur$split[0],
           viewName = _cur$split[1];
 
-      if (viewName) {
+      if (moduleName !== '@' && viewName) {
         if (!prev[moduleName]) {
           prev[moduleName] = {};
         }
 
         prev[moduleName][viewName] = true;
 
-        if (!firstStackParams[moduleName]) {
-          firstStackParams[moduleName] = {};
+        if (!params[moduleName]) {
+          params[moduleName] = {};
         }
       }
 
       return prev;
     }, {});
-    Object.keys(firstStackParams).forEach(function (moduleName) {
-      firstStackParams[moduleName] = deepExtend({}, config$1.defaultRouteParams[moduleName], firstStackParams[moduleName]);
-    });
-    var params = deepExtend.apply(void 0, [{}].concat(stackParams));
     Object.keys(params).forEach(function (moduleName) {
-      if (!firstStackParams[moduleName]) {
-        params[moduleName] = deepExtend({}, config$1.defaultRouteParams[moduleName], params[moduleName]);
-      }
+      params[moduleName] = deepExtend({}, config$1.defaultRouteParams[moduleName], params[moduleName]);
     });
     return {
       views: views,
       paths: paths,
       params: params,
-      stackParams: stackParams,
       action: action
     };
   }
@@ -4122,8 +4116,8 @@
 
     var _loop = function _loop(_moduleName2) {
       if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-        var data = params[_moduleName2];
-        var keys = Object.keys(data);
+        var _data = params[_moduleName2];
+        var keys = Object.keys(_data);
 
         if (keys.length > 0) {
           keys.forEach(function (key) {
@@ -4132,13 +4126,13 @@
                 hashParams[_moduleName2] = {};
               }
 
-              hashParams[_moduleName2][key] = data[key];
+              hashParams[_moduleName2][key] = _data[key];
             } else {
               if (!searchParams[_moduleName2]) {
                 searchParams[_moduleName2] = {};
               }
 
-              searchParams[_moduleName2][key] = data[key];
+              searchParams[_moduleName2][key] = _data[key];
             }
           });
         } else {
@@ -4157,145 +4151,192 @@
     };
   }
 
-  function locationToUrl$1(location) {
-    return location.pathname + (location.search ? "?" + location.search : '') + (location.hash ? "#" + location.hash : '');
-  }
-
   var cacheData = [];
-  function buildTransformRoute(routeConfig) {
+  function buildTransformRoute(routeConfig, getCurPathname) {
     var _compileConfig = compileConfig(routeConfig),
         viewToRule = _compileConfig.viewToRule,
         ruleToKeys = _compileConfig.ruleToKeys;
 
-    var locationToRoute = function locationToRoute(location) {
-      var url = locationToUrl$1(location);
-      var item = cacheData.find(function (val) {
-        return val && val.url === url;
-      });
+    var transformRoute = {
+      locationToRoute: function locationToRoute(location) {
+        var safeLocation = checkLocation(location, getCurPathname());
+        var url = safelocationToUrl(safeLocation);
+        var item = cacheData.find(function (val) {
+          return val && val.url === url;
+        });
 
-      if (item) {
-        item.routeData.action = location.action;
-        return item.routeData;
-      }
-
-      var pathname = location.pathname;
-      var paths = [];
-      var pathsArgs = {};
-      pathnameParse(pathname, routeConfig, paths, pathsArgs);
-      var stackParams = splitSearch(location.search);
-      var hashStackParams = splitSearch(location.hash);
-      hashStackParams.forEach(function (item, index) {
         if (item) {
-          if (!stackParams[index]) {
-            stackParams[index] = {};
-          }
-
-          deepExtend(stackParams[index], item);
+          item.routeData.action = safeLocation.action;
+          return item.routeData;
         }
-      });
-      var routeData = assignRouteData(paths, stackParams, pathsArgs, location.action);
-      cacheData.unshift({
-        url: url,
-        routeData: routeData
-      });
-      cacheData.length = 10;
-      return routeData;
-    };
 
-    var routeToLocation = function routeToLocation(routeData) {
-      var views = routeData.views,
-          paths = routeData.paths,
-          params = routeData.params,
-          stackParams = routeData.stackParams;
-      var firstStackParams = stackParams[0];
-      var pathname = '';
-      var firstStackParamsFilter;
+        var pathname = safeLocation.pathname;
+        var paths = [];
+        var pathsArgs = {};
+        pathnameParse(pathname, routeConfig, paths, pathsArgs);
+        var params = splitSearch(safeLocation.search);
+        var hashParams = splitSearch(safeLocation.hash);
+        deepExtend(params, hashParams);
+        var routeData = assignRouteData(paths, deepExtend(pathsArgs, params), safeLocation.action);
+        cacheData.unshift({
+          url: url,
+          routeData: routeData
+        });
+        cacheData.length = 100;
+        return routeData;
+      },
+      routeToLocation: function routeToLocation(paths, params, action) {
+        params = params || {};
+        var pathname;
+        var views = {};
 
-      if (paths.length > 0) {
-        firstStackParamsFilter = deepExtend({}, firstStackParams);
-        paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-          var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
-          var rule = viewToRule[absoluteViewName];
-          var moduleName = viewName.split(config.VSP)[0];
+        if (typeof paths === 'string') {
+          pathname = checkPathname(paths, getCurPathname());
+        } else {
+          var _data2 = pathsToPathname(paths, params);
 
-          if (index === paths.length - 1) {
-            var toPath = compileToPath(rule);
+          pathname = _data2.pathname;
+          params = _data2.params;
+          views = _data2.views;
+        }
 
-            var _keys = ruleToKeys[rule] || [];
+        var paramsFilter = excludeDefaultData(params, config$1.defaultRouteParams, false, views);
 
-            var args = _keys.reduce(function (prev, cur) {
-              if (typeof cur === 'string') {
-                var props = cur.split('.');
-
-                if (props.length) {
-                  prev[cur] = props.reduce(function (p, c) {
-                    return p[c];
-                  }, params[moduleName]);
-                  return prev;
-                }
-              }
-
-              prev[cur] = params[moduleName][cur];
-              return prev;
-            }, {});
-
-            pathname = toPath(args);
-          }
-
-          var keys = ruleToKeys[rule] || [];
-          keys.forEach(function (key) {
-            if (typeof key === 'string') {
-              var props = key.split('.');
-
-              if (props.length) {
-                props.reduce(function (p, c, i) {
-                  if (i === props.length - 1) {
-                    delete p[c];
-                  }
-
-                  return p[c] || {};
-                }, firstStackParamsFilter[moduleName] || {});
-                return;
-              }
-            }
-
-            if (firstStackParamsFilter[moduleName]) {
-              delete firstStackParamsFilter[moduleName][key];
-            }
-          });
-          return absoluteViewName;
-        }, '');
-      } else {
-        firstStackParamsFilter = firstStackParams;
-      }
-
-      var arr = [].concat(stackParams);
-      arr[0] = excludeDefaultData(firstStackParamsFilter, config$1.defaultRouteParams, false, views);
-      var searchStrings = [];
-      var hashStrings = [];
-      arr.forEach(function (params, index) {
-        var _extractHashData = extractHashData(params),
+        var _extractHashData = extractHashData(paramsFilter),
             search = _extractHashData.search,
             hash = _extractHashData.hash;
 
-        search && (searchStrings[index] = search);
-        hash && (hashStrings[index] = hash);
-      });
-      var search = joinSearchString(searchStrings).substr(1);
-      var hash = joinSearchString(hashStrings).substr(1);
+        var location = {
+          pathname: pathname,
+          search: search ? "?" + config$1.splitKey + "=" + search : '',
+          hash: hash ? "#" + config$1.splitKey + "=" + hash : '',
+          action: action
+        };
+        return location;
+      },
+      payloadToLocation: function payloadToLocation(payload) {
+        if (dataIsLocation(payload)) {
+          return checkLocation(payload, getCurPathname());
+        } else {
+          var _params2 = payload.extend ? deepExtend({}, payload.extend.params, payload.params) : payload.params;
+
+          var _location = transformRoute.routeToLocation(payload.paths, _params2);
+
+          return checkLocation(_location, getCurPathname());
+        }
+      },
+      urlToLocation: function urlToLocation(url) {
+        url = checkUrl(url);
+        return safeurlToLocation(url);
+      }
+    };
+
+    function getPathProps(pathprops, moduleParas, deleteIt) {
+      if (moduleParas === void 0) {
+        moduleParas = {};
+      }
+
+      var val;
+
+      if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
+        var props = pathprops.split('.');
+        var len = props.length - 1;
+        props.reduce(function (p, c, i) {
+          if (i === len) {
+            val = p[c];
+            deleteIt && delete p[c];
+          }
+
+          return p[c] || {};
+        }, moduleParas);
+      } else {
+        val = moduleParas[pathprops];
+        deleteIt && delete moduleParas[pathprops];
+      }
+
+      return val;
+    }
+
+    function pathsToPathname(paths, params) {
+      if (params === void 0) {
+        params = {};
+      }
+
+      var len = paths.length - 1;
+      var paramsFilter = deepExtend({}, params);
+      var pathname = '';
+      var views = {};
+      paths.reduce(function (parentAbsoluteViewName, viewName, index) {
+        var _viewName$split = viewName.split(config.VSP),
+            moduleName = _viewName$split[0],
+            view = _viewName$split[1];
+
+        var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+        var rule = viewToRule[absoluteViewName];
+        var keys = ruleToKeys[rule] || [];
+
+        if (moduleName !== '@' && view) {
+          if (!views[moduleName]) {
+            views[moduleName] = {};
+          }
+
+          views[moduleName][view] = true;
+        }
+
+        if (index === len) {
+          var toPath = compileToPath(rule);
+          var args = keys.reduce(function (prev, cur) {
+            prev[cur] = getPathProps(cur, params[moduleName]);
+            return prev;
+          }, {});
+          pathname = toPath(args);
+        }
+
+        keys.forEach(function (key) {
+          getPathProps(key, paramsFilter[moduleName], true);
+        });
+        return absoluteViewName;
+      }, '');
       return {
         pathname: pathname,
-        search: search ? '?' + search : '',
-        hash: hash ? '#' + hash : '',
-        action: routeData.action
+        views: views,
+        params: paramsFilter
+      };
+    }
+
+    return transformRoute;
+  }
+  var Dispatcher = function () {
+    function Dispatcher() {
+      _defineProperty(this, "_uid", 0);
+
+      _defineProperty(this, "_listenList", {});
+    }
+
+    var _proto = Dispatcher.prototype;
+
+    _proto.subscribe = function subscribe(listener) {
+      var _this = this;
+
+      this._uid++;
+      var uid = this._uid;
+      this._listenList[uid] = listener;
+      return function () {
+        delete _this._listenList[uid];
       };
     };
 
-    return {
-      locationToRoute: locationToRoute,
-      routeToLocation: routeToLocation
+    _proto.dispatch = function dispatch(data) {
+      for (var _key2 in this._listenList) {
+        if (this._listenList.hasOwnProperty(_key2)) {
+          var listener = this._listenList[_key2];
+          listener(data);
+        }
+      }
     };
-  }
+
+    return Dispatcher;
+  }();
 
   function renderApp$1(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, container, beforeRender) {
     if (container === void 0) {
@@ -4405,159 +4446,113 @@
   };
   var exportModule$1 = exportModule;
 
-  function fillBrowserRouteData(routePayload) {
-    var extend = routePayload.extend || {
-      views: {},
-      paths: [],
-      stackParams: [],
-      params: {}
-    };
-    var stackParams = [].concat(extend.stackParams);
+  var BrowserHistoryActions = function () {
+    function BrowserHistoryActions(_history, _transformRoute, _locationMap) {
+      var _this = this;
 
-    if (routePayload.params) {
-      stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
+      this._history = _history;
+      this._transformRoute = _transformRoute;
+      this._locationMap = _locationMap;
+
+      _defineProperty(this, "initialized", true);
+
+      _defineProperty(this, "_dispatcher", void 0);
+
+      _defineProperty(this, "_location", void 0);
+
+      _defineProperty(this, "_unlistenHistory", void 0);
+
+      this._dispatcher = new Dispatcher();
+      var location = Object.assign({}, this._history.location, {
+        action: this._history.action
+      });
+      this._location = this._locationMap ? this._locationMap.in(location) : location;
+      this._unlistenHistory = this._history.listen(function (location, action) {
+        location = Object.assign({}, location, {
+          action: action
+        });
+        _this._location = _this._locationMap ? _this._locationMap.in(location) : location;
+
+        _this._dispatcher.dispatch(_this._location);
+      });
     }
 
-    return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
-  }
+    var _proto = BrowserHistoryActions.prototype;
 
-  function isBrowserRoutePayload(data) {
-    return !data['pathname'];
-  }
-
-  function fillLocation(location) {
-    return {
-      pathname: location.pathname || '',
-      search: location.search || '',
-      hash: location.hash || '',
-      action: location.action
+    _proto.destroy = function destroy() {
+      this._unlistenHistory();
     };
-  }
+
+    _proto.getLocation = function getLocation() {
+      return this._location;
+    };
+
+    _proto.getRouteData = function getRouteData() {
+      return this._transformRoute.locationToRoute(this.getLocation());
+    };
+
+    _proto.subscribe = function subscribe(listener) {
+      return this._dispatcher.subscribe(listener);
+    };
+
+    _proto.locationToRouteData = function locationToRouteData(location) {
+      return this._transformRoute.locationToRoute(location);
+    };
+
+    _proto.equal = function equal(a, b) {
+      return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+    };
+
+    _proto.patch = function patch(location, routeData) {
+      this.push(location);
+    };
+
+    _proto.push = function push(data) {
+      var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+
+      this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+    };
+
+    _proto.replace = function replace(data) {
+      var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+
+      this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+    };
+
+    _proto.toUrl = function toUrl(data) {
+      var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+      location = this._locationMap ? this._locationMap.out(location) : location;
+      return location.pathname + location.search + location.hash;
+    };
+
+    _proto.go = function go(n) {
+      this._history.go(n);
+    };
+
+    _proto.back = function back() {
+      this._history.back();
+    };
+
+    _proto.forward = function forward() {
+      this._history.forward();
+    };
+
+    return BrowserHistoryActions;
+  }();
 
   function createRouter(history, routeConfig, locationMap) {
-    var transformRoute = buildTransformRoute(routeConfig);
-    var historyProxy = {
-      initialized: true,
-      getLocation: function getLocation() {
-        return Object.assign({}, history.location, {
-          action: history.action
-        });
-      },
-      subscribe: function subscribe(listener) {
-        var unlink = history.listen(function (location, action) {
-          listener(Object.assign({}, location, {
-            action: action
-          }));
-        });
-        return unlink;
-      },
-      locationToRouteData: function locationToRouteData(location) {
-        return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
-      },
-      equal: function equal(a, b) {
-        return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
-      },
-      patch: function patch(location) {
-        var url = locationToUrl(location);
-        history.push(url);
-      }
-    };
-
-    function navigateTo(action, data) {
-      if (typeof data === 'string') {
-        var url = checkUrl(data, history.location.pathname);
-
-        if (url) {
-          if (locationMap) {
-            var _location = urlToLocation(url);
-
-            _location = locationMap.out(_location);
-            url = checkUrl(locationToUrl(_location));
-          }
-        }
-
-        history[action](url);
-      } else if (isBrowserRoutePayload(data)) {
-        var routeData = fillBrowserRouteData(data);
-
-        var _location2 = transformRoute.routeToLocation(routeData);
-
-        if (locationMap) {
-          _location2 = locationMap.out(_location2);
-        }
-
-        var _url = checkUrl(locationToUrl(_location2));
-
-        history[action](_url);
-      } else {
-        var _url2 = checkUrl(locationToUrl(fillLocation(data)));
-
-        history[action](_url2);
-      }
-    }
-
-    var historyActions = {
-      listen: function listen(listener) {
-        var unlink = history.listen(function (location, action) {
-          listener(Object.assign({}, location, {
-            action: action
-          }));
-        });
-        return unlink;
-      },
-      getLocation: function getLocation() {
-        return Object.assign({}, history.location, {
-          action: history.action
-        });
-      },
-      getRouteData: function getRouteData() {
-        var location = this.getLocation();
-        return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
-      },
-      push: function push(data) {
-        navigateTo('push', data);
-      },
-      replace: function replace(data) {
-        navigateTo('replace', data);
-      },
-      go: function go(n) {
-        history.go(n);
-      },
-      back: function back() {
-        history.goBack();
-      },
-      forward: function forward() {
-        history.goForward();
-      }
-    };
-
-    function toBrowserUrl(data) {
-      var location;
-
-      if (isBrowserRoutePayload(data)) {
-        location = transformRoute.routeToLocation(fillBrowserRouteData(data));
-      } else {
-        location = fillLocation(data);
-      }
-
-      if (locationMap) {
-        location = locationMap.out(location);
-      }
-
-      return checkUrl(locationToUrl(location));
-    }
-
+    var transformRoute = buildTransformRoute(routeConfig, function () {
+      return historyActions.getLocation().pathname;
+    });
+    var historyActions = new BrowserHistoryActions(history, transformRoute, locationMap);
     return {
       transformRoute: transformRoute,
-      historyProxy: historyProxy,
-      historyActions: historyActions,
-      toBrowserUrl: toBrowserUrl
+      historyActions: historyActions
     };
   }
 
   var historyActions = undefined;
   var transformRoute = undefined;
-  var toBrowserUrl = undefined;
 
   function checkRedirect(views, throwError) {
     if (views['@']) {
@@ -4617,7 +4612,6 @@
     });
     var router = createRouter(history, routeConfig, locationMap);
     historyActions = router.historyActions;
-    toBrowserUrl = router.toBrowserUrl;
     transformRoute = router.transformRoute;
 
     if (!storeOptions.middlewares) {
@@ -4625,7 +4619,7 @@
     }
 
     storeOptions.middlewares.unshift(redirectMiddleware);
-    return renderApp$1(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, container, function (store) {
+    return renderApp$1(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, function (store) {
       var storeState = store.getState();
       var views = storeState.route.data.views;
       checkRedirect(views);
@@ -4633,7 +4627,6 @@
         store: store,
         history: history,
         historyActions: historyActions,
-        toBrowserUrl: toBrowserUrl,
         transformRoute: transformRoute
       }) : store;
     });
@@ -4647,6 +4640,7 @@
         location = _ref2.location,
         _ref2$routeConfig = _ref2.routeConfig,
         routeConfig = _ref2$routeConfig === void 0 ? {} : _ref2$routeConfig,
+        locationMap = _ref2.locationMap,
         defaultRouteParams = _ref2.defaultRouteParams,
         _ref2$storeOptions = _ref2.storeOptions,
         storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
@@ -4672,11 +4666,10 @@
         hash: ''
       }
     };
-    var router = createRouter(history, routeConfig);
+    var router = createRouter(history, routeConfig, locationMap);
     historyActions = router.historyActions;
-    toBrowserUrl = router.toBrowserUrl;
     transformRoute = router.transformRoute;
-    return renderSSR$1(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, renderToStream, function (store) {
+    return renderSSR$1(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, function (store) {
       var storeState = store.getState();
       var views = storeState.route.data.views;
       checkRedirect(views, true);
@@ -4684,7 +4677,6 @@
         store: store,
         history: history,
         historyActions: historyActions,
-        toBrowserUrl: toBrowserUrl,
         transformRoute: transformRoute
       }) : store;
     });

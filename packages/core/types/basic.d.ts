@@ -55,24 +55,20 @@ export interface ModelStore extends Store {
         destroy: () => void;
     };
 }
-export interface RouteData {
+export declare type RouteParams = {
+    [moduleName: string]: {
+        [key: string]: any;
+    } | undefined;
+};
+export interface RouteData<P extends RouteParams = any> {
     views: DisplayViews;
-    params: {
-        [moduleName: string]: {
-            [key: string]: any;
-        } | undefined;
-    };
+    params: P;
     paths: string[];
-    stackParams: {
-        [moduleName: string]: {
-            [key: string]: any;
-        } | undefined;
-    }[];
     action?: string;
 }
-export interface RouteState<L = any> {
+export interface RouteState<L = any, P extends RouteParams = any> {
     location: L;
-    data: RouteData;
+    data: RouteData<P>;
 }
 export declare type StoreState = {
     [moduleName: string]: BaseModelState;

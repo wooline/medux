@@ -70,6 +70,7 @@ export interface HistoryProxy<L = any> {
    * - inTimeTravelling时，应用的路由变化反过来带动宿主路由系统的变化
    */
   patch(location: L, routeData: RouteData): void;
+  destroy(): void;
 }
 
 function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
@@ -88,7 +89,8 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
       inTimeTravelling = false;
     }
   };
-  store._medux_.destroy = history.subscribe(handleLocationChange);
+  history.subscribe(handleLocationChange);
+  store._medux_.destroy = history.destroy;
   store.subscribe(() => {
     if (history.initialized) {
       const storeRouteState = (store.getState() as StoreState).route;

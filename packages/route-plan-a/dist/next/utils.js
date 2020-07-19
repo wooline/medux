@@ -1,27 +1,50 @@
-export function checkUrl(url, curPathname = '') {
-  if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
-    return '';
-  }
-
+export function checkPathname(pathname, curPathname) {
   curPathname = ('/' + curPathname).replace('//', '/').replace(/\/$/, '');
 
-  if (url.startsWith('./')) {
-    url = curPathname + url.replace('./', '/');
-  } else if (url.startsWith('../')) {
-    var _url$match;
+  if (pathname.startsWith('./')) {
+    pathname = curPathname + pathname.replace('./', '/');
+  } else if (pathname.startsWith('../')) {
+    var _pathname$match;
 
-    const n = ((_url$match = url.match(/\.\.\//g)) === null || _url$match === void 0 ? void 0 : _url$match.length) || 0;
+    const n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
     const arr = curPathname.split('/');
     arr.length = arr.length - n;
-    url = arr.join('/') + '/' + url.replace(/\.\.\//g, '');
+    pathname = arr.join('/') + '/' + pathname.replace(/\.\.\//g, '');
   } else {
-    url = ('/' + url).replace('//', '/');
+    pathname = ('/' + pathname).replace('//', '/');
   }
 
+  return pathname;
+}
+export function checkLocation(location, curPathname) {
+  const data = Object.assign({}, location);
+  data.pathname = checkPathname(data.pathname || '/', curPathname);
+  data.search = ('?' + (data.search || '')).replace('??', '?');
+  data.hash = ('#' + (data.hash || '')).replace('##', '#');
+
+  if (data.search === '?') {
+    data.search = '';
+  }
+
+  if (data.hash === '#') {
+    data.hash = '';
+  }
+
+  return data;
+}
+export function safelocationToUrl(safeLocation) {
+  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+}
+export function checkUrl(url, curPathname = '') {
+  if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
+    return '/';
+  }
+
+  url = checkPathname(url, curPathname);
   return url.replace(/\/(?=[?#]|$)/, '');
 }
-export function urlToLocation(url) {
-  if (!url) {
+export function safeurlToLocation(safeurl) {
+  if (!safeurl) {
     return {
       pathname: '/',
       search: '',
@@ -29,9 +52,9 @@ export function urlToLocation(url) {
     };
   }
 
-  const arr = url.split(/[?#]/);
+  const arr = safeurl.split(/[?#]/);
 
-  if (arr.length === 2 && url.indexOf('?') < 0) {
+  if (arr.length === 2 && safeurl.indexOf('?') < 0) {
     arr.splice(1, 0, '');
   }
 
@@ -41,7 +64,4 @@ export function urlToLocation(url) {
     search: search && '?' + search,
     hash: hash && '#' + hash
   };
-}
-export function locationToUrl(location) {
-  return location.pathname + location.search + location.hash;
 }

@@ -135,11 +135,12 @@ export interface ModelStore extends Store {
     destroy: () => void;
   };
 }
+export type RouteParams = {[moduleName: string]: {[key: string]: any} | undefined};
 /**
  * 框架内部使用的路由数据结构
  * - 用户需要通过HistoryProxy将宿主的路由数据结构转换为此数据结构
  */
-export interface RouteData {
+export interface RouteData<P extends RouteParams = any> {
   /**
    * 表示当前路由下加载了哪些views
    */
@@ -147,15 +148,11 @@ export interface RouteData {
   /**
    * 表示当前路由传递了哪些参数
    */
-  params: {[moduleName: string]: {[key: string]: any} | undefined};
+  params: P;
   /**
    * 表示当前路由下加载views的父子嵌套关系
    */
   paths: string[];
-  /**
-   * 如果存在多个路由栈（如APP）每个路由栈上分别保存什么数据
-   */
-  stackParams: {[moduleName: string]: {[key: string]: any} | undefined}[];
   /**
    * 路由的打开方式
    */
@@ -164,7 +161,7 @@ export interface RouteData {
 /**
  * Redux中保存的路由数据结构
  */
-export interface RouteState<L = any> {
+export interface RouteState<L = any, P extends RouteParams = any> {
   /**
    * 宿主的原始路由数据结构
    */
@@ -172,7 +169,7 @@ export interface RouteState<L = any> {
   /**
    * medux使用的路由数据结构，通常它由HistoryProxy转换而来
    */
-  data: RouteData;
+  data: RouteData<P>;
 }
 /**
  * medux使用的Store数据模型结构

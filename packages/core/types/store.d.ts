@@ -10,6 +10,7 @@ export interface HistoryProxy<L = any> {
     locationToRouteData(location: L): RouteData;
     equal(a: L, b: L): boolean;
     patch(location: L, routeData: RouteData): void;
+    destroy(): void;
 }
 export declare function buildStore(history: HistoryProxy<any>, preloadedState?: {
     [key: string]: any;

@@ -5,7 +5,7 @@ export declare function errorAction(error: any): {
 };
 export declare function routeChangeAction(route: RouteState): {
     type: string;
-    payload: RouteState<any>[];
+    payload: RouteState<any, any>[];
 };
 export declare function routeParamsAction(moduleName: string, params: any, action?: string): {
     type: string;

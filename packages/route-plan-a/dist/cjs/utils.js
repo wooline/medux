@@ -1,9 +1,51 @@
 "use strict";
 
 exports.__esModule = true;
+exports.checkPathname = checkPathname;
+exports.checkLocation = checkLocation;
+exports.safelocationToUrl = safelocationToUrl;
 exports.checkUrl = checkUrl;
-exports.urlToLocation = urlToLocation;
-exports.locationToUrl = locationToUrl;
+exports.safeurlToLocation = safeurlToLocation;
+
+function checkPathname(pathname, curPathname) {
+  curPathname = ('/' + curPathname).replace('//', '/').replace(/\/$/, '');
+
+  if (pathname.startsWith('./')) {
+    pathname = curPathname + pathname.replace('./', '/');
+  } else if (pathname.startsWith('../')) {
+    var _pathname$match;
+
+    var n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
+    var arr = curPathname.split('/');
+    arr.length = arr.length - n;
+    pathname = arr.join('/') + '/' + pathname.replace(/\.\.\//g, '');
+  } else {
+    pathname = ('/' + pathname).replace('//', '/');
+  }
+
+  return pathname;
+}
+
+function checkLocation(location, curPathname) {
+  var data = Object.assign({}, location);
+  data.pathname = checkPathname(data.pathname || '/', curPathname);
+  data.search = ('?' + (data.search || '')).replace('??', '?');
+  data.hash = ('#' + (data.hash || '')).replace('##', '#');
+
+  if (data.search === '?') {
+    data.search = '';
+  }
+
+  if (data.hash === '#') {
+    data.hash = '';
+  }
+
+  return data;
+}
+
+function safelocationToUrl(safeLocation) {
+  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+}
 
 function checkUrl(url, curPathname) {
   if (curPathname === void 0) {
@@ -11,29 +53,15 @@ function checkUrl(url, curPathname) {
   }
 
   if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
-    return '';
+    return '/';
   }
 
-  curPathname = ('/' + curPathname).replace('//', '/').replace(/\/$/, '');
-
-  if (url.startsWith('./')) {
-    url = curPathname + url.replace('./', '/');
-  } else if (url.startsWith('../')) {
-    var _url$match;
-
-    var n = ((_url$match = url.match(/\.\.\//g)) === null || _url$match === void 0 ? void 0 : _url$match.length) || 0;
-    var arr = curPathname.split('/');
-    arr.length = arr.length - n;
-    url = arr.join('/') + '/' + url.replace(/\.\.\//g, '');
-  } else {
-    url = ('/' + url).replace('//', '/');
-  }
-
+  url = checkPathname(url, curPathname);
   return url.replace(/\/(?=[?#]|$)/, '');
 }
 
-function urlToLocation(url) {
-  if (!url) {
+function safeurlToLocation(safeurl) {
+  if (!safeurl) {
     return {
       pathname: '/',
       search: '',
@@ -41,9 +69,9 @@ function urlToLocation(url) {
     };
   }
 
-  var arr = url.split(/[?#]/);
+  var arr = safeurl.split(/[?#]/);
 
-  if (arr.length === 2 && url.indexOf('?') < 0) {
+  if (arr.length === 2 && safeurl.indexOf('?') < 0) {
     arr.splice(1, 0, '');
   }
 
@@ -57,8 +85,4 @@ function urlToLocation(url) {
     search: search && '?' + search,
     hash: hash && '#' + hash
   };
-}
-
-function locationToUrl(location) {
-  return location.pathname + location.search + location.hash;
 }

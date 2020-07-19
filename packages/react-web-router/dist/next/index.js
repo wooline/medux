@@ -10,7 +10,6 @@ export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandle
 export { setRouteConfig } from '@medux/route-plan-a';
 let historyActions = undefined;
 let transformRoute = undefined;
-let toBrowserUrl = undefined;
 
 function checkRedirect(views, throwError) {
   if (views['@']) {
@@ -64,7 +63,6 @@ export function buildApp({
   });
   const router = createRouter(history, routeConfig, locationMap);
   historyActions = router.historyActions;
-  toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
 
   if (!storeOptions.middlewares) {
@@ -72,7 +70,7 @@ export function buildApp({
   }
 
   storeOptions.middlewares.unshift(redirectMiddleware);
-  return renderApp(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, container, store => {
+  return renderApp(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, store => {
     const storeState = store.getState();
     const {
       views
@@ -82,7 +80,6 @@ export function buildApp({
       store,
       history,
       historyActions: historyActions,
-      toBrowserUrl: toBrowserUrl,
       transformRoute: transformRoute
     }) : store;
   });
@@ -93,6 +90,7 @@ export function buildSSR({
   appViewName = 'main',
   location,
   routeConfig = {},
+  locationMap,
   defaultRouteParams,
   storeOptions = {},
   renderToStream = false,
@@ -110,11 +108,10 @@ export function buildSSR({
       hash: ''
     }
   };
-  const router = createRouter(history, routeConfig);
+  const router = createRouter(history, routeConfig, locationMap);
   historyActions = router.historyActions;
-  toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderSSR(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, renderToStream, store => {
+  return renderSSR(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, store => {
     const storeState = store.getState();
     const {
       views
@@ -124,7 +121,6 @@ export function buildSSR({
       store,
       history,
       historyActions: historyActions,
-      toBrowserUrl: toBrowserUrl,
       transformRoute: transformRoute
     }) : store;
   });

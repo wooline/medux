@@ -1,52 +1,32 @@
-import { HistoryProxy, RouteData } from '@medux/core';
-import { MeduxLocation, RouteConfig, TransformRoute } from '@medux/route-plan-a';
+import { LocationPayload, MeduxLocation, RouteConfig, RoutePayload, TransformRoute } from '@medux/route-plan-a';
+import { HistoryProxy, RouteData, RouteParams } from '@medux/core';
 declare type UnregisterCallback = () => void;
-interface BrowserLocation {
-    pathname: string;
-    search: string;
-    hash: string;
-}
-declare type MeduxLocationListener = (location: MeduxLocation) => void;
 export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export declare type LocationMap = {
     in: LocationToLocation;
     out: LocationToLocation;
 };
 export interface History {
-    location: BrowserLocation;
+    location: MeduxLocation;
     action: string;
-    push(path: string): void;
-    replace(path: string): void;
+    push(location: MeduxLocation): void;
+    replace(location: MeduxLocation): void;
     go(n: number): void;
-    goBack(): void;
-    goForward(): void;
-    listen(listener: (location: BrowserLocation, action: string) => void): UnregisterCallback;
+    back(): void;
+    forward(): void;
+    listen(listener: (location: MeduxLocation, action: string) => void): UnregisterCallback;
 }
-export interface BrowserRoutePayload<P = {}> {
-    extend?: RouteData;
-    params?: DeepPartial<P>;
-    paths?: string[];
-    action?: string;
-}
-export interface HistoryActions<P = {}> {
-    listen(listener: MeduxLocationListener): UnregisterCallback;
-    getLocation(): MeduxLocation;
+export interface HistoryActions<P extends RouteParams = any> extends HistoryProxy<MeduxLocation> {
     getRouteData(): RouteData;
-    push(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
-    replace(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
+    push(data: RoutePayload<P> | LocationPayload | string): void;
+    replace(data: RoutePayload<P> | LocationPayload | string): void;
+    toUrl(data: RoutePayload<P> | LocationPayload | string): string;
     go(n: number): void;
     back(): void;
     forward(): void;
 }
-declare type DeepPartial<T> = {
-    [P in keyof T]?: DeepPartial<T[P]>;
-};
-export declare function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData;
 export declare function createRouter(history: History, routeConfig: RouteConfig, locationMap?: LocationMap): {
-    transformRoute: TransformRoute;
-    historyProxy: HistoryProxy<MeduxLocation>;
-    historyActions: HistoryActions<{}>;
-    toBrowserUrl: <P = {}>(data: Partial<MeduxLocation> | BrowserRoutePayload<P>) => string;
+    transformRoute: TransformRoute<any>;
+    historyActions: HistoryActions<any>;
 };
-export declare type ToBrowserUrl<T = {}> = (routeOptions: BrowserRoutePayload<T> | Partial<MeduxLocation>) => string;
 export {};

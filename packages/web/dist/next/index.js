@@ -1,160 +1,102 @@
-import { assignRouteData, buildTransformRoute, checkUrl, deepAssign, locationToUrl, urlToLocation } from '@medux/route-plan-a';
-export function fillBrowserRouteData(routePayload) {
-  const extend = routePayload.extend || {
-    views: {},
-    paths: [],
-    stackParams: [],
-    params: {}
-  };
-  const stackParams = [...extend.stackParams];
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
+import { Dispatcher, buildTransformRoute } from '@medux/route-plan-a';
 
-  if (routePayload.params) {
-    stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
+class BrowserHistoryActions {
+  constructor(_history, _transformRoute, _locationMap) {
+    this._history = _history;
+    this._transformRoute = _transformRoute;
+    this._locationMap = _locationMap;
+
+    _defineProperty(this, "initialized", true);
+
+    _defineProperty(this, "_dispatcher", void 0);
+
+    _defineProperty(this, "_location", void 0);
+
+    _defineProperty(this, "_unlistenHistory", void 0);
+
+    this._dispatcher = new Dispatcher();
+    const location = Object.assign({}, this._history.location, {
+      action: this._history.action
+    });
+    this._location = this._locationMap ? this._locationMap.in(location) : location;
+    this._unlistenHistory = this._history.listen((location, action) => {
+      location = Object.assign({}, location, {
+        action
+      });
+      this._location = this._locationMap ? this._locationMap.in(location) : location;
+
+      this._dispatcher.dispatch(this._location);
+    });
   }
 
-  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
-}
+  destroy() {
+    this._unlistenHistory();
+  }
 
-function isBrowserRoutePayload(data) {
-  return !data['pathname'];
-}
+  getLocation() {
+    return this._location;
+  }
 
-function fillLocation(location) {
-  return {
-    pathname: location.pathname || '',
-    search: location.search || '',
-    hash: location.hash || '',
-    action: location.action
-  };
+  getRouteData() {
+    return this._transformRoute.locationToRoute(this.getLocation());
+  }
+
+  subscribe(listener) {
+    return this._dispatcher.subscribe(listener);
+  }
+
+  locationToRouteData(location) {
+    return this._transformRoute.locationToRoute(location);
+  }
+
+  equal(a, b) {
+    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+  }
+
+  patch(location, routeData) {
+    this.push(location);
+  }
+
+  push(data) {
+    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+
+    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+  }
+
+  replace(data) {
+    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+
+    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+  }
+
+  toUrl(data) {
+    let location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    location = this._locationMap ? this._locationMap.out(location) : location;
+    return location.pathname + location.search + location.hash;
+  }
+
+  go(n) {
+    this._history.go(n);
+  }
+
+  back() {
+    this._history.back();
+  }
+
+  forward() {
+    this._history.forward();
+  }
+
 }
 
 export function createRouter(history, routeConfig, locationMap) {
-  const transformRoute = buildTransformRoute(routeConfig);
-  const historyProxy = {
-    initialized: true,
-
-    getLocation() {
-      return Object.assign({}, history.location, {
-        action: history.action
-      });
-    },
-
-    subscribe(listener) {
-      const unlink = history.listen((location, action) => {
-        listener(Object.assign({}, location, {
-          action
-        }));
-      });
-      return unlink;
-    },
-
-    locationToRouteData(location) {
-      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
-    },
-
-    equal(a, b) {
-      return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
-    },
-
-    patch(location) {
-      const url = locationToUrl(location);
-      history.push(url);
-    }
-
-  };
-
-  function navigateTo(action, data) {
-    if (typeof data === 'string') {
-      let url = checkUrl(data, history.location.pathname);
-
-      if (url) {
-        if (locationMap) {
-          let location = urlToLocation(url);
-          location = locationMap.out(location);
-          url = checkUrl(locationToUrl(location));
-        }
-      }
-
-      history[action](url);
-    } else if (isBrowserRoutePayload(data)) {
-      const routeData = fillBrowserRouteData(data);
-      let location = transformRoute.routeToLocation(routeData);
-
-      if (locationMap) {
-        location = locationMap.out(location);
-      }
-
-      const url = checkUrl(locationToUrl(location));
-      history[action](url);
-    } else {
-      const url = checkUrl(locationToUrl(fillLocation(data)));
-      history[action](url);
-    }
-  }
-
-  const historyActions = {
-    listen(listener) {
-      const unlink = history.listen((location, action) => {
-        listener(Object.assign({}, location, {
-          action
-        }));
-      });
-      return unlink;
-    },
-
-    getLocation() {
-      return Object.assign({}, history.location, {
-        action: history.action
-      });
-    },
-
-    getRouteData() {
-      const location = this.getLocation();
-      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
-    },
-
-    push(data) {
-      navigateTo('push', data);
-    },
-
-    replace(data) {
-      navigateTo('replace', data);
-    },
-
-    go(n) {
-      history.go(n);
-    },
-
-    back() {
-      history.goBack();
-    },
-
-    forward() {
-      history.goForward();
-    }
-
-  };
-
-  function toBrowserUrl(data) {
-    let location;
-
-    if (isBrowserRoutePayload(data)) {
-      location = transformRoute.routeToLocation(fillBrowserRouteData(data));
-    } else {
-      location = fillLocation(data);
-    }
-
-    if (locationMap) {
-      location = locationMap.out(location);
-    }
-
-    return checkUrl(locationToUrl(location));
-  }
-
+  const transformRoute = buildTransformRoute(routeConfig, () => {
+    return historyActions.getLocation().pathname;
+  });
+  const historyActions = new BrowserHistoryActions(history, transformRoute, locationMap);
   return {
     transformRoute,
-    historyProxy,
-    historyActions,
-    toBrowserUrl
+    historyActions
   };
 }

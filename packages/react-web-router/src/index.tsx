@@ -1,10 +1,10 @@
 /// <reference path="../env/global.d.ts" />
-import {TransformRoute, MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
+import {TransformRoute as PTransformRoute, MeduxLocation, RouteConfig as PRouteConfig, setRouteConfig} from '@medux/route-plan-a';
 import {RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews} from '@medux/core';
 import {Store, Middleware} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
-import {History, HistoryActions, createRouter, ToBrowserUrl} from '@medux/web';
+import {History, HistoryActions as PHistoryActions, LocationMap as PLocationMap, createRouter} from '@medux/web';
 
 export {loadView, exportModule} from '@medux/react';
 export {
@@ -27,14 +27,11 @@ export {setRouteConfig} from '@medux/route-plan-a';
 
 export type {Actions, RouteData, RouteViews, BaseModelState} from '@medux/core';
 export type {LoadView} from '@medux/react';
-export type {RouteConfig} from '@medux/route-plan-a';
-export type {LocationMap} from '@medux/web';
+export type {RouteConfig, TransformRoute} from '@medux/route-plan-a';
+export type {LocationMap, HistoryActions} from '@medux/web';
 
-let historyActions: HistoryActions | undefined = undefined;
-let transformRoute: TransformRoute | undefined = undefined;
-let toBrowserUrl: ToBrowserUrl | undefined = undefined;
-
-export type BrowserRouter<Params> = {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>};
+let historyActions: PHistoryActions | undefined = undefined;
+let transformRoute: PTransformRoute | undefined = undefined;
 
 function checkRedirect(views: DisplayViews, throwError?: boolean): boolean {
   if (views['@']) {
@@ -75,27 +72,26 @@ export function buildApp({
   appModuleName?: string;
   appViewName?: string;
   history: History;
-  routeConfig?: import('@medux/route-plan-a').RouteConfig;
-  locationMap?: import('@medux/web').LocationMap;
+  routeConfig?: PRouteConfig;
+  locationMap?: PLocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   container?: string | Element | ((component: ReactElement<any>) => void);
-  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: PHistoryActions; transformRoute: PTransformRoute}) => Store<StoreState>;
 }) {
   setRouteConfig({defaultRouteParams});
   const router = createRouter(history, routeConfig, locationMap);
   historyActions = router.historyActions;
-  toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
   }
   storeOptions.middlewares.unshift(redirectMiddleware);
-  return renderApp(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, container, (store) => {
+  return renderApp(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, (store) => {
     const storeState = store.getState();
     const {views} = storeState.route.data;
     checkRedirect(views);
-    return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
+    return beforeRender ? beforeRender({store, history, historyActions: historyActions!, transformRoute: transformRoute!}) : store;
   });
 }
 
@@ -105,6 +101,7 @@ export function buildSSR({
   appViewName = 'main',
   location,
   routeConfig = {},
+  locationMap,
   defaultRouteParams,
   storeOptions = {},
   renderToStream = false,
@@ -114,11 +111,12 @@ export function buildSSR({
   appModuleName?: string;
   appViewName?: string;
   location: string;
-  routeConfig?: import('@medux/route-plan-a').RouteConfig;
+  routeConfig?: PRouteConfig;
+  locationMap?: PLocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   renderToStream?: boolean;
-  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; toBrowserUrl: ToBrowserUrl; transformRoute: TransformRoute}) => Store<StoreState>;
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: PHistoryActions; transformRoute: PTransformRoute}) => Store<StoreState>;
 }): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
   setRouteConfig({defaultRouteParams});
   const [pathname, search = ''] = location.split('?');
@@ -130,15 +128,14 @@ export function buildSSR({
       hash: '',
     },
   } as any;
-  const router = createRouter(history, routeConfig);
+  const router = createRouter(history, routeConfig, locationMap);
   historyActions = router.historyActions;
-  toBrowserUrl = router.toBrowserUrl;
   transformRoute = router.transformRoute;
-  return renderSSR(moduleGetter, appModuleName, appViewName, router.historyProxy, storeOptions, renderToStream, (store) => {
+  return renderSSR(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, (store) => {
     const storeState = store.getState();
     const {views} = storeState.route.data;
     checkRedirect(views, true);
-    return beforeRender ? beforeRender({store, history, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!}) : store;
+    return beforeRender ? beforeRender({store, history, historyActions: historyActions!, transformRoute: transformRoute!}) : store;
   });
 }
 

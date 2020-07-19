@@ -1,7 +1,14 @@
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { config as coreConfig } from '@medux/core';
+import { checkLocation, checkPathname, checkUrl, safelocationToUrl, safeurlToLocation } from './utils';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from './deep-extend';
-export { locationToUrl, urlToLocation, checkUrl } from './utils';
+export { checkUrl, checkLocation } from './utils';
+
+function dataIsLocation(data) {
+  return !!data['pathname'];
+}
+
 export var deepAssign = assignDeep;
 var config = {
   escape: true,
@@ -66,16 +73,6 @@ function searchParse(search) {
   }
 }
 
-function joinSearchString(arr) {
-  var strs = [''];
-
-  for (var i = 0, k = arr.length; i < k; i++) {
-    strs.push(arr[i] || '');
-  }
-
-  return strs.join("&" + config.splitKey + "=");
-}
-
 function searchStringify(searchData) {
   if (typeof searchData !== 'object') {
     return '';
@@ -95,17 +92,14 @@ function searchStringify(searchData) {
 }
 
 function splitSearch(search) {
-  var reg = new RegExp("[&?#]" + config.splitKey + "=[^&]*", 'g');
+  var reg = new RegExp("[?&#]" + config.splitKey + "=([^&]+)");
   var arr = search.match(reg);
-  var stackParams = [];
 
   if (arr) {
-    stackParams = arr.map(function (str) {
-      return searchParse(str.split('=')[1]);
-    });
+    return searchParse(arr[1]);
+  } else {
+    return {};
   }
-
-  return stackParams;
 }
 
 function checkPathArgs(params) {
@@ -157,10 +151,10 @@ function pathnameParse(pathname, routeConfig, paths, args) {
 
         var _moduleName = _viewName.split(coreConfig.VSP)[0];
 
-        var params = match.params;
+        var _params = match.params;
 
-        if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = Object.assign({}, args[_moduleName], {}, checkPathArgs(params));
+        if (_params && Object.keys(_params).length > 0) {
+          args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(_params));
         }
 
         if (pathConfig) {
@@ -188,6 +182,12 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
 
   for (var _rule2 in routeConfig) {
     if (routeConfig.hasOwnProperty(_rule2)) {
+      var item = routeConfig[_rule2];
+
+      var _ref2 = typeof item === 'string' ? [item, null] : item,
+          _viewName2 = _ref2[0],
+          pathConfig = _ref2[1];
+
       if (!ruleToKeys[_rule2]) {
         var _compilePath = compilePath(_rule2, {
           end: true,
@@ -201,12 +201,6 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
           return prev;
         }, []);
       }
-
-      var item = routeConfig[_rule2];
-
-      var _ref2 = typeof item === 'string' ? [item, null] : item,
-          _viewName2 = _ref2[0],
-          pathConfig = _ref2[1];
 
       var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
       viewToRule[absoluteViewName] = _rule2;
@@ -223,70 +217,35 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   };
 }
 
-export function assignRouteData(paths, stackParams, args, action) {
-  if (!stackParams[0]) {
-    stackParams[0] = {};
-  }
-
-  if (args) {
-    stackParams[0] = assignDeep({}, args, stackParams[0]);
-  }
-
-  var firstStackParams = stackParams[0];
+export function assignRouteData(paths, params, action) {
   var views = paths.reduce(function (prev, cur) {
     var _cur$split = cur.split(coreConfig.VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
-    if (viewName) {
+    if (moduleName !== '@' && viewName) {
       if (!prev[moduleName]) {
         prev[moduleName] = {};
       }
 
       prev[moduleName][viewName] = true;
 
-      if (!firstStackParams[moduleName]) {
-        firstStackParams[moduleName] = {};
+      if (!params[moduleName]) {
+        params[moduleName] = {};
       }
     }
 
     return prev;
   }, {});
-  Object.keys(firstStackParams).forEach(function (moduleName) {
-    firstStackParams[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], firstStackParams[moduleName]);
-  });
-  var params = assignDeep.apply(void 0, [{}].concat(stackParams));
   Object.keys(params).forEach(function (moduleName) {
-    if (!firstStackParams[moduleName]) {
-      params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
-    }
+    params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
   });
   return {
     views: views,
     paths: paths,
     params: params,
-    stackParams: stackParams,
     action: action
   };
-}
-export function fillRouteData(routePayload) {
-  var extend = routePayload.extend || {
-    views: {},
-    paths: [],
-    stackParams: [],
-    params: {}
-  };
-  var stackParams = [].concat(extend.stackParams);
-
-  if (routePayload.stackParams) {
-    routePayload.stackParams.forEach(function (item, index) {
-      if (item) {
-        stackParams[index] = assignDeep({}, stackParams[index], item);
-      }
-    });
-  }
-
-  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
 }
 
 function extractHashData(params) {
@@ -295,8 +254,8 @@ function extractHashData(params) {
 
   var _loop = function _loop(_moduleName2) {
     if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-      var data = params[_moduleName2];
-      var keys = Object.keys(data);
+      var _data = params[_moduleName2];
+      var keys = Object.keys(_data);
 
       if (keys.length > 0) {
         keys.forEach(function (key) {
@@ -305,13 +264,13 @@ function extractHashData(params) {
               hashParams[_moduleName2] = {};
             }
 
-            hashParams[_moduleName2][key] = data[key];
+            hashParams[_moduleName2][key] = _data[key];
           } else {
             if (!searchParams[_moduleName2]) {
               searchParams[_moduleName2] = {};
             }
 
-            searchParams[_moduleName2][key] = data[key];
+            searchParams[_moduleName2][key] = _data[key];
           }
         });
       } else {
@@ -330,142 +289,189 @@ function extractHashData(params) {
   };
 }
 
-function locationToUrl(location) {
-  return location.pathname + (location.search ? "?" + location.search : '') + (location.hash ? "#" + location.hash : '');
-}
-
 var cacheData = [];
-export function buildTransformRoute(routeConfig) {
+export function buildTransformRoute(routeConfig, getCurPathname) {
   var _compileConfig = compileConfig(routeConfig),
       viewToRule = _compileConfig.viewToRule,
       ruleToKeys = _compileConfig.ruleToKeys;
 
-  var locationToRoute = function locationToRoute(location) {
-    var url = locationToUrl(location);
-    var item = cacheData.find(function (val) {
-      return val && val.url === url;
-    });
+  var transformRoute = {
+    locationToRoute: function locationToRoute(location) {
+      var safeLocation = checkLocation(location, getCurPathname());
+      var url = safelocationToUrl(safeLocation);
+      var item = cacheData.find(function (val) {
+        return val && val.url === url;
+      });
 
-    if (item) {
-      item.routeData.action = location.action;
-      return item.routeData;
-    }
-
-    var pathname = location.pathname;
-    var paths = [];
-    var pathsArgs = {};
-    pathnameParse(pathname, routeConfig, paths, pathsArgs);
-    var stackParams = splitSearch(location.search);
-    var hashStackParams = splitSearch(location.hash);
-    hashStackParams.forEach(function (item, index) {
       if (item) {
-        if (!stackParams[index]) {
-          stackParams[index] = {};
-        }
-
-        assignDeep(stackParams[index], item);
+        item.routeData.action = safeLocation.action;
+        return item.routeData;
       }
-    });
-    var routeData = assignRouteData(paths, stackParams, pathsArgs, location.action);
-    cacheData.unshift({
-      url: url,
-      routeData: routeData
-    });
-    cacheData.length = 10;
-    return routeData;
-  };
 
-  var routeToLocation = function routeToLocation(routeData) {
-    var views = routeData.views,
-        paths = routeData.paths,
-        params = routeData.params,
-        stackParams = routeData.stackParams;
-    var firstStackParams = stackParams[0];
-    var pathname = '';
-    var firstStackParamsFilter;
+      var pathname = safeLocation.pathname;
+      var paths = [];
+      var pathsArgs = {};
+      pathnameParse(pathname, routeConfig, paths, pathsArgs);
+      var params = splitSearch(safeLocation.search);
+      var hashParams = splitSearch(safeLocation.hash);
+      assignDeep(params, hashParams);
+      var routeData = assignRouteData(paths, assignDeep(pathsArgs, params), safeLocation.action);
+      cacheData.unshift({
+        url: url,
+        routeData: routeData
+      });
+      cacheData.length = 100;
+      return routeData;
+    },
+    routeToLocation: function routeToLocation(paths, params, action) {
+      params = params || {};
+      var pathname;
+      var views = {};
 
-    if (paths.length > 0) {
-      firstStackParamsFilter = assignDeep({}, firstStackParams);
-      paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-        var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
-        var rule = viewToRule[absoluteViewName];
-        var moduleName = viewName.split(coreConfig.VSP)[0];
+      if (typeof paths === 'string') {
+        pathname = checkPathname(paths, getCurPathname());
+      } else {
+        var _data2 = pathsToPathname(paths, params);
 
-        if (index === paths.length - 1) {
-          var toPath = compileToPath(rule);
+        pathname = _data2.pathname;
+        params = _data2.params;
+        views = _data2.views;
+      }
 
-          var _keys = ruleToKeys[rule] || [];
+      var paramsFilter = excludeDefaultData(params, config.defaultRouteParams, false, views);
 
-          var args = _keys.reduce(function (prev, cur) {
-            if (typeof cur === 'string') {
-              var props = cur.split('.');
-
-              if (props.length) {
-                prev[cur] = props.reduce(function (p, c) {
-                  return p[c];
-                }, params[moduleName]);
-                return prev;
-              }
-            }
-
-            prev[cur] = params[moduleName][cur];
-            return prev;
-          }, {});
-
-          pathname = toPath(args);
-        }
-
-        var keys = ruleToKeys[rule] || [];
-        keys.forEach(function (key) {
-          if (typeof key === 'string') {
-            var props = key.split('.');
-
-            if (props.length) {
-              props.reduce(function (p, c, i) {
-                if (i === props.length - 1) {
-                  delete p[c];
-                }
-
-                return p[c] || {};
-              }, firstStackParamsFilter[moduleName] || {});
-              return;
-            }
-          }
-
-          if (firstStackParamsFilter[moduleName]) {
-            delete firstStackParamsFilter[moduleName][key];
-          }
-        });
-        return absoluteViewName;
-      }, '');
-    } else {
-      firstStackParamsFilter = firstStackParams;
-    }
-
-    var arr = [].concat(stackParams);
-    arr[0] = excludeDefaultData(firstStackParamsFilter, config.defaultRouteParams, false, views);
-    var searchStrings = [];
-    var hashStrings = [];
-    arr.forEach(function (params, index) {
-      var _extractHashData = extractHashData(params),
+      var _extractHashData = extractHashData(paramsFilter),
           search = _extractHashData.search,
           hash = _extractHashData.hash;
 
-      search && (searchStrings[index] = search);
-      hash && (hashStrings[index] = hash);
-    });
-    var search = joinSearchString(searchStrings).substr(1);
-    var hash = joinSearchString(hashStrings).substr(1);
+      var location = {
+        pathname: pathname,
+        search: search ? "?" + config.splitKey + "=" + search : '',
+        hash: hash ? "#" + config.splitKey + "=" + hash : '',
+        action: action
+      };
+      return location;
+    },
+    payloadToLocation: function payloadToLocation(payload) {
+      if (dataIsLocation(payload)) {
+        return checkLocation(payload, getCurPathname());
+      } else {
+        var _params2 = payload.extend ? assignDeep({}, payload.extend.params, payload.params) : payload.params;
+
+        var _location = transformRoute.routeToLocation(payload.paths, _params2);
+
+        return checkLocation(_location, getCurPathname());
+      }
+    },
+    urlToLocation: function urlToLocation(url) {
+      url = checkUrl(url);
+      return safeurlToLocation(url);
+    }
+  };
+
+  function getPathProps(pathprops, moduleParas, deleteIt) {
+    if (moduleParas === void 0) {
+      moduleParas = {};
+    }
+
+    var val;
+
+    if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
+      var props = pathprops.split('.');
+      var len = props.length - 1;
+      props.reduce(function (p, c, i) {
+        if (i === len) {
+          val = p[c];
+          deleteIt && delete p[c];
+        }
+
+        return p[c] || {};
+      }, moduleParas);
+    } else {
+      val = moduleParas[pathprops];
+      deleteIt && delete moduleParas[pathprops];
+    }
+
+    return val;
+  }
+
+  function pathsToPathname(paths, params) {
+    if (params === void 0) {
+      params = {};
+    }
+
+    var len = paths.length - 1;
+    var paramsFilter = assignDeep({}, params);
+    var pathname = '';
+    var views = {};
+    paths.reduce(function (parentAbsoluteViewName, viewName, index) {
+      var _viewName$split = viewName.split(coreConfig.VSP),
+          moduleName = _viewName$split[0],
+          view = _viewName$split[1];
+
+      var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      var rule = viewToRule[absoluteViewName];
+      var keys = ruleToKeys[rule] || [];
+
+      if (moduleName !== '@' && view) {
+        if (!views[moduleName]) {
+          views[moduleName] = {};
+        }
+
+        views[moduleName][view] = true;
+      }
+
+      if (index === len) {
+        var toPath = compileToPath(rule);
+        var args = keys.reduce(function (prev, cur) {
+          prev[cur] = getPathProps(cur, params[moduleName]);
+          return prev;
+        }, {});
+        pathname = toPath(args);
+      }
+
+      keys.forEach(function (key) {
+        getPathProps(key, paramsFilter[moduleName], true);
+      });
+      return absoluteViewName;
+    }, '');
     return {
       pathname: pathname,
-      search: search ? '?' + search : '',
-      hash: hash ? '#' + hash : '',
-      action: routeData.action
+      views: views,
+      params: paramsFilter
+    };
+  }
+
+  return transformRoute;
+}
+export var Dispatcher = function () {
+  function Dispatcher() {
+    _defineProperty(this, "_uid", 0);
+
+    _defineProperty(this, "_listenList", {});
+  }
+
+  var _proto = Dispatcher.prototype;
+
+  _proto.subscribe = function subscribe(listener) {
+    var _this = this;
+
+    this._uid++;
+    var uid = this._uid;
+    this._listenList[uid] = listener;
+    return function () {
+      delete _this._listenList[uid];
     };
   };
 
-  return {
-    locationToRoute: locationToRoute,
-    routeToLocation: routeToLocation
+  _proto.dispatch = function dispatch(data) {
+    for (var _key2 in this._listenList) {
+      if (this._listenList.hasOwnProperty(_key2)) {
+        var listener = this._listenList[_key2];
+        listener(data);
+      }
+    }
   };
-}
+
+  return Dispatcher;
+}();

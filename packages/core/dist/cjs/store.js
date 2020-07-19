@@ -65,7 +65,8 @@ function bindHistory(store, history) {
     }
   };
 
-  store._medux_.destroy = history.subscribe(handleLocationChange);
+  history.subscribe(handleLocationChange);
+  store._medux_.destroy = history.destroy;
   store.subscribe(function () {
     if (history.initialized) {
       var storeRouteState = store.getState().route;

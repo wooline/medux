@@ -41,11 +41,6 @@ export declare type RootState<G extends ModuleGetter, L> = {
             params: {
                 [key in keyof G]?: ModuleParams<ReturnModule<G[key]>>;
             };
-            stackParams: {
-                [moduleName: string]: {
-                    [key: string]: any;
-                } | undefined;
-            }[];
             paths: string[];
         };
     };

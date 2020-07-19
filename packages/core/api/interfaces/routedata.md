@@ -1,4 +1,4 @@
-[@medux/core - v1.1.0](../README.md) › [RouteData](routedata.md)
+[@medux/core - v1.1.1-alpha.1](../README.md) › [RouteData](routedata.md)
 
 # Interface: RouteData
 
@@ -16,7 +16,6 @@
 * [action](routedata.md#optional-action)
 * [params](routedata.md#params)
 * [paths](routedata.md#paths)
-* [stackParams](routedata.md#stackparams)
 * [views](routedata.md#views)
 
 ## Properties
@@ -46,14 +45,6 @@ ___
 • **paths**: *string[]*
 
 表示当前路由下加载views的父子嵌套关系
-
-___
-
-###  stackParams
-
-• **stackParams**: *object[]*
-
-如果存在多个路由栈（如APP）每个路由栈上分别保存什么数据
 
 ___
 

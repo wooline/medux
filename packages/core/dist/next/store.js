@@ -55,7 +55,8 @@ function bindHistory(store, history) {
     }
   };
 
-  store._medux_.destroy = history.subscribe(handleLocationChange);
+  history.subscribe(handleLocationChange);
+  store._medux_.destroy = history.destroy;
   store.subscribe(() => {
     if (history.initialized) {
       const storeRouteState = store.getState().route;

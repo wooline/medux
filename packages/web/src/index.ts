@@ -1,226 +1,108 @@
-import {HistoryProxy, RouteData} from '@medux/core';
-import {MeduxLocation, RouteConfig, TransformRoute, assignRouteData, buildTransformRoute, checkUrl, deepAssign, locationToUrl, urlToLocation} from '@medux/route-plan-a';
+import {Dispatcher, LocationPayload, MeduxLocation, RouteConfig, RoutePayload, TransformRoute, buildTransformRoute} from '@medux/route-plan-a';
+import {HistoryProxy, RouteData, RouteParams} from '@medux/core';
 
 type UnregisterCallback = () => void;
-interface BrowserLocation {
-  pathname: string;
-  search: string;
-  hash: string;
-}
-
-type MeduxLocationListener = (location: MeduxLocation) => void;
 
 export type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
 export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
 
 export interface History {
-  location: BrowserLocation;
+  location: MeduxLocation;
   action: string;
-  push(path: string): void;
-  replace(path: string): void;
+  push(location: MeduxLocation): void;
+  replace(location: MeduxLocation): void;
   go(n: number): void;
   back(): void;
   forward(): void;
-  listen(listener: (location: BrowserLocation, action: string) => void): UnregisterCallback;
-}
-
-/**
- * 定义一种数据结构，根据此结构可以生成一个url
- */
-export interface BrowserRoutePayload<P = {}> {
-  /**
-   * 可以继承一个RouteData
-   */
-  extend?: RouteData;
-  /**
-   * 将和继承的RouteData合并merge
-   */
-  params?: DeepPartial<P>;
-  /**
-   * 要展示的Views
-   */
-  paths?: string[];
-  /**
-   * 当前路由的打开方式 POP/PUSH/REPLACE
-   */
-  action?: string;
+  listen(listener: (location: MeduxLocation, action: string) => void): UnregisterCallback;
 }
 
 /**
  * 经过封装后的HistoryAPI比浏览器自带的history更强大
  */
-export interface HistoryActions<P = {}> {
-  /**
-   * 接受监听回调
-   */
-  listen(listener: MeduxLocationListener): UnregisterCallback;
-  /**
-   * 获取当前路由的原始路由数据
-   */
-  getLocation(): MeduxLocation;
-  /**
-   * 获取当前路由的经过转换之后的路由数据
-   */
+export interface HistoryActions<P extends RouteParams = any> extends HistoryProxy<MeduxLocation> {
   getRouteData(): RouteData;
-  /**
-   * 同浏览器的history.push方法
-   * @param data 除了可以接受一个url字符串外，也可以接受medux的RouteData
-   */
-  push(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
-  /**
-   * 同浏览器的history.replace
-   * @param data 除了可以接受一个url字符串外，也可以接受medux的RouteData
-   */
-  replace(data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void;
-  /**
-   * 同浏览器的history.go
-   */
+  push(data: RoutePayload<P> | LocationPayload | string): void;
+  replace(data: RoutePayload<P> | LocationPayload | string): void;
+  toUrl(data: RoutePayload<P> | LocationPayload | string): string;
   go(n: number): void;
-  /**
-   * 同浏览器的history.goBack
-   */
   back(): void;
-  /**
-   * 同浏览器的history.goForward
-   */
   forward(): void;
 }
 
-type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
+class BrowserHistoryActions implements HistoryActions {
+  readonly initialized = true;
+  private _dispatcher: Dispatcher;
+  private _location: MeduxLocation;
+  private _unlistenHistory: UnregisterCallback;
 
-/**
- * 将浏览器的路由数据结构转换为medux标准的RouteData
- */
-export function fillBrowserRouteData(routePayload: BrowserRoutePayload): RouteData {
-  const extend: RouteData = routePayload.extend || {views: {}, paths: [], stackParams: [], params: {}};
-  const stackParams = [...extend.stackParams];
-  if (routePayload.params) {
-    stackParams[0] = deepAssign({}, stackParams[0], routePayload.params);
+  constructor(private _history: History, private _transformRoute: TransformRoute<any>, private _locationMap: LocationMap | undefined) {
+    this._dispatcher = new Dispatcher();
+    const location: MeduxLocation = {...this._history.location, action: this._history.action};
+    this._location = this._locationMap ? this._locationMap.in(location) : location;
+    this._unlistenHistory = this._history.listen((location, action) => {
+      location = {...location, action};
+      this._location = this._locationMap ? this._locationMap.in(location) : location;
+      this._dispatcher.dispatch(this._location);
+    });
   }
-  return assignRouteData(routePayload.paths || extend.paths, stackParams, undefined, extend.action);
-}
-
-function isBrowserRoutePayload(data: Partial<MeduxLocation> | BrowserRoutePayload): data is BrowserRoutePayload {
-  return !data['pathname'];
-}
-function fillLocation(location: Partial<MeduxLocation>): MeduxLocation {
-  return {
-    pathname: location.pathname || '',
-    search: location.search || '',
-    hash: location.hash || '',
-    action: location.action,
-  };
+  destroy() {
+    this._unlistenHistory();
+  }
+  getLocation(): MeduxLocation {
+    return this._location;
+  }
+  getRouteData() {
+    return this._transformRoute.locationToRoute(this.getLocation());
+  }
+  subscribe(listener: (location: MeduxLocation) => void): () => void {
+    return this._dispatcher.subscribe(listener);
+  }
+  locationToRouteData(location: MeduxLocation): RouteData<any> {
+    return this._transformRoute.locationToRoute(location);
+  }
+  equal(a: MeduxLocation, b: MeduxLocation): boolean {
+    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+  }
+  patch(location: MeduxLocation, routeData: RouteData<any>): void {
+    this.push(location);
+  }
+  push(data: RoutePayload<any> | LocationPayload | string): void {
+    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+  }
+  replace(data: RoutePayload<any> | LocationPayload | string): void {
+    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+  }
+  toUrl(data: string | LocationPayload | RoutePayload<any>): string {
+    let location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    location = this._locationMap ? this._locationMap.out(location) : location;
+    return location.pathname + location.search + location.hash;
+  }
+  go(n: number) {
+    this._history.go(n);
+  }
+  back() {
+    this._history.back();
+  }
+  forward() {
+    this._history.forward();
+  }
 }
 /**
  * 创建一个路由解析器
  * @param history 浏览器的history或其代理
  * @param routeConfig 应用的路由配置文件
- * @returns {transformRoute,historyProxy,historyActions,toBrowserUrl}
+ * @returns {transformRoute,historyActions}
  */
 export function createRouter(history: History, routeConfig: RouteConfig, locationMap?: LocationMap) {
-  const transformRoute: TransformRoute = buildTransformRoute(routeConfig);
-
-  const historyProxy: HistoryProxy<MeduxLocation> = {
-    initialized: true,
-    getLocation() {
-      return {...history.location, action: history.action};
-    },
-    subscribe(listener) {
-      const unlink = history.listen((location, action) => {
-        listener({...location, action});
-      });
-      return unlink;
-    },
-    locationToRouteData(location) {
-      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
-    },
-    equal(a, b) {
-      return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
-    },
-    patch(location): void {
-      const url = locationToUrl(location);
-      history.push(url);
-    },
-  };
-
-  function navigateTo<P>(action: 'push' | 'replace', data: BrowserRoutePayload<P> | Partial<MeduxLocation> | string): void {
-    if (typeof data === 'string') {
-      let url = checkUrl(data, history.location.pathname);
-      if (url) {
-        if (locationMap) {
-          let location = urlToLocation(url);
-          location = locationMap.out(location);
-          url = checkUrl(locationToUrl(location));
-        }
-      }
-      history[action](url);
-    } else if (isBrowserRoutePayload(data)) {
-      const routeData = fillBrowserRouteData(data);
-      let location = transformRoute!.routeToLocation(routeData);
-      if (locationMap) {
-        location = locationMap.out(location);
-      }
-      const url = checkUrl(locationToUrl(location));
-      history[action](url);
-    } else {
-      const url = checkUrl(locationToUrl(fillLocation(data)));
-      history[action](url);
-    }
-  }
-
-  const historyActions: HistoryActions = {
-    listen(listener) {
-      const unlink = history.listen((location, action) => {
-        listener({...location, action});
-      });
-      return unlink;
-    },
-    getLocation() {
-      return {...history.location, action: history.action};
-    },
-    getRouteData() {
-      const location = this.getLocation();
-      return transformRoute.locationToRoute(locationMap ? locationMap.in(location) : location);
-    },
-    push(data) {
-      navigateTo('push', data);
-    },
-    replace(data) {
-      navigateTo('replace', data);
-    },
-    go(n: number) {
-      history.go(n);
-    },
-    back() {
-      history.back();
-    },
-    forward() {
-      history.forward();
-    },
-  };
-
-  function toBrowserUrl<P = {}>(data: BrowserRoutePayload<P> | Partial<MeduxLocation>) {
-    let location: MeduxLocation;
-    if (isBrowserRoutePayload(data)) {
-      location = transformRoute.routeToLocation(fillBrowserRouteData(data));
-    } else {
-      location = fillLocation(data);
-    }
-    if (locationMap) {
-      location = locationMap.out(location);
-    }
-    return checkUrl(locationToUrl(location));
-  }
-
+  const transformRoute: TransformRoute = buildTransformRoute(routeConfig, () => {
+    return historyActions.getLocation().pathname;
+  });
+  const historyActions: HistoryActions = new BrowserHistoryActions(history, transformRoute, locationMap);
   return {
     transformRoute,
-    historyProxy,
     historyActions,
-    toBrowserUrl,
   };
 }
-
-/**
- * 将一个内部RouteData序列化为一个url
- */
-export type ToBrowserUrl<T = {}> = (routeOptions: BrowserRoutePayload<T> | Partial<MeduxLocation>) => string;

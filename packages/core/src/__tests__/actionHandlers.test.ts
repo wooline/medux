@@ -17,7 +17,7 @@ const historyProxy: HistoryProxy = {
     return () => void 0;
   },
   locationToRouteData(location) {
-    return {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []};
+    return {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []};
   },
   equal(a, b) {
     return a === b;
@@ -58,7 +58,7 @@ describe('无SSR时', () => {
   test('初始状态', () => {
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message', text: 'text', tips: 'tips'},
     });
   });
@@ -67,7 +67,7 @@ describe('无SSR时', () => {
     getView<Function>('moduleC', 'Main');
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
@@ -85,7 +85,7 @@ describe('无SSR时', () => {
     //rootState尚未发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
@@ -93,7 +93,7 @@ describe('无SSR时', () => {
     //currentRootState改变了moduleB的部分
     expect(consoleLogs[1]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
@@ -103,7 +103,7 @@ describe('无SSR时', () => {
     //执行全部完成后，rootState已经全部改变
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
@@ -120,7 +120,7 @@ describe('无SSR时', () => {
     //当action同时有reducer和effect监听时，reducer先执行完毕后才执行effect，所以在effectHandle中rootState已经发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
@@ -130,7 +130,7 @@ describe('无SSR时', () => {
     //prevRootState指向未经reducer更改的前状态
     expect(consoleLogs[2]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
@@ -138,7 +138,7 @@ describe('无SSR时', () => {
     //reducer是同步执行的，effect是异步的，此时reducer已经全部执行完毕，但是effect还未完成，所以loading状态为Start
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Start'}},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
@@ -147,7 +147,7 @@ describe('无SSR时', () => {
     //await之后effect已经执行完毕了
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Stop'}},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
@@ -162,7 +162,7 @@ describe('无SSR时', () => {
     expect(actionLogs.join(' ')).toBe(['moduleA.setTips', 'moduleB.setTips', 'moduleA.Loading', 'moduleC.setTips', 'moduleB.setMessage', 'moduleC.setMessage', 'moduleA.Loading'].join(' '));
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], stackParams: []}},
+      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips-changed', loading: {global: 'Stop'}},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed'},

@@ -91,7 +91,6 @@ export type RootState<G extends ModuleGetter, L> = {
     data: {
       views: RouteViews<G>;
       params: {[key in keyof G]?: ModuleParams<ReturnModule<G[key]>>};
-      stackParams: {[moduleName: string]: {[key: string]: any} | undefined}[];
       paths: string[];
     };
   };

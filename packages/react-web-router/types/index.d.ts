@@ -1,28 +1,23 @@
 /// <reference path="../env/global.d.ts" />
-import { TransformRoute, MeduxLocation } from '@medux/route-plan-a';
+import { TransformRoute as PTransformRoute, MeduxLocation, RouteConfig as PRouteConfig } from '@medux/route-plan-a';
 import { RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { Store } from 'redux';
 import React, { ReactElement } from 'react';
-import { History, HistoryActions, ToBrowserUrl } from '@medux/web';
+import { History, HistoryActions as PHistoryActions, LocationMap as PLocationMap } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
 export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
 export type { LoadView } from '@medux/react';
-export type { RouteConfig } from '@medux/route-plan-a';
-export type { LocationMap } from '@medux/web';
-export declare type BrowserRouter<Params> = {
-    transformRoute: TransformRoute;
-    historyActions: HistoryActions<Params>;
-    toUrl: ToBrowserUrl<Params>;
-};
+export type { RouteConfig, TransformRoute } from '@medux/route-plan-a';
+export type { LocationMap, HistoryActions } from '@medux/web';
 export declare function buildApp({ moduleGetter, appModuleName, appViewName, history, routeConfig, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName?: string;
     appViewName?: string;
     history: History;
-    routeConfig?: import('@medux/route-plan-a').RouteConfig;
-    locationMap?: import('@medux/web').LocationMap;
+    routeConfig?: PRouteConfig;
+    locationMap?: PLocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };
@@ -31,17 +26,17 @@ export declare function buildApp({ moduleGetter, appModuleName, appViewName, his
     beforeRender?: (data: {
         store: Store<StoreState>;
         history: History;
-        historyActions: HistoryActions;
-        toBrowserUrl: ToBrowserUrl;
-        transformRoute: TransformRoute;
+        historyActions: PHistoryActions;
+        transformRoute: PTransformRoute;
     }) => Store<StoreState>;
 }): Promise<void>;
-export declare function buildSSR({ moduleGetter, appModuleName, appViewName, location, routeConfig, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
+export declare function buildSSR({ moduleGetter, appModuleName, appViewName, location, routeConfig, locationMap, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName?: string;
     appViewName?: string;
     location: string;
-    routeConfig?: import('@medux/route-plan-a').RouteConfig;
+    routeConfig?: PRouteConfig;
+    locationMap?: PLocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };
@@ -50,9 +45,8 @@ export declare function buildSSR({ moduleGetter, appModuleName, appViewName, loc
     beforeRender?: (data: {
         store: Store<StoreState>;
         history: History;
-        historyActions: HistoryActions;
-        toBrowserUrl: ToBrowserUrl;
-        transformRoute: TransformRoute;
+        historyActions: PHistoryActions;
+        transformRoute: PTransformRoute;
     }) => Store<StoreState>;
 }): Promise<{
     html: string | meduxCore.ReadableStream;
