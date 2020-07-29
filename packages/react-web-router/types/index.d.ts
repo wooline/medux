@@ -1,9 +1,11 @@
 /// <reference path="../env/global.d.ts" />
-import { TransformRoute as PTransformRoute, MeduxLocation, RouteConfig as PRouteConfig } from '@medux/route-plan-a';
+import { MeduxLocation } from '@medux/route-plan-a';
 import { RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { Store } from 'redux';
 import React, { ReactElement } from 'react';
-import { History, HistoryActions as PHistoryActions, LocationMap as PLocationMap } from '@medux/web';
+import { History } from '@medux/web';
+import type { TransformRoute, RouteConfig } from '@medux/route-plan-a';
+import type { HistoryActions, LocationMap } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
@@ -16,8 +18,8 @@ export declare function buildApp({ moduleGetter, appModuleName, appViewName, his
     appModuleName?: string;
     appViewName?: string;
     history: History;
-    routeConfig?: PRouteConfig;
-    locationMap?: PLocationMap;
+    routeConfig?: RouteConfig;
+    locationMap?: LocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };
@@ -26,8 +28,8 @@ export declare function buildApp({ moduleGetter, appModuleName, appViewName, his
     beforeRender?: (data: {
         store: Store<StoreState>;
         history: History;
-        historyActions: PHistoryActions;
-        transformRoute: PTransformRoute;
+        historyActions: HistoryActions;
+        transformRoute: TransformRoute;
     }) => Store<StoreState>;
 }): Promise<void>;
 export declare function buildSSR({ moduleGetter, appModuleName, appViewName, location, routeConfig, locationMap, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
@@ -35,8 +37,8 @@ export declare function buildSSR({ moduleGetter, appModuleName, appViewName, loc
     appModuleName?: string;
     appViewName?: string;
     location: string;
-    routeConfig?: PRouteConfig;
-    locationMap?: PLocationMap;
+    routeConfig?: RouteConfig;
+    locationMap?: LocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };
@@ -45,8 +47,8 @@ export declare function buildSSR({ moduleGetter, appModuleName, appViewName, loc
     beforeRender?: (data: {
         store: Store<StoreState>;
         history: History;
-        historyActions: PHistoryActions;
-        transformRoute: PTransformRoute;
+        historyActions: HistoryActions;
+        transformRoute: TransformRoute;
     }) => Store<StoreState>;
 }): Promise<{
     html: string | meduxCore.ReadableStream;

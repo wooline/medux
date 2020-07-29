@@ -3,7 +3,7 @@ import { config as coreConfig } from '@medux/core';
 import { checkLocation, checkPathname, checkUrl, safelocationToUrl, safeurlToLocation } from './utils';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from './deep-extend';
-export { checkUrl, checkLocation } from './utils';
+export { checkUrl, checkLocation, safeurlToLocation, safelocationToUrl } from './utils';
 
 function dataIsLocation(data) {
   return !!data['pathname'];
@@ -335,7 +335,7 @@ export function buildTransformRoute(routeConfig, getCurPathname) {
     },
 
     urlToLocation(url) {
-      url = checkUrl(url);
+      url = checkUrl(url, getCurPathname());
       return safeurlToLocation(url);
     }
 
@@ -405,11 +405,35 @@ export function buildTransformRoute(routeConfig, getCurPathname) {
 
   return transformRoute;
 }
-export class Dispatcher {
-  constructor() {
+export class BaseHistoryActions {
+  constructor(location, initialized, _transformRoute) {
+    this.initialized = initialized;
+    this._transformRoute = _transformRoute;
+
     _defineProperty(this, "_uid", 0);
 
     _defineProperty(this, "_listenList", {});
+
+    _defineProperty(this, "_blockerList", {});
+
+    _defineProperty(this, "_location", void 0);
+
+    _defineProperty(this, "_startupLocation", void 0);
+
+    this._location = location;
+    this._startupLocation = this._location;
+  }
+
+  equal(a, b) {
+    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+  }
+
+  getLocation() {
+    return this._location;
+  }
+
+  getRouteData() {
+    return this._transformRoute.locationToRoute(this.getLocation());
   }
 
   subscribe(listener) {
@@ -421,13 +445,28 @@ export class Dispatcher {
     };
   }
 
-  dispatch(data) {
-    for (const key in this._listenList) {
-      if (this._listenList.hasOwnProperty(key)) {
-        const listener = this._listenList[key];
-        listener(data);
-      }
+  block(listener) {
+    this._uid++;
+    const uid = this._uid;
+    this._blockerList[uid] = listener;
+    return () => {
+      delete this._blockerList[uid];
+    };
+  }
+
+  locationToRouteData(location) {
+    return this._transformRoute.locationToRoute(location);
+  }
+
+  dispatch(location) {
+    if (this.equal(location, this._location)) {
+      return Promise.reject();
     }
+
+    return Promise.all(Object.values(this._blockerList).map(fn => fn(location, this._location))).then(() => {
+      this._location = location;
+      Object.values(this._listenList).forEach(listener => listener(location));
+    });
   }
 
 }
