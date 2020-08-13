@@ -1,11 +1,12 @@
 /// <reference path="../env/global.d.ts" />
-import {TransformRoute as PTransformRoute, MeduxLocation, RouteConfig as PRouteConfig, setRouteConfig} from '@medux/route-plan-a';
+import {MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
 import {RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews} from '@medux/core';
 import {Store, Middleware} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
-import {History, HistoryActions as PHistoryActions, LocationMap as PLocationMap, createRouter} from '@medux/web';
-
+import {History, createRouter} from '@medux/web';
+import type {TransformRoute, RouteConfig} from '@medux/route-plan-a';
+import type {HistoryActions, LocationMap} from '@medux/web';
 export {loadView, exportModule} from '@medux/react';
 export {
   ActionTypes,
@@ -30,8 +31,8 @@ export type {LoadView} from '@medux/react';
 export type {RouteConfig, TransformRoute} from '@medux/route-plan-a';
 export type {LocationMap, HistoryActions} from '@medux/web';
 
-let historyActions: PHistoryActions | undefined = undefined;
-let transformRoute: PTransformRoute | undefined = undefined;
+let historyActions: HistoryActions | undefined = undefined;
+let transformRoute: TransformRoute | undefined = undefined;
 
 function checkRedirect(views: DisplayViews, throwError?: boolean): boolean {
   if (views['@']) {
@@ -72,12 +73,12 @@ export function buildApp({
   appModuleName?: string;
   appViewName?: string;
   history: History;
-  routeConfig?: PRouteConfig;
-  locationMap?: PLocationMap;
+  routeConfig?: RouteConfig;
+  locationMap?: LocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   container?: string | Element | ((component: ReactElement<any>) => void);
-  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: PHistoryActions; transformRoute: PTransformRoute}) => Store<StoreState>;
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; transformRoute: TransformRoute}) => Store<StoreState>;
 }) {
   setRouteConfig({defaultRouteParams});
   const router = createRouter(history, routeConfig, locationMap);
@@ -111,12 +112,12 @@ export function buildSSR({
   appModuleName?: string;
   appViewName?: string;
   location: string;
-  routeConfig?: PRouteConfig;
-  locationMap?: PLocationMap;
+  routeConfig?: RouteConfig;
+  locationMap?: LocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   renderToStream?: boolean;
-  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: PHistoryActions; transformRoute: PTransformRoute}) => Store<StoreState>;
+  beforeRender?: (data: {store: Store<StoreState>; history: History; historyActions: HistoryActions; transformRoute: TransformRoute}) => Store<StoreState>;
 }): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
   setRouteConfig({defaultRouteParams});
   const [pathname, search = ''] = location.split('?');

@@ -3,7 +3,7 @@ import { config as coreConfig } from '@medux/core';
 import { checkLocation, checkPathname, checkUrl, safelocationToUrl, safeurlToLocation } from './utils';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from './deep-extend';
-export { checkUrl, checkLocation } from './utils';
+export { checkUrl, checkLocation, safeurlToLocation, safelocationToUrl } from './utils';
 
 function dataIsLocation(data) {
   return !!data['pathname'];
@@ -254,8 +254,8 @@ function extractHashData(params) {
 
   var _loop = function _loop(_moduleName2) {
     if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-      var _data = params[_moduleName2];
-      var keys = Object.keys(_data);
+      var data = params[_moduleName2];
+      var keys = Object.keys(data);
 
       if (keys.length > 0) {
         keys.forEach(function (key) {
@@ -264,13 +264,13 @@ function extractHashData(params) {
               hashParams[_moduleName2] = {};
             }
 
-            hashParams[_moduleName2][key] = _data[key];
+            hashParams[_moduleName2][key] = data[key];
           } else {
             if (!searchParams[_moduleName2]) {
               searchParams[_moduleName2] = {};
             }
 
-            searchParams[_moduleName2][key] = _data[key];
+            searchParams[_moduleName2][key] = data[key];
           }
         });
       } else {
@@ -331,11 +331,10 @@ export function buildTransformRoute(routeConfig, getCurPathname) {
       if (typeof paths === 'string') {
         pathname = checkPathname(paths, getCurPathname());
       } else {
-        var _data2 = pathsToPathname(paths, params);
-
-        pathname = _data2.pathname;
-        params = _data2.params;
-        views = _data2.views;
+        var data = pathsToPathname(paths, params);
+        pathname = data.pathname;
+        params = data.params;
+        views = data.views;
       }
 
       var paramsFilter = excludeDefaultData(params, config.defaultRouteParams, false, views);
@@ -364,7 +363,7 @@ export function buildTransformRoute(routeConfig, getCurPathname) {
       }
     },
     urlToLocation: function urlToLocation(url) {
-      url = checkUrl(url);
+      url = checkUrl(url, getCurPathname());
       return safeurlToLocation(url);
     }
   };
@@ -444,14 +443,38 @@ export function buildTransformRoute(routeConfig, getCurPathname) {
 
   return transformRoute;
 }
-export var Dispatcher = function () {
-  function Dispatcher() {
+export var BaseHistoryActions = function () {
+  function BaseHistoryActions(location, initialized, _transformRoute) {
+    this.initialized = initialized;
+    this._transformRoute = _transformRoute;
+
     _defineProperty(this, "_uid", 0);
 
     _defineProperty(this, "_listenList", {});
+
+    _defineProperty(this, "_blockerList", {});
+
+    _defineProperty(this, "_location", void 0);
+
+    _defineProperty(this, "_startupLocation", void 0);
+
+    this._location = location;
+    this._startupLocation = this._location;
   }
 
-  var _proto = Dispatcher.prototype;
+  var _proto = BaseHistoryActions.prototype;
+
+  _proto.equal = function equal(a, b) {
+    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+  };
+
+  _proto.getLocation = function getLocation() {
+    return this._location;
+  };
+
+  _proto.getRouteData = function getRouteData() {
+    return this._transformRoute.locationToRoute(this.getLocation());
+  };
 
   _proto.subscribe = function subscribe(listener) {
     var _this = this;
@@ -464,14 +487,37 @@ export var Dispatcher = function () {
     };
   };
 
-  _proto.dispatch = function dispatch(data) {
-    for (var _key2 in this._listenList) {
-      if (this._listenList.hasOwnProperty(_key2)) {
-        var listener = this._listenList[_key2];
-        listener(data);
-      }
-    }
+  _proto.block = function block(listener) {
+    var _this2 = this;
+
+    this._uid++;
+    var uid = this._uid;
+    this._blockerList[uid] = listener;
+    return function () {
+      delete _this2._blockerList[uid];
+    };
   };
 
-  return Dispatcher;
+  _proto.locationToRouteData = function locationToRouteData(location) {
+    return this._transformRoute.locationToRoute(location);
+  };
+
+  _proto.dispatch = function dispatch(location) {
+    var _this3 = this;
+
+    if (this.equal(location, this._location)) {
+      return Promise.reject();
+    }
+
+    return Promise.all(Object.values(this._blockerList).map(function (fn) {
+      return fn(location, _this3._location);
+    })).then(function () {
+      _this3._location = location;
+      Object.values(_this3._listenList).forEach(function (listener) {
+        return listener(location);
+      });
+    });
+  };
+
+  return BaseHistoryActions;
 }();

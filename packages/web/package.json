@@ -32,6 +32,8 @@
     "build": "yarn build:next & yarn build:esm & yarn build:cjs"
   },
   "dependencies": {
+    "@types/history": "~4.7.7",
+    "history": "~4.10.1",
     "@babel/runtime": "~7.9.0",
     "@medux/core": "^1.1.1-alpha.1",
     "@medux/route-plan-a": "^1.1.1-alpha.1"

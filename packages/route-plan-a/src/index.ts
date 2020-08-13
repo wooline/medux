@@ -1,10 +1,10 @@
-import {DisplayViews, RouteData, RouteParams, config as coreConfig} from '@medux/core';
+import {DisplayViews, HistoryProxy, RouteData, RouteParams, config as coreConfig} from '@medux/core';
 import {checkLocation, checkPathname, checkUrl, safelocationToUrl, safeurlToLocation} from './utils';
 import {compilePath, compileToPath, matchPath} from './matchPath';
 
 import assignDeep from './deep-extend';
 
-export {checkUrl, checkLocation} from './utils';
+export {checkUrl, checkLocation, safeurlToLocation, safelocationToUrl} from './utils';
 
 /**
  * medux内部使用的Location数据结构，比浏览器的Location相比多了action属性，少了state属性，所以在此路由方案中不能使用history state
@@ -344,7 +344,7 @@ export function buildTransformRoute<P extends RouteParams>(routeConfig: RouteCon
       }
     },
     urlToLocation(url) {
-      url = checkUrl(url);
+      url = checkUrl(url, getCurPathname());
       return safeurlToLocation(url);
     },
   };
@@ -409,10 +409,30 @@ export function buildTransformRoute<P extends RouteParams>(routeConfig: RouteCon
   return transformRoute;
 }
 
-export class Dispatcher {
+export type LocationListener = (location: MeduxLocation) => void;
+export type LocationBlocker = (location: MeduxLocation, curLocation: MeduxLocation) => void | Promise<void>;
+
+export abstract class BaseHistoryActions implements HistoryProxy<MeduxLocation> {
   private _uid = 0;
-  private _listenList: {[key: string]: (data: any) => void} = {};
-  subscribe(listener: (data: any) => void): () => void {
+  private _listenList: {[key: string]: LocationListener} = {};
+  private _blockerList: {[key: string]: LocationBlocker} = {};
+  protected _location: MeduxLocation;
+  protected _startupLocation: MeduxLocation;
+
+  constructor(location: MeduxLocation, public initialized: boolean, protected _transformRoute: TransformRoute<any>) {
+    this._location = location;
+    this._startupLocation = this._location;
+  }
+  equal(a: MeduxLocation, b: MeduxLocation): boolean {
+    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+  }
+  getLocation(): MeduxLocation {
+    return this._location;
+  }
+  getRouteData() {
+    return this._transformRoute.locationToRoute(this.getLocation());
+  }
+  subscribe(listener: LocationListener): () => void {
     this._uid++;
     const uid = this._uid;
     this._listenList[uid] = listener;
@@ -420,12 +440,27 @@ export class Dispatcher {
       delete this._listenList[uid];
     };
   }
-  dispatch(data: any) {
-    for (const key in this._listenList) {
-      if (this._listenList.hasOwnProperty(key)) {
-        const listener = this._listenList[key];
-        listener(data);
-      }
-    }
+  block(listener: LocationBlocker): () => void {
+    this._uid++;
+    const uid = this._uid;
+    this._blockerList[uid] = listener;
+    return () => {
+      delete this._blockerList[uid];
+    };
   }
+  locationToRouteData(location: MeduxLocation): RouteData<any> {
+    return this._transformRoute.locationToRoute(location);
+  }
+  dispatch(location: MeduxLocation): Promise<void> {
+    if (this.equal(location, this._location)) {
+      return Promise.reject();
+    }
+    return Promise.all(Object.values(this._blockerList).map((fn) => fn(location, this._location))).then(() => {
+      this._location = location;
+      Object.values(this._listenList).forEach((listener) => listener(location));
+    });
+  }
+  abstract patch(location: MeduxLocation, routeData: RouteData<any>): void;
+  abstract destroy(): void;
+  abstract passive(location: MeduxLocation): void;
 }
