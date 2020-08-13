@@ -49,8 +49,9 @@ export function buildApp(options: Omit<InitAppOptions, 'startupUrl'>) {
 
   const result = initApp({...options, startupUrl: pathname + search});
   env.onAppRoute(function (res) {
+    const action = res.openType === 'navigateBack' ? 'POP' : 'PUSH';
     const {pathname, search} = toUrl(res.path, res.query);
-    result.historyActions.passive({pathname, search, hash: '', action: 'PUSH'});
+    result.historyActions.passive({pathname, search, hash: '', action});
   });
   return result;
 }

@@ -130,27 +130,19 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
     }
     switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then(() => {
-        env.switchTab(option);
-      });
+      return this._dispatch(location, 'PUSH').then(() => env.switchTab(option));
     }
     reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then(() => {
-        env.reLaunch(option);
-      });
+      return this._dispatch(location, 'PUSH').then(() => env.reLaunch(option));
     }
     redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then(() => {
-        env.redirectTo(option);
-      });
+      return this._dispatch(location, 'PUSH').then(() => env.redirectTo(option));
     }
     navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
-      return this._dispatch(location, 'PUSH').then(() => {
-        env.navigateTo(option);
-      });
+      return this._dispatch(location, 'PUSH').then(() => env.navigateTo(option));
     }
     navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void> {
       const routeOption: meduxCore.NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
@@ -170,15 +162,11 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
       } else {
         location = this.indexLocation;
       }
-      return this._dispatch(location, 'POP').then(() => {
-        env.navigateBack(routeOption);
-      });
+      return this._dispatch(location, 'POP').then(() => env.navigateBack(routeOption));
     }
     refresh(method: 'switchTab' | 'reLaunch' | 'redirectTo' | 'navigateTo') {
       const option: meduxCore.RouteOption = {url: this.location.pathname + this.location.search};
-      return this._dispatch(this.location, 'PUSH').then(() => {
-        env[method](option);
-      });
+      return this._dispatch(this.location, 'PUSH').then(() => env[method](option));
     }
     passive(location: MeduxLocation) {
       if (!this.equal(location, this.location)) {

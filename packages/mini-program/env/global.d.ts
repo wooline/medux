@@ -18,11 +18,11 @@ declare namespace meduxCore {
     success?: RouteCallback;
   }
   interface ENV {
-    switchTab(option: RouteOption): void;
-    reLaunch(option: RouteOption): void;
-    redirectTo(option: RouteOption): void;
-    navigateTo(option: RouteOption): void;
-    navigateBack(option: NavigateBackOption): void;
+    switchTab(option: RouteOption): Promise<void>;
+    reLaunch(option: RouteOption): Promise<void>;
+    redirectTo(option: RouteOption): Promise<void>;
+    navigateTo(option: RouteOption): Promise<void>;
+    navigateBack(option: NavigateBackOption): Promise<void>;
     getCurrentPages: () => Array<{route: string; options: {[key: string]: string}}>;
   }
 }
