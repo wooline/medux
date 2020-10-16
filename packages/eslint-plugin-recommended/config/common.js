@@ -8,8 +8,8 @@ module.exports = {
   extends: [
     'airbnb-typescript/base',
     'plugin:@typescript-eslint/recommended',
-    'prettier/@typescript-eslint', //屏蔽eslint
-    'plugin:prettier/recommended', //转eslint
+    'prettier/@typescript-eslint', // 屏蔽eslint
+    'plugin:prettier/recommended', // 转eslint
     'prettier/babel',
   ],
   plugins: [],
@@ -38,6 +38,7 @@ module.exports = {
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
+    '@typescript-eslint/no-unused-expressions': 'off',
     '@typescript-eslint/naming-convention': [
       'error',
       {

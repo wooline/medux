@@ -28,5 +28,6 @@
     "preserveConstEnums": false,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
-  }
+  },
+  "include": ["./"]
 }
