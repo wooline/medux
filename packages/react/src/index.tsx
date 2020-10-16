@@ -53,7 +53,7 @@ export function renderSSR(
   appViewName: string,
   historyProxy: HistoryProxy,
   storeOptions: StoreOptions = {},
-  renderToStream: boolean = false,
+  renderToStream = false,
   beforeRender?: (store: Store<StoreState>) => Store<StoreState>
 ) {
   return core.renderSSR<ComponentType<any>>(
@@ -88,7 +88,7 @@ const LoadViewOnError: ComponentType<any> = () => {
 };
 export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, Error) => {
   const {forwardRef, ...modelOptions} = options || {};
-  //Can't perform a React state update on an unmounted component.
+  // Can't perform a React state update on an unmounted component.
   let active = true;
   const Loader: FC<any> = function ViewLoader(props: any) {
     useEffect(() => {
@@ -112,20 +112,19 @@ export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, 
             active && setView({Component: Error || LoadViewOnError});
           });
         return null;
-      } else {
-        // loader.propTypes = moduleViewResult.propTypes;
-        // loader.contextTypes = moduleViewResult.contextTypes;
-        // loader.defaultProps = moduleViewResult.defaultProps;
-        // Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
-        // Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
-        return {Component: moduleViewResult};
       }
+      // loader.propTypes = moduleViewResult.propTypes;
+      // loader.contextTypes = moduleViewResult.contextTypes;
+      // loader.defaultProps = moduleViewResult.defaultProps;
+      // Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
+      // Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
+      return {Component: moduleViewResult};
     });
-    const {forwardRef, ...other} = props;
-    const ref = forwardRef ? {ref: forwardRef} : {};
+    const {forwardRef2, ...other} = props;
+    const ref = forwardRef ? {ref: forwardRef2} : {};
+    // eslint-disable-next-line no-nested-ternary
     return view ? <view.Component {...other} {...ref} /> : Loading ? <Loading {...props} /> : null;
   };
-  // eslint-disable-next-line react/display-name
   const Component = forwardRef ? React.forwardRef((props, ref) => <Loader {...props} forwardRef={ref} />) : Loader;
 
   return Component as any;
