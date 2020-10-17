@@ -7,7 +7,7 @@
   "globals": {},
   "parser": "/Users/zy/work/medux/medux/node_modules/@typescript-eslint/parser/dist/index.js",
   "parserOptions": {
-    "project": "./packages/**/tsconfig.json",
+    "project": "/Users/zy/work/medux/medux/packages/react/tsconfig.json",
     "ecmaVersion": 2018,
     "sourceType": "module",
     "ecmaFeatures": {
@@ -27,6 +27,16 @@
   "rules": {
     "global-require": [
       "off"
+    ],
+    "func-names": [
+      "off"
+    ],
+    "import/no-cycle": [
+      "off",
+      {
+        "maxDepth": null,
+        "ignoreExternal": false
+      }
     ],
     "@typescript-eslint/no-unused-expressions": [
       "off",
@@ -610,7 +620,8 @@
           "JSXEmptyExpression",
           "JSXSpreadChild"
         ],
-        "ignoreComments": false
+        "ignoreComments": false,
+        "offsetTernaryExpressions": false
       }
     ],
     "jsx-quotes": [
@@ -963,7 +974,8 @@
           "JSXEmptyExpression",
           "JSXSpreadChild"
         ],
-        "ignoreComments": false
+        "ignoreComments": false,
+        "offsetTernaryExpressions": false
       }
     ],
     "@typescript-eslint/keyword-spacing": [
@@ -1177,7 +1189,8 @@
       {
         "properties": "never",
         "ignoreDestructuring": false,
-        "ignoreImports": false
+        "ignoreImports": false,
+        "ignoreGlobals": false
       }
     ],
     "dot-notation": [
@@ -2003,13 +2016,6 @@
     "import/no-self-import": [
       "error"
     ],
-    "import/no-cycle": [
-      "error",
-      {
-        "maxDepth": null,
-        "ignoreExternal": false
-      }
-    ],
     "import/no-useless-path-segments": [
       "error",
       {
@@ -2217,9 +2223,6 @@
         "includeCommonJSModuleExports": false,
         "considerPropertyDescriptor": true
       }
-    ],
-    "func-names": [
-      "warn"
     ],
     "func-style": [
       "off",
@@ -2549,7 +2552,8 @@
     "array-callback-return": [
       "error",
       {
-        "allowImplicit": true
+        "allowImplicit": true,
+        "checkForEach": false
       }
     ],
     "block-scoped-var": [

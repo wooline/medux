@@ -31,7 +31,7 @@
     "build:esm": "cross-env NODE_ENV=production NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_ENV=production NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
     "build": "yarn build:next & yarn build:esm & yarn build:cjs",
-    "aaa": "eslint --print-config /Users/zy/work/medux/medux/packages/react/src/index.tsx > aaa.txt"
+    "eslintConfig": "eslint --print-config /Users/zy/work/medux/medux/packages/react/src/index.tsx > eslintConfig.txt"
   },
   "peerDependencies": {
     "@types/react": "^16.8.0",

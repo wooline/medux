@@ -76,20 +76,20 @@ export const loadView = (moduleName, viewName, options, Loading, Error) => {
           });
         });
         return null;
-      } else {
-        return {
-          Component: moduleViewResult
-        };
       }
+
+      return {
+        Component: moduleViewResult
+      };
     });
 
     const {
-      forwardRef
+      forwardRef2
     } = props,
-          other = _objectWithoutPropertiesLoose(props, ["forwardRef"]);
+          other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
 
     const ref = forwardRef ? {
-      ref: forwardRef
+      ref: forwardRef2
     } : {};
     return view ? React.createElement(view.Component, _extends({}, other, ref)) : Loading ? React.createElement(Loading, props) : null;
   };

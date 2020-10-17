@@ -109,19 +109,19 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
           });
         });
         return null;
-      } else {
-        return {
-          Component: moduleViewResult
-        };
       }
+
+      return {
+        Component: moduleViewResult
+      };
     }),
         view = _useState[0],
         setView = _useState[1];
 
-    var forwardRef = props.forwardRef,
-        other = (0, _objectWithoutPropertiesLoose2.default)(props, ["forwardRef"]);
+    var forwardRef2 = props.forwardRef2,
+        other = (0, _objectWithoutPropertiesLoose2.default)(props, ["forwardRef2"]);
     var ref = forwardRef ? {
-      ref: forwardRef
+      ref: forwardRef2
     } : {};
     return view ? _react.default.createElement(view.Component, (0, _extends2.default)({}, other, ref)) : Loading ? _react.default.createElement(Loading, props) : null;
   };
