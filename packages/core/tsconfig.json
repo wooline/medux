@@ -1,6 +1,5 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {},
   "include": ["./","./.eslintrc.js"],
-  "exclude": ["node_modules","./dist","./api","./types"]
+  "exclude": ["./dist","./src","./types","./api"]
 }

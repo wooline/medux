@@ -7,7 +7,6 @@
     "emitDeclarationOnly": true
   },
   "exclude": [
-    "**/__tests__/**/*",
-    "**/*.test.{ts,tsx}"
+    "./__tests__"
   ]
 }

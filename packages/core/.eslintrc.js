@@ -7,4 +7,5 @@ module.exports = {
     'no-restricted-syntax': 'off',
     'no-prototype-builtins': 'off',
   },
+  ignorePatterns: ['/dist', '/src', '/types', '/api'],
 };
