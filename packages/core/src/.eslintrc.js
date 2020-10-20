@@ -4,6 +4,9 @@ module.exports = {
     // @ts-ignore
     project: `${__dirname}/tsconfig.json`,
   },
-  rules: {},
-  ignorePatterns: [],
+  rules: {
+    'no-restricted-syntax': 'off',
+    'no-prototype-builtins': 'off',
+  },
+  ignorePatterns: ['/__tests__'],
 };

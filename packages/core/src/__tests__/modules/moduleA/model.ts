@@ -1,4 +1,4 @@
-import {BaseModelHandlers, BaseModelState, RouteState, effect, reducer} from '../../../index';
+import {BaseModelHandlers, BaseModelState, RouteState, reducer} from '../../../index';
 
 export interface State extends BaseModelState {
   message: string;

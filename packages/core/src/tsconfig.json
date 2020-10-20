@@ -6,4 +6,5 @@
     "rootDir": "./",
   },
    "include": ["./","./.eslintrc.js"],
+   "exclude": ["./__tests__"]
 }

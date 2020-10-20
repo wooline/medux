@@ -6,6 +6,7 @@ const options = {
   to: '&lt;$1&gt;',
   countMatches: true,
 };
+// @ts-ignore
 const results = replace.sync(options);
 const changedFiles = results.filter((result) => result.hasChanged);
 console.log('Replacement results:', changedFiles);

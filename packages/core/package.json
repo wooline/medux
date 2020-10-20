@@ -31,6 +31,12 @@
     "dist/"
   ],
   "scripts": {
+    "type": "tsc",
+    "typeSrc": "tsc -P ./src",
+    "typeTests": "tsc -P ./src/__tests__",
+    "eslint": "eslint --cache .",
+    "eslintSrc": "eslint --cache ./src",
+    "eslintTests": "eslint --cache ./src/__tests__",
     "prebuild": "yarn lint && rimraf ./dist ./types && yarn types && yarn test",
     "lint": "eslint --cache \"./src/**/*.ts\"",
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
