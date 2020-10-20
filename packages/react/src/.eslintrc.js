@@ -1,8 +1,9 @@
 module.exports = {
-  extends: ['../../.eslintrc.js'],
+  extends: ['../../../.eslintrc-react.js'],
   parserOptions: {
+    // @ts-ignore
     project: `${__dirname}/tsconfig.json`,
   },
   rules: {},
-  ignorePatterns: ['/dist', '/src', '/types'],
+  ignorePatterns: [],
 };

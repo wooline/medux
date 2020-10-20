@@ -1,5 +1,6 @@
-import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, cacheModule, config, isProcessedError, isPromise, setProcessedError} from './basic';
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
+import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, cacheModule, config, isProcessedError, isPromise, setProcessedError} from './basic';
 import {Module, ModuleGetter} from './module';
 import {client, isDevelopmentEnv, isServerEnv} from './env';
 import {errorAction, routeChangeAction, routeParamsAction} from './actions';
@@ -24,11 +25,11 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
         cacheModule(module);
         return module.default.model(store, options);
       });
-    } else {
-      cacheModule(result);
-      return result.default.model(store, options);
     }
+    cacheModule(result);
+    return result.default.model(store, options);
   }
+  return undefined;
 }
 /**
  * 从redux action上获取有效数据载体
@@ -133,7 +134,7 @@ export function buildStore(
     }
     const meta = store._medux_;
     meta.prevState = rootState;
-    //const currentState = {...rootState};
+    // const currentState = {...rootState};
     meta.currentState = rootState;
     Object.keys(storeReducers).forEach((moduleName) => {
       const result = storeReducers[moduleName](rootState[moduleName], action);
@@ -305,7 +306,7 @@ export function buildStore(
         reducerMap: {},
         effectMap: {},
         injectedModules: {},
-        destroy: () => void 0,
+        destroy: () => undefined,
       };
       return newStore;
     };

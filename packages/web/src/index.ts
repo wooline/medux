@@ -43,46 +43,53 @@ class WebHistoryActions extends BaseHistoryActions {
   constructor(private _history: History, _transformRoute: TransformRoute<any>, private _locationMap: LocationMap | undefined) {
     super(_locationMap ? _locationMap.in({..._history.location, action: _history.action}) : {..._history.location, action: _history.action}, true, _transformRoute);
     this._unlistenHistory = this._history.block((location, action) => {
-      const meduxLocation = _locationMap ? _locationMap.in({...location, action}) : {...location, action: action};
+      const meduxLocation = _locationMap ? _locationMap.in({...location, action}) : {...location, action};
       if (!this.equal(meduxLocation, this.getLocation())) {
-        return meduxLocation.action + '::' + safelocationToUrl(meduxLocation);
-      } else {
-        return;
+        return `${meduxLocation.action}::${safelocationToUrl(meduxLocation)}`;
       }
     });
   }
+
   destroy() {
     this._unlistenHistory();
   }
+
   toUrl(data: string | LocationPayload | RoutePayload<any>): string {
     let location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
     location = this._locationMap ? this._locationMap.out(location) : location;
     return location.pathname + location.search + location.hash;
   }
+
   patch(location: MeduxLocation, routeData: RouteData<any>): void {
     this.push(location);
   }
+
   push(data: RoutePayload<any> | LocationPayload | string): Promise<void> {
     const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
     return this.dispatch({...location, action: Action.Push}).then(() => {
       this._history.push(this._locationMap ? this._locationMap.out(location) : location);
     });
   }
+
   replace(data: RoutePayload<any> | LocationPayload | string): Promise<void> {
     const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
     return this.dispatch({...location, action: Action.Replace}).then(() => {
       this._history.push(this._locationMap ? this._locationMap.out(location) : location);
     });
   }
+
   go(n: number) {
     this._history.go(n);
   }
+
   back() {
     this._history.goBack();
   }
+
   forward() {
     this._history.goForward();
   }
+
   passive() {
     throw 1;
   }

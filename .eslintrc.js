@@ -1,22 +1,15 @@
 module.exports = {
-  extends: ['plugin:@medux/recommended/react'],
+  root: true,
+  extends: ['plugin:@medux/recommended/common'],
+  env: {
+    browser: false,
+    node: true,
+  },
   parserOptions: {
-    project: './packages/**/tsconfig.json',
+    project: `${__dirname}/tsconfig.json`,
   },
   rules: {
     'global-require': 'off',
-    '@typescript-eslint/no-unused-expressions': 'off',
-    '@typescript-eslint/triple-slash-reference': 'off'
   },
-  overrides: [
-    {
-      files: ['**/*.{ts,tsx}'],
-      env: {
-        es6: true,
-        browser: true,
-        node: false,
-      },
-      rules: {},
-    },
-  ],
+  ignorePatterns: ['/packages'],
 };

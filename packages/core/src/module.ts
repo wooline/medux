@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 import {
   Action,
   ActionCreatorList,
@@ -16,7 +18,6 @@ import {
   reducer,
 } from './basic';
 import {HistoryProxy, buildStore, loadModel} from './store';
-import {Middleware, ReducersMapObject, Store, StoreEnhancer} from 'redux';
 import {client, env, isServerEnv} from './env';
 /**
  * 模块Model的数据结构，该数据由ExportModule方法自动生成
@@ -37,7 +38,7 @@ export interface Model<ModelState extends BaseModelState = BaseModelState> {
 /**
  * 模块的数据结构，该数据由ExportModule方法自动生成
  */
-export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = {}, N extends string = string> {
+export interface Module<M extends Model = Model, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = Record<string, any>, N extends string = string> {
   default: {
     /**
      * 模块名称
@@ -149,7 +150,7 @@ export function modelHotReplacement(moduleName: string, initState: any, ActionHa
     env.console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
   }
 }
-let reRender: (appView: any) => void = () => void 0;
+let reRender: (appView: any) => void = () => undefined;
 let reRenderTimer = 0;
 let appView: any = null;
 /**
@@ -200,7 +201,7 @@ export const exportModule: ExportModule<any> = (moduleName, initState, ActionHan
       const initAction = actions.Init(moduleState, params[moduleName], options);
       return store.dispatch(initAction) as any;
     }
-    return void 0;
+    return undefined;
   };
   model.moduleName = moduleName;
   model.initState = initState;
@@ -239,24 +240,28 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected get state(): S {
     return this.getState();
   }
+
   /**
    * ie8不支持getter专用
    */
   protected getState(): S {
     return this.store._medux_.prevState[this.moduleName] as S;
   }
+
   /**
    * 获取整个store的state
    */
   protected get rootState(): R {
     return this.getRootState();
   }
+
   /**
    * ie8不支持getter专用
    */
   protected getRootState(): R {
     return this.store._medux_.prevState as any;
   }
+
   /**
    * - 获取本Model的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
    * - state会等到所有模块的reducer更新完成时才变化
@@ -265,12 +270,14 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected get currentState(): S {
     return this.getCurrentState();
   }
+
   /**
    * ie8不支持getter专用
    */
   protected getCurrentState(): S {
     return this.store._medux_.currentState[this.moduleName] as S;
   }
+
   /**
    * 获取整个store的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
    * - state会等到所有模块的reducer更新完成时才变化
@@ -279,12 +286,14 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected get currentRootState(): R {
     return this.getCurrentRootState();
   }
+
   /**
    * ie8不支持getter专用
    */
   protected getCurrentRootState(): R {
     return this.store._medux_.currentState as any;
   }
+
   /**
    * 获取本Model的前state状态，通常在effect中使用，当一个action同时引起reducer和effect执行时：
    * - 所有reducer会先执行完毕并更新rootState
@@ -294,12 +303,14 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected get prevState(): undefined | S {
     return this.getPrevState();
   }
+
   /**
    * ie8不支持getter专用
    */
   protected getPrevState(): undefined | S {
     return this.store._medux_.beforeState[this.moduleName] as S;
   }
+
   /**
    * 获整个store的前state状态，通常在effect中使用，
    * 当一个action同时引起reducer和effect执行时：
@@ -310,18 +321,21 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected get prevRootState(): R {
     return this.getPrevRootState();
   }
+
   /**
    * ie8不支持getter专用
    */
   protected getPrevRootState(): R {
     return this.store._medux_.beforeState as any;
   }
+
   /**
    * store.dispatch的引用
    */
   protected dispatch(action: Action): Action | Promise<void> {
     return this.store.dispatch(action) as any;
   }
+
   /**
    * 对于某些仅供本模块内部使用的action，限制非public不对外开放.
    * 所以即使this.actions也调用不到，此时可以使用callThisAction.
@@ -333,6 +347,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     const actions = MetaData.actionCreatorMap[this.moduleName];
     return actions[(handler as ActionHandler).__actionName__](...rest);
   }
+
   /**
    * 一个快捷操作，相当于
    * ```
@@ -342,12 +357,14 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected updateState(payload: Partial<S>) {
     this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}));
   }
+
   /**
    * 动态加载并初始化其他模块的model
    */
   protected loadModel(moduleName: string, options?: any) {
     return loadModel(moduleName, this.store, options);
   }
+
   /**
    * - 模块被加载并初始化时将触发‘moduleName.Init’的action
    * - 此方法为该action的默认reducerHandler，通常用来注入初始化moduleState
@@ -359,6 +376,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
     }
     return {...initState, routeParams: routeParams || initState.routeParams, ...options};
   }
+
   /**
    * 通用的reducerHandler，通常用来更新moduleState
    */
@@ -366,6 +384,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
   protected Update(payload: S): S {
     return payload;
   }
+
   /**
    * - 路由发生变化时如果路由中有该模块的routeParams，框架将自动为各个模块派发‘moduleName.RouteParams’的action
    * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入路由参数
@@ -378,6 +397,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
       routeParams: payload,
     };
   }
+
   /**
    * - effect异步执行时，将自动派发‘moduleName.Loading’的action
    * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入loading状态
@@ -434,7 +454,7 @@ export function exportActions<G extends {[N in keyof G]: N extends ModuleName<Re
         : new Proxy(
             {},
             {
-              get: (target: {}, key: string) => {
+              get: (target: any, key: string) => {
                 return (...payload: any[]) => ({type: moduleName + config.NSP + key, payload});
               },
               set: () => {
@@ -466,23 +486,20 @@ export function getView<T>(moduleName: string, viewName: string, modelOptions?: 
       const initModel = module.default.model(MetaData.clientStore, modelOptions);
       if (isPromise(initModel)) {
         return initModel.then(() => view);
-      } else {
-        return view;
       }
+      return view;
     });
-  } else {
-    cacheModule(result);
-    const view: T = result.default.views[viewName];
-    if (isServerEnv) {
-      return view;
-    }
-    const initModel = result.default.model(MetaData.clientStore, modelOptions);
-    if (isPromise(initModel)) {
-      return initModel.then(() => view);
-    } else {
-      return view;
-    }
   }
+  cacheModule(result);
+  const view: T = result.default.views[viewName];
+  if (isServerEnv) {
+    return view;
+  }
+  const initModel = result.default.model(MetaData.clientStore, modelOptions);
+  if (isPromise(initModel)) {
+    return initModel.then(() => view);
+  }
+  return view;
 }
 
 /**
@@ -502,14 +519,13 @@ function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promis
   const result = moduleGetter[moduleName]();
   if (isPromiseModule(result)) {
     return result.then((module) => {
-      //在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
+      // 在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       cacheModule(module);
       return module;
     });
-  } else {
-    cacheModule(result);
-    return result;
   }
+  cacheModule(result);
+  return result;
 }
 // function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter): Promise<Module[]> {
 //   const preModules = moduleNames.map((moduleName) => {
@@ -591,7 +607,8 @@ export async function renderApp<V>(
     preModuleNames.push(...Object.keys(initData).filter((key) => key !== appModuleName && initData[key].isModule));
   }
   // 在ssr时，client必须在第一次render周期中完成和ssr一至的输出结构，所以不能出现异步模块
-  let appModule: Module | undefined = undefined;
+  let appModule: Module | undefined;
+
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
     const module = await getModuleByName(moduleName, moduleGetter);
@@ -629,7 +646,7 @@ export async function renderSSR<V>(
   const storeState = reduxStore.getState();
   const {paths} = storeState.route.data;
   paths.length === 0 && paths.push(appModuleName);
-  let appModule: Module | undefined = undefined;
+  let appModule: Module | undefined;
   const inited: {[moduleName: string]: boolean} = {};
   for (let i = 0, k = paths.length; i < k; i++) {
     const [moduleName] = paths[i].split(config.VSP);

@@ -1,8 +1,8 @@
+import {Unsubscribe} from 'redux';
 import {LoadingState, TaskCountEvent, TaskCounter} from './sprite';
 import {env, isServerEnv} from './env';
 
 import {ModuleGetter} from './module';
-import {Unsubscribe} from 'redux';
 
 export function isServer(): boolean {
   return isServerEnv;
@@ -19,33 +19,6 @@ let depthTime = 2;
 export function setLoadingDepthTime(second: number) {
   depthTime = second;
 }
-/**
- * 手动设置Loading状态，同一个key名的loading状态将自动合并
- * - 参见LoadingState
- * @param item 一个Promise加载项
- * @param moduleName moduleName+groupName合起来作为该加载项的key
- * @param groupName moduleName+groupName合起来作为该加载项的key
- */
-export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, groupName: string = 'global'): T {
-  if (isServerEnv) {
-    return item;
-  }
-  const key = moduleName + config.NSP + groupName;
-  if (!loadings[key]) {
-    loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, (e) => {
-      const store = MetaData.clientStore;
-      if (store) {
-        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
-        const action = actions({[groupName]: e.data});
-        store.dispatch(action);
-      }
-    });
-  }
-  loadings[key].addItem(item);
-  return item;
-}
-
 /**
  * 可供设置的全局参数，参见setConfig
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
@@ -111,6 +84,32 @@ export const ActionTypes = {
    */
   RouteChange: `medux${config.NSP}RouteChange`,
 };
+/**
+ * 手动设置Loading状态，同一个key名的loading状态将自动合并
+ * - 参见LoadingState
+ * @param item 一个Promise加载项
+ * @param moduleName moduleName+groupName合起来作为该加载项的key
+ * @param groupName moduleName+groupName合起来作为该加载项的key
+ */
+export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, groupName = 'global'): T {
+  if (isServerEnv) {
+    return item;
+  }
+  const key = moduleName + config.NSP + groupName;
+  if (!loadings[key]) {
+    loadings[key] = new TaskCounter(depthTime);
+    loadings[key].addListener(TaskCountEvent, (e) => {
+      const store = MetaData.clientStore;
+      if (store) {
+        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+        const action = actions({[groupName]: e.data});
+        store.dispatch(action);
+      }
+    });
+  }
+  loadings[key].addItem(item);
+  return item;
+}
 
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;
@@ -128,7 +127,7 @@ export interface ModelStore extends Store {
   _medux_: {
     reducerMap: ReducerMap;
     effectMap: EffectMap;
-    injectedModules: {[moduleName: string]: {}};
+    injectedModules: {[moduleName: string]: Record<string, any>};
     beforeState: StoreState;
     prevState: StoreState;
     currentState: StoreState;
@@ -256,14 +255,13 @@ export function cacheModule<T extends CommonModule>(module: T): () => T {
   const moduleName = module.default.moduleName;
   const moduleGetter: ModuleGetter = MetaData.moduleGetter;
   let fn = moduleGetter[moduleName] as any;
-  if (fn['__module__'] === module) {
-    return fn;
-  } else {
-    fn = () => module;
-    fn['__module__'] = module;
-    moduleGetter[moduleName] = fn;
+  if (fn.__module__ === module) {
     return fn;
   }
+  fn = () => module;
+  fn.__module__ = module;
+  moduleGetter[moduleName] = fn;
+  return fn;
 }
 /**
  * 所有ModuleState的固定属性
@@ -291,7 +289,7 @@ export interface BaseModelState<R = {[key: string]: any}> {
 }
 
 export function isPromise(data: any): data is Promise<any> {
-  return typeof data === 'object' && typeof data['then'] === 'function';
+  return typeof data === 'object' && typeof data.then === 'function';
 }
 /**
  * 在client中运行时，全局只有一个单例的Store对象，可通过该方法直接获得
@@ -410,20 +408,18 @@ export function delayPromise(second: number) {
 export function isProcessedError(error: any): boolean | undefined {
   if (typeof error !== 'object' || error.meduxProcessed === undefined) {
     return undefined;
-  } else {
-    return !!error.meduxProcessed;
   }
+  return !!error.meduxProcessed;
 }
 export function setProcessedError(error: any, meduxProcessed: boolean): {meduxProcessed: boolean; [key: string]: any} {
   if (typeof error === 'object') {
     error.meduxProcessed = meduxProcessed;
     return error;
-  } else {
-    return {
-      meduxProcessed,
-      error,
-    };
   }
+  return {
+    meduxProcessed,
+    error,
+  };
 }
 function bindThis(fun: ActionHandler, thisObj: any) {
   const newFun = fun.bind(thisObj);
@@ -456,6 +452,7 @@ export function injectActions(store: ModelStore, moduleName: string, handlers: A
       if (handler.__isReducer__ || handler.__isEffect__) {
         handler = bindThis(handler, handlers);
         actionNames.split(config.MSP).forEach((actionName) => {
+          // eslint-disable-next-line no-useless-escape
           actionName = actionName.trim().replace(new RegExp(`^this\[${config.NSP}]`), `${moduleName}${config.NSP}`);
           const arr = actionName.split(config.NSP);
           if (arr[1]) {

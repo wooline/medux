@@ -18,10 +18,12 @@ export class ModelHandlers extends BaseModelHandlers<State, {route: RouteState}>
   public setMessage(message: string): State {
     return {...this.state, message};
   }
+
   @reducer
   public setText(text: string): State {
     return {...this.state, text};
   }
+
   @reducer
   public setTips(tips: string): State {
     return {...this.state, tips};

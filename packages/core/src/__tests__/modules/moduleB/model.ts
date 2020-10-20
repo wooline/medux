@@ -18,18 +18,22 @@ export class ModelHandlers extends BaseModelHandlers<State, {route: RouteState}>
   public setMessage(message: string): State {
     return {...this.state, message};
   }
+
   @reducer
   public setText(text: string): State {
     return {...this.state, text};
   }
+
   @reducer
   public setTips(tips: string): State {
     return {...this.state, tips};
   }
+
   @reducer
   protected ['moduleA.setMessage'](message: string): State {
     return {...this.state, message: 'message-changed'};
   }
+
   @effect()
   protected async ['moduleA.setText'](text: string) {
     console.log(this.rootState);
@@ -37,6 +41,7 @@ export class ModelHandlers extends BaseModelHandlers<State, {route: RouteState}>
     console.log(this.prevRootState);
     this.dispatch(this.actions.setText('text-changed'));
   }
+
   @effect()
   protected async ['moduleA.setTips'](tips: string) {
     this.dispatch(this.actions.setTips('tips-changed'));

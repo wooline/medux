@@ -2,7 +2,7 @@ module.exports = {
   env: {
     es6: true,
     browser: false,
-    node: true,
+    node: false,
   },
   parser: '@typescript-eslint/parser',
   extends: [
@@ -14,7 +14,8 @@ module.exports = {
   ],
   plugins: [],
   parserOptions: {
-    project: './tsconfig.json',
+    //project: './tsconfig.json',
+    //tsconfigRootDir: './',
     ecmaVersion: 2018,
     sourceType: 'module',
     ecmaFeatures: {
@@ -23,6 +24,9 @@ module.exports = {
   },
   rules: {
     'no-console': 'off',
+    'no-plusplus': 'off',
+    'func-names': 'off',
+    'no-undef': 'off',
     'class-methods-use-this': 'off',
     'no-template-curly-in-string': 'off',
     'max-classes-per-file': 'off',
@@ -32,13 +36,19 @@ module.exports = {
     'prefer-promise-reject-errors': 'off',
     'import/no-dynamic-require': 'off',
     'import/no-extraneous-dependencies': 'off',
+    'import/no-cycle': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/dot-notation': 'off',
+    '@typescript-eslint/no-throw-literal': 'off',
+    '@typescript-eslint/no-unused-expressions': 'off',
+    '@typescript-eslint/triple-slash-reference': 'off',
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
-    '@typescript-eslint/no-unused-expressions': 'off',
     '@typescript-eslint/naming-convention': [
       'error',
       {
@@ -46,19 +56,5 @@ module.exports = {
         format: ['PascalCase'],
       },
     ],
-  },
-  overrides: [
-    {
-      files: ['**/*.{ts,tsx}'],
-      env: {
-        es6: true,
-        browser: true,
-        node: false,
-      },
-      rules: {
-        'no-undef': 'off',
-        '@typescript-eslint/no-unused-vars': 'off',
-      },
-    },
-  ],
+  }
 };

@@ -23,8 +23,11 @@
     "dist/"
   ],
   "scripts": {
-    "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
-    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+    "type": "tsc",
+    "typeSrc": "tsc -P ./src",
+    "eslint": "eslint --cache .",
+    "eslintSrc": "eslint --cache ./src",
+    "prebuild": "rimraf ./dist ./types && yarn types",
     "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
     "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.tsx --hideSources --theme markdown && node fixDocs",
     "build:next": "cross-env NODE_ENV=production NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",

@@ -1,33 +1,25 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "commonjs",
+    "module": "CommonJS",
+    "lib": ["es2018"],
     "moduleResolution": "node",
-    "declaration": false,
-    "emitDeclarationOnly": false,
-    "isolatedModules": false,
+    "types": ["node"],
     "noEmit": true,
-    "sourceMap": false,
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noImplicitAny": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "strict": true,
-    "newLine": "LF",
-    "lib": [
-      "es2018"
-    ],
-    "types": [
-      "jest"
-    ],
-    "removeComments": true,
-    "jsx": "react",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "importHelpers": false,
+    "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "suppressImplicitAnyIndexErrors": true,
     "preserveConstEnums": false,
-    "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },
-  "include": ["./"]
+  "include": ["./","./.eslintrc.js"],
+  "exclude": ["./packages"]
 }

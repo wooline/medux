@@ -22,6 +22,8 @@
     "packages/react-taro"
   ],
   "scripts": {
+    "typeCheck": "tsc",
+    "lintCheck": "eslint --cache .",
     "build:core": "lerna run build --scope @medux/core",
     "build:web": "lerna run build --scope @medux/web",
     "build:react": "lerna run build --scope @medux/react",
@@ -29,7 +31,8 @@
     "build:react-web-router": "lerna run build --scope @medux/react-web-router",
     "build:react-native-router": "lerna run build --scope @medux/react-native-router",
     "build:dev-utils": "lerna run build --scope @medux/dev-utils",
-    "test": "eslint ./packages/core/scripts/build.js"
+    "test": "eslint ./packages/core/scripts/build.js",
+    "eslintConfig": "eslint --print-config /Users/zy/work/medux/medux/packages/react/src/index.tsx > eslintConfig.txt"
   },
   "dependencies": {
     "@types/express": "~4.17.2",
@@ -55,7 +58,7 @@
     "react-navigation": "~4.3.3"
   },
   "devDependencies": {
-    "@medux/eslint-plugin-recommended": "~1.0.0",
+    "@medux/eslint-plugin-recommended": "~1.0.2",
     "@babel/cli": "~7.8.4",
     "@babel/plugin-proposal-class-properties": "~7.8.3",
     "@babel/plugin-proposal-decorators": "~7.8.3",
@@ -73,7 +76,7 @@
     "@rollup/plugin-alias": "~3.1.0",
     "copyfiles": "~2.2.0",
     "cross-env": "~7.0.2",
-    "eslint": "~6.8.0",
+    "eslint": "~7.5.0",
     "jest": "~25.2.2",
     "lerna": "~3.20.2",
     "rimraf": "~3.0.0",

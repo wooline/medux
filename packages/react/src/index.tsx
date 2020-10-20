@@ -30,7 +30,7 @@ export function renderApp(
         if (typeof container === 'function') {
           container(reduxProvider);
         } else {
-          const panel = typeof container === 'string' ? env.document.getElementById(container) : container;
+          const panel: any = typeof container === 'string' ? env.document.getElementById(container) : container;
           ReactDOM.unmountComponentAtNode(panel!);
           const render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
           render(reduxProvider, panel);

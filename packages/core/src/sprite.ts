@@ -1,4 +1,5 @@
 import {env} from './env';
+
 export const TaskCountEvent = 'TaskCountEvent';
 
 /**
@@ -22,6 +23,7 @@ export enum LoadingState {
 
 export class PEvent {
   public readonly target: PDispatcher = null as any;
+
   public readonly currentTarget: PDispatcher = null as any;
 
   public constructor(public readonly name: string, public readonly data?: any, public bubbling: boolean = false) {}
@@ -45,6 +47,7 @@ export class PDispatcher {
   public addListener(ename: string, handler: (e: PEvent) => void): this {
     let dictionary = this.storeHandlers[ename];
     if (!dictionary) {
+      // eslint-disable-next-line no-multi-assign
       this.storeHandlers[ename] = dictionary = [];
     }
     dictionary.push(handler);
@@ -92,6 +95,7 @@ export class PDispatcher {
     }
     return this;
   }
+
   public setParent(parent?: PDispatcher): this {
     (this as any).parent = parent;
     return this;
@@ -100,11 +104,14 @@ export class PDispatcher {
 
 export class TaskCounter extends PDispatcher {
   public readonly list: {promise: Promise<any>; note: string}[] = [];
+
   private ctimer: number | null = null;
+
   public constructor(public deferSecond: number) {
     super();
   }
-  public addItem(promise: Promise<any>, note: string = ''): Promise<any> {
+
+  public addItem(promise: Promise<any>, note = ''): Promise<any> {
     if (!this.list.some((item) => item.promise === promise)) {
       this.list.push({promise, note});
       promise.then(
@@ -124,6 +131,7 @@ export class TaskCounter extends PDispatcher {
     }
     return promise;
   }
+
   private completeItem(promise: Promise<any>): this {
     const i = this.list.findIndex((item) => item.promise === promise);
     if (i > -1) {

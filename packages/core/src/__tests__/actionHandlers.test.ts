@@ -1,20 +1,21 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {HistoryProxy, getView, renderApp} from '../index';
 import {Middleware, Store} from 'redux';
+import {HistoryProxy, getView, renderApp} from '../index';
 
-import {actions} from './modules';
-import {moduleGetter} from './modules';
+import {actions, moduleGetter} from './modules';
 
 declare const console: any;
 
 const historyProxy: HistoryProxy = {
   initialized: true,
+  destroy: () => undefined,
   getLocation() {
     return '127.0.0.1';
   },
   subscribe(listener) {
-    return () => void 0;
+    return () => undefined;
   },
   locationToRouteData(location) {
     return {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []};
@@ -37,8 +38,8 @@ describe('无SSR时', () => {
   beforeAll(() => {
     return renderApp<() => void>(
       (store, appModel, appView, ssrKey) => {
-        return (appView) => {
-          appView();
+        return (appView2) => {
+          appView2();
         };
       },
       moduleGetter,
@@ -82,7 +83,7 @@ describe('无SSR时', () => {
       consoleLogs.push(...args);
     };
     mockStore.dispatch(actions.moduleA.setMessage('message-changed'));
-    //rootState尚未发生改变
+    // rootState尚未发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
@@ -90,7 +91,7 @@ describe('无SSR时', () => {
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
     });
-    //currentRootState改变了moduleB的部分
+    // currentRootState改变了moduleB的部分
     expect(consoleLogs[1]).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
@@ -98,9 +99,9 @@ describe('无SSR时', () => {
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
     });
-    //在reducer中，通常prevRootState与rootState相同
+    // 在reducer中，通常prevRootState与rootState相同
     expect(consoleLogs[2]).toBe(consoleLogs[0]);
-    //执行全部完成后，rootState已经全部改变
+    // 执行全部完成后，rootState已经全部改变
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
@@ -117,7 +118,7 @@ describe('无SSR时', () => {
       consoleLogs.push(...args);
     };
     const result: any = mockStore.dispatch(actions.moduleA.setText('text-changed'));
-    //当action同时有reducer和effect监听时，reducer先执行完毕后才执行effect，所以在effectHandle中rootState已经发生改变
+    // 当action同时有reducer和effect监听时，reducer先执行完毕后才执行effect，所以在effectHandle中rootState已经发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
@@ -125,9 +126,9 @@ describe('无SSR时', () => {
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
     });
-    //在effect中，通常currentRootState与rootState相同
+    // 在effect中，通常currentRootState与rootState相同
     expect(consoleLogs[1]).toBe(consoleLogs[0]);
-    //prevRootState指向未经reducer更改的前状态
+    // prevRootState指向未经reducer更改的前状态
     expect(consoleLogs[2]).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
@@ -135,7 +136,7 @@ describe('无SSR时', () => {
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
     });
-    //reducer是同步执行的，effect是异步的，此时reducer已经全部执行完毕，但是effect还未完成，所以loading状态为Start
+    // reducer是同步执行的，effect是异步的，此时reducer已经全部执行完毕，但是effect还未完成，所以loading状态为Start
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
@@ -144,7 +145,7 @@ describe('无SSR时', () => {
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
     });
     await result;
-    //await之后effect已经执行完毕了
+    // await之后effect已经执行完毕了
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},

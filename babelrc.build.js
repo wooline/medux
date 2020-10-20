@@ -8,7 +8,7 @@ const cfg = {
 };
 const env = cfg[tag];
 
-module.exports = function (features = []) {
+module.exports = (features = []) => {
   const config = {
     presets: [
       [
@@ -23,7 +23,7 @@ module.exports = function (features = []) {
       '@babel/preset-typescript',
     ].filter(Boolean),
     plugins: [
-      //'@babel/plugin-syntax-dynamic-import',
+      // '@babel/plugin-syntax-dynamic-import',
       ['@babel/plugin-proposal-decorators', {legacy: false, decoratorsBeforeExport: true}],
       ['@babel/plugin-proposal-class-properties', {loose: true}],
       '@babel/plugin-proposal-nullish-coalescing-operator',
