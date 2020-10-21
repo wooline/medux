@@ -1,6 +1,5 @@
 {
    "extends": "../../../tsconfig-src.json",
-   "lib": ["es2018"],
    "compilerOptions": {
     "baseUrl": "./",
     "rootDir": "./",

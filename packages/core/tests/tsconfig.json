@@ -1,6 +1,5 @@
 {
    "extends": "../../../tsconfig-jest.json",
-   "lib": ["es2018"],
    "compilerOptions": {
     "baseUrl": "./",
     "rootDir": "./",

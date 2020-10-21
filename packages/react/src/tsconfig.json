@@ -1,10 +1,10 @@
 {
    "extends": "../../../tsconfig-src.json",
-   "lib": ["es2018"],
    "compilerOptions": {
     "baseUrl": "./",
     "rootDir": "./",
     "jsx": "react",
   },
-   "include": ["./"],
+  "include": ["./"],
+  "exclude": []
 }

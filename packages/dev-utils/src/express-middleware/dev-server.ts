@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {NextFunction, Request, Response} from 'express';
 

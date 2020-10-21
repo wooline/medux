@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import {NextFunction, Request, Response} from 'express';
 
 import chalk from 'chalk';
@@ -75,24 +76,24 @@ function getResult(url: string, buffer: Buffer, res: Response) {
 function serializeUrl(method: string, url: string) {
   const arr = url.split('?');
   if (arr[1]) {
-    url = arr[0] + '?' + arr[1].split('&').sort().join('&');
+    url = `${arr[0]}?${arr[1].split('&').sort().join('&')}`;
   }
-  return (method.toLowerCase() + '/' + url)
+  return `${method.toLowerCase()}/${url}`
     .replace(/\//g, '-')
     .replace('?', '$')
-    .replace(/[?*:"<>\/|]/g, '-');
+    .replace(/[?*:"<>\\/|]/g, '-');
 }
 
 function urlToFileName(method: string, url: string, sourceDir: string, tempDir: string) {
   const name = serializeUrl(method, url);
-  const fileName = name + '.js';
+  const fileName = `${name}.js`;
   let sourceFileName = path.join(sourceDir, fileName);
   let tempFileName = path.join(tempDir, fileName);
   if (tempFileName.length > 240) {
     const md5 = crypto.createHash('md5');
-    const fileName = md5.update(name).digest('hex') + '--' + name;
-    sourceFileName = path.join(sourceDir, fileName).substr(0, 240) + '.js';
-    tempFileName = path.join(tempDir, fileName).substr(0, 240) + '.js';
+    const fileName2 = `${md5.update(name).digest('hex')}--${name}`;
+    sourceFileName = `${path.join(sourceDir, fileName2).substr(0, 240)}.js`;
+    tempFileName = `${path.join(tempDir, fileName2).substr(0, 240)}.js`;
   }
   return {sourceFileName, tempFileName, fileName};
 }
@@ -137,7 +138,7 @@ function cacheFileNames(sourceDir: string, timeout: number) {
       if (name.endsWith('.js')) {
         const arr = name.split('@');
         if (arr[1]) {
-          const str = new Buffer(arr[1].replace('.js', ''), 'base64').toString();
+          const str = Buffer.from(arr[1].replace('.js', ''), 'base64').toString();
           fileNamesLatest.regExpFiles[str] = name;
         } else {
           fileNamesLatest.files[name] = name;
@@ -186,10 +187,10 @@ function hitMockFile(fileName: string): string {
 export = function middleware(
   enable: boolean,
   proxyMap: {[key: string]: any} | {context: string[] | string}[] | Function,
-  enableRecord: boolean = false,
-  mockDir: string = './mock',
-  maxNum: number = 1000,
-  cacheTimeout: number = 3000
+  enableRecord = false,
+  mockDir = './mock',
+  maxNum = 1000,
+  cacheTimeout = 3000
 ) {
   if (!enable || !proxyMap) {
     return function (req: Request, res: Response, next: NextFunction) {
@@ -229,10 +230,10 @@ export = function middleware(
           } else {
             try {
               parseFile(req, res, database, content);
-            } catch (err) {
-              console.error(err, mockFile);
+            } catch (err2) {
+              console.error(err2, mockFile);
               res.writeHead(500, {'content-type': 'text/plain; charset=utf-8'});
-              res.end(err.toString());
+              res.end(err2.toString());
             }
           }
         });
@@ -246,7 +247,7 @@ export = function middleware(
           const contentType = res.get('content-type') || '';
           if ((statusCode === 200 || statusCode === 201 || statusCode === 204) && args.length === 0 && (!contentType || /\bjson\b|\bhtml\b|\btext\b/.test(contentType))) {
             const data = getResult(req.url, buffer, res);
-            fs.writeFile(tempFileName, 'return ' + jsonFormat(data, {type: 'space'}), (err) => {
+            fs.writeFile(tempFileName, `return ${jsonFormat(data, {type: 'space'})}`, (err) => {
               if (err) {
                 console.error(err);
               }

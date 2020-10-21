@@ -1,9 +1,14 @@
 {
    "extends": "../../../tsconfig-src.json",
-   "lib": ["es2018"],
    "compilerOptions": {
+    "module": "CommonJS",
     "baseUrl": "./",
     "rootDir": "./",
+    "outDir": "../dist",
+    "noEmit": false,
+    "strict": false,
+    "declaration": false,
+    "isolatedModules": false,
   },
    "include": ["./"],
    "exclude": []

@@ -17,12 +17,11 @@ export = function loader(source: string) {
     const options = loaderUtils.getOptions(this);
     if (options) {
       validate(optionsType, options, 'server-replace-async');
-      const str = '(\\b(' + options.modules.join('|') + ')\\b[^,]+?)import\\s*\\(';
+      const str = `(\\b(${options.modules.join('|')})\\b[^,]+?)import\\s*\\(`;
       const reg = new RegExp(str, 'gm');
       return source.replace(reg, '$1require(');
-    } else {
-      return source.replace(/import\s*\(/gm, 'require(');
     }
+    return source.replace(/import\s*\(/gm, 'require(');
   }
   return source;
 };

@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {Request, Response} from 'express';
 

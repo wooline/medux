@@ -14,8 +14,6 @@ module.exports = {
   ],
   plugins: [],
   parserOptions: {
-    //project: './tsconfig.json',
-    //tsconfigRootDir: './',
     ecmaVersion: 2018,
     sourceType: 'module',
     ecmaFeatures: {
@@ -56,5 +54,5 @@ module.exports = {
         format: ['PascalCase'],
       },
     ],
-  }
+  },
 };

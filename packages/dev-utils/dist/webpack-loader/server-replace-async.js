@@ -19,13 +19,11 @@ module.exports = function loader(source) {
         const options = loader_utils_1.default.getOptions(this);
         if (options) {
             schema_utils_1.default(optionsType, options, 'server-replace-async');
-            const str = '(\\b(' + options.modules.join('|') + ')\\b[^,]+?)import\\s*\\(';
+            const str = `(\\b(${options.modules.join('|')})\\b[^,]+?)import\\s*\\(`;
             const reg = new RegExp(str, 'gm');
             return source.replace(reg, '$1require(');
         }
-        else {
-            return source.replace(/import\s*\(/gm, 'require(');
-        }
+        return source.replace(/import\s*\(/gm, 'require(');
     }
     return source;
 };

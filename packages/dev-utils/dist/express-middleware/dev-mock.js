@@ -76,23 +76,23 @@ function getResult(url, buffer, res) {
 function serializeUrl(method, url) {
     const arr = url.split('?');
     if (arr[1]) {
-        url = arr[0] + '?' + arr[1].split('&').sort().join('&');
+        url = `${arr[0]}?${arr[1].split('&').sort().join('&')}`;
     }
-    return (method.toLowerCase() + '/' + url)
+    return `${method.toLowerCase()}/${url}`
         .replace(/\//g, '-')
         .replace('?', '$')
-        .replace(/[?*:"<>\/|]/g, '-');
+        .replace(/[?*:"<>\\/|]/g, '-');
 }
 function urlToFileName(method, url, sourceDir, tempDir) {
     const name = serializeUrl(method, url);
-    const fileName = name + '.js';
+    const fileName = `${name}.js`;
     let sourceFileName = path_1.default.join(sourceDir, fileName);
     let tempFileName = path_1.default.join(tempDir, fileName);
     if (tempFileName.length > 240) {
         const md5 = crypto_1.default.createHash('md5');
-        const fileName = md5.update(name).digest('hex') + '--' + name;
-        sourceFileName = path_1.default.join(sourceDir, fileName).substr(0, 240) + '.js';
-        tempFileName = path_1.default.join(tempDir, fileName).substr(0, 240) + '.js';
+        const fileName2 = `${md5.update(name).digest('hex')}--${name}`;
+        sourceFileName = `${path_1.default.join(sourceDir, fileName2).substr(0, 240)}.js`;
+        tempFileName = `${path_1.default.join(tempDir, fileName2).substr(0, 240)}.js`;
     }
     return { sourceFileName, tempFileName, fileName };
 }
@@ -136,7 +136,7 @@ function cacheFileNames(sourceDir, timeout) {
             if (name.endsWith('.js')) {
                 const arr = name.split('@');
                 if (arr[1]) {
-                    const str = new Buffer(arr[1].replace('.js', ''), 'base64').toString();
+                    const str = Buffer.from(arr[1].replace('.js', ''), 'base64').toString();
                     fileNamesLatest.regExpFiles[str] = name;
                 }
                 else {
@@ -222,10 +222,10 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, moc
                         try {
                             parseFile(req, res, database, content);
                         }
-                        catch (err) {
-                            console.error(err, mockFile);
+                        catch (err2) {
+                            console.error(err2, mockFile);
                             res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
-                            res.end(err.toString());
+                            res.end(err2.toString());
                         }
                     }
                 });
@@ -239,7 +239,7 @@ module.exports = function middleware(enable, proxyMap, enableRecord = false, moc
                     const contentType = res.get('content-type') || '';
                     if ((statusCode === 200 || statusCode === 201 || statusCode === 204) && args.length === 0 && (!contentType || /\bjson\b|\bhtml\b|\btext\b/.test(contentType))) {
                         const data = getResult(req.url, buffer, res);
-                        fs_1.default.writeFile(tempFileName, 'return ' + json_format_1.default(data, { type: 'space' }), (err) => {
+                        fs_1.default.writeFile(tempFileName, `return ${json_format_1.default(data, { type: 'space' })}`, (err) => {
                             if (err) {
                                 console.error(err);
                             }
