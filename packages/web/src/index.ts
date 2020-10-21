@@ -28,6 +28,7 @@ export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
  * 经过封装后的HistoryAPI比浏览器自带的history更强大
  */
 export interface HistoryActions<P extends RouteParams = any> extends HistoryProxy<MeduxLocation> {
+  getHistory(): History;
   getRouteData(): RouteData;
   push(data: RoutePayload<P> | LocationPayload | string): Promise<void>;
   replace(data: RoutePayload<P> | LocationPayload | string): Promise<void>;
@@ -50,6 +51,10 @@ class WebHistoryActions extends BaseHistoryActions {
       }
       return undefined;
     });
+  }
+
+  getHistory() {
+    return this._history;
   }
 
   destroy() {
@@ -96,13 +101,8 @@ class WebHistoryActions extends BaseHistoryActions {
     throw 1;
   }
 }
-/**
- * 创建一个路由解析器
- * @param history 浏览器的history或其代理
- * @param routeConfig 应用的路由配置文件
- * @returns {transformRoute,historyActions}
- */
-export function createRouter(createHistory: 'Hash' | 'Memory', routeConfig: RouteConfig, locationMap?: LocationMap) {
+
+export function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, routeConfig: RouteConfig, locationMap?: LocationMap) {
   let history: History;
 
   const historyOptions = {
@@ -125,8 +125,34 @@ export function createRouter(createHistory: 'Hash' | 'Memory', routeConfig: Rout
     history = createHashHistory(historyOptions);
   } else if (createHistory === 'Memory') {
     history = createMemoryHistory(historyOptions);
-  } else {
+  } else if (createHistory === 'Browser') {
     history = createBrowserHistory(historyOptions);
+  } else {
+    const [pathname, search = ''] = createHistory.split('?');
+    history = {
+      action: 'PUSH',
+      length: 0,
+      listen() {
+        return () => undefined;
+      },
+      createHref() {
+        return '';
+      },
+      push() {},
+      replace() {},
+      go() {},
+      goBack() {},
+      goForward() {},
+      block() {
+        return () => undefined;
+      },
+      location: {
+        state: null,
+        pathname,
+        search: search && `?${search}`,
+        hash: '',
+      },
+    };
   }
   const getCurPathname = () => {
     return historyActions.getLocation().pathname;

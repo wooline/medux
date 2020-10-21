@@ -1,73 +1,47 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { Dispatcher, buildTransformRoute } from '@medux/route-plan-a';
+import { BaseHistoryActions, buildTransformRoute, checkLocation, safelocationToUrl, safeurlToLocation } from '@medux/route-plan-a';
+import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
+export let Action;
 
-class BrowserHistoryActions {
+(function (Action) {
+  Action["Push"] = "PUSH";
+  Action["Pop"] = "POP";
+  Action["Replace"] = "REPLACE";
+})(Action || (Action = {}));
+
+class WebHistoryActions extends BaseHistoryActions {
   constructor(_history, _transformRoute, _locationMap) {
+    super(_locationMap ? _locationMap.in(Object.assign(Object.assign({}, _history.location), {}, {
+      action: _history.action
+    })) : Object.assign(Object.assign({}, _history.location), {}, {
+      action: _history.action
+    }), true, _transformRoute);
     this._history = _history;
-    this._transformRoute = _transformRoute;
     this._locationMap = _locationMap;
-
-    _defineProperty(this, "initialized", true);
-
-    _defineProperty(this, "_dispatcher", void 0);
-
-    _defineProperty(this, "_location", void 0);
 
     _defineProperty(this, "_unlistenHistory", void 0);
 
-    this._dispatcher = new Dispatcher();
-    const location = Object.assign({}, this._history.location, {
-      action: this._history.action
-    });
-    this._location = this._locationMap ? this._locationMap.in(location) : location;
-    this._unlistenHistory = this._history.listen((location, action) => {
-      location = Object.assign({}, location, {
+    this._unlistenHistory = this._history.block((location, action) => {
+      const meduxLocation = _locationMap ? _locationMap.in(Object.assign(Object.assign({}, location), {}, {
+        action
+      })) : Object.assign(Object.assign({}, location), {}, {
         action
       });
-      this._location = this._locationMap ? this._locationMap.in(location) : location;
 
-      this._dispatcher.dispatch(this._location);
+      if (!this.equal(meduxLocation, this.getLocation())) {
+        return `${meduxLocation.action}::${safelocationToUrl(meduxLocation)}`;
+      }
+
+      return undefined;
     });
+  }
+
+  getHistory() {
+    return this._history;
   }
 
   destroy() {
     this._unlistenHistory();
-  }
-
-  getLocation() {
-    return this._location;
-  }
-
-  getRouteData() {
-    return this._transformRoute.locationToRoute(this.getLocation());
-  }
-
-  subscribe(listener) {
-    return this._dispatcher.subscribe(listener);
-  }
-
-  locationToRouteData(location) {
-    return this._transformRoute.locationToRoute(location);
-  }
-
-  equal(a, b) {
-    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
-  }
-
-  patch(location, routeData) {
-    this.push(location);
-  }
-
-  push(data) {
-    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-
-    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
-  }
-
-  replace(data) {
-    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-
-    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
   }
 
   toUrl(data) {
@@ -76,25 +50,120 @@ class BrowserHistoryActions {
     return location.pathname + location.search + location.hash;
   }
 
+  patch(location, routeData) {
+    this.push(location);
+  }
+
+  push(data) {
+    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
+      action: Action.Push
+    })).then(() => {
+      this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+    });
+  }
+
+  replace(data) {
+    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
+      action: Action.Replace
+    })).then(() => {
+      this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+    });
+  }
+
   go(n) {
     this._history.go(n);
   }
 
   back() {
-    this._history.back();
+    this._history.goBack();
   }
 
   forward() {
-    this._history.forward();
+    this._history.goForward();
+  }
+
+  passive() {
+    throw 1;
   }
 
 }
 
-export function createRouter(history, routeConfig, locationMap) {
-  const transformRoute = buildTransformRoute(routeConfig, () => {
+export function createRouter(createHistory, routeConfig, locationMap) {
+  let history;
+  const historyOptions = {
+    getUserConfirmation(str, callback) {
+      const arr = str.split('::');
+      const location = safeurlToLocation(arr.join('::'));
+      location.action = arr.shift();
+      historyActions.dispatch(location).then(() => {
+        callback(true);
+      }).catch(e => {
+        callback(false);
+        throw e;
+      });
+    }
+
+  };
+
+  if (createHistory === 'Hash') {
+    history = createHashHistory(historyOptions);
+  } else if (createHistory === 'Memory') {
+    history = createMemoryHistory(historyOptions);
+  } else if (createHistory === 'Browser') {
+    history = createBrowserHistory(historyOptions);
+  } else {
+    const [pathname, search = ''] = createHistory.split('?');
+    history = {
+      action: 'PUSH',
+      length: 0,
+
+      listen() {
+        return () => undefined;
+      },
+
+      createHref() {
+        return '';
+      },
+
+      push() {},
+
+      replace() {},
+
+      go() {},
+
+      goBack() {},
+
+      goForward() {},
+
+      block() {
+        return () => undefined;
+      },
+
+      location: {
+        state: null,
+        pathname,
+        search: search && `?${search}`,
+        hash: ''
+      }
+    };
+  }
+
+  const getCurPathname = () => {
     return historyActions.getLocation().pathname;
-  });
-  const historyActions = new BrowserHistoryActions(history, transformRoute, locationMap);
+  };
+
+  const _locationMap = locationMap;
+
+  if (locationMap && _locationMap) {
+    _locationMap.in = location => checkLocation(locationMap.in(location), getCurPathname());
+
+    _locationMap.out = location => checkLocation(locationMap.out(location), getCurPathname());
+  }
+
+  const transformRoute = buildTransformRoute(routeConfig, getCurPathname);
+  const historyActions = new WebHistoryActions(history, transformRoute, _locationMap);
   return {
     transformRoute,
     historyActions

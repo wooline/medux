@@ -9,6 +9,7 @@ var React__default = _interopDefault(React);
 var server = require('react-dom/server');
 var reactRedux = require('react-redux');
 var ReactDOM = _interopDefault(require('react-dom'));
+var history = require('history');
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -64,67 +65,6 @@ function _assertThisInitialized(self) {
   }
 
   return self;
-}
-
-function _getPrototypeOf(o) {
-  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  return _getPrototypeOf(o);
-}
-
-function _isNativeReflectConstruct() {
-  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-  if (Reflect.construct.sham) return false;
-  if (typeof Proxy === "function") return true;
-
-  try {
-    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-function _typeof(obj) {
-  "@babel/helpers - typeof";
-
-  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-    _typeof = function _typeof(obj) {
-      return typeof obj;
-    };
-  } else {
-    _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-  }
-
-  return _typeof(obj);
-}
-
-function _possibleConstructorReturn(self, call) {
-  if (call && (_typeof(call) === "object" || typeof call === "function")) {
-    return call;
-  }
-
-  return _assertThisInitialized(self);
-}
-
-function _createSuper(Derived) {
-  var hasNativeReflectConstruct = _isNativeReflectConstruct();
-  return function () {
-    var Super = _getPrototypeOf(Derived),
-        result;
-
-    if (hasNativeReflectConstruct) {
-      var NewTarget = _getPrototypeOf(this).constructor;
-      result = Reflect.construct(Super, arguments, NewTarget);
-    } else {
-      result = Super.apply(this, arguments);
-    }
-
-    return _possibleConstructorReturn(this, result);
-  };
 }
 
 function _inheritsLoose(subClass, superClass) {
@@ -256,8 +196,6 @@ var PDispatcher = function () {
 var TaskCounter = function (_PDispatcher) {
   _inheritsLoose(TaskCounter, _PDispatcher);
 
-  var _super = _createSuper(TaskCounter);
-
   function TaskCounter(deferSecond) {
     var _this2;
 
@@ -337,6 +275,30 @@ var depthTime = 2;
 function setLoadingDepthTime(second) {
   depthTime = second;
 }
+var config = {
+  NSP: '.',
+  VSP: '.',
+  MSP: ','
+};
+function setConfig(_config) {
+  _config.NSP && (config.NSP = _config.NSP);
+  _config.VSP && (config.VSP = _config.VSP);
+  _config.MSP && (config.MSP = _config.MSP);
+}
+var MetaData = {
+  appViewName: null,
+  actionCreatorMap: null,
+  clientStore: null,
+  appModuleName: null,
+  moduleGetter: null
+};
+var ActionTypes = {
+  MLoading: 'Loading',
+  MInit: 'Init',
+  MRouteParams: 'RouteParams',
+  Error: "medux" + config.NSP + "Error",
+  RouteChange: "medux" + config.NSP + "RouteChange"
+};
 function setLoading(item, moduleName, groupName) {
   if (moduleName === void 0) {
     moduleName = MetaData.appModuleName;
@@ -372,49 +334,25 @@ function setLoading(item, moduleName, groupName) {
   loadings[key].addItem(item);
   return item;
 }
-var config = {
-  NSP: '.',
-  VSP: '.',
-  MSP: ','
-};
-function setConfig(_config) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.VSP && (config.VSP = _config.VSP);
-  _config.MSP && (config.MSP = _config.MSP);
-}
-var MetaData = {
-  appViewName: null,
-  actionCreatorMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null
-};
-var ActionTypes = {
-  MLoading: 'Loading',
-  MInit: 'Init',
-  MRouteParams: 'RouteParams',
-  Error: "medux" + config.NSP + "Error",
-  RouteChange: "medux" + config.NSP + "RouteChange"
-};
 function cacheModule(module) {
   var moduleName = module.default.moduleName;
   var moduleGetter = MetaData.moduleGetter;
   var fn = moduleGetter[moduleName];
 
-  if (fn['__module__'] === module) {
-    return fn;
-  } else {
-    fn = function fn() {
-      return module;
-    };
-
-    fn['__module__'] = module;
-    moduleGetter[moduleName] = fn;
+  if (fn.__module__ === module) {
     return fn;
   }
+
+  fn = function fn() {
+    return module;
+  };
+
+  fn.__module__ = module;
+  moduleGetter[moduleName] = fn;
+  return fn;
 }
 function isPromise(data) {
-  return typeof data === 'object' && typeof data['then'] === 'function';
+  return typeof data === 'object' && typeof data.then === 'function';
 }
 function reducer(target, key, descriptor) {
   if (!key && !descriptor) {
@@ -513,20 +451,20 @@ function delayPromise(second) {
 function isProcessedError(error) {
   if (typeof error !== 'object' || error.meduxProcessed === undefined) {
     return undefined;
-  } else {
-    return !!error.meduxProcessed;
   }
+
+  return !!error.meduxProcessed;
 }
 function setProcessedError(error, meduxProcessed) {
   if (typeof error === 'object') {
     error.meduxProcessed = meduxProcessed;
     return error;
-  } else {
-    return {
-      meduxProcessed: meduxProcessed,
-      error: error
-    };
   }
+
+  return {
+    meduxProcessed: meduxProcessed,
+    error: error
+  };
 }
 
 function bindThis(fun, thisObj) {
@@ -1137,11 +1075,13 @@ function loadModel(moduleName, storeInstance, options) {
         cacheModule(module);
         return module.default.model(store, options);
       });
-    } else {
-      cacheModule(result);
-      return result.default.model(store, options);
     }
+
+    cacheModule(result);
+    return result.default.model(store, options);
   }
+
+  return undefined;
 }
 function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
@@ -1219,7 +1159,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         return payload;
       }
 
-      return Object.assign({}, state, {}, payload);
+      return Object.assign(Object.assign({}, state), payload);
     }
 
     return state;
@@ -1239,12 +1179,12 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
       if (result !== rootState[moduleName]) {
         var _Object$assign;
 
-        meta.currentState = Object.assign({}, meta.currentState, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
+        meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
       }
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-    var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
+    var handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -1274,7 +1214,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
           if (result !== rootState[moduleName]) {
             var _Object$assign2;
 
-            meta.currentState = Object.assign({}, meta.currentState, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
+            meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
           }
         }
       });
@@ -1315,7 +1255,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-        var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
+        var handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
@@ -1439,7 +1379,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         effectMap: {},
         injectedModules: {},
         destroy: function destroy() {
-          return void 0;
+          return undefined;
         }
       };
       return newStore;
@@ -2247,6 +2187,22 @@ function _toArray(arr) {
   return _arrayWithHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableRest();
 }
 
+function _typeof(obj) {
+  "@babel/helpers - typeof";
+
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    _typeof = function _typeof(obj) {
+      return typeof obj;
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+  }
+
+  return _typeof(obj);
+}
+
 function _toPrimitive(input, hint) {
   if (_typeof(input) !== "object" || input === null) return input;
   var prim = input[Symbol.toPrimitive];
@@ -2689,7 +2645,7 @@ function modelHotReplacement(moduleName, initState, ActionHandles) {
 }
 
 var reRender = function reRender() {
-  return void 0;
+  return undefined;
 };
 
 var reRenderTimer = 0;
@@ -2733,7 +2689,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
         moduleState = initState;
         moduleState.isModule = true;
       } else {
-        moduleState = Object.assign({}, moduleState, {
+        moduleState = Object.assign(Object.assign({}, moduleState), {}, {
           isHydrate: true
         });
       }
@@ -2743,7 +2699,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
       return store.dispatch(initAction);
     }
 
-    return void 0;
+    return undefined;
   };
 
   model.moduleName = moduleName;
@@ -2866,7 +2822,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.getState(), {}, payload)));
+        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload)));
       }
     }, {
       kind: "method",
@@ -2883,7 +2839,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
           return initState;
         }
 
-        return Object.assign({}, initState, {
+        return Object.assign(Object.assign({}, initState), {}, {
           routeParams: routeParams || initState.routeParams
         }, options);
       }
@@ -2900,7 +2856,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "RouteParams",
       value: function RouteParams(payload, action) {
         var state = this.getState();
-        return Object.assign({}, state, {
+        return Object.assign(Object.assign({}, state), {}, {
           routeParams: payload
         });
       }
@@ -2910,8 +2866,8 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "Loading",
       value: function Loading(payload) {
         var state = this.getState();
-        return Object.assign({}, state, {
-          loading: Object.assign({}, state.loading, {}, payload)
+        return Object.assign(Object.assign({}, state), {}, {
+          loading: Object.assign(Object.assign({}, state.loading), payload)
         });
       }
     }]
@@ -2966,28 +2922,28 @@ function getView(moduleName, viewName, modelOptions) {
         return initModel.then(function () {
           return view;
         });
-      } else {
-        return view;
       }
+
+      return view;
     });
-  } else {
-    cacheModule(result);
-    var view = result.default.views[viewName];
-
-    if (isServerEnv) {
-      return view;
-    }
-
-    var initModel = result.default.model(MetaData.clientStore, modelOptions);
-
-    if (isPromise(initModel)) {
-      return initModel.then(function () {
-        return view;
-      });
-    } else {
-      return view;
-    }
   }
+
+  cacheModule(result);
+  var view = result.default.views[viewName];
+
+  if (isServerEnv) {
+    return view;
+  }
+
+  var initModel = result.default.model(MetaData.clientStore, modelOptions);
+
+  if (isPromise(initModel)) {
+    return initModel.then(function () {
+      return view;
+    });
+  }
+
+  return view;
 }
 
 function getModuleByName(moduleName, moduleGetter) {
@@ -2998,10 +2954,10 @@ function getModuleByName(moduleName, moduleGetter) {
       cacheModule(module);
       return module;
     });
-  } else {
-    cacheModule(result);
-    return result;
   }
+
+  cacheModule(result);
+  return result;
 }
 
 function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
@@ -3037,7 +2993,7 @@ function _renderApp() {
             initData = {};
 
             if (storeOptions.initData || client[ssrInitStoreKey]) {
-              initData = Object.assign({}, client[ssrInitStoreKey], {}, storeOptions.initData);
+              initData = Object.assign(Object.assign({}, client[ssrInitStoreKey]), storeOptions.initData);
             }
 
             store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
@@ -3050,38 +3006,37 @@ function _renderApp() {
               }));
             }
 
-            appModule = undefined;
             i = 0, k = preModuleNames.length;
 
-          case 15:
+          case 14:
             if (!(i < k)) {
-              _context.next = 26;
+              _context.next = 25;
               break;
             }
 
             _moduleName = preModuleNames[i];
-            _context.next = 19;
+            _context.next = 18;
             return getModuleByName(_moduleName, moduleGetter);
 
-          case 19:
+          case 18:
             module = _context.sent;
-            _context.next = 22;
+            _context.next = 21;
             return module.default.model(reduxStore, undefined);
 
-          case 22:
+          case 21:
             if (i === 0) {
               appModule = module;
             }
 
-          case 23:
+          case 22:
             i++;
-            _context.next = 15;
+            _context.next = 14;
             break;
 
-          case 26:
+          case 25:
             reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 
-          case 27:
+          case 26:
           case "end":
             return _context.stop();
         }
@@ -3115,42 +3070,41 @@ function _renderSSR() {
             storeState = reduxStore.getState();
             paths = storeState.route.data.paths;
             paths.length === 0 && paths.push(appModuleName);
-            appModule = undefined;
             inited = {};
             i = 0, k = paths.length;
 
-          case 12:
+          case 11:
             if (!(i < k)) {
-              _context2.next = 23;
+              _context2.next = 22;
               break;
             }
 
             _paths$i$split = paths[i].split(config.VSP), _moduleName2 = _paths$i$split[0];
 
             if (inited[_moduleName2]) {
-              _context2.next = 20;
+              _context2.next = 19;
               break;
             }
 
             inited[_moduleName2] = true;
             module = moduleGetter[_moduleName2]();
-            _context2.next = 19;
+            _context2.next = 18;
             return module.default.model(reduxStore, undefined);
 
-          case 19:
+          case 18:
             if (i === 0) {
               appModule = module;
             }
 
-          case 20:
+          case 19:
             i++;
-            _context2.next = 12;
+            _context2.next = 11;
             break;
 
-          case 23:
+          case 22:
             return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 24:
+          case 23:
           case "end":
             return _context2.stop();
         }
@@ -3161,7 +3115,7 @@ function _renderSSR() {
 }
 
 function checkPathname(pathname, curPathname) {
-  curPathname = ('/' + curPathname).replace('//', '/').replace(/\/$/, '');
+  curPathname = ("/" + curPathname).replace('//', '/').replace(/\/$/, '');
 
   if (pathname.startsWith('./')) {
     pathname = curPathname + pathname.replace('./', '/');
@@ -3170,10 +3124,10 @@ function checkPathname(pathname, curPathname) {
 
     var n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
     var arr = curPathname.split('/');
-    arr.length = arr.length - n;
-    pathname = arr.join('/') + '/' + pathname.replace(/\.\.\//g, '');
+    arr.length -= n;
+    pathname = arr.join('/') + "/" + pathname.replace(/\.\.\//g, '');
   } else {
-    pathname = ('/' + pathname).replace('//', '/');
+    pathname = ("/" + pathname).replace('//', '/');
   }
 
   return pathname;
@@ -3181,8 +3135,8 @@ function checkPathname(pathname, curPathname) {
 function checkLocation(location, curPathname) {
   var data = Object.assign({}, location);
   data.pathname = checkPathname(data.pathname || '/', curPathname);
-  data.search = ('?' + (data.search || '')).replace('??', '?');
-  data.hash = ('#' + (data.hash || '')).replace('##', '#');
+  data.search = ("?" + (data.search || '')).replace('??', '?');
+  data.hash = ("#" + (data.hash || '')).replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';
@@ -3231,8 +3185,8 @@ function safeurlToLocation(safeurl) {
       hash = _arr$2 === void 0 ? '' : _arr$2;
   return {
     pathname: pathname,
-    search: search && '?' + search,
-    hash: hash && '#' + hash
+    search: search && "?" + search,
+    hash: hash && "#" + hash
   };
 }
 
@@ -3741,14 +3695,14 @@ function matchPath(pathname, options) {
   }
 
   var _options = options,
-      path = _options.path,
+      pathStr = _options.path,
       _options$exact = _options.exact,
       exact = _options$exact === void 0 ? false : _options$exact,
       _options$strict = _options.strict,
       strict = _options$strict === void 0 ? false : _options$strict,
       _options$sensitive = _options.sensitive,
       sensitive = _options$sensitive === void 0 ? false : _options$sensitive;
-  var paths = [].concat(path);
+  var paths = [].concat(pathStr);
   return paths.reduce(function (matched, path) {
     if (!path) return null;
     if (matched) return matched;
@@ -3789,17 +3743,19 @@ function matchPath(pathname, options) {
 }
 
 function isSpecificValue(val) {
-  return val instanceof Date || val instanceof RegExp ? true : false;
+  return !!(val instanceof Date || val instanceof RegExp);
 }
 
 function cloneSpecificValue(val) {
   if (val instanceof Date) {
     return new Date(val.getTime());
-  } else if (val instanceof RegExp) {
-    return new RegExp(val);
-  } else {
-    throw new Error('Unexpected situation');
   }
+
+  if (val instanceof RegExp) {
+    return new RegExp(val);
+  }
+
+  throw new Error('Unexpected situation');
 }
 
 function deepCloneArray(arr) {
@@ -3839,7 +3795,8 @@ function deepExtend() {
 
   var target = arguments[0];
   var args = Array.prototype.slice.call(arguments, 1);
-  var val, src;
+  var val;
+  var src;
   args.forEach(function (obj) {
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
@@ -3849,23 +3806,16 @@ function deepExtend() {
       src = safeGetProperty(target, key);
       val = safeGetProperty(obj, key);
 
-      if (val === target) {
-        return;
-      } else if (typeof val !== 'object' || val === null) {
+      if (val === target) ; else if (typeof val !== 'object' || val === null) {
         target[key] = val;
-        return;
       } else if (Array.isArray(val)) {
         target[key] = deepCloneArray(val);
-        return;
       } else if (isSpecificValue(val)) {
         target[key] = cloneSpecificValue(val);
-        return;
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
         target[key] = deepExtend({}, val);
-        return;
       } else {
         target[key] = deepExtend(src, val);
-        return;
       }
     });
   });
@@ -3951,9 +3901,9 @@ function searchStringify(searchData) {
 
   if (config$1.escape) {
     return escape(str);
-  } else {
-    return str;
   }
+
+  return str;
 }
 
 function splitSearch(search) {
@@ -3962,9 +3912,9 @@ function splitSearch(search) {
 
   if (arr) {
     return searchParse(arr[1]);
-  } else {
-    return {};
   }
+
+  return {};
 }
 
 function checkPathArgs(params) {
@@ -4067,7 +4017,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
         }, []);
       }
 
-      var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
+      var absoluteViewName = parentAbsoluteViewName + "/" + _viewName2;
       viewToRule[absoluteViewName] = _rule2;
 
       if (pathConfig) {
@@ -4119,8 +4069,8 @@ function extractHashData(params) {
 
   var _loop = function _loop(_moduleName2) {
     if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-      var _data = params[_moduleName2];
-      var keys = Object.keys(_data);
+      var data = params[_moduleName2];
+      var keys = Object.keys(data);
 
       if (keys.length > 0) {
         keys.forEach(function (key) {
@@ -4129,13 +4079,13 @@ function extractHashData(params) {
               hashParams[_moduleName2] = {};
             }
 
-            hashParams[_moduleName2][key] = _data[key];
+            hashParams[_moduleName2][key] = data[key];
           } else {
             if (!searchParams[_moduleName2]) {
               searchParams[_moduleName2] = {};
             }
 
-            searchParams[_moduleName2][key] = _data[key];
+            searchParams[_moduleName2][key] = data[key];
           }
         });
       } else {
@@ -4196,11 +4146,10 @@ function buildTransformRoute(routeConfig, getCurPathname) {
       if (typeof paths === 'string') {
         pathname = checkPathname(paths, getCurPathname());
       } else {
-        var _data2 = pathsToPathname(paths, params);
-
-        pathname = _data2.pathname;
-        params = _data2.params;
-        views = _data2.views;
+        var data = pathsToPathname(paths, params);
+        pathname = data.pathname;
+        params = data.params;
+        views = data.views;
       }
 
       var paramsFilter = excludeDefaultData(params, config$1.defaultRouteParams, false, views);
@@ -4220,16 +4169,14 @@ function buildTransformRoute(routeConfig, getCurPathname) {
     payloadToLocation: function payloadToLocation(payload) {
       if (dataIsLocation(payload)) {
         return checkLocation(payload, getCurPathname());
-      } else {
-        var _params2 = payload.extend ? deepExtend({}, payload.extend.params, payload.params) : payload.params;
-
-        var _location = transformRoute.routeToLocation(payload.paths, _params2);
-
-        return checkLocation(_location, getCurPathname());
       }
+
+      var params = payload.extend ? deepExtend({}, payload.extend.params, payload.params) : payload.params;
+      var location = transformRoute.routeToLocation(payload.paths, params);
+      return checkLocation(location, getCurPathname());
     },
     urlToLocation: function urlToLocation(url) {
-      url = checkUrl(url);
+      url = checkUrl(url, getCurPathname());
       return safeurlToLocation(url);
     }
   };
@@ -4274,7 +4221,7 @@ function buildTransformRoute(routeConfig, getCurPathname) {
           moduleName = _viewName$split[0],
           view = _viewName$split[1];
 
-      var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
       var rule = viewToRule[absoluteViewName];
       var keys = ruleToKeys[rule] || [];
 
@@ -4309,14 +4256,38 @@ function buildTransformRoute(routeConfig, getCurPathname) {
 
   return transformRoute;
 }
-var Dispatcher = function () {
-  function Dispatcher() {
+var BaseHistoryActions = function () {
+  function BaseHistoryActions(location, initialized, _transformRoute) {
+    this.initialized = initialized;
+    this._transformRoute = _transformRoute;
+
     _defineProperty(this, "_uid", 0);
 
     _defineProperty(this, "_listenList", {});
+
+    _defineProperty(this, "_blockerList", {});
+
+    _defineProperty(this, "_location", void 0);
+
+    _defineProperty(this, "_startupLocation", void 0);
+
+    this._location = location;
+    this._startupLocation = this._location;
   }
 
-  var _proto = Dispatcher.prototype;
+  var _proto = BaseHistoryActions.prototype;
+
+  _proto.equal = function equal(a, b) {
+    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.action === b.action;
+  };
+
+  _proto.getLocation = function getLocation() {
+    return this._location;
+  };
+
+  _proto.getRouteData = function getRouteData() {
+    return this._transformRoute.locationToRoute(this.getLocation());
+  };
 
   _proto.subscribe = function subscribe(listener) {
     var _this = this;
@@ -4329,16 +4300,39 @@ var Dispatcher = function () {
     };
   };
 
-  _proto.dispatch = function dispatch(data) {
-    for (var _key2 in this._listenList) {
-      if (this._listenList.hasOwnProperty(_key2)) {
-        var listener = this._listenList[_key2];
-        listener(data);
-      }
-    }
+  _proto.block = function block(listener) {
+    var _this2 = this;
+
+    this._uid++;
+    var uid = this._uid;
+    this._blockerList[uid] = listener;
+    return function () {
+      delete _this2._blockerList[uid];
+    };
   };
 
-  return Dispatcher;
+  _proto.locationToRouteData = function locationToRouteData(location) {
+    return this._transformRoute.locationToRoute(location);
+  };
+
+  _proto.dispatch = function dispatch(location) {
+    var _this3 = this;
+
+    if (this.equal(location, this._location)) {
+      return Promise.reject();
+    }
+
+    return Promise.all(Object.values(this._blockerList).map(function (fn) {
+      return fn(location, _this3._location);
+    })).then(function () {
+      _this3._location = location;
+      Object.values(_this3._listenList).forEach(function (listener) {
+        return listener(location);
+      });
+    });
+  };
+
+  return BaseHistoryActions;
 }();
 
 function renderApp$1(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, container, beforeRender) {
@@ -4422,20 +4416,20 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
           });
         });
         return null;
-      } else {
-        return {
-          Component: moduleViewResult
-        };
       }
+
+      return {
+        Component: moduleViewResult
+      };
     }),
         view = _useState[0],
         setView = _useState[1];
 
-    var forwardRef = props.forwardRef,
-        other = _objectWithoutPropertiesLoose(props, ["forwardRef"]);
+    var forwardRef2 = props.forwardRef2,
+        other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
 
     var ref = forwardRef ? {
-      ref: forwardRef
+      ref: forwardRef2
     } : {};
     return view ? React__default.createElement(view.Component, _extends({}, other, ref)) : Loading ? React__default.createElement(Loading, props) : null;
   };
@@ -4449,77 +4443,54 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
 };
 var exportModule$1 = exportModule;
 
-var BrowserHistoryActions = function () {
-  function BrowserHistoryActions(_history, _transformRoute, _locationMap) {
-    var _this = this;
+var Action;
 
-    this._history = _history;
-    this._transformRoute = _transformRoute;
-    this._locationMap = _locationMap;
+(function (Action) {
+  Action["Push"] = "PUSH";
+  Action["Pop"] = "POP";
+  Action["Replace"] = "REPLACE";
+})(Action || (Action = {}));
 
-    _defineProperty(this, "initialized", true);
+var WebHistoryActions = function (_BaseHistoryActions) {
+  _inheritsLoose(WebHistoryActions, _BaseHistoryActions);
 
-    _defineProperty(this, "_dispatcher", void 0);
+  function WebHistoryActions(_history, _transformRoute, _locationMap) {
+    var _this;
 
-    _defineProperty(this, "_location", void 0);
+    _this = _BaseHistoryActions.call(this, _locationMap ? _locationMap.in(Object.assign(Object.assign({}, _history.location), {}, {
+      action: _history.action
+    })) : Object.assign(Object.assign({}, _history.location), {}, {
+      action: _history.action
+    }), true, _transformRoute) || this;
+    _this._history = _history;
+    _this._locationMap = _locationMap;
 
-    _defineProperty(this, "_unlistenHistory", void 0);
+    _defineProperty(_assertThisInitialized(_this), "_unlistenHistory", void 0);
 
-    this._dispatcher = new Dispatcher();
-    var location = Object.assign({}, this._history.location, {
-      action: this._history.action
-    });
-    this._location = this._locationMap ? this._locationMap.in(location) : location;
-    this._unlistenHistory = this._history.listen(function (location, action) {
-      location = Object.assign({}, location, {
+    _this._unlistenHistory = _this._history.block(function (location, action) {
+      var meduxLocation = _locationMap ? _locationMap.in(Object.assign(Object.assign({}, location), {}, {
+        action: action
+      })) : Object.assign(Object.assign({}, location), {}, {
         action: action
       });
-      _this._location = _this._locationMap ? _this._locationMap.in(location) : location;
 
-      _this._dispatcher.dispatch(_this._location);
+      if (!_this.equal(meduxLocation, _this.getLocation())) {
+        return meduxLocation.action + "::" + safelocationToUrl(meduxLocation);
+      }
+
+      return undefined;
     });
+    return _this;
   }
 
-  var _proto = BrowserHistoryActions.prototype;
+  var _proto = WebHistoryActions.prototype;
+
+  _proto.getHistory = function getHistory() {
+    return this._history;
+  };
 
   _proto.destroy = function destroy() {
     this._unlistenHistory();
-  };
-
-  _proto.getLocation = function getLocation() {
-    return this._location;
-  };
-
-  _proto.getRouteData = function getRouteData() {
-    return this._transformRoute.locationToRoute(this.getLocation());
-  };
-
-  _proto.subscribe = function subscribe(listener) {
-    return this._dispatcher.subscribe(listener);
-  };
-
-  _proto.locationToRouteData = function locationToRouteData(location) {
-    return this._transformRoute.locationToRoute(location);
-  };
-
-  _proto.equal = function equal(a, b) {
-    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
-  };
-
-  _proto.patch = function patch(location, routeData) {
-    this.push(location);
-  };
-
-  _proto.push = function push(data) {
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-
-    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
-  };
-
-  _proto.replace = function replace(data) {
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-
-    this._history.push(this._locationMap ? this._locationMap.out(location) : location);
   };
 
   _proto.toUrl = function toUrl(data) {
@@ -4528,34 +4499,135 @@ var BrowserHistoryActions = function () {
     return location.pathname + location.search + location.hash;
   };
 
+  _proto.patch = function patch(location, routeData) {
+    this.push(location);
+  };
+
+  _proto.push = function push(data) {
+    var _this2 = this;
+
+    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
+      action: Action.Push
+    })).then(function () {
+      _this2._history.push(_this2._locationMap ? _this2._locationMap.out(location) : location);
+    });
+  };
+
+  _proto.replace = function replace(data) {
+    var _this3 = this;
+
+    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
+    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
+      action: Action.Replace
+    })).then(function () {
+      _this3._history.push(_this3._locationMap ? _this3._locationMap.out(location) : location);
+    });
+  };
+
   _proto.go = function go(n) {
     this._history.go(n);
   };
 
   _proto.back = function back() {
-    this._history.back();
+    this._history.goBack();
   };
 
   _proto.forward = function forward() {
-    this._history.forward();
+    this._history.goForward();
   };
 
-  return BrowserHistoryActions;
-}();
+  _proto.passive = function passive() {
+    throw 1;
+  };
 
-function createRouter(history, routeConfig, locationMap) {
-  var transformRoute = buildTransformRoute(routeConfig, function () {
+  return WebHistoryActions;
+}(BaseHistoryActions);
+
+function createRouter(createHistory, routeConfig, locationMap) {
+  var history$1;
+  var historyOptions = {
+    getUserConfirmation: function getUserConfirmation(str, callback) {
+      var arr = str.split('::');
+      var location = safeurlToLocation(arr.join('::'));
+      location.action = arr.shift();
+      historyActions.dispatch(location).then(function () {
+        callback(true);
+      }).catch(function (e) {
+        callback(false);
+        throw e;
+      });
+    }
+  };
+
+  if (createHistory === 'Hash') {
+    history$1 = history.createHashHistory(historyOptions);
+  } else if (createHistory === 'Memory') {
+    history$1 = history.createMemoryHistory(historyOptions);
+  } else if (createHistory === 'Browser') {
+    history$1 = history.createBrowserHistory(historyOptions);
+  } else {
+    var _createHistory$split = createHistory.split('?'),
+        pathname = _createHistory$split[0],
+        _createHistory$split$ = _createHistory$split[1],
+        search = _createHistory$split$ === void 0 ? '' : _createHistory$split$;
+
+    history$1 = {
+      action: 'PUSH',
+      length: 0,
+      listen: function listen() {
+        return function () {
+          return undefined;
+        };
+      },
+      createHref: function createHref() {
+        return '';
+      },
+      push: function push() {},
+      replace: function replace() {},
+      go: function go() {},
+      goBack: function goBack() {},
+      goForward: function goForward() {},
+      block: function block() {
+        return function () {
+          return undefined;
+        };
+      },
+      location: {
+        state: null,
+        pathname: pathname,
+        search: search && "?" + search,
+        hash: ''
+      }
+    };
+  }
+
+  var getCurPathname = function getCurPathname() {
     return historyActions.getLocation().pathname;
-  });
-  var historyActions = new BrowserHistoryActions(history, transformRoute, locationMap);
+  };
+
+  var _locationMap = locationMap;
+
+  if (locationMap && _locationMap) {
+    _locationMap.in = function (location) {
+      return checkLocation(locationMap.in(location), getCurPathname());
+    };
+
+    _locationMap.out = function (location) {
+      return checkLocation(locationMap.out(location), getCurPathname());
+    };
+  }
+
+  var transformRoute = buildTransformRoute(routeConfig, getCurPathname);
+  var historyActions = new WebHistoryActions(history$1, transformRoute, _locationMap);
   return {
     transformRoute: transformRoute,
     historyActions: historyActions
   };
 }
 
-var historyActions = undefined;
-var transformRoute = undefined;
+var historyActions;
+var transformRoute;
 
 function checkRedirect(views, throwError) {
   if (views['@']) {
@@ -4600,7 +4672,8 @@ function buildApp(_ref) {
       appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
       _ref$appViewName = _ref.appViewName,
       appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
-      history = _ref.history,
+      _ref$historyType = _ref.historyType,
+      historyType = _ref$historyType === void 0 ? 'Browser' : _ref$historyType,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
       locationMap = _ref.locationMap,
@@ -4613,7 +4686,7 @@ function buildApp(_ref) {
   setRouteConfig({
     defaultRouteParams: defaultRouteParams
   });
-  var router = createRouter(history, routeConfig, locationMap);
+  var router = createRouter(historyType, routeConfig, locationMap);
   historyActions = router.historyActions;
   transformRoute = router.transformRoute;
 
@@ -4628,7 +4701,6 @@ function buildApp(_ref) {
     checkRedirect(views);
     return beforeRender ? beforeRender({
       store: store,
-      history: history,
       historyActions: historyActions,
       transformRoute: transformRoute
     }) : store;
@@ -4653,23 +4725,7 @@ function buildSSR(_ref2) {
   setRouteConfig({
     defaultRouteParams: defaultRouteParams
   });
-
-  var _location$split = location.split('?'),
-      pathname = _location$split[0],
-      _location$split$ = _location$split[1],
-      search = _location$split$ === void 0 ? '' : _location$split$;
-
-  var history = {
-    listen: function listen() {
-      return void 0;
-    },
-    location: {
-      pathname: pathname,
-      search: search && '?' + search,
-      hash: ''
-    }
-  };
-  var router = createRouter(history, routeConfig, locationMap);
+  var router = createRouter(location, routeConfig, locationMap);
   historyActions = router.historyActions;
   transformRoute = router.transformRoute;
   return renderSSR$1(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, function (store) {
@@ -4678,7 +4734,6 @@ function buildSSR(_ref2) {
     checkRedirect(views, true);
     return beforeRender ? beforeRender({
       store: store,
-      history: history,
       historyActions: historyActions,
       transformRoute: transformRoute
     }) : store;
@@ -4692,9 +4747,9 @@ var Switch = function Switch(_ref3) {
     return !item;
   })) {
     return React__default.createElement(React__default.Fragment, null, elseView);
-  } else {
-    return React__default.createElement(React__default.Fragment, null, children);
   }
+
+  return React__default.createElement(React__default.Fragment, null, children);
 };
 
 function isModifiedEvent(event) {
@@ -4707,7 +4762,7 @@ var Link = React__default.forwardRef(function (_ref4, ref) {
       rest = _objectWithoutPropertiesLoose(_ref4, ["onClick", "replace"]);
 
   var target = rest.target;
-  var props = Object.assign({}, rest, {
+  var props = Object.assign(Object.assign({}, rest), {}, {
     onClick: function onClick(event) {
       try {
         _onClick && _onClick(event);

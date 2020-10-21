@@ -3,7 +3,6 @@ import { MeduxLocation } from '@medux/route-plan-a';
 import { RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
 import { Store } from 'redux';
 import React, { ReactElement } from 'react';
-import { History } from '@medux/web';
 import type { TransformRoute, RouteConfig } from '@medux/route-plan-a';
 import type { HistoryActions, LocationMap } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
@@ -13,11 +12,11 @@ export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core
 export type { LoadView } from '@medux/react';
 export type { RouteConfig, TransformRoute } from '@medux/route-plan-a';
 export type { LocationMap, HistoryActions } from '@medux/web';
-export declare function buildApp({ moduleGetter, appModuleName, appViewName, history, routeConfig, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
+export declare function buildApp({ moduleGetter, appModuleName, appViewName, historyType, routeConfig, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName?: string;
     appViewName?: string;
-    history: History;
+    historyType?: 'Browser' | 'Hash' | 'Memory';
     routeConfig?: RouteConfig;
     locationMap?: LocationMap;
     defaultRouteParams?: {
@@ -27,7 +26,6 @@ export declare function buildApp({ moduleGetter, appModuleName, appViewName, his
     container?: string | Element | ((component: ReactElement<any>) => void);
     beforeRender?: (data: {
         store: Store<StoreState>;
-        history: History;
         historyActions: HistoryActions;
         transformRoute: TransformRoute;
     }) => Store<StoreState>;
@@ -46,7 +44,6 @@ export declare function buildSSR({ moduleGetter, appModuleName, appViewName, loc
     renderToStream?: boolean;
     beforeRender?: (data: {
         store: Store<StoreState>;
-        history: History;
         historyActions: HistoryActions;
         transformRoute: TransformRoute;
     }) => Store<StoreState>;

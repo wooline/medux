@@ -8,8 +8,8 @@ import { createRouter } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
 export { setRouteConfig } from '@medux/route-plan-a';
-let historyActions = undefined;
-let transformRoute = undefined;
+let historyActions;
+let transformRoute;
 
 function checkRedirect(views, throwError) {
   if (views['@']) {
@@ -50,7 +50,7 @@ export function buildApp({
   moduleGetter,
   appModuleName = 'app',
   appViewName = 'main',
-  history,
+  historyType = 'Browser',
   routeConfig = {},
   locationMap,
   defaultRouteParams,
@@ -61,7 +61,7 @@ export function buildApp({
   setRouteConfig({
     defaultRouteParams
   });
-  const router = createRouter(history, routeConfig, locationMap);
+  const router = createRouter(historyType, routeConfig, locationMap);
   historyActions = router.historyActions;
   transformRoute = router.transformRoute;
 
@@ -78,7 +78,6 @@ export function buildApp({
     checkRedirect(views);
     return beforeRender ? beforeRender({
       store,
-      history,
       historyActions: historyActions,
       transformRoute: transformRoute
     }) : store;
@@ -99,16 +98,7 @@ export function buildSSR({
   setRouteConfig({
     defaultRouteParams
   });
-  const [pathname, search = ''] = location.split('?');
-  const history = {
-    listen: () => void 0,
-    location: {
-      pathname,
-      search: search && '?' + search,
-      hash: ''
-    }
-  };
-  const router = createRouter(history, routeConfig, locationMap);
+  const router = createRouter(location, routeConfig, locationMap);
   historyActions = router.historyActions;
   transformRoute = router.transformRoute;
   return renderSSR(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, store => {
@@ -119,7 +109,6 @@ export function buildSSR({
     checkRedirect(views, true);
     return beforeRender ? beforeRender({
       store,
-      history,
       historyActions: historyActions,
       transformRoute: transformRoute
     }) : store;
@@ -131,9 +120,9 @@ export const Switch = ({
 }) => {
   if (!children || Array.isArray(children) && children.every(item => !item)) {
     return React.createElement(React.Fragment, null, elseView);
-  } else {
-    return React.createElement(React.Fragment, null, children);
   }
+
+  return React.createElement(React.Fragment, null, children);
 };
 
 function isModifiedEvent(event) {
@@ -150,7 +139,7 @@ export const Link = React.forwardRef((_ref, ref) => {
   const {
     target
   } = rest;
-  const props = Object.assign({}, rest, {
+  const props = Object.assign(Object.assign({}, rest), {}, {
     onClick: event => {
       try {
         onClick && onClick(event);
