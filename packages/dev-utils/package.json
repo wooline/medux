@@ -15,8 +15,11 @@
     "dist/"
   ],
   "scripts": {
-    "prebuild": "yarn lint && rimraf ./dist",
-    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+    "type": "tsc",
+    "typeSrc": "tsc -P ./src",
+    "eslint": "eslint --cache .",
+    "eslintSrc": "eslint --cache ./src",
+    "prebuild": "yarn type & yarn typeSrc & yarn eslint & yarn eslintSrc && rimraf ./dist",
     "build": "tsc"
   },
   "dependencies": {

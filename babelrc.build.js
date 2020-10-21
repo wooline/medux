@@ -28,7 +28,7 @@ module.exports = (features = []) => {
         'babel-plugin-root-import',
         {
           rootPathPrefix: 'src/',
-          rootPathSuffix: '../src/',
+          rootPathSuffix: './src/',
         },
       ],
       ['@babel/plugin-proposal-decorators', {legacy: false, decoratorsBeforeExport: true}],

@@ -1,15 +1,5 @@
 {
-  "extends": "../../.tsconfig.json",
-  "compilerOptions": {
-    "importHelpers": false,
-    "noEmit": false,
-    "strict": false,
-    "declaration": false,
-    "isolatedModules": false,
-    "baseUrl": "./src",
-    "outDir": "./dist",
-    "lib": ["es2017"],
-    "types": ["node"]
-  },
-  "include": ["./src"]
+  "extends": "../../tsconfig.json",
+  "include": ["./"],
+  "exclude": ["./dist","./src","./tests","./types","./api"]
 }
