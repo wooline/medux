@@ -5,8 +5,9 @@
     "baseUrl": "./",
     "rootDir": "./",
     "paths": {
-      "core/*": ["../src/*"],
+      "src/*": ["../src/*"],
     }
   },
   "include": ["./"],
+  "exclude": []
 }

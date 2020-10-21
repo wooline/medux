@@ -1,4 +1,4 @@
-import {exportModule} from 'core/index';
+import {exportModule} from 'src/index';
 import {ModelHandlers, initModelState} from './model';
 
 import Main from './views/Main';

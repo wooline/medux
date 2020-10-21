@@ -1,7 +1,7 @@
 module.exports = {
-  roots: ['<rootDir>/src/'],
+  roots: ['<rootDir>/tests/'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   testRegex: '\\.test\\.ts$',
-  setupFiles: ['<rootDir>/src/__tests__/setup.ts'],
+  setupFiles: ['<rootDir>/tests/setup.ts'],
   testURL: 'http://localhost/',
 };

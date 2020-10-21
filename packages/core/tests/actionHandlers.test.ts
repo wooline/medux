@@ -1,5 +1,5 @@
 import {Middleware, Store} from 'redux';
-import {HistoryProxy, getView, renderApp} from 'core/index';
+import {HistoryProxy, getView, renderApp} from 'src/index';
 
 import {actions, moduleGetter} from './modules';
 

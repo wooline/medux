@@ -24,6 +24,13 @@ module.exports = (features = []) => {
     ].filter(Boolean),
     plugins: [
       // '@babel/plugin-syntax-dynamic-import',
+      [
+        'babel-plugin-root-import',
+        {
+          rootPathPrefix: 'src/',
+          rootPathSuffix: '../src/',
+        },
+      ],
       ['@babel/plugin-proposal-decorators', {legacy: false, decoratorsBeforeExport: true}],
       ['@babel/plugin-proposal-class-properties', {loose: true}],
       '@babel/plugin-proposal-nullish-coalescing-operator',
