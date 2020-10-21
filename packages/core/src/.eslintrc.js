@@ -8,5 +8,5 @@ module.exports = {
     'no-restricted-syntax': 'off',
     'no-prototype-builtins': 'off',
   },
-  ignorePatterns: ['/__tests__'],
+  ignorePatterns: [],
 };

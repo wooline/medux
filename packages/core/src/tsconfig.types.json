@@ -5,6 +5,5 @@
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true
-  },
-  "include": ["./"]
+  }
 }

@@ -1,4 +1,4 @@
-import {BaseModelHandlers, BaseModelState, RouteState, effect, reducer} from '../../../index';
+import {BaseModelHandlers, BaseModelState, RouteState, effect, reducer} from 'core/index';
 
 export interface State extends BaseModelState {
   message: string;
@@ -31,24 +31,21 @@ export class ModelHandlers extends BaseModelHandlers<State, {route: RouteState}>
 
   @reducer
   protected ['moduleA.setMessage'](message: string): State {
-    console.log(this.rootState);
-    console.log(this.currentRootState);
-    console.log(this.prevRootState);
     return {...this.state, message: 'message-changed'};
   }
 
   @effect()
   protected async ['moduleA.setText'](text: string) {
+    console.log(this.rootState);
+    console.log(this.currentRootState);
+    console.log(this.prevRootState);
     this.dispatch(this.actions.setText('text-changed'));
   }
 
   @effect()
   protected async ['moduleA.setTips'](tips: string) {
     this.dispatch(this.actions.setTips('tips-changed'));
-  }
-
-  @effect()
-  protected async ['moduleB.setMessage'](message: string) {
+    await Promise.resolve('');
     this.dispatch(this.actions.setMessage('tips-message-changed'));
   }
 }

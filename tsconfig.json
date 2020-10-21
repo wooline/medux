@@ -20,6 +20,6 @@
     "preserveConstEnums": false,
     "esModuleInterop": true
   },
-  "include": ["./","./.eslintrc.js"],
+  "include": ["./"],
   "exclude": ["./packages"]
 }

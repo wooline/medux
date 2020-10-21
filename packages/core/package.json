@@ -33,10 +33,10 @@
   "scripts": {
     "type": "tsc",
     "typeSrc": "tsc -P ./src",
-    "typeTests": "tsc -P ./src/__tests__",
+    "typeTests": "tsc -P ./tests",
     "eslint": "eslint --cache .",
     "eslintSrc": "eslint --cache ./src",
-    "eslintTests": "eslint --cache ./src/__tests__",
+    "eslintTests": "eslint --cache ./tests",
     "buildTypes": "tsc --project ./src/tsconfig.types.json && copyfiles -f ./src/*.d.ts ./types",
     "test": "jest",
     "prebuild": "yarn type & yarn typeSrc & yarn typeTests & yarn eslint & yarn eslintSrc & yarn eslintTests && yarn test && rimraf ./dist ./types && yarn buildTypes",

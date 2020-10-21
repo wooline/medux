@@ -37,7 +37,7 @@ module.exports = (features = []) => {
         },
       ],
     ],
-    ignore: ['**/*.d.ts', env.code !== 'test' && '**/__tests__/**'].filter(Boolean),
+    ignore: ['**/*.d.ts'].filter(Boolean),
     comments: false,
   };
   return config;

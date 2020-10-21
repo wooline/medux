@@ -6,5 +6,5 @@
     "rootDir": "./",
     "jsx": "react",
   },
-   "include": ["./","./.eslintrc.js"],
+   "include": ["./"],
 }
