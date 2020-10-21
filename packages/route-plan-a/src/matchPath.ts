@@ -52,9 +52,9 @@ export function matchPath(pathname: string, options: string | string[] | MatchPa
     options = {path: options};
   }
 
-  const {path, exact = false, strict = false, sensitive = false} = options;
+  const {path: pathStr, exact = false, strict = false, sensitive = false} = options;
 
-  const paths = [].concat(path as any);
+  const paths = [].concat(pathStr as any);
 
   return paths.reduce((matched, path: string) => {
     if (!path) return null;

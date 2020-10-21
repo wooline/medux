@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {DisplayViews, HistoryProxy, RouteData, RouteParams, config as coreConfig} from '@medux/core';
 import {checkLocation, checkPathname, checkUrl, safelocationToUrl, safeurlToLocation} from './utils';
 import {compilePath, compileToPath, matchPath} from './matchPath';
@@ -124,7 +125,7 @@ function searchParse(search: string): {[moduleName: string]: {[key: string]: any
   }
 }
 
-//将参数序列化为string
+// 将参数序列化为string
 function searchStringify(searchData: any): string {
   if (typeof searchData !== 'object') {
     return '';
@@ -135,9 +136,8 @@ function searchStringify(searchData: any): string {
   }
   if (config.escape) {
     return escape(str);
-  } else {
-    return str;
   }
+  return str;
 }
 
 function splitSearch(search: string) {
@@ -145,12 +145,11 @@ function splitSearch(search: string) {
   const arr = search.match(reg);
   if (arr) {
     return searchParse(arr[1]);
-  } else {
-    return {};
   }
+  return {};
 }
 
-//将{"aa.bb.cc":1}转换为{aa:{bb:{cc:1}}}
+// 将{"aa.bb.cc":1}转换为{aa:{bb:{cc:1}}}
 function checkPathArgs(params: {[key: string]: string}): {[key: string]: any} {
   const obj = {};
   for (const key in params) {
@@ -173,7 +172,7 @@ function checkPathArgs(params: {[key: string]: string}): {[key: string]: any} {
   }
   return obj;
 }
-//将routeConfig逐层匹配pathname，可以得到viewPaths和pathArgs
+// 将routeConfig逐层匹配pathname，可以得到viewPaths和pathArgs
 function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string[], args: {[moduleName: string]: {[key: string]: any} | undefined}) {
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
@@ -196,8 +195,8 @@ function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string
     }
   }
 }
-//预先编译routeConfig，得到viewToRule及ruleToKeys
-function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName: string = '', viewToRule: {[viewName: string]: string} = {}, ruleToKeys: {[rule: string]: (string | number)[]} = {}) {
+// 预先编译routeConfig，得到viewToRule及ruleToKeys
+function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName = '', viewToRule: {[viewName: string]: string} = {}, ruleToKeys: {[rule: string]: (string | number)[]} = {}) {
   // ruleToKeys将每条rule中的params key解析出来
   for (const rule in routeConfig) {
     if (routeConfig.hasOwnProperty(rule)) {
@@ -210,7 +209,7 @@ function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName: string 
           return prev;
         }, []);
       }
-      const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       viewToRule[absoluteViewName] = rule;
       if (pathConfig) {
         compileConfig(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
@@ -246,7 +245,7 @@ export function assignRouteData(paths: string[], params: {[moduleName: string]: 
   return {views, paths, params, action};
 }
 
-//分离search和hash并且序列化为string
+// 分离search和hash并且序列化为string
 function extractHashData(params: {[moduleName: string]: any}) {
   const searchParams: {[moduleName: string]: any} = {};
   const hashParams: {[moduleName: string]: any} = {};
@@ -337,11 +336,10 @@ export function buildTransformRoute<P extends RouteParams>(routeConfig: RouteCon
     payloadToLocation(payload) {
       if (dataIsLocation(payload)) {
         return checkLocation(payload, getCurPathname());
-      } else {
-        const params: P | undefined = payload.extend ? assignDeep({}, payload.extend.params, payload.params) : payload.params;
-        const location = transformRoute.routeToLocation(payload.paths, params);
-        return checkLocation(location, getCurPathname());
       }
+      const params: P | undefined = payload.extend ? assignDeep({}, payload.extend.params, payload.params) : payload.params;
+      const location = transformRoute.routeToLocation(payload.paths, params);
+      return checkLocation(location, getCurPathname());
     },
     urlToLocation(url) {
       url = checkUrl(url, getCurPathname());
@@ -378,7 +376,7 @@ export function buildTransformRoute<P extends RouteParams>(routeConfig: RouteCon
     const views: DisplayViews = {};
     paths.reduce((parentAbsoluteViewName, viewName, index) => {
       const [moduleName, view] = viewName.split(coreConfig.VSP);
-      const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       const rule = viewToRule[absoluteViewName];
       const keys = ruleToKeys[rule] || [];
       if (moduleName !== '@' && view) {
@@ -387,7 +385,7 @@ export function buildTransformRoute<P extends RouteParams>(routeConfig: RouteCon
         }
         views[moduleName]![view] = true;
       }
-      //最深的一个view可以决定pathname
+      // 最深的一个view可以决定pathname
       if (index === len) {
         // const toPath = compileToPath(rule.replace(/\$$/, ''));
         const toPath = compileToPath(rule);
@@ -397,7 +395,7 @@ export function buildTransformRoute<P extends RouteParams>(routeConfig: RouteCon
         }, {});
         pathname = toPath(args);
       }
-      //pathname中传递的值可以不在params中重复传递
+      // pathname中传递的值可以不在params中重复传递
       keys.forEach((key) => {
         getPathProps(key, paramsFilter[moduleName], true);
       });
@@ -414,24 +412,32 @@ export type LocationBlocker = (location: MeduxLocation, curLocation: MeduxLocati
 
 export abstract class BaseHistoryActions implements HistoryProxy<MeduxLocation> {
   private _uid = 0;
+
   private _listenList: {[key: string]: LocationListener} = {};
+
   private _blockerList: {[key: string]: LocationBlocker} = {};
+
   protected _location: MeduxLocation;
+
   protected _startupLocation: MeduxLocation;
 
   constructor(location: MeduxLocation, public initialized: boolean, protected _transformRoute: TransformRoute<any>) {
     this._location = location;
     this._startupLocation = this._location;
   }
+
   equal(a: MeduxLocation, b: MeduxLocation): boolean {
-    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.action === b.action;
   }
+
   getLocation(): MeduxLocation {
     return this._location;
   }
+
   getRouteData() {
     return this._transformRoute.locationToRoute(this.getLocation());
   }
+
   subscribe(listener: LocationListener): () => void {
     this._uid++;
     const uid = this._uid;
@@ -440,6 +446,7 @@ export abstract class BaseHistoryActions implements HistoryProxy<MeduxLocation> 
       delete this._listenList[uid];
     };
   }
+
   block(listener: LocationBlocker): () => void {
     this._uid++;
     const uid = this._uid;
@@ -448,9 +455,11 @@ export abstract class BaseHistoryActions implements HistoryProxy<MeduxLocation> 
       delete this._blockerList[uid];
     };
   }
+
   locationToRouteData(location: MeduxLocation): RouteData<any> {
     return this._transformRoute.locationToRoute(location);
   }
+
   dispatch(location: MeduxLocation): Promise<void> {
     if (this.equal(location, this._location)) {
       return Promise.reject();
@@ -460,7 +469,10 @@ export abstract class BaseHistoryActions implements HistoryProxy<MeduxLocation> 
       Object.values(this._listenList).forEach((listener) => listener(location));
     });
   }
+
   abstract patch(location: MeduxLocation, routeData: RouteData<any>): void;
+
   abstract destroy(): void;
+
   abstract passive(location: MeduxLocation): void;
 }

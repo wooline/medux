@@ -1,15 +1,17 @@
+/* eslint-disable prefer-rest-params */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 function isSpecificValue(val: Date | RegExp) {
-  return val instanceof Date || val instanceof RegExp ? true : false;
+  return !!(val instanceof Date || val instanceof RegExp);
 }
 
 function cloneSpecificValue(val: Date | RegExp) {
   if (val instanceof Date) {
     return new Date(val.getTime());
-  } else if (val instanceof RegExp) {
-    return new RegExp(val);
-  } else {
-    throw new Error('Unexpected situation');
   }
+  if (val instanceof RegExp) {
+    return new RegExp(val);
+  }
+  throw new Error('Unexpected situation');
 }
 
 function deepCloneArray(arr: any[]) {
@@ -48,7 +50,8 @@ function deepExtend(...datas: any[]) {
   // convert arguments to array and cut off target object
   const args = Array.prototype.slice.call(arguments, 1);
 
-  let val, src;
+  let val;
+  let src;
 
   args.forEach(function (obj) {
     // skip argument if isn't an object, is null, or is an array
@@ -62,35 +65,28 @@ function deepExtend(...datas: any[]) {
 
       // recursion prevention
       if (val === target) {
-        return;
-
         /**
          * if new value isn't object then just overwrite by new value
          * instead of extending.
          */
       } else if (typeof val !== 'object' || val === null) {
         target[key] = val;
-        return;
 
         // just clone arrays (and recursive clone objects inside)
       } else if (Array.isArray(val)) {
         target[key] = deepCloneArray(val);
-        return;
 
         // custom cloning and overwrite for specific objects
       } else if (isSpecificValue(val)) {
         target[key] = cloneSpecificValue(val);
-        return;
 
         // overwrite by new value if source isn't object or array
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
         target[key] = deepExtend({}, val);
-        return;
 
         // source value and new value is objects both, extending...
       } else {
         target[key] = deepExtend(src, val);
-        return;
       }
     });
   });

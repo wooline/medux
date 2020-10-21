@@ -1,3 +1,4 @@
+/* eslint-disable */
 // fork from path-to-regexp 6.1.0
 // https://github.com/pillarjs/path-to-regexp
 
