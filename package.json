@@ -22,6 +22,7 @@
     "packages/react-taro"
   ],
   "scripts": {
+    "lerna": "lerna publish",
     "typeCheck": "tsc",
     "lintCheck": "eslint --cache .",
     "build:core": "lerna run build --scope @medux/core",
