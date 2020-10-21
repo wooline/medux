@@ -58,14 +58,14 @@ export function matchPath(pathname, options) {
   }
 
   var _options = options,
-      path = _options.path,
+      pathStr = _options.path,
       _options$exact = _options.exact,
       exact = _options$exact === void 0 ? false : _options$exact,
       _options$strict = _options.strict,
       strict = _options$strict === void 0 ? false : _options$strict,
       _options$sensitive = _options.sensitive,
       sensitive = _options$sensitive === void 0 ? false : _options$sensitive;
-  var paths = [].concat(path);
+  var paths = [].concat(pathStr);
   return paths.reduce(function (matched, path) {
     if (!path) return null;
     if (matched) return matched;

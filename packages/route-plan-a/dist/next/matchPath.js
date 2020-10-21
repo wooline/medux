@@ -50,12 +50,12 @@ export function matchPath(pathname, options = {}) {
   }
 
   const {
-    path,
+    path: pathStr,
     exact = false,
     strict = false,
     sensitive = false
   } = options;
-  const paths = [].concat(path);
+  const paths = [].concat(pathStr);
   return paths.reduce((matched, path) => {
     if (!path) return null;
     if (matched) return matched;

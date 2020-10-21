@@ -1,15 +1,17 @@
 function isSpecificValue(val) {
-  return val instanceof Date || val instanceof RegExp ? true : false;
+  return !!(val instanceof Date || val instanceof RegExp);
 }
 
 function cloneSpecificValue(val) {
   if (val instanceof Date) {
     return new Date(val.getTime());
-  } else if (val instanceof RegExp) {
-    return new RegExp(val);
-  } else {
-    throw new Error('Unexpected situation');
   }
+
+  if (val instanceof RegExp) {
+    return new RegExp(val);
+  }
+
+  throw new Error('Unexpected situation');
 }
 
 function deepCloneArray(arr) {
@@ -49,7 +51,8 @@ function deepExtend() {
 
   var target = arguments[0];
   var args = Array.prototype.slice.call(arguments, 1);
-  var val, src;
+  var val;
+  var src;
   args.forEach(function (obj) {
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
@@ -59,23 +62,16 @@ function deepExtend() {
       src = safeGetProperty(target, key);
       val = safeGetProperty(obj, key);
 
-      if (val === target) {
-        return;
-      } else if (typeof val !== 'object' || val === null) {
+      if (val === target) {} else if (typeof val !== 'object' || val === null) {
         target[key] = val;
-        return;
       } else if (Array.isArray(val)) {
         target[key] = deepCloneArray(val);
-        return;
       } else if (isSpecificValue(val)) {
         target[key] = cloneSpecificValue(val);
-        return;
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
         target[key] = deepExtend({}, val);
-        return;
       } else {
         target[key] = deepExtend(src, val);
-        return;
       }
     });
   });

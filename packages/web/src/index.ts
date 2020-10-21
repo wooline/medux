@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {
   BaseHistoryActions,
   LocationPayload,
@@ -47,6 +48,7 @@ class WebHistoryActions extends BaseHistoryActions {
       if (!this.equal(meduxLocation, this.getLocation())) {
         return `${meduxLocation.action}::${safelocationToUrl(meduxLocation)}`;
       }
+      return undefined;
     });
   }
 
@@ -121,7 +123,7 @@ export function createRouter(createHistory: 'Hash' | 'Memory', routeConfig: Rout
   };
   if (createHistory === 'Hash') {
     history = createHashHistory(historyOptions);
-  } else if (createHistory == 'Memory') {
+  } else if (createHistory === 'Memory') {
     history = createMemoryHistory(historyOptions);
   } else {
     history = createBrowserHistory(historyOptions);

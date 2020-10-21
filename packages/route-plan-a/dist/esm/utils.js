@@ -1,5 +1,5 @@
 export function checkPathname(pathname, curPathname) {
-  curPathname = ('/' + curPathname).replace('//', '/').replace(/\/$/, '');
+  curPathname = ("/" + curPathname).replace('//', '/').replace(/\/$/, '');
 
   if (pathname.startsWith('./')) {
     pathname = curPathname + pathname.replace('./', '/');
@@ -8,10 +8,10 @@ export function checkPathname(pathname, curPathname) {
 
     var n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
     var arr = curPathname.split('/');
-    arr.length = arr.length - n;
-    pathname = arr.join('/') + '/' + pathname.replace(/\.\.\//g, '');
+    arr.length -= n;
+    pathname = arr.join('/') + "/" + pathname.replace(/\.\.\//g, '');
   } else {
-    pathname = ('/' + pathname).replace('//', '/');
+    pathname = ("/" + pathname).replace('//', '/');
   }
 
   return pathname;
@@ -19,8 +19,8 @@ export function checkPathname(pathname, curPathname) {
 export function checkLocation(location, curPathname) {
   var data = Object.assign({}, location);
   data.pathname = checkPathname(data.pathname || '/', curPathname);
-  data.search = ('?' + (data.search || '')).replace('??', '?');
-  data.hash = ('#' + (data.hash || '')).replace('##', '#');
+  data.search = ("?" + (data.search || '')).replace('??', '?');
+  data.hash = ("#" + (data.hash || '')).replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';
@@ -69,7 +69,7 @@ export function safeurlToLocation(safeurl) {
       hash = _arr$2 === void 0 ? '' : _arr$2;
   return {
     pathname: pathname,
-    search: search && '?' + search,
-    hash: hash && '#' + hash
+    search: search && "?" + search,
+    hash: hash && "#" + hash
   };
 }

@@ -86,9 +86,9 @@ function searchStringify(searchData) {
 
   if (config.escape) {
     return escape(str);
-  } else {
-    return str;
   }
+
+  return str;
 }
 
 function splitSearch(search) {
@@ -97,9 +97,9 @@ function splitSearch(search) {
 
   if (arr) {
     return searchParse(arr[1]);
-  } else {
-    return {};
   }
+
+  return {};
 }
 
 function checkPathArgs(params) {
@@ -180,7 +180,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName = '', viewToRule = {}
         }, []);
       }
 
-      const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       viewToRule[absoluteViewName] = rule;
 
       if (pathConfig) {
@@ -327,11 +327,11 @@ export function buildTransformRoute(routeConfig, getCurPathname) {
     payloadToLocation(payload) {
       if (dataIsLocation(payload)) {
         return checkLocation(payload, getCurPathname());
-      } else {
-        const params = payload.extend ? assignDeep({}, payload.extend.params, payload.params) : payload.params;
-        const location = transformRoute.routeToLocation(payload.paths, params);
-        return checkLocation(location, getCurPathname());
       }
+
+      const params = payload.extend ? assignDeep({}, payload.extend.params, payload.params) : payload.params;
+      const location = transformRoute.routeToLocation(payload.paths, params);
+      return checkLocation(location, getCurPathname());
     },
 
     urlToLocation(url) {
@@ -370,7 +370,7 @@ export function buildTransformRoute(routeConfig, getCurPathname) {
     const views = {};
     paths.reduce((parentAbsoluteViewName, viewName, index) => {
       const [moduleName, view] = viewName.split(coreConfig.VSP);
-      const absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       const rule = viewToRule[absoluteViewName];
       const keys = ruleToKeys[rule] || [];
 
@@ -425,7 +425,7 @@ export class BaseHistoryActions {
   }
 
   equal(a, b) {
-    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.action === b.action;
   }
 
   getLocation() {

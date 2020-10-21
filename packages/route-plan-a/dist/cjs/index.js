@@ -106,9 +106,9 @@ function searchStringify(searchData) {
 
   if (config.escape) {
     return escape(str);
-  } else {
-    return str;
   }
+
+  return str;
 }
 
 function splitSearch(search) {
@@ -117,9 +117,9 @@ function splitSearch(search) {
 
   if (arr) {
     return searchParse(arr[1]);
-  } else {
-    return {};
   }
+
+  return {};
 }
 
 function checkPathArgs(params) {
@@ -222,7 +222,7 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
         }, []);
       }
 
-      var absoluteViewName = parentAbsoluteViewName + '/' + _viewName2;
+      var absoluteViewName = parentAbsoluteViewName + "/" + _viewName2;
       viewToRule[absoluteViewName] = _rule2;
 
       if (pathConfig) {
@@ -375,13 +375,11 @@ function buildTransformRoute(routeConfig, getCurPathname) {
     payloadToLocation: function payloadToLocation(payload) {
       if (dataIsLocation(payload)) {
         return (0, _utils.checkLocation)(payload, getCurPathname());
-      } else {
-        var _params2 = payload.extend ? (0, _deepExtend.default)({}, payload.extend.params, payload.params) : payload.params;
-
-        var _location = transformRoute.routeToLocation(payload.paths, _params2);
-
-        return (0, _utils.checkLocation)(_location, getCurPathname());
       }
+
+      var params = payload.extend ? (0, _deepExtend.default)({}, payload.extend.params, payload.params) : payload.params;
+      var location = transformRoute.routeToLocation(payload.paths, params);
+      return (0, _utils.checkLocation)(location, getCurPathname());
     },
     urlToLocation: function urlToLocation(url) {
       url = (0, _utils.checkUrl)(url, getCurPathname());
@@ -429,7 +427,7 @@ function buildTransformRoute(routeConfig, getCurPathname) {
           moduleName = _viewName$split[0],
           view = _viewName$split[1];
 
-      var absoluteViewName = parentAbsoluteViewName + '/' + viewName;
+      var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
       var rule = viewToRule[absoluteViewName];
       var keys = ruleToKeys[rule] || [];
 
@@ -481,7 +479,7 @@ var BaseHistoryActions = function () {
   var _proto = BaseHistoryActions.prototype;
 
   _proto.equal = function equal(a, b) {
-    return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
+    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.action === b.action;
   };
 
   _proto.getLocation = function getLocation() {
