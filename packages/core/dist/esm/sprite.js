@@ -1,5 +1,4 @@
 import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
-import _createSuper from "@babel/runtime/helpers/esm/createSuper";
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { env } from './env';
@@ -121,8 +120,6 @@ export var PDispatcher = function () {
 }();
 export var TaskCounter = function (_PDispatcher) {
   _inheritsLoose(TaskCounter, _PDispatcher);
-
-  var _super = _createSuper(TaskCounter);
 
   function TaskCounter(deferSecond) {
     var _this2;

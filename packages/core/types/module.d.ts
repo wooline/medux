@@ -1,6 +1,6 @@
+import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 import { Action, ActionCreatorList, BaseModelState, CommonModule, ModelStore, RouteState, StoreState } from './basic';
 import { HistoryProxy } from './store';
-import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
     moduleName: string;
     initState: ModelState;
@@ -10,7 +10,7 @@ export interface Module<M extends Model = Model, VS extends {
     [key: string]: any;
 } = {
     [key: string]: any;
-}, AS extends ActionCreatorList = {}, N extends string = string> {
+}, AS extends ActionCreatorList = Record<string, any>, N extends string = string> {
     default: {
         moduleName: N;
         model: M;

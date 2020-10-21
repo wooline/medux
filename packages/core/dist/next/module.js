@@ -31,7 +31,7 @@ export function modelHotReplacement(moduleName, initState, ActionHandles) {
   }
 }
 
-let reRender = () => void 0;
+let reRender = () => undefined;
 
 let reRenderTimer = 0;
 let appView = null;
@@ -72,7 +72,7 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
         moduleState = initState;
         moduleState.isModule = true;
       } else {
-        moduleState = Object.assign({}, moduleState, {
+        moduleState = Object.assign(Object.assign({}, moduleState), {}, {
           isHydrate: true
         });
       }
@@ -81,7 +81,7 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
       return store.dispatch(initAction);
     }
 
-    return void 0;
+    return undefined;
   };
 
   model.moduleName = moduleName;
@@ -202,7 +202,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.getState(), {}, payload)));
+        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload)));
       }
     }, {
       kind: "method",
@@ -219,7 +219,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
           return initState;
         }
 
-        return Object.assign({}, initState, {
+        return Object.assign(Object.assign({}, initState), {}, {
           routeParams: routeParams || initState.routeParams
         }, options);
       }
@@ -236,7 +236,7 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "RouteParams",
       value: function RouteParams(payload, action) {
         const state = this.getState();
-        return Object.assign({}, state, {
+        return Object.assign(Object.assign({}, state), {}, {
           routeParams: payload
         });
       }
@@ -246,8 +246,8 @@ export let BaseModelHandlers = _decorate(null, function (_initialize) {
       key: "Loading",
       value: function Loading(payload) {
         const state = this.getState();
-        return Object.assign({}, state, {
-          loading: Object.assign({}, state.loading, {}, payload)
+        return Object.assign(Object.assign({}, state), {}, {
+          loading: Object.assign(Object.assign({}, state.loading), payload)
         });
       }
     }]
@@ -294,26 +294,26 @@ export function getView(moduleName, viewName, modelOptions) {
 
       if (isPromise(initModel)) {
         return initModel.then(() => view);
-      } else {
-        return view;
       }
+
+      return view;
     });
-  } else {
-    cacheModule(result);
-    const view = result.default.views[viewName];
-
-    if (isServerEnv) {
-      return view;
-    }
-
-    const initModel = result.default.model(MetaData.clientStore, modelOptions);
-
-    if (isPromise(initModel)) {
-      return initModel.then(() => view);
-    } else {
-      return view;
-    }
   }
+
+  cacheModule(result);
+  const view = result.default.views[viewName];
+
+  if (isServerEnv) {
+    return view;
+  }
+
+  const initModel = result.default.model(MetaData.clientStore, modelOptions);
+
+  if (isPromise(initModel)) {
+    return initModel.then(() => view);
+  }
+
+  return view;
 }
 
 function getModuleByName(moduleName, moduleGetter) {
@@ -324,10 +324,10 @@ function getModuleByName(moduleName, moduleGetter) {
       cacheModule(module);
       return module;
     });
-  } else {
-    cacheModule(result);
-    return result;
   }
+
+  cacheModule(result);
+  return result;
 }
 
 export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, history, storeOptions = {}, beforeRender) {
@@ -348,7 +348,7 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   let initData = {};
 
   if (storeOptions.initData || client[ssrInitStoreKey]) {
-    initData = Object.assign({}, client[ssrInitStoreKey], {}, storeOptions.initData);
+    initData = Object.assign(Object.assign({}, client[ssrInitStoreKey]), storeOptions.initData);
   }
 
   const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
@@ -359,7 +359,7 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
     preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
   }
 
-  let appModule = undefined;
+  let appModule;
 
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
@@ -384,7 +384,7 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
     paths
   } = storeState.route.data;
   paths.length === 0 && paths.push(appModuleName);
-  let appModule = undefined;
+  let appModule;
   const inited = {};
 
   for (let i = 0, k = paths.length; i < k; i++) {

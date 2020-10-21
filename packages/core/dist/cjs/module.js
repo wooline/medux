@@ -55,7 +55,7 @@ function modelHotReplacement(moduleName, initState, ActionHandles) {
 }
 
 var reRender = function reRender() {
-  return void 0;
+  return undefined;
 };
 
 var reRenderTimer = 0;
@@ -104,7 +104,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
         moduleState = initState;
         moduleState.isModule = true;
       } else {
-        moduleState = Object.assign({}, moduleState, {
+        moduleState = Object.assign(Object.assign({}, moduleState), {}, {
           isHydrate: true
         });
       }
@@ -114,7 +114,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
       return store.dispatch(initAction);
     }
 
-    return void 0;
+    return undefined;
   };
 
   model.moduleName = moduleName;
@@ -239,7 +239,7 @@ var BaseModelHandlers = (0, _decorate2.default)(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.getState(), {}, payload)));
+        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload)));
       }
     }, {
       kind: "method",
@@ -256,7 +256,7 @@ var BaseModelHandlers = (0, _decorate2.default)(null, function (_initialize) {
           return initState;
         }
 
-        return Object.assign({}, initState, {
+        return Object.assign(Object.assign({}, initState), {}, {
           routeParams: routeParams || initState.routeParams
         }, options);
       }
@@ -273,7 +273,7 @@ var BaseModelHandlers = (0, _decorate2.default)(null, function (_initialize) {
       key: "RouteParams",
       value: function RouteParams(payload, action) {
         var state = this.getState();
-        return Object.assign({}, state, {
+        return Object.assign(Object.assign({}, state), {}, {
           routeParams: payload
         });
       }
@@ -283,8 +283,8 @@ var BaseModelHandlers = (0, _decorate2.default)(null, function (_initialize) {
       key: "Loading",
       value: function Loading(payload) {
         var state = this.getState();
-        return Object.assign({}, state, {
-          loading: Object.assign({}, state.loading, {}, payload)
+        return Object.assign(Object.assign({}, state), {}, {
+          loading: Object.assign(Object.assign({}, state.loading), payload)
         });
       }
     }]
@@ -344,28 +344,28 @@ function getView(moduleName, viewName, modelOptions) {
         return initModel.then(function () {
           return view;
         });
-      } else {
-        return view;
       }
+
+      return view;
     });
-  } else {
-    (0, _basic.cacheModule)(result);
-    var view = result.default.views[viewName];
-
-    if (_env.isServerEnv) {
-      return view;
-    }
-
-    var initModel = result.default.model(_basic.MetaData.clientStore, modelOptions);
-
-    if ((0, _basic.isPromise)(initModel)) {
-      return initModel.then(function () {
-        return view;
-      });
-    } else {
-      return view;
-    }
   }
+
+  (0, _basic.cacheModule)(result);
+  var view = result.default.views[viewName];
+
+  if (_env.isServerEnv) {
+    return view;
+  }
+
+  var initModel = result.default.model(_basic.MetaData.clientStore, modelOptions);
+
+  if ((0, _basic.isPromise)(initModel)) {
+    return initModel.then(function () {
+      return view;
+    });
+  }
+
+  return view;
 }
 
 function getModuleByName(moduleName, moduleGetter) {
@@ -376,10 +376,10 @@ function getModuleByName(moduleName, moduleGetter) {
       (0, _basic.cacheModule)(module);
       return module;
     });
-  } else {
-    (0, _basic.cacheModule)(result);
-    return result;
   }
+
+  (0, _basic.cacheModule)(result);
+  return result;
 }
 
 function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
@@ -416,7 +416,7 @@ function _renderApp() {
             initData = {};
 
             if (storeOptions.initData || _env.client[ssrInitStoreKey]) {
-              initData = Object.assign({}, _env.client[ssrInitStoreKey], {}, storeOptions.initData);
+              initData = Object.assign(Object.assign({}, _env.client[ssrInitStoreKey]), storeOptions.initData);
             }
 
             store = (0, _store.buildStore)(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
@@ -429,38 +429,37 @@ function _renderApp() {
               }));
             }
 
-            appModule = undefined;
             i = 0, k = preModuleNames.length;
 
-          case 15:
+          case 14:
             if (!(i < k)) {
-              _context.next = 26;
+              _context.next = 25;
               break;
             }
 
             _moduleName = preModuleNames[i];
-            _context.next = 19;
+            _context.next = 18;
             return getModuleByName(_moduleName, moduleGetter);
 
-          case 19:
+          case 18:
             module = _context.sent;
-            _context.next = 22;
+            _context.next = 21;
             return module.default.model(reduxStore, undefined);
 
-          case 22:
+          case 21:
             if (i === 0) {
               appModule = module;
             }
 
-          case 23:
+          case 22:
             i++;
-            _context.next = 15;
+            _context.next = 14;
             break;
 
-          case 26:
+          case 25:
             reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 
-          case 27:
+          case 26:
           case "end":
             return _context.stop();
         }
@@ -494,42 +493,41 @@ function _renderSSR() {
             storeState = reduxStore.getState();
             paths = storeState.route.data.paths;
             paths.length === 0 && paths.push(appModuleName);
-            appModule = undefined;
             inited = {};
             i = 0, k = paths.length;
 
-          case 12:
+          case 11:
             if (!(i < k)) {
-              _context2.next = 23;
+              _context2.next = 22;
               break;
             }
 
             _paths$i$split = paths[i].split(_basic.config.VSP), _moduleName2 = _paths$i$split[0];
 
             if (inited[_moduleName2]) {
-              _context2.next = 20;
+              _context2.next = 19;
               break;
             }
 
             inited[_moduleName2] = true;
             module = moduleGetter[_moduleName2]();
-            _context2.next = 19;
+            _context2.next = 18;
             return module.default.model(reduxStore, undefined);
 
-          case 19:
+          case 18:
             if (i === 0) {
               appModule = module;
             }
 
-          case 20:
+          case 19:
             i++;
-            _context2.next = 12;
+            _context2.next = 11;
             break;
 
-          case 23:
+          case 22:
             return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 24:
+          case 23:
           case "end":
             return _context2.stop();
         }

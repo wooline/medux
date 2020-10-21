@@ -28,12 +28,12 @@
     "eslint": "eslint --cache .",
     "eslintSrc": "eslint --cache ./src",
     "buildTypes": "tsc --project ./src/tsconfig.types.json && copyfiles -f ./src/*.d.ts ./types",
-    "prebuild": "yarn type && yarn typeSrc && yarn eslint && yarn eslintSrc && rimraf ./dist ./types && yarn buildTypes",
-    "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.tsx --hideSources --theme markdown && node fixDocs",
+    "prebuild": "yarn type & yarn typeSrc & yarn eslint & yarn eslintSrc && rimraf ./dist ./types && yarn buildTypes",
     "build:next": "cross-env NODE_ENV=production NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_ENV=production NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_ENV=production NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
     "build": "yarn build:next & yarn build:esm & yarn build:cjs",
+    "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.tsx --hideSources --theme markdown && node fixDocs",
     "eslintConfig": "eslint --print-config /Users/zy/work/medux/medux/packages/react/src/index.tsx > eslintConfig.txt"
   },
   "peerDependencies": {

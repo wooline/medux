@@ -1,9 +1,8 @@
+import { Unsubscribe } from 'redux';
 import { LoadingState } from './sprite';
 import { ModuleGetter } from './module';
-import { Unsubscribe } from 'redux';
 export declare function isServer(): boolean;
 export declare function setLoadingDepthTime(second: number): void;
-export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, groupName?: string): T;
 export declare const config: {
     NSP: string;
     VSP: string;
@@ -28,6 +27,7 @@ export declare const ActionTypes: {
     Error: string;
     RouteChange: string;
 };
+export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, groupName?: string): T;
 export interface ActionCreatorMap {
     [moduleName: string]: ActionCreatorList;
 }
@@ -47,7 +47,7 @@ export interface ModelStore extends Store {
         reducerMap: ReducerMap;
         effectMap: EffectMap;
         injectedModules: {
-            [moduleName: string]: {};
+            [moduleName: string]: Record<string, any>;
         };
         beforeState: StoreState;
         prevState: StoreState;

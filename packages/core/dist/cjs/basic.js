@@ -3,8 +3,8 @@
 exports.__esModule = true;
 exports.isServer = isServer;
 exports.setLoadingDepthTime = setLoadingDepthTime;
-exports.setLoading = setLoading;
 exports.setConfig = setConfig;
+exports.setLoading = setLoading;
 exports.cacheModule = cacheModule;
 exports.isPromise = isPromise;
 exports.getClientStore = getClientStore;
@@ -31,6 +31,36 @@ var depthTime = 2;
 function setLoadingDepthTime(second) {
   depthTime = second;
 }
+
+var config = {
+  NSP: '.',
+  VSP: '.',
+  MSP: ','
+};
+exports.config = config;
+
+function setConfig(_config) {
+  _config.NSP && (config.NSP = _config.NSP);
+  _config.VSP && (config.VSP = _config.VSP);
+  _config.MSP && (config.MSP = _config.MSP);
+}
+
+var MetaData = {
+  appViewName: null,
+  actionCreatorMap: null,
+  clientStore: null,
+  appModuleName: null,
+  moduleGetter: null
+};
+exports.MetaData = MetaData;
+var ActionTypes = {
+  MLoading: 'Loading',
+  MInit: 'Init',
+  MRouteParams: 'RouteParams',
+  Error: "medux" + config.NSP + "Error",
+  RouteChange: "medux" + config.NSP + "RouteChange"
+};
+exports.ActionTypes = ActionTypes;
 
 function setLoading(item, moduleName, groupName) {
   if (moduleName === void 0) {
@@ -68,56 +98,26 @@ function setLoading(item, moduleName, groupName) {
   return item;
 }
 
-var config = {
-  NSP: '.',
-  VSP: '.',
-  MSP: ','
-};
-exports.config = config;
-
-function setConfig(_config) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.VSP && (config.VSP = _config.VSP);
-  _config.MSP && (config.MSP = _config.MSP);
-}
-
-var MetaData = {
-  appViewName: null,
-  actionCreatorMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null
-};
-exports.MetaData = MetaData;
-var ActionTypes = {
-  MLoading: 'Loading',
-  MInit: 'Init',
-  MRouteParams: 'RouteParams',
-  Error: "medux" + config.NSP + "Error",
-  RouteChange: "medux" + config.NSP + "RouteChange"
-};
-exports.ActionTypes = ActionTypes;
-
 function cacheModule(module) {
   var moduleName = module.default.moduleName;
   var moduleGetter = MetaData.moduleGetter;
   var fn = moduleGetter[moduleName];
 
-  if (fn['__module__'] === module) {
-    return fn;
-  } else {
-    fn = function fn() {
-      return module;
-    };
-
-    fn['__module__'] = module;
-    moduleGetter[moduleName] = fn;
+  if (fn.__module__ === module) {
     return fn;
   }
+
+  fn = function fn() {
+    return module;
+  };
+
+  fn.__module__ = module;
+  moduleGetter[moduleName] = fn;
+  return fn;
 }
 
 function isPromise(data) {
-  return typeof data === 'object' && typeof data['then'] === 'function';
+  return typeof data === 'object' && typeof data.then === 'function';
 }
 
 function getClientStore() {
@@ -225,21 +225,21 @@ function delayPromise(second) {
 function isProcessedError(error) {
   if (typeof error !== 'object' || error.meduxProcessed === undefined) {
     return undefined;
-  } else {
-    return !!error.meduxProcessed;
   }
+
+  return !!error.meduxProcessed;
 }
 
 function setProcessedError(error, meduxProcessed) {
   if (typeof error === 'object') {
     error.meduxProcessed = meduxProcessed;
     return error;
-  } else {
-    return {
-      meduxProcessed: meduxProcessed,
-      error: error
-    };
   }
+
+  return {
+    meduxProcessed: meduxProcessed,
+    error: error
+  };
 }
 
 function bindThis(fun, thisObj) {

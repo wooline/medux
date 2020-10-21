@@ -7,8 +7,6 @@ exports.TaskCounter = exports.PDispatcher = exports.PEvent = exports.LoadingStat
 
 var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
-var _createSuper2 = _interopRequireDefault(require("@babel/runtime/helpers/createSuper"));
-
 var _inheritsLoose2 = _interopRequireDefault(require("@babel/runtime/helpers/inheritsLoose"));
 
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
@@ -138,8 +136,6 @@ exports.PDispatcher = PDispatcher;
 
 var TaskCounter = function (_PDispatcher) {
   (0, _inheritsLoose2.default)(TaskCounter, _PDispatcher);
-
-  var _super = (0, _createSuper2.default)(TaskCounter);
 
   function TaskCounter(deferSecond) {
     var _this2;

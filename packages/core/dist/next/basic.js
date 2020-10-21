@@ -8,6 +8,30 @@ let depthTime = 2;
 export function setLoadingDepthTime(second) {
   depthTime = second;
 }
+export const config = {
+  NSP: '.',
+  VSP: '.',
+  MSP: ','
+};
+export function setConfig(_config) {
+  _config.NSP && (config.NSP = _config.NSP);
+  _config.VSP && (config.VSP = _config.VSP);
+  _config.MSP && (config.MSP = _config.MSP);
+}
+export const MetaData = {
+  appViewName: null,
+  actionCreatorMap: null,
+  clientStore: null,
+  appModuleName: null,
+  moduleGetter: null
+};
+export const ActionTypes = {
+  MLoading: 'Loading',
+  MInit: 'Init',
+  MRouteParams: 'RouteParams',
+  Error: `medux${config.NSP}Error`,
+  RouteChange: `medux${config.NSP}RouteChange`
+};
 export function setLoading(item, moduleName = MetaData.appModuleName, groupName = 'global') {
   if (isServerEnv) {
     return item;
@@ -33,47 +57,23 @@ export function setLoading(item, moduleName = MetaData.appModuleName, groupName 
   loadings[key].addItem(item);
   return item;
 }
-export const config = {
-  NSP: '.',
-  VSP: '.',
-  MSP: ','
-};
-export function setConfig(_config) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.VSP && (config.VSP = _config.VSP);
-  _config.MSP && (config.MSP = _config.MSP);
-}
-export const MetaData = {
-  appViewName: null,
-  actionCreatorMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null
-};
-export const ActionTypes = {
-  MLoading: 'Loading',
-  MInit: 'Init',
-  MRouteParams: 'RouteParams',
-  Error: `medux${config.NSP}Error`,
-  RouteChange: `medux${config.NSP}RouteChange`
-};
 export function cacheModule(module) {
   const moduleName = module.default.moduleName;
   const moduleGetter = MetaData.moduleGetter;
   let fn = moduleGetter[moduleName];
 
-  if (fn['__module__'] === module) {
-    return fn;
-  } else {
-    fn = () => module;
-
-    fn['__module__'] = module;
-    moduleGetter[moduleName] = fn;
+  if (fn.__module__ === module) {
     return fn;
   }
+
+  fn = () => module;
+
+  fn.__module__ = module;
+  moduleGetter[moduleName] = fn;
+  return fn;
 }
 export function isPromise(data) {
-  return typeof data === 'object' && typeof data['then'] === 'function';
+  return typeof data === 'object' && typeof data.then === 'function';
 }
 export function getClientStore() {
   return MetaData.clientStore;
@@ -170,20 +170,20 @@ export function delayPromise(second) {
 export function isProcessedError(error) {
   if (typeof error !== 'object' || error.meduxProcessed === undefined) {
     return undefined;
-  } else {
-    return !!error.meduxProcessed;
   }
+
+  return !!error.meduxProcessed;
 }
 export function setProcessedError(error, meduxProcessed) {
   if (typeof error === 'object') {
     error.meduxProcessed = meduxProcessed;
     return error;
-  } else {
-    return {
-      meduxProcessed,
-      error
-    };
   }
+
+  return {
+    meduxProcessed,
+    error
+  };
 }
 
 function bindThis(fun, thisObj) {

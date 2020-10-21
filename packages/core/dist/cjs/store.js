@@ -5,9 +5,9 @@ exports.loadModel = loadModel;
 exports.getActionData = getActionData;
 exports.buildStore = buildStore;
 
-var _basic = require("./basic");
-
 var _redux = require("redux");
+
+var _basic = require("./basic");
 
 var _env = require("./env");
 
@@ -30,11 +30,13 @@ function loadModel(moduleName, storeInstance, options) {
         (0, _basic.cacheModule)(module);
         return module.default.model(store, options);
       });
-    } else {
-      (0, _basic.cacheModule)(result);
-      return result.default.model(store, options);
     }
+
+    (0, _basic.cacheModule)(result);
+    return result.default.model(store, options);
   }
+
+  return undefined;
 }
 
 function getActionData(action) {
@@ -113,7 +115,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         return payload;
       }
 
-      return Object.assign({}, state, {}, payload);
+      return Object.assign(Object.assign({}, state), payload);
     }
 
     return state;
@@ -133,12 +135,12 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
       if (result !== rootState[moduleName]) {
         var _Object$assign;
 
-        meta.currentState = Object.assign({}, meta.currentState, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
+        meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
       }
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-    var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
+    var handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -168,7 +170,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
           if (result !== rootState[moduleName]) {
             var _Object$assign2;
 
-            meta.currentState = Object.assign({}, meta.currentState, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
+            meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
           }
         }
       });
@@ -209,7 +211,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-        var handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
+        var handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
@@ -333,7 +335,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         effectMap: {},
         injectedModules: {},
         destroy: function destroy() {
-          return void 0;
+          return undefined;
         }
       };
       return newStore;

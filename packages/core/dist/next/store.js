@@ -1,5 +1,5 @@
-import { ActionTypes, MetaData, cacheModule, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { applyMiddleware, compose, createStore } from 'redux';
+import { ActionTypes, MetaData, cacheModule, config, isProcessedError, isPromise, setProcessedError } from './basic';
 import { client, isDevelopmentEnv, isServerEnv } from './env';
 import { errorAction, routeChangeAction, routeParamsAction } from './actions';
 
@@ -20,11 +20,13 @@ export function loadModel(moduleName, storeInstance, options) {
         cacheModule(module);
         return module.default.model(store, options);
       });
-    } else {
-      cacheModule(result);
-      return result.default.model(store, options);
     }
+
+    cacheModule(result);
+    return result.default.model(store, options);
   }
+
+  return undefined;
 }
 export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
@@ -87,7 +89,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
         return payload;
       }
 
-      return Object.assign({}, state, {}, payload);
+      return Object.assign(Object.assign({}, state), payload);
     }
 
     return state;
@@ -105,14 +107,14 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
       const result = storeReducers[moduleName](rootState[moduleName], action);
 
       if (result !== rootState[moduleName]) {
-        meta.currentState = Object.assign({}, meta.currentState, {
+        meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, {
           [moduleName]: result
         });
       }
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
+    const handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -140,7 +142,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
           const result = fun(...getActionData(action));
 
           if (result !== rootState[moduleName]) {
-            meta.currentState = Object.assign({}, meta.currentState, {
+            meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, {
               [moduleName]: result
             });
           }
@@ -180,7 +182,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
 
     const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, {}, handlersEvery);
+    const handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -291,7 +293,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
         reducerMap: {},
         effectMap: {},
         injectedModules: {},
-        destroy: () => void 0
+        destroy: () => undefined
       };
       return newStore;
     };
