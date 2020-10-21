@@ -1,6 +1,6 @@
 {
   "name": "@medux/web",
-  "version": "1.1.1-alpha.1",
+  "version": "1.1.1-alpha.2",
   "description": "The practice of @medux/core in web app.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web",
   "author": "wooline <wooline@qq.com>",
@@ -35,11 +35,11 @@
     "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.ts --hideSources --theme markdown && node fixDocs"
   },
   "dependencies": {
-    "@types/history": "~4.7.7",
-    "history": "~4.10.1",
     "@babel/runtime": "~7.9.0",
-    "@medux/core": "^1.1.1-alpha.1",
-    "@medux/route-plan-a": "^1.1.1-alpha.1"
+    "@medux/core": "^1.1.1-alpha.2",
+    "@medux/route-plan-a": "^1.1.1-alpha.2",
+    "@types/history": "~4.7.7",
+    "history": "~4.10.1"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
