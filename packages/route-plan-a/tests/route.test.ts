@@ -1,4 +1,4 @@
-import {MeduxLocation, RouteConfig, TransformRoute, buildTransformRoute, setRouteConfig} from '../index';
+import {MeduxLocation, RouteConfig, TransformRoute, buildTransformRoute, setRouteConfig} from 'src/index';
 
 enum ViewNames {
   'appMain' = 'app.Main',
@@ -58,7 +58,7 @@ interface CommentsRouteParams {
   articleId: string;
   _detailKey: string;
   _listKey: string;
-  //将搜索条件中的articleType和articleId放在path路径中传递
+  // 将搜索条件中的articleType和articleId放在path路径中传递
   listSearch: {
     isNewest: boolean;
     page: number;

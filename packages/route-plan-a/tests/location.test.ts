@@ -1,4 +1,4 @@
-import {checkUrl, safelocationToUrl, safeurlToLocation} from '../utils';
+import {checkUrl, safelocationToUrl, safeurlToLocation} from 'src/utils';
 
 describe('绝对路径', () => {
   const curPathname = '/aa/bb/cc/';
