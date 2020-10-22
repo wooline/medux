@@ -47,6 +47,7 @@ class WebHistoryActions extends BaseHistoryActions {
     this._unlistenHistory = this._history.block((location, action) => {
       const meduxLocation = _locationMap ? _locationMap.in({...location, action}) : {...location, action};
       if (!this.equal(meduxLocation, this.getLocation())) {
+        // 如果宿主路由未经过本系统而先变化，此时需要经过确认
         return `${meduxLocation.action}::${safelocationToUrl(meduxLocation)}`;
       }
       return undefined;

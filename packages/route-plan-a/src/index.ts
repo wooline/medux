@@ -379,7 +379,7 @@ export function buildTransformRoute<P extends RouteParams>(routeConfig: RouteCon
       const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       const rule = viewToRule[absoluteViewName];
       const keys = ruleToKeys[rule] || [];
-      if (moduleName !== '@' && view) {
+      if (moduleName && view) {
         if (!views[moduleName]) {
           views[moduleName] = {};
         }
