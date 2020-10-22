@@ -81,7 +81,7 @@ class WebHistoryActions extends BaseHistoryActions {
   replace(data: RoutePayload<any> | LocationPayload | string): Promise<void> {
     const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
     return this.dispatch({...location, action: Action.Replace}).then(() => {
-      this._history.push(this._locationMap ? this._locationMap.out(location) : location);
+      this._history.replace(this._locationMap ? this._locationMap.out(location) : location);
     });
   }
 
@@ -107,9 +107,9 @@ export function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | stri
 
   const historyOptions = {
     getUserConfirmation(str: string, callback: (result: boolean) => void) {
-      const arr = str.split('::');
-      const location = safeurlToLocation(arr.join('::'));
-      location.action = arr.shift();
+      const [action, pathname] = str.split('::');
+      const location = safeurlToLocation(pathname);
+      location.action = action;
       historyActions
         .dispatch(location)
         .then(() => {

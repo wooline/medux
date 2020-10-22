@@ -93,8 +93,8 @@ function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
   history.subscribe(handleLocationChange);
   store._medux_.destroy = history.destroy;
   store.subscribe(() => {
-    if (history.initialized) {
-      const storeRouteState = (store.getState() as StoreState).route;
+    const storeRouteState = (store.getState() as StoreState).route;
+    if (history.initialized && storeRouteState) {
       if (!history.equal(storeRouteState.location, history.getLocation())) {
         inTimeTravelling = true;
         history.patch(storeRouteState.location, storeRouteState.data);

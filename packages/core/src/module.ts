@@ -354,8 +354,8 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
    * this.dispatch(this.actions.Update({...this.state,...args}));
    * ```
    */
-  protected updateState(payload: Partial<S>) {
-    this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}));
+  protected updateState(payload: Partial<S>, key: string) {
+    this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}, key));
   }
 
   /**
@@ -381,7 +381,7 @@ export abstract class BaseModelHandlers<S extends BaseModelState, R extends {rou
    * 通用的reducerHandler，通常用来更新moduleState
    */
   @reducer
-  protected Update(payload: S): S {
+  protected Update(payload: S, key: string): S {
     return payload;
   }
 

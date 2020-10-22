@@ -1,6 +1,6 @@
 /// <reference path="../env/global.d.ts" />
 import {MeduxLocation, setRouteConfig} from '@medux/route-plan-a';
-import {RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, DisplayViews} from '@medux/core';
+import {RootState as BaseRootState, RouteState, ModuleGetter, StoreOptions, StoreState, ActionTypes, isServer} from '@medux/core';
 import {Store, Middleware} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
@@ -35,23 +35,17 @@ export type {LocationMap, HistoryActions} from '@medux/web';
 let historyActions: HistoryActions | undefined;
 let transformRoute: TransformRoute | undefined;
 
-function checkRedirect(views: DisplayViews, throwError?: boolean): boolean {
-  if (views['@']) {
-    const url = Object.keys(views['@'])[0];
-    if (throwError) {
-      throw {code: '301', message: url, detail: url};
-    } else {
-      historyActions!.replace(url);
-    }
-    return true;
-  }
-  return false;
-}
 const redirectMiddleware: Middleware = () => (next) => (action) => {
   if (action.type === ActionTypes.RouteChange) {
     const routeState: RouteState = action.payload[0];
     const {views} = routeState.data;
-    if (checkRedirect(views)) {
+    if (views['@']) {
+      const url = Object.keys(views['@'])[0];
+      if (isServer()) {
+        throw {code: '301', message: url, detail: url};
+      } else {
+        historyActions!.replace(url);
+      }
       return;
     }
   }
@@ -91,9 +85,6 @@ export function buildApp({
   }
   storeOptions.middlewares.unshift(redirectMiddleware);
   return renderApp(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, (store) => {
-    const storeState = store.getState();
-    const {views} = storeState.route.data;
-    checkRedirect(views);
     return beforeRender ? beforeRender({store, historyActions: historyActions!, transformRoute: transformRoute!}) : store;
   });
 }
@@ -126,9 +117,6 @@ export function buildSSR({
   historyActions = router.historyActions;
   transformRoute = router.transformRoute;
   return renderSSR(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, (store) => {
-    const storeState = store.getState();
-    const {views} = storeState.route.data;
-    checkRedirect(views, true);
     return beforeRender ? beforeRender({store, historyActions: historyActions!, transformRoute: transformRoute!}) : store;
   });
 }
