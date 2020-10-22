@@ -4520,7 +4520,7 @@
       return this.dispatch(Object.assign(Object.assign({}, location), {}, {
         action: Action.Replace
       })).then(function () {
-        _this3._history.push(_this3._locationMap ? _this3._locationMap.out(location) : location);
+        _this3._history.replace(_this3._locationMap ? _this3._locationMap.out(location) : location);
       });
     };
 
@@ -4547,9 +4547,12 @@
     var history$1;
     var historyOptions = {
       getUserConfirmation: function getUserConfirmation(str, callback) {
-        var arr = str.split('::');
-        var location = safeurlToLocation(arr.join('::'));
-        location.action = arr.shift();
+        var _str$split = str.split('::'),
+            action = _str$split[0],
+            pathname = _str$split[1];
+
+        var location = safeurlToLocation(pathname);
+        location.action = action;
         historyActions.dispatch(location).then(function () {
           callback(true);
         }).catch(function (e) {
