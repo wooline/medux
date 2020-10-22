@@ -59,9 +59,9 @@ function bindHistory(store, history) {
   history.subscribe(handleLocationChange);
   store._medux_.destroy = history.destroy;
   store.subscribe(function () {
-    if (history.initialized) {
-      var storeRouteState = store.getState().route;
+    var storeRouteState = store.getState().route;
 
+    if (history.initialized && storeRouteState) {
       if (!history.equal(storeRouteState.location, history.getLocation())) {
         inTimeTravelling = true;
         history.patch(storeRouteState.location, storeRouteState.data);

@@ -270,6 +270,9 @@ var TaskCounter = function (_PDispatcher) {
   return TaskCounter;
 }(PDispatcher);
 
+function isServer() {
+  return isServerEnv;
+}
 var loadings = {};
 var depthTime = 2;
 function setLoadingDepthTime(second) {
@@ -1114,9 +1117,9 @@ function bindHistory(store, history) {
   history.subscribe(handleLocationChange);
   store._medux_.destroy = history.destroy;
   store.subscribe(function () {
-    if (history.initialized) {
-      var storeRouteState = store.getState().route;
+    var storeRouteState = store.getState().route;
 
+    if (history.initialized && storeRouteState) {
       if (!history.equal(storeRouteState.location, history.getLocation())) {
         inTimeTravelling = true;
         history.patch(storeRouteState.location, storeRouteState.data);
@@ -2821,8 +2824,8 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       key: "updateState",
-      value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload)));
+      value: function updateState(payload, key) {
+        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload), key));
       }
     }, {
       kind: "method",
@@ -2847,7 +2850,7 @@ var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       decorators: [reducer],
       key: "Update",
-      value: function Update(payload) {
+      value: function Update(payload, key) {
         return payload;
       }
     }, {
@@ -4629,26 +4632,6 @@ function createRouter(createHistory, routeConfig, locationMap) {
 var historyActions;
 var transformRoute;
 
-function checkRedirect(views, throwError) {
-  if (views['@']) {
-    var url = Object.keys(views['@'])[0];
-
-    if (throwError) {
-      throw {
-        code: '301',
-        message: url,
-        detail: url
-      };
-    } else {
-      historyActions.replace(url);
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
 var redirectMiddleware = function redirectMiddleware() {
   return function (next) {
     return function (action) {
@@ -4656,7 +4639,19 @@ var redirectMiddleware = function redirectMiddleware() {
         var routeState = action.payload[0];
         var views = routeState.data.views;
 
-        if (checkRedirect(views)) {
+        if (views['@']) {
+          var url = Object.keys(views['@'])[0];
+
+          if (isServer()) {
+            throw {
+              code: '301',
+              message: url,
+              detail: url
+            };
+          } else {
+            historyActions.replace(url);
+          }
+
           return;
         }
       }
@@ -4696,9 +4691,6 @@ function buildApp(_ref) {
 
   storeOptions.middlewares.unshift(redirectMiddleware);
   return renderApp$1(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, function (store) {
-    var storeState = store.getState();
-    var views = storeState.route.data.views;
-    checkRedirect(views);
     return beforeRender ? beforeRender({
       store: store,
       historyActions: historyActions,
@@ -4729,9 +4721,6 @@ function buildSSR(_ref2) {
   historyActions = router.historyActions;
   transformRoute = router.transformRoute;
   return renderSSR$1(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, function (store) {
-    var storeState = store.getState();
-    var views = storeState.route.data.views;
-    checkRedirect(views, true);
     return beforeRender ? beforeRender({
       store: store,
       historyActions: historyActions,

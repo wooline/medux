@@ -1,7 +1,7 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import { setRouteConfig } from '@medux/route-plan-a';
-import { ActionTypes } from '@medux/core';
+import { ActionTypes, isServer } from '@medux/core';
 import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
 import { createRouter } from '@medux/web';
@@ -11,26 +11,6 @@ export { setRouteConfig } from '@medux/route-plan-a';
 var historyActions;
 var transformRoute;
 
-function checkRedirect(views, throwError) {
-  if (views['@']) {
-    var url = Object.keys(views['@'])[0];
-
-    if (throwError) {
-      throw {
-        code: '301',
-        message: url,
-        detail: url
-      };
-    } else {
-      historyActions.replace(url);
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
 var redirectMiddleware = function redirectMiddleware() {
   return function (next) {
     return function (action) {
@@ -38,7 +18,19 @@ var redirectMiddleware = function redirectMiddleware() {
         var routeState = action.payload[0];
         var views = routeState.data.views;
 
-        if (checkRedirect(views)) {
+        if (views['@']) {
+          var url = Object.keys(views['@'])[0];
+
+          if (isServer()) {
+            throw {
+              code: '301',
+              message: url,
+              detail: url
+            };
+          } else {
+            historyActions.replace(url);
+          }
+
           return;
         }
       }
@@ -78,9 +70,6 @@ export function buildApp(_ref) {
 
   storeOptions.middlewares.unshift(redirectMiddleware);
   return renderApp(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, function (store) {
-    var storeState = store.getState();
-    var views = storeState.route.data.views;
-    checkRedirect(views);
     return beforeRender ? beforeRender({
       store: store,
       historyActions: historyActions,
@@ -111,9 +100,6 @@ export function buildSSR(_ref2) {
   historyActions = router.historyActions;
   transformRoute = router.transformRoute;
   return renderSSR(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, function (store) {
-    var storeState = store.getState();
-    var views = storeState.route.data.views;
-    checkRedirect(views, true);
     return beforeRender ? beforeRender({
       store: store,
       historyActions: historyActions,

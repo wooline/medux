@@ -29,7 +29,7 @@
     "eslint": "eslint --cache .",
     "eslintSrc": "eslint --cache ./src",
     "buildTypes": "tsc --project ./src/tsconfig.types.json && copyfiles -f ./src/*.d.ts ./types",
-    "prebuild": "yarn type & yarn typeSrc & yarn eslint & yarn eslintSrc && rimraf ./dist ./types && yarn buildTypes",
+    "prebuild": "node ../../preBuild && yarn type & yarn typeSrc & yarn eslint & yarn eslintSrc && rimraf ./dist ./types && yarn buildTypes",
     "build:next": "cross-env NODE_ENV=production NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_ENV=production NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:pkg": "cross-env NODE_ENV=development NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c",
@@ -50,7 +50,7 @@
     "react-redux": "^7.0.0"
   },
   "dependencies": {
-    "@babel/runtime": "~7.9.0",
+    "@babel/runtime": "7.9.6",
     "@medux/core": "^1.1.1-alpha.3",
     "@medux/react": "^1.1.1-alpha.3",
     "@medux/route-plan-a": "^1.1.1-alpha.3",

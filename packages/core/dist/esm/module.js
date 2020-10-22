@@ -210,8 +210,8 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       key: "updateState",
-      value: function updateState(payload) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload)));
+      value: function updateState(payload, key) {
+        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload), key));
       }
     }, {
       kind: "method",
@@ -236,7 +236,7 @@ export var BaseModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       decorators: [reducer],
       key: "Update",
-      value: function Update(payload) {
+      value: function Update(payload, key) {
         return payload;
       }
     }, {

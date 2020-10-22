@@ -1,3 +1,5 @@
+const runtimeVersion = require('@babel/runtime/package.json').version;
+
 const tag = process.env.NODE_TAG || process.env.NODE_ENV;
 const cfg = {
   next: {code: tag, targets: {chrome: 80}},
@@ -40,7 +42,7 @@ module.exports = (features = []) => {
         '@babel/plugin-transform-runtime',
         {
           useESModules: env.code !== 'cjs' && env.code !== 'test',
-          version: '~7.9.0',
+          version: runtimeVersion,
         },
       ],
     ],
