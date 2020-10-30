@@ -1,14 +1,58 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { config as coreConfig } from '@medux/core';
-import { checkLocation, checkPathname, checkUrl, safelocationToUrl, safeurlToLocation } from './utils';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from './deep-extend';
-export { checkUrl, checkLocation, safeurlToLocation, safelocationToUrl } from './utils';
 
 function dataIsLocation(data) {
   return !!data['pathname'];
 }
 
+export function checkLocation(location) {
+  var data = Object.assign({}, location);
+  data.search = ("?" + (location.search || '')).replace('??', '?');
+  data.hash = ("#" + (location.hash || '')).replace('##', '#');
+
+  if (data.search === '?') {
+    data.search = '';
+  }
+
+  if (data.hash === '#') {
+    data.hash = '';
+  }
+
+  return data;
+}
+export function urlToLocation(url) {
+  url = url.replace(/\/(?=[?#]|$)/, '');
+
+  if (!url) {
+    return {
+      pathname: '/',
+      search: '',
+      hash: ''
+    };
+  }
+
+  var arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  var pathname = arr[0],
+      _arr$ = arr[1],
+      search = _arr$ === void 0 ? '' : _arr$,
+      _arr$2 = arr[2],
+      hash = _arr$2 === void 0 ? '' : _arr$2;
+  return {
+    pathname: pathname,
+    search: search && "?" + search,
+    hash: hash && "#" + hash
+  };
+}
+export function locationToUrl(safeLocation) {
+  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+}
 export var deepAssign = assignDeep;
 var config = {
   escape: true,
@@ -151,10 +195,10 @@ function pathnameParse(pathname, routeConfig, paths, args) {
 
         var _moduleName = _viewName.split(coreConfig.VSP)[0];
 
-        var _params = match.params;
+        var params = match.params;
 
-        if (_params && Object.keys(_params).length > 0) {
-          args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(_params));
+        if (params && Object.keys(params).length > 0) {
+          args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -217,13 +261,13 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   };
 }
 
-export function assignRouteData(paths, params, action) {
+export function assignRouteData(paths, params) {
   var views = paths.reduce(function (prev, cur) {
     var _cur$split = cur.split(coreConfig.VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
-    if (moduleName !== '@' && viewName) {
+    if (moduleName && viewName) {
       if (!prev[moduleName]) {
         prev[moduleName] = {};
       }
@@ -243,8 +287,7 @@ export function assignRouteData(paths, params, action) {
   return {
     views: views,
     paths: paths,
-    params: params,
-    action: action
+    params: params
   };
 }
 
@@ -290,163 +333,92 @@ function extractHashData(params) {
 }
 
 var cacheData = [];
-export function buildTransformRoute(routeConfig, getCurPathname) {
-  var _compileConfig = compileConfig(routeConfig),
-      viewToRule = _compileConfig.viewToRule,
-      ruleToKeys = _compileConfig.ruleToKeys;
 
-  var transformRoute = {
-    locationToRoute: function locationToRoute(location) {
-      var safeLocation = checkLocation(location, getCurPathname());
-      var url = safelocationToUrl(safeLocation);
-      var item = cacheData.find(function (val) {
-        return val && val.url === url;
-      });
-
-      if (item) {
-        item.routeData.action = safeLocation.action;
-        return item.routeData;
-      }
-
-      var pathname = safeLocation.pathname;
-      var paths = [];
-      var pathsArgs = {};
-      pathnameParse(pathname, routeConfig, paths, pathsArgs);
-      var params = splitSearch(safeLocation.search);
-      var hashParams = splitSearch(safeLocation.hash);
-      assignDeep(params, hashParams);
-      var routeData = assignRouteData(paths, assignDeep(pathsArgs, params), safeLocation.action);
-      cacheData.unshift({
-        url: url,
-        routeData: routeData
-      });
-      cacheData.length = 100;
-      return routeData;
-    },
-    routeToLocation: function routeToLocation(paths, params, action) {
-      params = params || {};
-      var pathname;
-      var views = {};
-
-      if (typeof paths === 'string') {
-        pathname = checkPathname(paths, getCurPathname());
-      } else {
-        var data = pathsToPathname(paths, params);
-        pathname = data.pathname;
-        params = data.params;
-        views = data.views;
-      }
-
-      var paramsFilter = excludeDefaultData(params, config.defaultRouteParams, false, views);
-
-      var _extractHashData = extractHashData(paramsFilter),
-          search = _extractHashData.search,
-          hash = _extractHashData.hash;
-
-      var location = {
-        pathname: pathname,
-        search: search ? "?" + config.splitKey + "=" + search : '',
-        hash: hash ? "#" + config.splitKey + "=" + hash : '',
-        action: action
-      };
-      return location;
-    },
-    payloadToLocation: function payloadToLocation(payload) {
-      if (dataIsLocation(payload)) {
-        return checkLocation(payload, getCurPathname());
-      }
-
-      var params = payload.extend ? assignDeep({}, payload.extend.params, payload.params) : payload.params;
-      var location = transformRoute.routeToLocation(payload.paths, params);
-      return checkLocation(location, getCurPathname());
-    },
-    urlToLocation: function urlToLocation(url) {
-      url = checkUrl(url, getCurPathname());
-      return safeurlToLocation(url);
-    }
-  };
-
-  function getPathProps(pathprops, moduleParas, deleteIt) {
-    if (moduleParas === void 0) {
-      moduleParas = {};
-    }
-
-    var val;
-
-    if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
-      var props = pathprops.split('.');
-      var len = props.length - 1;
-      props.reduce(function (p, c, i) {
-        if (i === len) {
-          val = p[c];
-          deleteIt && delete p[c];
-        }
-
-        return p[c] || {};
-      }, moduleParas);
-    } else {
-      val = moduleParas[pathprops];
-      deleteIt && delete moduleParas[pathprops];
-    }
-
-    return val;
+function getPathProps(pathprops, moduleParas, deleteIt) {
+  if (moduleParas === void 0) {
+    moduleParas = {};
   }
 
-  function pathsToPathname(paths, params) {
-    if (params === void 0) {
-      params = {};
-    }
+  var val;
 
-    var len = paths.length - 1;
-    var paramsFilter = assignDeep({}, params);
-    var pathname = '';
-    var views = {};
-    paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-      var _viewName$split = viewName.split(coreConfig.VSP),
-          moduleName = _viewName$split[0],
-          view = _viewName$split[1];
-
-      var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
-      var rule = viewToRule[absoluteViewName];
-      var keys = ruleToKeys[rule] || [];
-
-      if (moduleName !== '@' && view) {
-        if (!views[moduleName]) {
-          views[moduleName] = {};
-        }
-
-        views[moduleName][view] = true;
+  if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
+    var props = pathprops.split('.');
+    var len = props.length - 1;
+    props.reduce(function (p, c, i) {
+      if (i === len) {
+        val = p[c];
+        deleteIt && delete p[c];
       }
 
-      if (index === len) {
-        var toPath = compileToPath(rule);
-        var args = keys.reduce(function (prev, cur) {
-          prev[cur] = getPathProps(cur, params[moduleName]);
-          return prev;
-        }, {});
-        pathname = toPath(args);
-      }
-
-      keys.forEach(function (key) {
-        getPathProps(key, paramsFilter[moduleName], true);
-      });
-      return absoluteViewName;
-    }, '');
-    return {
-      pathname: pathname,
-      views: views,
-      params: paramsFilter
-    };
+      return p[c] || {};
+    }, moduleParas);
+  } else {
+    val = moduleParas[pathprops];
+    deleteIt && delete moduleParas[pathprops];
   }
 
-  return transformRoute;
+  return val;
 }
+
+function pathsToPathname(paths, params, viewToRule, ruleToKeys) {
+  if (params === void 0) {
+    params = {};
+  }
+
+  var len = paths.length - 1;
+  var paramsFilter = assignDeep({}, params);
+  var pathname = '';
+  var views = {};
+  paths.reduce(function (parentAbsoluteViewName, viewName, index) {
+    var _viewName$split = viewName.split(coreConfig.VSP),
+        moduleName = _viewName$split[0],
+        view = _viewName$split[1];
+
+    var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
+    var rule = viewToRule[absoluteViewName];
+    var keys = ruleToKeys[rule] || [];
+
+    if (moduleName && view) {
+      if (!views[moduleName]) {
+        views[moduleName] = {};
+      }
+
+      views[moduleName][view] = true;
+    }
+
+    if (index === len) {
+      var toPath = compileToPath(rule);
+      var args = keys.reduce(function (prev, cur) {
+        prev[cur] = getPathProps(cur, params[moduleName]);
+        return prev;
+      }, {});
+      pathname = toPath(args);
+    }
+
+    keys.forEach(function (key) {
+      getPathProps(key, paramsFilter[moduleName], true);
+    });
+    return absoluteViewName;
+  }, '');
+  return {
+    pathname: pathname,
+    views: views,
+    params: paramsFilter
+  };
+}
+
 export var BaseHistoryActions = function () {
-  function BaseHistoryActions(location, initialized, _transformRoute) {
-    this.initialized = initialized;
-    this._transformRoute = _transformRoute;
+  function BaseHistoryActions(_homeUrl, nativeHistory, routeConfig, locationMap) {
+    this._homeUrl = _homeUrl;
+    this.nativeHistory = nativeHistory;
+    this.routeConfig = routeConfig;
+    this.locationMap = locationMap;
+
+    _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "_uid", 0);
+
+    _defineProperty(this, "_RSP", '|');
 
     _defineProperty(this, "_listenList", {});
 
@@ -454,67 +426,438 @@ export var BaseHistoryActions = function () {
 
     _defineProperty(this, "_location", void 0);
 
+    _defineProperty(this, "_routeData", void 0);
+
     _defineProperty(this, "_startupLocation", void 0);
 
-    this._location = location;
-    this._startupLocation = this._location;
+    _defineProperty(this, "_startupRouteData", void 0);
+
+    _defineProperty(this, "_history", []);
+
+    _defineProperty(this, "_stack", []);
+
+    _defineProperty(this, "_viewToRule", void 0);
+
+    _defineProperty(this, "_ruleToKeys", void 0);
+
+    var _compileConfig = compileConfig(routeConfig),
+        viewToRule = _compileConfig.viewToRule,
+        ruleToKeys = _compileConfig.ruleToKeys;
+
+    this._viewToRule = viewToRule;
+    this._ruleToKeys = ruleToKeys;
   }
 
   var _proto = BaseHistoryActions.prototype;
 
-  _proto.equal = function equal(a, b) {
-    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.action === b.action;
+  _proto.init = function init(initLocation) {
+    this.relaunch(this.locationMap ? this.locationMap.in(initLocation) : initLocation);
   };
 
-  _proto.getLocation = function getLocation() {
-    return this._location;
+  _proto._getCurKey = function _getCurKey() {
+    var _this$getLocation;
+
+    return ((_this$getLocation = this.getLocation()) === null || _this$getLocation === void 0 ? void 0 : _this$getLocation.key) || '';
   };
 
-  _proto.getRouteData = function getRouteData() {
-    return this._transformRoute.locationToRoute(this.getLocation());
+  _proto._getCurPathname = function _getCurPathname() {
+    var _this$getLocation2;
+
+    return ((_this$getLocation2 = this.getLocation()) === null || _this$getLocation2 === void 0 ? void 0 : _this$getLocation2.pathname) || '';
+  };
+
+  _proto.getLocation = function getLocation(startup) {
+    return startup ? this._startupLocation : this._location;
+  };
+
+  _proto.getRouteData = function getRouteData(startup) {
+    return startup ? this._startupRouteData : this._routeData;
+  };
+
+  _proto.getRouteState = function getRouteState() {
+    if (this._location) {
+      return {
+        history: this._history,
+        stack: this._stack,
+        location: this._location,
+        data: this._routeData
+      };
+    }
+
+    return undefined;
+  };
+
+  _proto.locationToRoute = function locationToRoute(safeLocation) {
+    var url = locationToUrl(safeLocation);
+    var item = cacheData.find(function (val) {
+      return val && val.url === url;
+    });
+
+    if (item) {
+      return item.routeData;
+    }
+
+    var pathname = safeLocation.pathname;
+    var paths = [];
+    var pathsArgs = {};
+    pathnameParse(pathname, this.routeConfig, paths, pathsArgs);
+    var params = splitSearch(safeLocation.search);
+    var hashParams = splitSearch(safeLocation.hash);
+    assignDeep(params, hashParams);
+    var routeData = assignRouteData(paths, assignDeep(pathsArgs, params));
+    cacheData.unshift({
+      url: url,
+      routeData: routeData
+    });
+    cacheData.length = 100;
+    return routeData;
+  };
+
+  _proto.routeToLocation = function routeToLocation(paths, params) {
+    params = params || {};
+    var pathname;
+    var views = {};
+
+    if (typeof paths === 'string') {
+      pathname = paths;
+    } else {
+      var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+      pathname = data.pathname;
+      params = data.params;
+      views = data.views;
+    }
+
+    var paramsFilter = excludeDefaultData(params, config.defaultRouteParams, false, views);
+
+    var _extractHashData = extractHashData(paramsFilter),
+        search = _extractHashData.search,
+        hash = _extractHashData.hash;
+
+    return {
+      pathname: pathname,
+      search: search ? "?" + config.splitKey + "=" + search : '',
+      hash: hash ? "#" + config.splitKey + "=" + hash : ''
+    };
+  };
+
+  _proto.payloadToRoute = function payloadToRoute(data) {
+    var params = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
+    var paths = [];
+
+    if (typeof data.paths === 'string') {
+      var pathname = data.paths;
+      pathnameParse(pathname, this.routeConfig, paths, {});
+    } else {
+      paths = data.paths;
+    }
+
+    return assignRouteData(paths, params || {});
+  };
+
+  _proto.payloadToLocation = function payloadToLocation(data) {
+    if (typeof data === 'string') {
+      return urlToLocation(data);
+    }
+
+    if (dataIsLocation(data)) {
+      return checkLocation(data);
+    }
+
+    var params = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
+    return this.routeToLocation(data.paths, params);
+  };
+
+  _proto._createKey = function _createKey() {
+    this._tid++;
+    return "" + this._tid;
+  };
+
+  _proto._getEfficientLocation = function _getEfficientLocation(safeLocation, curPathname) {
+    var routeData = this.locationToRoute(safeLocation);
+
+    if (routeData.views['@']) {
+      var url = Object.keys(routeData.views['@'])[0];
+      var reLocation = urlToLocation(url);
+      return this._getEfficientLocation(reLocation, safeLocation.pathname);
+    }
+
+    return {
+      location: safeLocation,
+      routeData: routeData
+    };
+  };
+
+  _proto._buildHistory = function _buildHistory(location) {
+    var _this = this;
+
+    var action = location.action,
+        url = location.url,
+        pathname = location.pathname,
+        key = location.key;
+
+    var uri = this._urlToUri(url, key);
+
+    var historyList = [].concat(this._history);
+    var stackList = [].concat(this._stack);
+
+    if (action === 'RELAUNCH') {
+      historyList = [uri];
+      stackList = [pathname];
+    } else if (action === 'PUSH') {
+      historyList.unshift(uri);
+
+      if (historyList.length > 10) {
+        historyList.length = 10;
+      }
+
+      if (stackList[0] !== pathname) {
+        stackList.unshift(pathname);
+      }
+
+      if (stackList.length > 10) {
+        stackList.length = 10;
+      }
+    } else if (action === 'REPLACE') {
+      historyList[0] = uri;
+
+      if (stackList[0] !== pathname) {
+        var cpathname = this._uriToUrl(historyList[1]).split('?')[0];
+
+        if (cpathname !== stackList[0]) {
+          stackList.shift();
+        }
+
+        if (stackList[0] !== pathname) {
+          stackList.unshift(pathname);
+        }
+
+        if (stackList.length > 10) {
+          stackList.length = 10;
+        }
+      }
+    } else if (action.startsWith('POP')) {
+      var _n = parseInt(action.replace('POP', ''), 10) || 1;
+
+      var arr = historyList.splice(0, _n + 1, uri).reduce(function (pre, curUri) {
+        var pn = _this._uriToUrl(curUri).split('?')[0];
+
+        if (pre[pre.length - 1] !== pn) {
+          pre.push(pn);
+        }
+
+        return pre;
+      }, []);
+
+      if (arr[arr.length - 1] === this._uriToUrl(historyList[1]).split('?')[0]) {
+        arr.pop();
+      }
+
+      stackList.splice(0, arr.length, pathname);
+
+      if (stackList[0] === stackList[1]) {
+        stackList.shift();
+      }
+    }
+
+    return {
+      history: historyList,
+      stack: stackList
+    };
   };
 
   _proto.subscribe = function subscribe(listener) {
-    var _this = this;
+    var _this2 = this;
 
     this._uid++;
     var uid = this._uid;
     this._listenList[uid] = listener;
     return function () {
-      delete _this._listenList[uid];
+      delete _this2._listenList[uid];
     };
   };
 
   _proto.block = function block(listener) {
-    var _this2 = this;
+    var _this3 = this;
 
     this._uid++;
     var uid = this._uid;
     this._blockerList[uid] = listener;
     return function () {
-      delete _this2._blockerList[uid];
+      delete _this3._blockerList[uid];
     };
   };
 
-  _proto.locationToRouteData = function locationToRouteData(location) {
-    return this._transformRoute.locationToRoute(location);
+  _proto._urlToUri = function _urlToUri(url, key) {
+    return "" + key + this._RSP + url;
   };
 
-  _proto.dispatch = function dispatch(location) {
-    var _this3 = this;
-
-    if (this.equal(location, this._location)) {
-      return Promise.reject();
+  _proto._uriToUrl = function _uriToUrl(uri) {
+    if (uri === void 0) {
+      uri = '';
     }
 
-    return Promise.all(Object.values(this._blockerList).map(function (fn) {
-      return fn(location, _this3._location);
-    })).then(function () {
-      _this3._location = location;
-      Object.values(_this3._listenList).forEach(function (listener) {
-        return listener(location);
-      });
+    return uri.substr(uri.indexOf(this._RSP) + 1);
+  };
+
+  _proto._uriToKey = function _uriToKey(uri) {
+    if (uri === void 0) {
+      uri = '';
+    }
+
+    return uri.substr(0, uri.indexOf(this._RSP));
+  };
+
+  _proto._findHistoryByKey = function _findHistoryByKey(key) {
+    var _this4 = this;
+
+    var index = this._history.findIndex(function (uri) {
+      return uri.startsWith("" + key + _this4._RSP);
     });
+
+    return {
+      index: index,
+      url: index > -1 ? this._uriToUrl(this._history[index]) : ''
+    };
+  };
+
+  _proto.dispatch = function dispatch(paLocation, action, key, callNative) {
+    var _this5 = this;
+
+    if (key === void 0) {
+      key = '';
+    }
+
+    key = key || this._createKey();
+
+    var data = this._getEfficientLocation(paLocation, this._getCurPathname());
+
+    var location = Object.assign(Object.assign({}, data.location), {}, {
+      action: action,
+      url: locationToUrl(data.location),
+      key: key
+    });
+    var routeData = Object.assign(Object.assign({}, data.routeData), {}, {
+      action: action,
+      key: key
+    });
+    return Promise.all(Object.values(this._blockerList).map(function (fn) {
+      return fn(location, _this5.getLocation(), routeData, _this5.getRouteData());
+    })).then(function () {
+      _this5._location = location;
+      _this5._routeData = routeData;
+
+      if (!_this5._startupLocation) {
+        _this5._startupLocation = location;
+        _this5._startupRouteData = routeData;
+      }
+
+      var _this5$_buildHistory = _this5._buildHistory(location),
+          history = _this5$_buildHistory.history,
+          stack = _this5$_buildHistory.stack;
+
+      _this5._history = history;
+      _this5._stack = stack;
+      Object.values(_this5._listenList).forEach(function (listener) {
+        return listener({
+          location: location,
+          data: routeData,
+          history: _this5._history,
+          stack: _this5._stack
+        });
+      });
+
+      if (callNative) {
+        if (typeof callNative === 'number') {
+          _this5.nativeHistory.pop(callNative);
+        } else {
+          _this5.nativeHistory[callNative](_this5.locationMap ? _this5.locationMap.out(location) : location);
+        }
+      }
+
+      return location;
+    });
+  };
+
+  _proto.passive = function passive(nativeLocation, action) {
+    if (nativeLocation.key !== this._getCurKey()) {
+      if (action === 'POP') {
+        if (nativeLocation.key) {
+          var _this$_findHistoryByK = this._findHistoryByKey(nativeLocation.key),
+              index = _this$_findHistoryByK.index,
+              url = _this$_findHistoryByK.url;
+
+          if (index > 0) {
+            this.dispatch(urlToLocation(url), "POP" + index, nativeLocation.key);
+            return;
+          }
+        }
+
+        action = 'RELAUNCH';
+      }
+
+      var _location = urlToLocation(nativeLocation.url);
+
+      this.dispatch(this.locationMap ? this.locationMap.in(_location) : _location, action, nativeLocation.key);
+    }
+  };
+
+  _proto.relaunch = function relaunch(data) {
+    var paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'RELAUNCH', '', 'relaunch');
+  };
+
+  _proto.push = function push(data) {
+    var paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'PUSH', '', 'PUSH');
+  };
+
+  _proto.replace = function replace(data) {
+    var paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'REPLACE', '', 'replace');
+  };
+
+  _proto.pop = function pop(n, root) {
+    if (n === void 0) {
+      n = 1;
+    }
+
+    if (root === void 0) {
+      root = 'FIRST';
+    }
+
+    n = n || 1;
+    var uri = this._history[n];
+
+    if (uri) {
+      var _url = this._uriToUrl(uri);
+
+      var _key2 = this._uriToKey(uri);
+
+      var paLocation = urlToLocation(_url);
+      return this.dispatch(paLocation, "POP" + n, _key2, n);
+    }
+
+    var url = root;
+
+    if (root === 'HOME') {
+      url = this._homeUrl;
+    } else if (root === 'FIRST') {
+      url = this._startupLocation.url;
+    }
+
+    if (!url) {
+      return Promise.reject(1);
+    }
+
+    return this.relaunch(url);
+  };
+
+  _proto.home = function home(root) {
+    if (root === void 0) {
+      root = 'FIRST';
+    }
+
+    return this.relaunch(root === 'HOME' ? this._homeUrl : this._startupLocation.url);
   };
 
   return BaseHistoryActions;

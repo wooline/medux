@@ -1,36 +1,13 @@
 "use strict";
 
 exports.__esModule = true;
-exports.checkPathname = checkPathname;
 exports.checkLocation = checkLocation;
-exports.safelocationToUrl = safelocationToUrl;
-exports.checkUrl = checkUrl;
-exports.safeurlToLocation = safeurlToLocation;
+exports.urlToLocation = urlToLocation;
 
-function checkPathname(pathname, curPathname) {
-  curPathname = ("/" + curPathname).replace('//', '/').replace(/\/$/, '');
-
-  if (pathname.startsWith('./')) {
-    pathname = curPathname + pathname.replace('./', '/');
-  } else if (pathname.startsWith('../')) {
-    var _pathname$match;
-
-    var n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
-    var arr = curPathname.split('/');
-    arr.length -= n;
-    pathname = arr.join('/') + "/" + pathname.replace(/\.\.\//g, '');
-  } else {
-    pathname = ("/" + pathname).replace('//', '/');
-  }
-
-  return pathname;
-}
-
-function checkLocation(location, curPathname) {
+function checkLocation(location) {
   var data = Object.assign({}, location);
-  data.pathname = checkPathname(data.pathname || '/', curPathname);
-  data.search = ("?" + (data.search || '')).replace('??', '?');
-  data.hash = ("#" + (data.hash || '')).replace('##', '#');
+  data.search = ("?" + (location.search || '')).replace('??', '?');
+  data.hash = ("#" + (location.hash || '')).replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';
@@ -43,25 +20,10 @@ function checkLocation(location, curPathname) {
   return data;
 }
 
-function safelocationToUrl(safeLocation) {
-  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
-}
+function urlToLocation(url) {
+  url = url.replace(/\/(?=[?#]|$)/, '');
 
-function checkUrl(url, curPathname) {
-  if (curPathname === void 0) {
-    curPathname = '';
-  }
-
-  if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
-    return '/';
-  }
-
-  url = checkPathname(url, curPathname);
-  return url.replace(/\/(?=[?#]|$)/, '');
-}
-
-function safeurlToLocation(safeurl) {
-  if (!safeurl) {
+  if (!url) {
     return {
       pathname: '/',
       search: '',
@@ -69,9 +31,9 @@ function safeurlToLocation(safeurl) {
     };
   }
 
-  var arr = safeurl.split(/[?#]/);
+  var arr = url.split(/[?#]/);
 
-  if (arr.length === 2 && safeurl.indexOf('?') < 0) {
+  if (arr.length === 2 && url.indexOf('?') < 0) {
     arr.splice(1, 0, '');
   }
 

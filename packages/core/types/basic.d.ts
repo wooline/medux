@@ -7,11 +7,13 @@ export declare const config: {
     NSP: string;
     VSP: string;
     MSP: string;
+    RSP: string;
 };
 export declare function setConfig(_config: {
     NSP?: string;
     VSP?: string;
     MSP?: string;
+    RSP?: string;
 }): void;
 export declare const MetaData: {
     actionCreatorMap: ActionCreatorMap;
@@ -60,13 +62,23 @@ export declare type RouteParams = {
         [key: string]: any;
     } | undefined;
 };
+export declare type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
 export interface RouteData<P extends RouteParams = any> {
     views: DisplayViews;
     params: P;
     paths: string[];
-    action?: string;
+    action: HistoryAction;
+    key: string;
 }
-export interface RouteState<L = any, P extends RouteParams = any> {
+export interface Location {
+    url: string;
+    pathname: string;
+    action: HistoryAction;
+    key: string;
+}
+export interface RouteState<L extends Location = Location, P extends RouteParams = RouteParams> {
+    history: string[];
+    stack: string[];
     location: L;
     data: RouteData<P>;
 }

@@ -35,6 +35,7 @@ export declare type RouteViews<G extends ModuleGetter> = {
 };
 export declare type RootState<G extends ModuleGetter, L> = {
     route: {
+        history: string[];
         location: L;
         data: {
             views: RouteViews<G>;

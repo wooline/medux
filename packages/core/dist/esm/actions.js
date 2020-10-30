@@ -5,10 +5,10 @@ export function errorAction(error) {
     payload: [error]
   };
 }
-export function routeChangeAction(route) {
+export function routeChangeAction(routeState) {
   return {
     type: ActionTypes.RouteChange,
-    payload: [route]
+    payload: [routeState]
   };
 }
 export function routeParamsAction(moduleName, params, action) {

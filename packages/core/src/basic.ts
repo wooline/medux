@@ -24,15 +24,18 @@ export function setLoadingDepthTime(second: number) {
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
+ * - RSP 默认为| 用于在路由中唯一标示一个url
  */
 export const config: {
   NSP: string;
   VSP: string;
   MSP: string;
+  RSP: string;
 } = {
   NSP: '.',
   VSP: '.',
   MSP: ',',
+  RSP: '|',
 };
 /**
  * 可供设置的全局参数
@@ -41,10 +44,11 @@ export const config: {
  * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
-export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
+export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string; RSP?: string}) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
+  _config.RSP && (config.RSP = _config.RSP);
 }
 export const MetaData: {
   actionCreatorMap: ActionCreatorMap;
@@ -135,6 +139,7 @@ export interface ModelStore extends Store {
   };
 }
 export type RouteParams = {[moduleName: string]: {[key: string]: any} | undefined};
+export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
 /**
  * 框架内部使用的路由数据结构
  * - 用户需要通过HistoryProxy将宿主的路由数据结构转换为此数据结构
@@ -155,12 +160,27 @@ export interface RouteData<P extends RouteParams = any> {
   /**
    * 路由的打开方式
    */
-  action?: string;
+  action: HistoryAction;
+  key: string;
+}
+export interface Location {
+  url: string;
+  pathname: string;
+  action: HistoryAction;
+  key: string;
 }
 /**
  * Redux中保存的路由数据结构
  */
-export interface RouteState<L = any, P extends RouteParams = any> {
+export interface RouteState<L extends Location = Location, P extends RouteParams = RouteParams> {
+  /**
+   * 路由记录
+   */
+  history: string[];
+  /**
+   * pathname记录
+   */
+  stack: string[];
   /**
    * 宿主的原始路由数据结构
    */

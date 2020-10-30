@@ -14,10 +14,10 @@ export function errorAction(error: any) {
  * 框架定义的全局路由切换ActionCreator，拥有固定的type
  * @param route 路由数据
  */
-export function routeChangeAction(route: RouteState) {
+export function routeChangeAction(routeState: RouteState) {
   return {
     type: ActionTypes.RouteChange,
-    payload: [route],
+    payload: [routeState],
   };
 }
 /**

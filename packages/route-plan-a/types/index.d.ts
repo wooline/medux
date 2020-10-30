@@ -1,35 +1,43 @@
-import { HistoryProxy, RouteData, RouteParams } from '@medux/core';
+import { DisplayViews, HistoryProxy, RouteState, RouteParams, RouteData, Location as BaseLocation, HistoryAction } from '@medux/core';
 import assignDeep from './deep-extend';
-export { checkUrl, checkLocation, safeurlToLocation, safelocationToUrl } from './utils';
-export interface MeduxLocation {
+export interface PaRouteData<P extends RouteParams = RouteParams> {
+    views: DisplayViews;
+    params: P;
+    paths: string[];
+}
+export interface PaLocation {
     pathname: string;
     search: string;
     hash: string;
-    action?: string;
 }
 export interface LocationPayload {
     pathname: string;
     search?: string;
     hash?: string;
-    action?: string;
 }
-export interface RoutePayload<P extends RouteParams> {
+export interface RoutePayload<P extends RouteParams = RouteParams> {
     paths: string[] | string;
     params?: DeepPartial<P>;
-    action?: string;
     extend?: RouteData<P>;
 }
-export interface TransformRoute<P extends RouteParams = any> {
-    locationToRoute: (location: MeduxLocation) => RouteData<P>;
-    routeToLocation: (paths: string[] | string, params?: P, action?: string) => MeduxLocation;
-    payloadToLocation: (payload: LocationPayload | RoutePayload<P>) => MeduxLocation;
-    urlToLocation: (url: string) => MeduxLocation;
+export interface Location extends BaseLocation {
+    pathname: string;
+    search: string;
+    hash: string;
 }
+export interface NativeLocation {
+    key: string;
+    url: string;
+}
+export declare function checkLocation(location: LocationPayload): PaLocation;
+export declare function urlToLocation(url: string): PaLocation;
+export declare function locationToUrl(safeLocation: PaLocation): string;
 export declare const deepAssign: typeof assignDeep;
 export declare function setRouteConfig(conf: {
     escape?: boolean;
     dateParse?: boolean;
     splitKey?: string;
+    homeUrl?: string;
     defaultRouteParams?: {
         [moduleName: string]: any;
     };
@@ -42,27 +50,65 @@ declare type DeepPartial<T> = {
 };
 export declare function assignRouteData(paths: string[], params: {
     [moduleName: string]: any;
-}, action?: string): RouteData;
-export declare function buildTransformRoute<P extends RouteParams>(routeConfig: RouteConfig, getCurPathname: () => string): TransformRoute<P>;
-export declare type LocationListener = (location: MeduxLocation) => void;
-export declare type LocationBlocker = (location: MeduxLocation, curLocation: MeduxLocation) => void | Promise<void>;
-export declare abstract class BaseHistoryActions implements HistoryProxy<MeduxLocation> {
-    initialized: boolean;
-    protected _transformRoute: TransformRoute<any>;
+}): PaRouteData;
+export declare type LocationListener<P extends RouteParams> = (routeState: RouteState<Location, P>) => void;
+export declare type LocationBlocker<P extends RouteParams> = (location: Location, curLocation: Location | undefined, routeData: RouteData<P>, curRouteData: RouteData<P> | undefined) => void | Promise<void>;
+export declare type LocationToLocation = (location: PaLocation) => PaLocation;
+export declare type LocationMap = {
+    in: LocationToLocation;
+    out: LocationToLocation;
+};
+export interface NativeHistory {
+    push(location: Location): void;
+    replace(location: Location): void;
+    relaunch(location: Location): void;
+    pop(n: number): void;
+}
+export declare abstract class BaseHistoryActions<P extends RouteParams = RouteParams> implements HistoryProxy {
+    private _homeUrl;
+    nativeHistory: NativeHistory;
+    routeConfig: RouteConfig;
+    locationMap?: LocationMap | undefined;
+    private _tid;
     private _uid;
+    private _RSP;
     private _listenList;
     private _blockerList;
-    protected _location: MeduxLocation;
-    protected _startupLocation: MeduxLocation;
-    constructor(location: MeduxLocation, initialized: boolean, _transformRoute: TransformRoute<any>);
-    equal(a: MeduxLocation, b: MeduxLocation): boolean;
-    getLocation(): MeduxLocation;
-    getRouteData(): RouteData<any>;
-    subscribe(listener: LocationListener): () => void;
-    block(listener: LocationBlocker): () => void;
-    locationToRouteData(location: MeduxLocation): RouteData<any>;
-    dispatch(location: MeduxLocation): Promise<void>;
-    abstract patch(location: MeduxLocation, routeData: RouteData<any>): void;
+    private _location;
+    private _routeData;
+    private _startupLocation;
+    private _startupRouteData;
+    private _history;
+    private _stack;
+    private _viewToRule;
+    private _ruleToKeys;
+    constructor(_homeUrl: string, nativeHistory: NativeHistory, routeConfig: RouteConfig, locationMap?: LocationMap | undefined);
+    init(initLocation: PaLocation): void;
+    private _getCurKey;
+    private _getCurPathname;
+    getLocation(startup?: boolean): Location | undefined;
+    getRouteData(startup?: boolean): RouteData<P> | undefined;
+    getRouteState(): RouteState<Location, P> | undefined;
+    locationToRoute(safeLocation: PaLocation): PaRouteData<P>;
+    routeToLocation(paths: string[] | string, params?: RouteParams): PaLocation;
+    payloadToRoute(data: RoutePayload<P>): PaRouteData<P>;
+    payloadToLocation(data: RoutePayload<P> | LocationPayload | string): PaLocation;
+    private _createKey;
+    private _getEfficientLocation;
+    private _buildHistory;
+    subscribe(listener: LocationListener<P>): () => void;
+    block(listener: LocationBlocker<P>): () => void;
+    private _urlToUri;
+    private _uriToUrl;
+    private _uriToKey;
+    private _findHistoryByKey;
+    protected dispatch(paLocation: PaLocation, action: HistoryAction, key?: string, callNative?: string | number): Promise<Location>;
+    protected passive(nativeLocation: NativeLocation, action: HistoryAction): void;
+    relaunch(data: RoutePayload<P> | LocationPayload | string): Promise<Location>;
+    push(data: RoutePayload<P> | LocationPayload | string): Promise<Location>;
+    replace(data: RoutePayload<P> | LocationPayload | string): Promise<Location>;
+    pop(n?: number, root?: 'HOME' | 'FIRST' | ''): Promise<Location>;
+    home(root?: 'HOME' | 'FIRST'): Promise<Location>;
     abstract destroy(): void;
-    abstract passive(location: MeduxLocation): void;
 }
+export {};

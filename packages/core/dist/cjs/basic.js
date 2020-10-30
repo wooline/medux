@@ -35,7 +35,8 @@ function setLoadingDepthTime(second) {
 var config = {
   NSP: '.',
   VSP: '.',
-  MSP: ','
+  MSP: ',',
+  RSP: '|'
 };
 exports.config = config;
 
@@ -43,6 +44,7 @@ function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
+  _config.RSP && (config.RSP = _config.RSP);
 }
 
 var MetaData = {

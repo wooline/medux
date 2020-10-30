@@ -1,9 +1,83 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
-import {Action, ActionTypes, MetaData, ModelStore, RouteData, RouteState, StoreState, cacheModule, config, isProcessedError, isPromise, setProcessedError} from './basic';
+import {Action, ActionTypes, MetaData, ModelStore, RouteState, StoreState, cacheModule, config, isProcessedError, isPromise, setProcessedError} from './basic';
 import {Module, ModuleGetter} from './module';
 import {client, isDevelopmentEnv, isServerEnv} from './env';
 import {errorAction, routeChangeAction, routeParamsAction} from './actions';
+
+// const routeHistoryUriTools = {
+//   toUri(url: string, key: string) {
+//     return `${key}${config.RSP}${url}`;
+//   },
+//   toUrl(uri = '') {
+//     return uri.substr(uri.indexOf(config.RSP) + 1);
+//   },
+//   find(uri = '', key: string) {
+//     return uri.startsWith(`${key}${config.RSP}`);
+//   },
+// };
+
+// export function routeReducer(state: RouteState | undefined, reduxAction: Action): RouteState {
+//   if (reduxAction.type === ActionTypes.RouteChange) {
+//     const {location, data} = getActionData(reduxAction)[0] as RouteState;
+//     const {action, url, pathname, key} = location;
+//     const uri = routeHistoryUriTools.toUri(url, key);
+//     if (!state) {
+//       return {location, data, history: [uri], stack: [pathname]};
+//     }
+//     let historyList: string[] = [...state.history];
+//     let stackList: string[] = [...state.stack];
+
+//     if (action === 'RELAUNCH') {
+//       historyList = [uri];
+//       stackList = [pathname];
+//     } else if (action === 'PUSH') {
+//       historyList.unshift(uri);
+//       if (historyList.length > 10) {
+//         historyList.length = 10;
+//       }
+//       if (stackList[0] !== pathname) {
+//         stackList.unshift(pathname);
+//       }
+//       if (stackList.length > 10) {
+//         stackList.length = 10;
+//       }
+//     } else if (action === 'REPLACE') {
+//       historyList[0] = uri;
+//       if (stackList[0] !== pathname) {
+//         const cpathname = routeHistoryUriTools.toUrl(historyList[1]).split('?')[0];
+//         if (cpathname !== stackList[0]) {
+//           stackList.shift();
+//         }
+//         if (stackList[0] !== pathname) {
+//           stackList.unshift(pathname);
+//         }
+//         if (stackList.length > 10) {
+//           stackList.length = 10;
+//         }
+//       }
+//     } else if (action.startsWith('POP')) {
+//       const n = parseInt(action.replace('POP', ''), 10) || 1;
+//       const arr = historyList.splice(0, n + 1, uri).reduce((pre: string[], curUri) => {
+//         const pn = routeHistoryUriTools.toUrl(curUri).split('?')[0];
+//         if (pre[pre.length - 1] !== pn) {
+//           pre.push(pn);
+//         }
+//         return pre;
+//       }, []);
+//       if (arr[arr.length - 1] === routeHistoryUriTools.toUrl(historyList[1]).split('?')[0]) {
+//         arr.pop();
+//       }
+//       stackList.splice(0, arr.length, pathname);
+//       if (stackList[0] === stackList[1]) {
+//         stackList.shift();
+//       }
+//     }
+
+//     return {location, data, history: historyList, stack: stackList};
+//   }
+//   return state!;
+// }
 
 function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
   return typeof module['then'] === 'function';
@@ -44,68 +118,46 @@ export function getActionData(action: Action): any[] {
  * - 路由系统通常由宿主平台自己提供，由于各个平台的路由实现方式不同，为了支持跨平台使用，框架抽象了路由代理
  * - 该代理用来实现medux与宿主路由系统的对接
  */
-export interface HistoryProxy<L = any> {
+export interface HistoryProxy {
   /**
-   * 是否初始化完成了，有些平台路由自动被初始化，如web。有些平台路由需要手动代理，如app
+   * @returns bool 是否初始化完成了，有些平台路由自动被初始化，如web。有些平台路由需要手动代理，如app
    */
-  initialized: boolean;
-  /**
-   * 宿主路由系统的原始数据
-   */
-  getLocation(): L;
+  getRouteState(): RouteState | undefined;
+  // /**
+  //  * 宿主路由系统的原始数据
+  //  */
+  // getLocation(): L;
+  // getRouteData(): R;
   /**
    * 监听宿主路由系统的变化
    * @returns 卸载监听
    */
-  subscribe(listener: (location: L) => void): () => void;
-  /**
-   * 宿主路由系统的原始数据转换为medux的RouteData
-   */
-  locationToRouteData(location: L): RouteData;
-  /**
-   * 对比2个宿主路由系统的原始数据是否相同
-   */
-  equal(a: L, b: L): boolean;
-  /**
-   * - 通常情况下，宿主路由系统的变化引起应用的路由变化
-   * - inTimeTravelling时，应用的路由变化反过来带动宿主路由系统的变化
-   */
-  patch(location: L, routeData: RouteData): void;
+  subscribe(listener: (routeState: RouteState) => void): () => void;
   destroy(): void;
 }
 
-function bindHistory<L>(store: ModelStore, history: HistoryProxy<L>) {
-  let inTimeTravelling = false;
-  const handleLocationChange = (location: L) => {
-    if (!inTimeTravelling) {
-      const {route} = store.getState() as StoreState;
-      if (route) {
-        if (history.equal(route.location, location)) {
-          return;
-        }
-      }
-      const data = history.locationToRouteData(location);
-      store.dispatch(routeChangeAction({location, data}));
-    } else {
-      inTimeTravelling = false;
-    }
+function bindHistory(store: ModelStore, historyProxy: HistoryProxy) {
+  const handleLocationChange = (routeState: RouteState) => {
+    store.dispatch(routeChangeAction(routeState));
   };
-  history.subscribe(handleLocationChange);
-  store._medux_.destroy = history.destroy;
-  store.subscribe(() => {
-    const storeRouteState = (store.getState() as StoreState).route;
-    if (history.initialized && storeRouteState) {
-      if (!history.equal(storeRouteState.location, history.getLocation())) {
-        inTimeTravelling = true;
-        history.patch(storeRouteState.location, storeRouteState.data);
-      }
-    }
-  });
-  history.initialized && handleLocationChange(history.getLocation());
+  historyProxy.subscribe(handleLocationChange);
+  store._medux_.destroy = historyProxy.destroy;
+  const initData = historyProxy.getRouteState();
+  if (initData) {
+    handleLocationChange(initData);
+  }
+  // history.init((key: string) => {
+  //   const uriList = store._medux_.currentState.route.history;
+  //   const index = uriList.findIndex((uri) => routeHistoryUriTools.find(uri, key));
+  //   if (index > 0) {
+  //     return {index, url: routeHistoryUriTools.toUrl(uriList[index])};
+  //   }
+  //   return undefined;
+  // }) && handleLocationChange(history.getLocation(), history.getRouteData());
 }
 
 export function buildStore(
-  history: HistoryProxy<any>,
+  history: HistoryProxy,
   preloadedState: {[key: string]: any} = {},
   storeReducers: ReducersMapObject<any, any> = {},
   storeMiddlewares: Middleware[] = [],
@@ -119,11 +171,7 @@ export function buildStore(
   }
   storeReducers.route = (state: RouteState, action: Action) => {
     if (action.type === ActionTypes.RouteChange) {
-      const payload: RouteState = getActionData(action)[0];
-      if (!state) {
-        return payload;
-      }
-      return {...state, ...payload};
+      return getActionData(action)[0];
     }
     return state;
   };

@@ -6,23 +6,60 @@ import {actions, moduleGetter} from './modules';
 declare const console: any;
 
 const historyProxy: HistoryProxy = {
-  initialized: true,
+  getRouteState: () => ({
+    location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+    data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+    history: ['dsfs|127.0.0.1'],
+    stack: ['127.0.0.1'],
+  }),
   destroy: () => undefined,
-  getLocation() {
-    return '127.0.0.1';
-  },
-  subscribe(listener) {
+  subscribe() {
     return () => undefined;
   },
-  locationToRouteData(location) {
-    return {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []};
-  },
-  equal(a, b) {
-    return a === b;
-  },
-  patch(location, routeData) {},
 };
+describe('route', () => {
+  let mockStore: Store;
+  const actionLogs: string[] = [];
 
+  const logerMiddleware: Middleware = ({dispatch}) => (next) => (originalAction) => {
+    actionLogs.push(originalAction.type);
+    return next(originalAction);
+  };
+
+  beforeAll(() => {
+    return renderApp<() => void>(
+      (store, appModel, appView, ssrKey) => {
+        return (appView2) => {
+          appView2();
+        };
+      },
+      moduleGetter,
+      'moduleA',
+      'Main',
+      historyProxy,
+      {middlewares: [logerMiddleware], initData: {thirdParty: 123}},
+      (store) => {
+        mockStore = store;
+        return store;
+      }
+    );
+  });
+  beforeEach(() => {
+    actionLogs.length = 0;
+  });
+  test('初始状态', () => {
+    expect(mockStore.getState()).toEqual({
+      thirdParty: 123,
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
+      moduleA: {isModule: true, routeParams: {id: 5}, message: 'message', text: 'text', tips: 'tips'},
+    });
+  });
+});
 describe('无SSR时', () => {
   let mockStore: Store;
   const actionLogs: string[] = [];
@@ -56,7 +93,12 @@ describe('无SSR时', () => {
   test('初始状态', () => {
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message', text: 'text', tips: 'tips'},
     });
   });
@@ -65,7 +107,12 @@ describe('无SSR时', () => {
     getView<Function>('moduleC', 'Main');
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
@@ -83,7 +130,12 @@ describe('无SSR时', () => {
     // rootState尚未发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
@@ -91,7 +143,12 @@ describe('无SSR时', () => {
     // currentRootState改变了moduleB的部分
     expect(consoleLogs[1]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message', text: 'text', tips: 'tips'},
@@ -101,7 +158,12 @@ describe('无SSR时', () => {
     // 执行全部完成后，rootState已经全部改变
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
@@ -118,7 +180,12 @@ describe('无SSR时', () => {
     // 当action同时有reducer和effect监听时，reducer先执行完毕后才执行effect，所以在effectHandle中rootState已经发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
@@ -128,7 +195,12 @@ describe('无SSR时', () => {
     // prevRootState指向未经reducer更改的前状态
     expect(consoleLogs[2]).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text', tips: 'tips'},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text', tips: 'tips'},
@@ -136,7 +208,12 @@ describe('无SSR时', () => {
     // reducer是同步执行的，effect是异步的，此时reducer已经全部执行完毕，但是effect还未完成，所以loading状态为Start
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Start'}},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
@@ -145,7 +222,12 @@ describe('无SSR时', () => {
     // await之后effect已经执行完毕了
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips', loading: {global: 'Stop'}},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'message-changed', text: 'text-changed', tips: 'tips2'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'message-changed', text: 'text-changed', tips: 'tips'},
@@ -160,7 +242,12 @@ describe('无SSR时', () => {
     expect(actionLogs.join(' ')).toBe(['moduleA.setTips', 'moduleB.setTips', 'moduleA.Loading', 'moduleC.setTips', 'moduleB.setMessage', 'moduleC.setMessage', 'moduleA.Loading'].join(' '));
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      route: {location: '127.0.0.1', data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: []}},
+      route: {
+        history: ['dsfs|127.0.0.1'],
+        stack: ['127.0.0.1'],
+        location: {url: '127.0.0.1', pathname: '127.0.0.1', key: 'dsfs', action: 'PUSH'},
+        data: {views: {}, params: {moduleA: {id: 5}, moduleB: {id: 6}, moduleC: {id: 7}}, paths: [], action: 'PUSH', key: 'sfsf'},
+      },
       moduleA: {isModule: true, routeParams: {id: 5}, message: 'message-changed', text: 'text-changed', tips: 'tips-changed', loading: {global: 'Stop'}},
       moduleB: {isModule: true, routeParams: {id: 6}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed'},
       moduleC: {isModule: true, routeParams: {id: 7}, message: 'tips-message-changed', text: 'text-changed', tips: 'tips-changed'},

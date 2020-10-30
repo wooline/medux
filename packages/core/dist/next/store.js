@@ -32,44 +32,18 @@ export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function bindHistory(store, history) {
-  let inTimeTravelling = false;
-
-  const handleLocationChange = location => {
-    if (!inTimeTravelling) {
-      const {
-        route
-      } = store.getState();
-
-      if (route) {
-        if (history.equal(route.location, location)) {
-          return;
-        }
-      }
-
-      const data = history.locationToRouteData(location);
-      store.dispatch(routeChangeAction({
-        location,
-        data
-      }));
-    } else {
-      inTimeTravelling = false;
-    }
+function bindHistory(store, historyProxy) {
+  const handleLocationChange = routeState => {
+    store.dispatch(routeChangeAction(routeState));
   };
 
-  history.subscribe(handleLocationChange);
-  store._medux_.destroy = history.destroy;
-  store.subscribe(() => {
-    const storeRouteState = store.getState().route;
+  historyProxy.subscribe(handleLocationChange);
+  store._medux_.destroy = historyProxy.destroy;
+  const initData = historyProxy.getRouteState();
 
-    if (history.initialized && storeRouteState) {
-      if (!history.equal(storeRouteState.location, history.getLocation())) {
-        inTimeTravelling = true;
-        history.patch(storeRouteState.location, storeRouteState.data);
-      }
-    }
-  });
-  history.initialized && handleLocationChange(history.getLocation());
+  if (initData) {
+    handleLocationChange(initData);
+  }
 }
 
 export function buildStore(history, preloadedState = {}, storeReducers = {}, storeMiddlewares = [], storeEnhancers = []) {
@@ -83,13 +57,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
 
   storeReducers.route = (state, action) => {
     if (action.type === ActionTypes.RouteChange) {
-      const payload = getActionData(action)[0];
-
-      if (!state) {
-        return payload;
-      }
-
-      return Object.assign(Object.assign({}, state), payload);
+      return getActionData(action)[0];
     }
 
     return state;

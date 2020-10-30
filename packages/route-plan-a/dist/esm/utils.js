@@ -1,26 +1,7 @@
-export function checkPathname(pathname, curPathname) {
-  curPathname = ("/" + curPathname).replace('//', '/').replace(/\/$/, '');
-
-  if (pathname.startsWith('./')) {
-    pathname = curPathname + pathname.replace('./', '/');
-  } else if (pathname.startsWith('../')) {
-    var _pathname$match;
-
-    var n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
-    var arr = curPathname.split('/');
-    arr.length -= n;
-    pathname = arr.join('/') + "/" + pathname.replace(/\.\.\//g, '');
-  } else {
-    pathname = ("/" + pathname).replace('//', '/');
-  }
-
-  return pathname;
-}
-export function checkLocation(location, curPathname) {
+export function checkLocation(location) {
   var data = Object.assign({}, location);
-  data.pathname = checkPathname(data.pathname || '/', curPathname);
-  data.search = ("?" + (data.search || '')).replace('??', '?');
-  data.hash = ("#" + (data.hash || '')).replace('##', '#');
+  data.search = ("?" + (location.search || '')).replace('??', '?');
+  data.hash = ("#" + (location.hash || '')).replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';
@@ -32,23 +13,10 @@ export function checkLocation(location, curPathname) {
 
   return data;
 }
-export function safelocationToUrl(safeLocation) {
-  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
-}
-export function checkUrl(url, curPathname) {
-  if (curPathname === void 0) {
-    curPathname = '';
-  }
+export function urlToLocation(url) {
+  url = url.replace(/\/(?=[?#]|$)/, '');
 
-  if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
-    return '/';
-  }
-
-  url = checkPathname(url, curPathname);
-  return url.replace(/\/(?=[?#]|$)/, '');
-}
-export function safeurlToLocation(safeurl) {
-  if (!safeurl) {
+  if (!url) {
     return {
       pathname: '/',
       search: '',
@@ -56,9 +24,9 @@ export function safeurlToLocation(safeurl) {
     };
   }
 
-  var arr = safeurl.split(/[?#]/);
+  var arr = url.split(/[?#]/);
 
-  if (arr.length === 2 && safeurl.indexOf('?') < 0) {
+  if (arr.length === 2 && url.indexOf('?') < 0) {
     arr.splice(1, 0, '');
   }
 

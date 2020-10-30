@@ -43,43 +43,18 @@ function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function bindHistory(store, history) {
-  var inTimeTravelling = false;
-
-  var handleLocationChange = function handleLocationChange(location) {
-    if (!inTimeTravelling) {
-      var _ref = store.getState(),
-          route = _ref.route;
-
-      if (route) {
-        if (history.equal(route.location, location)) {
-          return;
-        }
-      }
-
-      var data = history.locationToRouteData(location);
-      store.dispatch((0, _actions.routeChangeAction)({
-        location: location,
-        data: data
-      }));
-    } else {
-      inTimeTravelling = false;
-    }
+function bindHistory(store, historyProxy) {
+  var handleLocationChange = function handleLocationChange(routeState) {
+    store.dispatch((0, _actions.routeChangeAction)(routeState));
   };
 
-  history.subscribe(handleLocationChange);
-  store._medux_.destroy = history.destroy;
-  store.subscribe(function () {
-    var storeRouteState = store.getState().route;
+  historyProxy.subscribe(handleLocationChange);
+  store._medux_.destroy = historyProxy.destroy;
+  var initData = historyProxy.getRouteState();
 
-    if (history.initialized && storeRouteState) {
-      if (!history.equal(storeRouteState.location, history.getLocation())) {
-        inTimeTravelling = true;
-        history.patch(storeRouteState.location, storeRouteState.data);
-      }
-    }
-  });
-  history.initialized && handleLocationChange(history.getLocation());
+  if (initData) {
+    handleLocationChange(initData);
+  }
 }
 
 function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
@@ -109,13 +84,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
   storeReducers.route = function (state, action) {
     if (action.type === _basic.ActionTypes.RouteChange) {
-      var payload = getActionData(action)[0];
-
-      if (!state) {
-        return payload;
-      }
-
-      return Object.assign(Object.assign({}, state), payload);
+      return getActionData(action)[0];
     }
 
     return state;
@@ -183,8 +152,8 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     return meta.prevState;
   };
 
-  var middleware = function middleware(_ref2) {
-    var dispatch = _ref2.dispatch;
+  var middleware = function middleware(_ref) {
+    var dispatch = _ref.dispatch;
     return function (next) {
       return function (originalAction) {
         if (_env.isServerEnv) {
@@ -198,13 +167,13 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         var action = next(originalAction);
 
         if (action.type === _basic.ActionTypes.RouteChange) {
-          var _routeData = meta.prevState.route.data;
-          var rootRouteParams = _routeData.params;
+          var routeData = meta.prevState.route.data;
+          var rootRouteParams = routeData.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
             var routeParams = rootRouteParams[moduleName];
 
             if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch((0, _actions.routeParamsAction)(moduleName, routeParams, _routeData.action));
+              dispatch((0, _actions.routeParamsAction)(moduleName, routeParams, routeData.action));
             }
           });
         }

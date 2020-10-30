@@ -14,10 +14,10 @@ function errorAction(error) {
   };
 }
 
-function routeChangeAction(route) {
+function routeChangeAction(routeState) {
   return {
     type: _basic.ActionTypes.RouteChange,
-    payload: [route]
+    payload: [routeState]
   };
 }
 

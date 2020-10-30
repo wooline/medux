@@ -32,43 +32,18 @@ export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function bindHistory(store, history) {
-  var inTimeTravelling = false;
-
-  var handleLocationChange = function handleLocationChange(location) {
-    if (!inTimeTravelling) {
-      var _ref = store.getState(),
-          route = _ref.route;
-
-      if (route) {
-        if (history.equal(route.location, location)) {
-          return;
-        }
-      }
-
-      var data = history.locationToRouteData(location);
-      store.dispatch(routeChangeAction({
-        location: location,
-        data: data
-      }));
-    } else {
-      inTimeTravelling = false;
-    }
+function bindHistory(store, historyProxy) {
+  var handleLocationChange = function handleLocationChange(routeState) {
+    store.dispatch(routeChangeAction(routeState));
   };
 
-  history.subscribe(handleLocationChange);
-  store._medux_.destroy = history.destroy;
-  store.subscribe(function () {
-    var storeRouteState = store.getState().route;
+  historyProxy.subscribe(handleLocationChange);
+  store._medux_.destroy = historyProxy.destroy;
+  var initData = historyProxy.getRouteState();
 
-    if (history.initialized && storeRouteState) {
-      if (!history.equal(storeRouteState.location, history.getLocation())) {
-        inTimeTravelling = true;
-        history.patch(storeRouteState.location, storeRouteState.data);
-      }
-    }
-  });
-  history.initialized && handleLocationChange(history.getLocation());
+  if (initData) {
+    handleLocationChange(initData);
+  }
 }
 
 export function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
@@ -98,13 +73,7 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
 
   storeReducers.route = function (state, action) {
     if (action.type === ActionTypes.RouteChange) {
-      var payload = getActionData(action)[0];
-
-      if (!state) {
-        return payload;
-      }
-
-      return Object.assign(Object.assign({}, state), payload);
+      return getActionData(action)[0];
     }
 
     return state;
@@ -172,8 +141,8 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
     return meta.prevState;
   };
 
-  var middleware = function middleware(_ref2) {
-    var dispatch = _ref2.dispatch;
+  var middleware = function middleware(_ref) {
+    var dispatch = _ref.dispatch;
     return function (next) {
       return function (originalAction) {
         if (isServerEnv) {
@@ -187,13 +156,13 @@ export function buildStore(history, preloadedState, storeReducers, storeMiddlewa
         var action = next(originalAction);
 
         if (action.type === ActionTypes.RouteChange) {
-          var _routeData = meta.prevState.route.data;
-          var rootRouteParams = _routeData.params;
+          var routeData = meta.prevState.route.data;
+          var rootRouteParams = routeData.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
             var routeParams = rootRouteParams[moduleName];
 
             if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch(routeParamsAction(moduleName, routeParams, _routeData.action));
+              dispatch(routeParamsAction(moduleName, routeParams, routeData.action));
             }
           });
         }

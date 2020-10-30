@@ -88,6 +88,7 @@ export type RouteViews<G extends ModuleGetter> = {[key in keyof G]?: MountViews<
  */
 export type RootState<G extends ModuleGetter, L> = {
   route: {
+    history: string[];
     location: L;
     data: {
       views: RouteViews<G>;

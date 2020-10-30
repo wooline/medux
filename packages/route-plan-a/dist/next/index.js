@@ -1,14 +1,54 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { config as coreConfig } from '@medux/core';
-import { checkLocation, checkPathname, checkUrl, safelocationToUrl, safeurlToLocation } from './utils';
 import { compilePath, compileToPath, matchPath } from './matchPath';
 import assignDeep from './deep-extend';
-export { checkUrl, checkLocation, safeurlToLocation, safelocationToUrl } from './utils';
 
 function dataIsLocation(data) {
   return !!data['pathname'];
 }
 
+export function checkLocation(location) {
+  const data = Object.assign({}, location);
+  data.search = `?${location.search || ''}`.replace('??', '?');
+  data.hash = `#${location.hash || ''}`.replace('##', '#');
+
+  if (data.search === '?') {
+    data.search = '';
+  }
+
+  if (data.hash === '#') {
+    data.hash = '';
+  }
+
+  return data;
+}
+export function urlToLocation(url) {
+  url = url.replace(/\/(?=[?#]|$)/, '');
+
+  if (!url) {
+    return {
+      pathname: '/',
+      search: '',
+      hash: ''
+    };
+  }
+
+  const arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  const [pathname, search = '', hash = ''] = arr;
+  return {
+    pathname,
+    search: search && `?${search}`,
+    hash: hash && `#${hash}`
+  };
+}
+export function locationToUrl(safeLocation) {
+  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+}
 export const deepAssign = assignDeep;
 const config = {
   escape: true,
@@ -195,11 +235,11 @@ function compileConfig(routeConfig, parentAbsoluteViewName = '', viewToRule = {}
   };
 }
 
-export function assignRouteData(paths, params, action) {
+export function assignRouteData(paths, params) {
   const views = paths.reduce((prev, cur) => {
     const [moduleName, viewName] = cur.split(coreConfig.VSP);
 
-    if (moduleName !== '@' && viewName) {
+    if (moduleName && viewName) {
       if (!prev[moduleName]) {
         prev[moduleName] = {};
       }
@@ -219,8 +259,7 @@ export function assignRouteData(paths, params, action) {
   return {
     views,
     paths,
-    params,
-    action
+    params
   };
 }
 
@@ -262,155 +301,81 @@ function extractHashData(params) {
 }
 
 const cacheData = [];
-export function buildTransformRoute(routeConfig, getCurPathname) {
-  const {
-    viewToRule,
-    ruleToKeys
-  } = compileConfig(routeConfig);
-  const transformRoute = {
-    locationToRoute(location) {
-      const safeLocation = checkLocation(location, getCurPathname());
-      const url = safelocationToUrl(safeLocation);
-      const item = cacheData.find(val => {
-        return val && val.url === url;
-      });
 
-      if (item) {
-        item.routeData.action = safeLocation.action;
-        return item.routeData;
+function getPathProps(pathprops, moduleParas = {}, deleteIt) {
+  let val;
+
+  if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
+    const props = pathprops.split('.');
+    const len = props.length - 1;
+    props.reduce((p, c, i) => {
+      if (i === len) {
+        val = p[c];
+        deleteIt && delete p[c];
       }
 
-      const pathname = safeLocation.pathname;
-      const paths = [];
-      const pathsArgs = {};
-      pathnameParse(pathname, routeConfig, paths, pathsArgs);
-      const params = splitSearch(safeLocation.search);
-      const hashParams = splitSearch(safeLocation.hash);
-      assignDeep(params, hashParams);
-      const routeData = assignRouteData(paths, assignDeep(pathsArgs, params), safeLocation.action);
-      cacheData.unshift({
-        url,
-        routeData
-      });
-      cacheData.length = 100;
-      return routeData;
-    },
-
-    routeToLocation(paths, params, action) {
-      params = params || {};
-      let pathname;
-      let views = {};
-
-      if (typeof paths === 'string') {
-        pathname = checkPathname(paths, getCurPathname());
-      } else {
-        const data = pathsToPathname(paths, params);
-        pathname = data.pathname;
-        params = data.params;
-        views = data.views;
-      }
-
-      const paramsFilter = excludeDefaultData(params, config.defaultRouteParams, false, views);
-      const {
-        search,
-        hash
-      } = extractHashData(paramsFilter);
-      const location = {
-        pathname,
-        search: search ? `?${config.splitKey}=${search}` : '',
-        hash: hash ? `#${config.splitKey}=${hash}` : '',
-        action
-      };
-      return location;
-    },
-
-    payloadToLocation(payload) {
-      if (dataIsLocation(payload)) {
-        return checkLocation(payload, getCurPathname());
-      }
-
-      const params = payload.extend ? assignDeep({}, payload.extend.params, payload.params) : payload.params;
-      const location = transformRoute.routeToLocation(payload.paths, params);
-      return checkLocation(location, getCurPathname());
-    },
-
-    urlToLocation(url) {
-      url = checkUrl(url, getCurPathname());
-      return safeurlToLocation(url);
-    }
-
-  };
-
-  function getPathProps(pathprops, moduleParas = {}, deleteIt) {
-    let val;
-
-    if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
-      const props = pathprops.split('.');
-      const len = props.length - 1;
-      props.reduce((p, c, i) => {
-        if (i === len) {
-          val = p[c];
-          deleteIt && delete p[c];
-        }
-
-        return p[c] || {};
-      }, moduleParas);
-    } else {
-      val = moduleParas[pathprops];
-      deleteIt && delete moduleParas[pathprops];
-    }
-
-    return val;
+      return p[c] || {};
+    }, moduleParas);
+  } else {
+    val = moduleParas[pathprops];
+    deleteIt && delete moduleParas[pathprops];
   }
 
-  function pathsToPathname(paths, params = {}) {
-    const len = paths.length - 1;
-    const paramsFilter = assignDeep({}, params);
-    let pathname = '';
-    const views = {};
-    paths.reduce((parentAbsoluteViewName, viewName, index) => {
-      const [moduleName, view] = viewName.split(coreConfig.VSP);
-      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
-      const rule = viewToRule[absoluteViewName];
-      const keys = ruleToKeys[rule] || [];
-
-      if (moduleName !== '@' && view) {
-        if (!views[moduleName]) {
-          views[moduleName] = {};
-        }
-
-        views[moduleName][view] = true;
-      }
-
-      if (index === len) {
-        const toPath = compileToPath(rule);
-        const args = keys.reduce((prev, cur) => {
-          prev[cur] = getPathProps(cur, params[moduleName]);
-          return prev;
-        }, {});
-        pathname = toPath(args);
-      }
-
-      keys.forEach(key => {
-        getPathProps(key, paramsFilter[moduleName], true);
-      });
-      return absoluteViewName;
-    }, '');
-    return {
-      pathname,
-      views,
-      params: paramsFilter
-    };
-  }
-
-  return transformRoute;
+  return val;
 }
+
+function pathsToPathname(paths, params = {}, viewToRule, ruleToKeys) {
+  const len = paths.length - 1;
+  const paramsFilter = assignDeep({}, params);
+  let pathname = '';
+  const views = {};
+  paths.reduce((parentAbsoluteViewName, viewName, index) => {
+    const [moduleName, view] = viewName.split(coreConfig.VSP);
+    const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
+    const rule = viewToRule[absoluteViewName];
+    const keys = ruleToKeys[rule] || [];
+
+    if (moduleName && view) {
+      if (!views[moduleName]) {
+        views[moduleName] = {};
+      }
+
+      views[moduleName][view] = true;
+    }
+
+    if (index === len) {
+      const toPath = compileToPath(rule);
+      const args = keys.reduce((prev, cur) => {
+        prev[cur] = getPathProps(cur, params[moduleName]);
+        return prev;
+      }, {});
+      pathname = toPath(args);
+    }
+
+    keys.forEach(key => {
+      getPathProps(key, paramsFilter[moduleName], true);
+    });
+    return absoluteViewName;
+  }, '');
+  return {
+    pathname,
+    views,
+    params: paramsFilter
+  };
+}
+
 export class BaseHistoryActions {
-  constructor(location, initialized, _transformRoute) {
-    this.initialized = initialized;
-    this._transformRoute = _transformRoute;
+  constructor(_homeUrl, nativeHistory, routeConfig, locationMap) {
+    this._homeUrl = _homeUrl;
+    this.nativeHistory = nativeHistory;
+    this.routeConfig = routeConfig;
+    this.locationMap = locationMap;
+
+    _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "_uid", 0);
+
+    _defineProperty(this, "_RSP", '|');
 
     _defineProperty(this, "_listenList", {});
 
@@ -418,22 +383,239 @@ export class BaseHistoryActions {
 
     _defineProperty(this, "_location", void 0);
 
+    _defineProperty(this, "_routeData", void 0);
+
     _defineProperty(this, "_startupLocation", void 0);
 
-    this._location = location;
-    this._startupLocation = this._location;
+    _defineProperty(this, "_startupRouteData", void 0);
+
+    _defineProperty(this, "_history", []);
+
+    _defineProperty(this, "_stack", []);
+
+    _defineProperty(this, "_viewToRule", void 0);
+
+    _defineProperty(this, "_ruleToKeys", void 0);
+
+    const {
+      viewToRule,
+      ruleToKeys
+    } = compileConfig(routeConfig);
+    this._viewToRule = viewToRule;
+    this._ruleToKeys = ruleToKeys;
   }
 
-  equal(a, b) {
-    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.action === b.action;
+  init(initLocation) {
+    this.relaunch(this.locationMap ? this.locationMap.in(initLocation) : initLocation);
   }
 
-  getLocation() {
-    return this._location;
+  _getCurKey() {
+    var _this$getLocation;
+
+    return ((_this$getLocation = this.getLocation()) === null || _this$getLocation === void 0 ? void 0 : _this$getLocation.key) || '';
   }
 
-  getRouteData() {
-    return this._transformRoute.locationToRoute(this.getLocation());
+  _getCurPathname() {
+    var _this$getLocation2;
+
+    return ((_this$getLocation2 = this.getLocation()) === null || _this$getLocation2 === void 0 ? void 0 : _this$getLocation2.pathname) || '';
+  }
+
+  getLocation(startup) {
+    return startup ? this._startupLocation : this._location;
+  }
+
+  getRouteData(startup) {
+    return startup ? this._startupRouteData : this._routeData;
+  }
+
+  getRouteState() {
+    if (this._location) {
+      return {
+        history: this._history,
+        stack: this._stack,
+        location: this._location,
+        data: this._routeData
+      };
+    }
+
+    return undefined;
+  }
+
+  locationToRoute(safeLocation) {
+    const url = locationToUrl(safeLocation);
+    const item = cacheData.find(val => {
+      return val && val.url === url;
+    });
+
+    if (item) {
+      return item.routeData;
+    }
+
+    const pathname = safeLocation.pathname;
+    const paths = [];
+    const pathsArgs = {};
+    pathnameParse(pathname, this.routeConfig, paths, pathsArgs);
+    const params = splitSearch(safeLocation.search);
+    const hashParams = splitSearch(safeLocation.hash);
+    assignDeep(params, hashParams);
+    const routeData = assignRouteData(paths, assignDeep(pathsArgs, params));
+    cacheData.unshift({
+      url,
+      routeData
+    });
+    cacheData.length = 100;
+    return routeData;
+  }
+
+  routeToLocation(paths, params) {
+    params = params || {};
+    let pathname;
+    let views = {};
+
+    if (typeof paths === 'string') {
+      pathname = paths;
+    } else {
+      const data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+      pathname = data.pathname;
+      params = data.params;
+      views = data.views;
+    }
+
+    const paramsFilter = excludeDefaultData(params, config.defaultRouteParams, false, views);
+    const {
+      search,
+      hash
+    } = extractHashData(paramsFilter);
+    return {
+      pathname,
+      search: search ? `?${config.splitKey}=${search}` : '',
+      hash: hash ? `#${config.splitKey}=${hash}` : ''
+    };
+  }
+
+  payloadToRoute(data) {
+    const params = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
+    let paths = [];
+
+    if (typeof data.paths === 'string') {
+      const pathname = data.paths;
+      pathnameParse(pathname, this.routeConfig, paths, {});
+    } else {
+      paths = data.paths;
+    }
+
+    return assignRouteData(paths, params || {});
+  }
+
+  payloadToLocation(data) {
+    if (typeof data === 'string') {
+      return urlToLocation(data);
+    }
+
+    if (dataIsLocation(data)) {
+      return checkLocation(data);
+    }
+
+    const params = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
+    return this.routeToLocation(data.paths, params);
+  }
+
+  _createKey() {
+    this._tid++;
+    return `${this._tid}`;
+  }
+
+  _getEfficientLocation(safeLocation, curPathname) {
+    const routeData = this.locationToRoute(safeLocation);
+
+    if (routeData.views['@']) {
+      const url = Object.keys(routeData.views['@'])[0];
+      const reLocation = urlToLocation(url);
+      return this._getEfficientLocation(reLocation, safeLocation.pathname);
+    }
+
+    return {
+      location: safeLocation,
+      routeData
+    };
+  }
+
+  _buildHistory(location) {
+    const {
+      action,
+      url,
+      pathname,
+      key
+    } = location;
+
+    const uri = this._urlToUri(url, key);
+
+    let historyList = [...this._history];
+    let stackList = [...this._stack];
+
+    if (action === 'RELAUNCH') {
+      historyList = [uri];
+      stackList = [pathname];
+    } else if (action === 'PUSH') {
+      historyList.unshift(uri);
+
+      if (historyList.length > 10) {
+        historyList.length = 10;
+      }
+
+      if (stackList[0] !== pathname) {
+        stackList.unshift(pathname);
+      }
+
+      if (stackList.length > 10) {
+        stackList.length = 10;
+      }
+    } else if (action === 'REPLACE') {
+      historyList[0] = uri;
+
+      if (stackList[0] !== pathname) {
+        const cpathname = this._uriToUrl(historyList[1]).split('?')[0];
+
+        if (cpathname !== stackList[0]) {
+          stackList.shift();
+        }
+
+        if (stackList[0] !== pathname) {
+          stackList.unshift(pathname);
+        }
+
+        if (stackList.length > 10) {
+          stackList.length = 10;
+        }
+      }
+    } else if (action.startsWith('POP')) {
+      const n = parseInt(action.replace('POP', ''), 10) || 1;
+      const arr = historyList.splice(0, n + 1, uri).reduce((pre, curUri) => {
+        const pn = this._uriToUrl(curUri).split('?')[0];
+
+        if (pre[pre.length - 1] !== pn) {
+          pre.push(pn);
+        }
+
+        return pre;
+      }, []);
+
+      if (arr[arr.length - 1] === this._uriToUrl(historyList[1]).split('?')[0]) {
+        arr.pop();
+      }
+
+      stackList.splice(0, arr.length, pathname);
+
+      if (stackList[0] === stackList[1]) {
+        stackList.shift();
+      }
+    }
+
+    return {
+      history: historyList,
+      stack: stackList
+    };
   }
 
   subscribe(listener) {
@@ -454,19 +636,144 @@ export class BaseHistoryActions {
     };
   }
 
-  locationToRouteData(location) {
-    return this._transformRoute.locationToRoute(location);
+  _urlToUri(url, key) {
+    return `${key}${this._RSP}${url}`;
   }
 
-  dispatch(location) {
-    if (this.equal(location, this._location)) {
-      return Promise.reject();
+  _uriToUrl(uri = '') {
+    return uri.substr(uri.indexOf(this._RSP) + 1);
+  }
+
+  _uriToKey(uri = '') {
+    return uri.substr(0, uri.indexOf(this._RSP));
+  }
+
+  _findHistoryByKey(key) {
+    const index = this._history.findIndex(uri => uri.startsWith(`${key}${this._RSP}`));
+
+    return {
+      index,
+      url: index > -1 ? this._uriToUrl(this._history[index]) : ''
+    };
+  }
+
+  dispatch(paLocation, action, key = '', callNative) {
+    key = key || this._createKey();
+
+    const data = this._getEfficientLocation(paLocation, this._getCurPathname());
+
+    const location = Object.assign(Object.assign({}, data.location), {}, {
+      action,
+      url: locationToUrl(data.location),
+      key
+    });
+    const routeData = Object.assign(Object.assign({}, data.routeData), {}, {
+      action,
+      key
+    });
+    return Promise.all(Object.values(this._blockerList).map(fn => fn(location, this.getLocation(), routeData, this.getRouteData()))).then(() => {
+      this._location = location;
+      this._routeData = routeData;
+
+      if (!this._startupLocation) {
+        this._startupLocation = location;
+        this._startupRouteData = routeData;
+      }
+
+      const {
+        history,
+        stack
+      } = this._buildHistory(location);
+
+      this._history = history;
+      this._stack = stack;
+      Object.values(this._listenList).forEach(listener => listener({
+        location,
+        data: routeData,
+        history: this._history,
+        stack: this._stack
+      }));
+
+      if (callNative) {
+        if (typeof callNative === 'number') {
+          this.nativeHistory.pop(callNative);
+        } else {
+          this.nativeHistory[callNative](this.locationMap ? this.locationMap.out(location) : location);
+        }
+      }
+
+      return location;
+    });
+  }
+
+  passive(nativeLocation, action) {
+    if (nativeLocation.key !== this._getCurKey()) {
+      if (action === 'POP') {
+        if (nativeLocation.key) {
+          const {
+            index,
+            url
+          } = this._findHistoryByKey(nativeLocation.key);
+
+          if (index > 0) {
+            this.dispatch(urlToLocation(url), `POP${index}`, nativeLocation.key);
+            return;
+          }
+        }
+
+        action = 'RELAUNCH';
+      }
+
+      const location = urlToLocation(nativeLocation.url);
+      this.dispatch(this.locationMap ? this.locationMap.in(location) : location, action, nativeLocation.key);
+    }
+  }
+
+  relaunch(data) {
+    const paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'RELAUNCH', '', 'relaunch');
+  }
+
+  push(data) {
+    const paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'PUSH', '', 'PUSH');
+  }
+
+  replace(data) {
+    const paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'REPLACE', '', 'replace');
+  }
+
+  pop(n = 1, root = 'FIRST') {
+    n = n || 1;
+    const uri = this._history[n];
+
+    if (uri) {
+      const url = this._uriToUrl(uri);
+
+      const key = this._uriToKey(uri);
+
+      const paLocation = urlToLocation(url);
+      return this.dispatch(paLocation, `POP${n}`, key, n);
     }
 
-    return Promise.all(Object.values(this._blockerList).map(fn => fn(location, this._location))).then(() => {
-      this._location = location;
-      Object.values(this._listenList).forEach(listener => listener(location));
-    });
+    let url = root;
+
+    if (root === 'HOME') {
+      url = this._homeUrl;
+    } else if (root === 'FIRST') {
+      url = this._startupLocation.url;
+    }
+
+    if (!url) {
+      return Promise.reject(1);
+    }
+
+    return this.relaunch(url);
+  }
+
+  home(root = 'FIRST') {
+    return this.relaunch(root === 'HOME' ? this._homeUrl : this._startupLocation.url);
   }
 
 }
