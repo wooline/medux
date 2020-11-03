@@ -105,6 +105,8 @@ export class HistoryActions extends BaseHistoryActions {
 
     _defineProperty(this, "_unlistenHistory", void 0);
 
+    _defineProperty(this, "_timer", 0);
+
     this._unlistenHistory = this.nativeHistory.block((location, key, action) => {
       if (key !== this.getCurKey()) {
         let callback;
@@ -116,6 +118,7 @@ export class HistoryActions extends BaseHistoryActions {
 
         if (index > 0) {
           callback = () => {
+            this._timer = 0;
             this.pop(index);
           };
         } else {
@@ -123,20 +126,26 @@ export class HistoryActions extends BaseHistoryActions {
 
           if (action === 'REPLACE') {
             callback = () => {
+              this._timer = 0;
               this.replace(paLocation);
             };
           } else if (action === 'PUSH') {
             callback = () => {
+              this._timer = 0;
               this.push(paLocation);
             };
           } else {
             callback = () => {
+              this._timer = 0;
               this.relaunch(paLocation);
             };
           }
         }
 
-        callback && env.setTimeout(callback, 0);
+        if (callback && !this._timer) {
+          this._timer = env.setTimeout(callback, 50);
+        }
+
         return false;
       }
 

@@ -83,6 +83,8 @@ export class WebNativeHistory implements NativeHistory {
 export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHistoryActions<P> {
   private _unlistenHistory: UnregisterCallback;
 
+  private _timer: number = 0;
+
   constructor(public nativeHistory: WebNativeHistory, public homeUrl: string, public routeConfig: RouteConfig, public maxLength: number, public locationMap?: LocationMap) {
     super(nativeHistory, homeUrl, routeConfig, maxLength, locationMap);
     this._unlistenHistory = this.nativeHistory.block((location, key, action) => {
@@ -94,25 +96,31 @@ export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHis
         }
         if (index > 0) {
           callback = () => {
+            this._timer = 0;
             this.pop(index);
           };
         } else {
           const paLocation = this.locationMap ? this.locationMap.in(location) : location;
           if (action === 'REPLACE') {
             callback = () => {
+              this._timer = 0;
               this.replace(paLocation);
             };
           } else if (action === 'PUSH') {
             callback = () => {
+              this._timer = 0;
               this.push(paLocation);
             };
           } else {
             callback = () => {
+              this._timer = 0;
               this.relaunch(paLocation);
             };
           }
         }
-        callback && env.setTimeout(callback, 0);
+        if (callback && !this._timer) {
+          this._timer = env.setTimeout(callback, 50);
+        }
         return false;
       }
       return undefined;

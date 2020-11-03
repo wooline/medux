@@ -115,6 +115,8 @@ export var HistoryActions = function (_BaseHistoryActions) {
 
     _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);
 
+    _defineProperty(_assertThisInitialized(_this2), "_timer", 0);
+
     _this2._unlistenHistory = _this2.nativeHistory.block(function (location, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;
@@ -126,6 +128,8 @@ export var HistoryActions = function (_BaseHistoryActions) {
 
         if (index > 0) {
           callback = function callback() {
+            _this2._timer = 0;
+
             _this2.pop(index);
           };
         } else {
@@ -133,20 +137,29 @@ export var HistoryActions = function (_BaseHistoryActions) {
 
           if (action === 'REPLACE') {
             callback = function callback() {
+              _this2._timer = 0;
+
               _this2.replace(paLocation);
             };
           } else if (action === 'PUSH') {
             callback = function callback() {
+              _this2._timer = 0;
+
               _this2.push(paLocation);
             };
           } else {
             callback = function callback() {
+              _this2._timer = 0;
+
               _this2.relaunch(paLocation);
             };
           }
         }
 
-        callback && env.setTimeout(callback, 0);
+        if (callback && !_this2._timer) {
+          _this2._timer = env.setTimeout(callback, 50);
+        }
+
         return false;
       }
 

@@ -127,6 +127,7 @@ var HistoryActions = function (_BaseHistoryActions) {
     _this2.maxLength = maxLength;
     _this2.locationMap = locationMap;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_unlistenHistory", void 0);
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_timer", 0);
     _this2._unlistenHistory = _this2.nativeHistory.block(function (location, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;
@@ -138,6 +139,8 @@ var HistoryActions = function (_BaseHistoryActions) {
 
         if (index > 0) {
           callback = function callback() {
+            _this2._timer = 0;
+
             _this2.pop(index);
           };
         } else {
@@ -145,20 +148,29 @@ var HistoryActions = function (_BaseHistoryActions) {
 
           if (action === 'REPLACE') {
             callback = function callback() {
+              _this2._timer = 0;
+
               _this2.replace(paLocation);
             };
           } else if (action === 'PUSH') {
             callback = function callback() {
+              _this2._timer = 0;
+
               _this2.push(paLocation);
             };
           } else {
             callback = function callback() {
+              _this2._timer = 0;
+
               _this2.relaunch(paLocation);
             };
           }
         }
 
-        callback && _core.env.setTimeout(callback, 0);
+        if (callback && !_this2._timer) {
+          _this2._timer = _core.env.setTimeout(callback, 50);
+        }
+
         return false;
       }
 

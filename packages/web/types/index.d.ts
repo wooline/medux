@@ -22,6 +22,7 @@ export declare class HistoryActions<P extends RouteParams = RouteParams> extends
     maxLength: number;
     locationMap?: LocationMap | undefined;
     private _unlistenHistory;
+    private _timer;
     constructor(nativeHistory: WebNativeHistory, homeUrl: string, routeConfig: RouteConfig, maxLength: number, locationMap?: LocationMap | undefined);
     destroy(): void;
 }
