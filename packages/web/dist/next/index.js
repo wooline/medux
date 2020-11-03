@@ -55,13 +55,22 @@ export class WebNativeHistory {
       };
     }
 
-    this.initLocation = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+    const location = this.hsLocationToPaLocation(this.history.location);
+    this.initLocation = this.locationMap ? this.locationMap.in(location) : location;
   }
 
   block(blocker) {
     return this.history.block((location, action) => {
-      return blocker(location, this.getKey(location), action);
+      return blocker(this.hsLocationToPaLocation(location), this.getKey(location), action);
     });
+  }
+
+  hsLocationToPaLocation(historyLocation) {
+    return {
+      pathname: historyLocation.pathname,
+      search: historyLocation.search,
+      hash: historyLocation.hash
+    };
   }
 
   getKey(location) {

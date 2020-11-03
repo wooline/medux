@@ -7,6 +7,7 @@ import {
   ActionHandlerMap,
   BaseModelState,
   CommonModule,
+  HistoryAction,
   MetaData,
   ModelStore,
   RouteState,
@@ -89,11 +90,14 @@ export type RouteViews<G extends ModuleGetter> = {[key in keyof G]?: MountViews<
 export type RootState<G extends ModuleGetter, L> = {
   route: {
     history: string[];
+    stack: string[];
     location: L;
     data: {
       views: RouteViews<G>;
       params: {[key in keyof G]?: ModuleParams<ReturnModule<G[key]>>};
       paths: string[];
+      key: string;
+      action: HistoryAction;
     };
   };
 } & {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};

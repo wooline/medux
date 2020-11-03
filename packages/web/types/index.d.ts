@@ -7,7 +7,8 @@ export declare class WebNativeHistory implements NativeHistory {
     initLocation: PaLocation;
     actions: HistoryActions | undefined;
     constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationMap?: LocationMap | undefined);
-    block(blocker: (location: HistoryLocation, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void): import("history").UnregisterCallback;
+    block(blocker: (location: PaLocation, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void): import("history").UnregisterCallback;
+    hsLocationToPaLocation(historyLocation: HistoryLocation): PaLocation;
     getKey(location: HistoryLocation): string;
     push(location: Location): void;
     replace(location: Location): void;

@@ -418,12 +418,6 @@ export class BaseHistoryActions {
     return ((_this$getLocation = this.getLocation()) === null || _this$getLocation === void 0 ? void 0 : _this$getLocation.key) || '';
   }
 
-  _getCurPathname() {
-    var _this$getLocation2;
-
-    return ((_this$getLocation2 = this.getLocation()) === null || _this$getLocation2 === void 0 ? void 0 : _this$getLocation2.pathname) || '';
-  }
-
   getLocation(startup) {
     return startup ? this._startupLocation : this._location;
   }
@@ -498,6 +492,14 @@ export class BaseHistoryActions {
   }
 
   payloadToRoute(data) {
+    if (typeof data === 'string') {
+      return this.locationToRoute(urlToLocation(data));
+    }
+
+    if (dataIsLocation(data)) {
+      return this.locationToRoute(checkLocation(data));
+    }
+
     const params = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
     let paths = [];
 
@@ -529,13 +531,13 @@ export class BaseHistoryActions {
     return `${this._tid}`;
   }
 
-  _getEfficientLocation(safeLocation, curPathname) {
+  _getEfficientLocation(safeLocation) {
     const routeData = this.locationToRoute(safeLocation);
 
     if (routeData.views['@']) {
       const url = Object.keys(routeData.views['@'])[0];
       const reLocation = urlToLocation(url);
-      return this._getEfficientLocation(reLocation, safeLocation.pathname);
+      return this._getEfficientLocation(reLocation);
     }
 
     return {
@@ -680,10 +682,10 @@ export class BaseHistoryActions {
     return location;
   }
 
-  dispatch(paLocation, action, key = '', callNative) {
+  dispatch(safeLocation, action, key = '', callNative) {
     key = key || this._createKey();
 
-    const data = this._getEfficientLocation(paLocation, this._getCurPathname());
+    const data = this._getEfficientLocation(safeLocation);
 
     const location = Object.assign(Object.assign({}, data.location), {}, {
       action,

@@ -423,7 +423,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     [rule: string]: (string | number)[];
   };
 
-  constructor(public nativeHistory: NativeHistory, public homeUrl: string, public routeConfig: RouteConfig, public maxLength: number, public locationMap?: LocationMap) {
+  constructor(protected nativeHistory: NativeHistory, public homeUrl: string, protected routeConfig: RouteConfig, protected maxLength: number, protected locationMap?: LocationMap) {
     const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
@@ -431,10 +431,6 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
 
   protected getCurKey(): string {
     return this.getLocation()?.key || '';
-  }
-
-  private _getCurPathname(): string {
-    return this.getLocation()?.pathname || '';
   }
 
   getLocation(startup?: boolean): Location | undefined {
@@ -452,7 +448,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     return undefined;
   }
 
-  locationToRoute(safeLocation: PaLocation): PaRouteData<P> {
+  protected locationToRoute(safeLocation: PaLocation): PaRouteData<P> {
     // const safeLocation = checkLocation(location, this._getCurPathname());
     const url = locationToUrl(safeLocation);
     const item = cacheData.find((val) => {
@@ -474,7 +470,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     return routeData as PaRouteData<P>;
   }
 
-  routeToLocation(paths: string[] | string, params?: RouteParams): PaLocation {
+  protected routeToLocation(paths: string[] | string, params?: RouteParams): PaLocation {
     params = params || ({} as any);
     let pathname: string;
     let views: DisplayViews = {};
@@ -495,7 +491,13 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     };
   }
 
-  payloadToRoute(data: RoutePayload<P>): PaRouteData<P> {
+  payloadToRoute(data: RoutePayload<P> | LocationPayload | string): PaRouteData<P> {
+    if (typeof data === 'string') {
+      return this.locationToRoute(urlToLocation(data));
+    }
+    if (dataIsLocation(data)) {
+      return this.locationToRoute(checkLocation(data));
+    }
     const params: RouteParams | undefined = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
     let paths: string[] = [];
     if (typeof data.paths === 'string') {
@@ -523,12 +525,12 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     return `${this._tid}`;
   }
 
-  private _getEfficientLocation(safeLocation: PaLocation, curPathname: string): {location: PaLocation; routeData: PaRouteData<P>} {
+  private _getEfficientLocation(safeLocation: PaLocation): {location: PaLocation; routeData: PaRouteData<P>} {
     const routeData = this.locationToRoute(safeLocation);
     if (routeData.views['@']) {
       const url = Object.keys(routeData.views['@'])[0];
       const reLocation = urlToLocation(url);
-      return this._getEfficientLocation(reLocation, safeLocation.pathname);
+      return this._getEfficientLocation(reLocation);
     }
     return {location: safeLocation, routeData};
   }
@@ -635,9 +637,9 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     return location;
   }
 
-  protected dispatch(paLocation: PaLocation, action: HistoryAction, key: string = '', callNative?: string | number): Promise<Location> {
+  protected dispatch(safeLocation: PaLocation, action: HistoryAction, key: string = '', callNative?: string | number): Promise<Location> {
     key = key || this._createKey();
-    const data = this._getEfficientLocation(paLocation, this._getCurPathname());
+    const data = this._getEfficientLocation(safeLocation);
     const location: Location = {...data.location, action, url: locationToUrl(data.location), key};
     const routeData: RouteData = {...data.routeData, action, key};
 

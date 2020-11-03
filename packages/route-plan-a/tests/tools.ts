@@ -3,7 +3,7 @@ import {RouteState} from '@medux/core';
 
 let _curRouteState: RouteState;
 
-export class HistoryActions extends BaseHistoryActions {
+export class HistoryActions extends BaseHistoryActions<RouteParams> {
   destroy() {}
 }
 export const nativeHistory: any = {};
@@ -92,6 +92,8 @@ export const defaultRouteParams = {
   photos: photoDefaultParams,
   comments: commentsDefaultParams,
 };
+
+type RouteParams = typeof defaultRouteParams;
 
 setRouteConfig({escape: false, defaultRouteParams});
 

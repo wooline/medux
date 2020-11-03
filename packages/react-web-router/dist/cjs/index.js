@@ -270,9 +270,6 @@ var TaskCounter = function (_PDispatcher) {
   return TaskCounter;
 }(PDispatcher);
 
-function isServer() {
-  return isServerEnv;
-}
 var loadings = {};
 var depthTime = 2;
 function setLoadingDepthTime(second) {
@@ -281,12 +278,14 @@ function setLoadingDepthTime(second) {
 var config = {
   NSP: '.',
   VSP: '.',
-  MSP: ','
+  MSP: ',',
+  RSP: '|'
 };
 function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
+  _config.RSP && (config.RSP = _config.RSP);
 }
 var MetaData = {
   appViewName: null,
@@ -542,10 +541,10 @@ function errorAction(error) {
     payload: [error]
   };
 }
-function routeChangeAction(route) {
+function routeChangeAction(routeState) {
   return {
     type: ActionTypes.RouteChange,
-    payload: [route]
+    payload: [routeState]
   };
 }
 function routeParamsAction(moduleName, params, action) {
@@ -1090,43 +1089,18 @@ function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function bindHistory(store, history) {
-  var inTimeTravelling = false;
-
-  var handleLocationChange = function handleLocationChange(location) {
-    if (!inTimeTravelling) {
-      var _ref = store.getState(),
-          route = _ref.route;
-
-      if (route) {
-        if (history.equal(route.location, location)) {
-          return;
-        }
-      }
-
-      var data = history.locationToRouteData(location);
-      store.dispatch(routeChangeAction({
-        location: location,
-        data: data
-      }));
-    } else {
-      inTimeTravelling = false;
-    }
+function bindHistory(store, historyProxy) {
+  var handleLocationChange = function handleLocationChange(routeState) {
+    store.dispatch(routeChangeAction(routeState));
   };
 
-  history.subscribe(handleLocationChange);
-  store._medux_.destroy = history.destroy;
-  store.subscribe(function () {
-    var storeRouteState = store.getState().route;
+  historyProxy.subscribe(handleLocationChange);
+  store._medux_.destroy = historyProxy.destroy;
+  var initData = historyProxy.getRouteState();
 
-    if (history.initialized && storeRouteState) {
-      if (!history.equal(storeRouteState.location, history.getLocation())) {
-        inTimeTravelling = true;
-        history.patch(storeRouteState.location, storeRouteState.data);
-      }
-    }
-  });
-  history.initialized && handleLocationChange(history.getLocation());
+  if (initData) {
+    handleLocationChange(initData);
+  }
 }
 
 function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
@@ -1156,13 +1130,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
 
   storeReducers.route = function (state, action) {
     if (action.type === ActionTypes.RouteChange) {
-      var payload = getActionData(action)[0];
-
-      if (!state) {
-        return payload;
-      }
-
-      return Object.assign(Object.assign({}, state), payload);
+      return getActionData(action)[0];
     }
 
     return state;
@@ -1230,8 +1198,8 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
     return meta.prevState;
   };
 
-  var middleware = function middleware(_ref2) {
-    var dispatch = _ref2.dispatch;
+  var middleware = function middleware(_ref) {
+    var dispatch = _ref.dispatch;
     return function (next) {
       return function (originalAction) {
         if (isServerEnv) {
@@ -1245,13 +1213,13 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         var action = next(originalAction);
 
         if (action.type === ActionTypes.RouteChange) {
-          var _routeData = meta.prevState.route.data;
-          var rootRouteParams = _routeData.params;
+          var routeData = meta.prevState.route.data;
+          var rootRouteParams = routeData.params;
           Object.keys(rootRouteParams).forEach(function (moduleName) {
             var routeParams = rootRouteParams[moduleName];
 
             if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch(routeParamsAction(moduleName, routeParams, _routeData.action));
+              dispatch(routeParamsAction(moduleName, routeParams, routeData.action));
             }
           });
         }
@@ -3117,82 +3085,6 @@ function _renderSSR() {
   return _renderSSR.apply(this, arguments);
 }
 
-function checkPathname(pathname, curPathname) {
-  curPathname = ("/" + curPathname).replace('//', '/').replace(/\/$/, '');
-
-  if (pathname.startsWith('./')) {
-    pathname = curPathname + pathname.replace('./', '/');
-  } else if (pathname.startsWith('../')) {
-    var _pathname$match;
-
-    var n = ((_pathname$match = pathname.match(/\.\.\//g)) === null || _pathname$match === void 0 ? void 0 : _pathname$match.length) || 0;
-    var arr = curPathname.split('/');
-    arr.length -= n;
-    pathname = arr.join('/') + "/" + pathname.replace(/\.\.\//g, '');
-  } else {
-    pathname = ("/" + pathname).replace('//', '/');
-  }
-
-  return pathname;
-}
-function checkLocation(location, curPathname) {
-  var data = Object.assign({}, location);
-  data.pathname = checkPathname(data.pathname || '/', curPathname);
-  data.search = ("?" + (data.search || '')).replace('??', '?');
-  data.hash = ("#" + (data.hash || '')).replace('##', '#');
-
-  if (data.search === '?') {
-    data.search = '';
-  }
-
-  if (data.hash === '#') {
-    data.hash = '';
-  }
-
-  return data;
-}
-function safelocationToUrl(safeLocation) {
-  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
-}
-function checkUrl(url, curPathname) {
-  if (curPathname === void 0) {
-    curPathname = '';
-  }
-
-  if (url !== url.replace(/^\w+:\/\/[^/]+/, '')) {
-    return '/';
-  }
-
-  url = checkPathname(url, curPathname);
-  return url.replace(/\/(?=[?#]|$)/, '');
-}
-function safeurlToLocation(safeurl) {
-  if (!safeurl) {
-    return {
-      pathname: '/',
-      search: '',
-      hash: ''
-    };
-  }
-
-  var arr = safeurl.split(/[?#]/);
-
-  if (arr.length === 2 && safeurl.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-
-  var pathname = arr[0],
-      _arr$ = arr[1],
-      search = _arr$ === void 0 ? '' : _arr$,
-      _arr$2 = arr[2],
-      hash = _arr$2 === void 0 ? '' : _arr$2;
-  return {
-    pathname: pathname,
-    search: search && "?" + search,
-    hash: hash && "#" + hash
-  };
-}
-
 function _createForOfIteratorHelperLoose(o) {
   var i = 0;
 
@@ -3828,6 +3720,59 @@ function deepExtend() {
 function dataIsLocation(data) {
   return !!data['pathname'];
 }
+
+function checkLocation(location) {
+  var data = Object.assign({}, location);
+  data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
+
+  if (data.pathname !== '/') {
+    data.pathname = data.pathname.replace(/\/$/, '');
+  }
+
+  data.search = ("?" + (location.search || '')).replace('??', '?');
+  data.hash = ("#" + (location.hash || '')).replace('##', '#');
+
+  if (data.search === '?') {
+    data.search = '';
+  }
+
+  if (data.hash === '#') {
+    data.hash = '';
+  }
+
+  return data;
+}
+function urlToLocation(url) {
+  url = ("/" + url).replace(/\/+/g, '/');
+
+  if (!url) {
+    return {
+      pathname: '/',
+      search: '',
+      hash: ''
+    };
+  }
+
+  var arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  var pathname = arr[0],
+      _arr$ = arr[1],
+      search = _arr$ === void 0 ? '' : _arr$,
+      _arr$2 = arr[2],
+      hash = _arr$2 === void 0 ? '' : _arr$2;
+  return {
+    pathname: pathname,
+    search: search && "?" + search,
+    hash: hash && "#" + hash
+  };
+}
+function locationToUrl(safeLocation) {
+  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+}
 var config$1 = {
   escape: true,
   dateParse: false,
@@ -3969,10 +3914,10 @@ function pathnameParse(pathname, routeConfig, paths, args) {
 
         var _moduleName = _viewName.split(config.VSP)[0];
 
-        var _params = match.params;
+        var params = match.params;
 
-        if (_params && Object.keys(_params).length > 0) {
-          args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(_params));
+        if (params && Object.keys(params).length > 0) {
+          args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -4035,13 +3980,13 @@ function compileConfig(routeConfig, parentAbsoluteViewName, viewToRule, ruleToKe
   };
 }
 
-function assignRouteData(paths, params, action) {
+function assignRouteData(paths, params) {
   var views = paths.reduce(function (prev, cur) {
     var _cur$split = cur.split(config.VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
-    if (moduleName !== '@' && viewName) {
+    if (moduleName && viewName) {
       if (!prev[moduleName]) {
         prev[moduleName] = {};
       }
@@ -4061,8 +4006,7 @@ function assignRouteData(paths, params, action) {
   return {
     views: views,
     paths: paths,
-    params: params,
-    action: action
+    params: params
   };
 }
 
@@ -4108,163 +4052,93 @@ function extractHashData(params) {
 }
 
 var cacheData = [];
-function buildTransformRoute(routeConfig, getCurPathname) {
-  var _compileConfig = compileConfig(routeConfig),
-      viewToRule = _compileConfig.viewToRule,
-      ruleToKeys = _compileConfig.ruleToKeys;
 
-  var transformRoute = {
-    locationToRoute: function locationToRoute(location) {
-      var safeLocation = checkLocation(location, getCurPathname());
-      var url = safelocationToUrl(safeLocation);
-      var item = cacheData.find(function (val) {
-        return val && val.url === url;
-      });
-
-      if (item) {
-        item.routeData.action = safeLocation.action;
-        return item.routeData;
-      }
-
-      var pathname = safeLocation.pathname;
-      var paths = [];
-      var pathsArgs = {};
-      pathnameParse(pathname, routeConfig, paths, pathsArgs);
-      var params = splitSearch(safeLocation.search);
-      var hashParams = splitSearch(safeLocation.hash);
-      deepExtend(params, hashParams);
-      var routeData = assignRouteData(paths, deepExtend(pathsArgs, params), safeLocation.action);
-      cacheData.unshift({
-        url: url,
-        routeData: routeData
-      });
-      cacheData.length = 100;
-      return routeData;
-    },
-    routeToLocation: function routeToLocation(paths, params, action) {
-      params = params || {};
-      var pathname;
-      var views = {};
-
-      if (typeof paths === 'string') {
-        pathname = checkPathname(paths, getCurPathname());
-      } else {
-        var data = pathsToPathname(paths, params);
-        pathname = data.pathname;
-        params = data.params;
-        views = data.views;
-      }
-
-      var paramsFilter = excludeDefaultData(params, config$1.defaultRouteParams, false, views);
-
-      var _extractHashData = extractHashData(paramsFilter),
-          search = _extractHashData.search,
-          hash = _extractHashData.hash;
-
-      var location = {
-        pathname: pathname,
-        search: search ? "?" + config$1.splitKey + "=" + search : '',
-        hash: hash ? "#" + config$1.splitKey + "=" + hash : '',
-        action: action
-      };
-      return location;
-    },
-    payloadToLocation: function payloadToLocation(payload) {
-      if (dataIsLocation(payload)) {
-        return checkLocation(payload, getCurPathname());
-      }
-
-      var params = payload.extend ? deepExtend({}, payload.extend.params, payload.params) : payload.params;
-      var location = transformRoute.routeToLocation(payload.paths, params);
-      return checkLocation(location, getCurPathname());
-    },
-    urlToLocation: function urlToLocation(url) {
-      url = checkUrl(url, getCurPathname());
-      return safeurlToLocation(url);
-    }
-  };
-
-  function getPathProps(pathprops, moduleParas, deleteIt) {
-    if (moduleParas === void 0) {
-      moduleParas = {};
-    }
-
-    var val;
-
-    if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
-      var props = pathprops.split('.');
-      var len = props.length - 1;
-      props.reduce(function (p, c, i) {
-        if (i === len) {
-          val = p[c];
-          deleteIt && delete p[c];
-        }
-
-        return p[c] || {};
-      }, moduleParas);
-    } else {
-      val = moduleParas[pathprops];
-      deleteIt && delete moduleParas[pathprops];
-    }
-
-    return val;
+function getPathProps(pathprops, moduleParas, deleteIt) {
+  if (moduleParas === void 0) {
+    moduleParas = {};
   }
 
-  function pathsToPathname(paths, params) {
-    if (params === void 0) {
-      params = {};
-    }
+  var val;
 
-    var len = paths.length - 1;
-    var paramsFilter = deepExtend({}, params);
-    var pathname = '';
-    var views = {};
-    paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-      var _viewName$split = viewName.split(config.VSP),
-          moduleName = _viewName$split[0],
-          view = _viewName$split[1];
-
-      var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
-      var rule = viewToRule[absoluteViewName];
-      var keys = ruleToKeys[rule] || [];
-
-      if (moduleName !== '@' && view) {
-        if (!views[moduleName]) {
-          views[moduleName] = {};
-        }
-
-        views[moduleName][view] = true;
+  if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
+    var props = pathprops.split('.');
+    var len = props.length - 1;
+    props.reduce(function (p, c, i) {
+      if (i === len) {
+        val = p[c];
+        deleteIt && delete p[c];
       }
 
-      if (index === len) {
-        var toPath = compileToPath(rule);
-        var args = keys.reduce(function (prev, cur) {
-          prev[cur] = getPathProps(cur, params[moduleName]);
-          return prev;
-        }, {});
-        pathname = toPath(args);
-      }
-
-      keys.forEach(function (key) {
-        getPathProps(key, paramsFilter[moduleName], true);
-      });
-      return absoluteViewName;
-    }, '');
-    return {
-      pathname: pathname,
-      views: views,
-      params: paramsFilter
-    };
+      return p[c] || {};
+    }, moduleParas);
+  } else {
+    val = moduleParas[pathprops];
+    deleteIt && delete moduleParas[pathprops];
   }
 
-  return transformRoute;
+  return val;
 }
+
+function pathsToPathname(paths, params, viewToRule, ruleToKeys) {
+  if (params === void 0) {
+    params = {};
+  }
+
+  var len = paths.length - 1;
+  var paramsFilter = deepExtend({}, params);
+  var pathname = '';
+  var views = {};
+  paths.reduce(function (parentAbsoluteViewName, viewName, index) {
+    var _viewName$split = viewName.split(config.VSP),
+        moduleName = _viewName$split[0],
+        view = _viewName$split[1];
+
+    var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
+    var rule = viewToRule[absoluteViewName];
+    var keys = ruleToKeys[rule] || [];
+
+    if (moduleName && view) {
+      if (!views[moduleName]) {
+        views[moduleName] = {};
+      }
+
+      views[moduleName][view] = true;
+    }
+
+    if (index === len) {
+      var toPath = compileToPath(rule);
+      var args = keys.reduce(function (prev, cur) {
+        prev[cur] = getPathProps(cur, params[moduleName]);
+        return prev;
+      }, {});
+      pathname = toPath(args);
+    }
+
+    keys.forEach(function (key) {
+      getPathProps(key, paramsFilter[moduleName], true);
+    });
+    return absoluteViewName;
+  }, '');
+  return {
+    pathname: pathname,
+    views: views,
+    params: paramsFilter
+  };
+}
+
 var BaseHistoryActions = function () {
-  function BaseHistoryActions(location, initialized, _transformRoute) {
-    this.initialized = initialized;
-    this._transformRoute = _transformRoute;
+  function BaseHistoryActions(nativeHistory, homeUrl, routeConfig, maxLength, locationMap) {
+    this.nativeHistory = nativeHistory;
+    this.homeUrl = homeUrl;
+    this.routeConfig = routeConfig;
+    this.maxLength = maxLength;
+    this.locationMap = locationMap;
+
+    _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "_uid", 0);
+
+    _defineProperty(this, "_RSP", '|');
 
     _defineProperty(this, "_listenList", {});
 
@@ -4272,67 +4146,439 @@ var BaseHistoryActions = function () {
 
     _defineProperty(this, "_location", void 0);
 
+    _defineProperty(this, "_routeData", void 0);
+
     _defineProperty(this, "_startupLocation", void 0);
 
-    this._location = location;
-    this._startupLocation = this._location;
+    _defineProperty(this, "_startupRouteData", void 0);
+
+    _defineProperty(this, "_history", []);
+
+    _defineProperty(this, "_stack", []);
+
+    _defineProperty(this, "_viewToRule", void 0);
+
+    _defineProperty(this, "_ruleToKeys", void 0);
+
+    var _compileConfig = compileConfig(routeConfig),
+        viewToRule = _compileConfig.viewToRule,
+        ruleToKeys = _compileConfig.ruleToKeys;
+
+    this._viewToRule = viewToRule;
+    this._ruleToKeys = ruleToKeys;
   }
 
   var _proto = BaseHistoryActions.prototype;
 
-  _proto.equal = function equal(a, b) {
-    return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.action === b.action;
+  _proto.getCurKey = function getCurKey() {
+    var _this$getLocation;
+
+    return ((_this$getLocation = this.getLocation()) === null || _this$getLocation === void 0 ? void 0 : _this$getLocation.key) || '';
   };
 
-  _proto.getLocation = function getLocation() {
-    return this._location;
+  _proto.getLocation = function getLocation(startup) {
+    return startup ? this._startupLocation : this._location;
   };
 
-  _proto.getRouteData = function getRouteData() {
-    return this._transformRoute.locationToRoute(this.getLocation());
+  _proto.getRouteData = function getRouteData(startup) {
+    return startup ? this._startupRouteData : this._routeData;
+  };
+
+  _proto.getRouteState = function getRouteState() {
+    if (this._location) {
+      return {
+        history: this._history,
+        stack: this._stack,
+        location: this._location,
+        data: this._routeData
+      };
+    }
+
+    return undefined;
+  };
+
+  _proto.locationToRoute = function locationToRoute(safeLocation) {
+    var url = locationToUrl(safeLocation);
+    var item = cacheData.find(function (val) {
+      return val && val.url === url;
+    });
+
+    if (item) {
+      return item.routeData;
+    }
+
+    var pathname = safeLocation.pathname;
+    var paths = [];
+    var pathsArgs = {};
+    pathnameParse(pathname, this.routeConfig, paths, pathsArgs);
+    var params = splitSearch(safeLocation.search);
+    var hashParams = splitSearch(safeLocation.hash);
+    deepExtend(params, hashParams);
+    var routeData = assignRouteData(paths, deepExtend(pathsArgs, params));
+    cacheData.unshift({
+      url: url,
+      routeData: routeData
+    });
+    cacheData.length = 100;
+    return routeData;
+  };
+
+  _proto.routeToLocation = function routeToLocation(paths, params) {
+    params = params || {};
+    var pathname;
+    var views = {};
+
+    if (typeof paths === 'string') {
+      pathname = paths;
+    } else {
+      var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+      pathname = data.pathname;
+      params = data.params;
+      views = data.views;
+    }
+
+    var paramsFilter = excludeDefaultData(params, config$1.defaultRouteParams, false, views);
+
+    var _extractHashData = extractHashData(paramsFilter),
+        search = _extractHashData.search,
+        hash = _extractHashData.hash;
+
+    return {
+      pathname: pathname,
+      search: search ? "?" + config$1.splitKey + "=" + search : '',
+      hash: hash ? "#" + config$1.splitKey + "=" + hash : ''
+    };
+  };
+
+  _proto.payloadToRoute = function payloadToRoute(data) {
+    if (typeof data === 'string') {
+      return this.locationToRoute(urlToLocation(data));
+    }
+
+    if (dataIsLocation(data)) {
+      return this.locationToRoute(checkLocation(data));
+    }
+
+    var params = data.extend ? deepExtend({}, data.extend.params, data.params) : data.params;
+    var paths = [];
+
+    if (typeof data.paths === 'string') {
+      var pathname = data.paths;
+      pathnameParse(pathname, this.routeConfig, paths, {});
+    } else {
+      paths = data.paths;
+    }
+
+    return assignRouteData(paths, params || {});
+  };
+
+  _proto.payloadToLocation = function payloadToLocation(data) {
+    if (typeof data === 'string') {
+      return urlToLocation(data);
+    }
+
+    if (dataIsLocation(data)) {
+      return checkLocation(data);
+    }
+
+    var params = data.extend ? deepExtend({}, data.extend.params, data.params) : data.params;
+    return this.routeToLocation(data.paths, params);
+  };
+
+  _proto._createKey = function _createKey() {
+    this._tid++;
+    return "" + this._tid;
+  };
+
+  _proto._getEfficientLocation = function _getEfficientLocation(safeLocation) {
+    var routeData = this.locationToRoute(safeLocation);
+
+    if (routeData.views['@']) {
+      var url = Object.keys(routeData.views['@'])[0];
+      var reLocation = urlToLocation(url);
+      return this._getEfficientLocation(reLocation);
+    }
+
+    return {
+      location: safeLocation,
+      routeData: routeData
+    };
+  };
+
+  _proto._buildHistory = function _buildHistory(location) {
+    var _this = this;
+
+    var maxLength = this.maxLength;
+    var action = location.action,
+        url = location.url,
+        pathname = location.pathname,
+        key = location.key;
+
+    var uri = this._urlToUri(url, key);
+
+    var historyList = [].concat(this._history);
+    var stackList = [].concat(this._stack);
+
+    if (action === 'RELAUNCH') {
+      historyList = [uri];
+      stackList = [pathname];
+    } else if (action === 'PUSH') {
+      historyList.unshift(uri);
+
+      if (historyList.length > maxLength) {
+        historyList.length = maxLength;
+      }
+
+      if (stackList[0] !== pathname) {
+        stackList.unshift(pathname);
+      }
+
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
+      }
+    } else if (action === 'REPLACE') {
+      historyList[0] = uri;
+
+      if (stackList[0] !== pathname) {
+        var cpathname = this._uriToPathname(historyList[1]);
+
+        if (cpathname !== stackList[0]) {
+          stackList.shift();
+        }
+
+        if (stackList[0] !== pathname) {
+          stackList.unshift(pathname);
+        }
+
+        if (stackList.length > maxLength) {
+          stackList.length = maxLength;
+        }
+      }
+    } else if (action.startsWith('POP')) {
+      var _n = parseInt(action.replace('POP', ''), 10) || 1;
+
+      var arr = historyList.splice(0, _n + 1, uri).reduce(function (pre, curUri) {
+        var cpathname = _this._uriToPathname(curUri);
+
+        if (pre[pre.length - 1] !== cpathname) {
+          pre.push(cpathname);
+        }
+
+        return pre;
+      }, []);
+
+      if (arr[arr.length - 1] === this._uriToPathname(historyList[1])) {
+        arr.pop();
+      }
+
+      stackList.splice(0, arr.length, pathname);
+
+      if (stackList[0] === stackList[1]) {
+        stackList.shift();
+      }
+    }
+
+    return {
+      history: historyList,
+      stack: stackList
+    };
   };
 
   _proto.subscribe = function subscribe(listener) {
-    var _this = this;
+    var _this2 = this;
 
     this._uid++;
     var uid = this._uid;
     this._listenList[uid] = listener;
     return function () {
-      delete _this._listenList[uid];
+      delete _this2._listenList[uid];
     };
   };
 
   _proto.block = function block(listener) {
-    var _this2 = this;
+    var _this3 = this;
 
     this._uid++;
     var uid = this._uid;
     this._blockerList[uid] = listener;
     return function () {
-      delete _this2._blockerList[uid];
+      delete _this3._blockerList[uid];
     };
   };
 
-  _proto.locationToRouteData = function locationToRouteData(location) {
-    return this._transformRoute.locationToRoute(location);
+  _proto._urlToUri = function _urlToUri(url, key) {
+    return "" + key + this._RSP + url;
   };
 
-  _proto.dispatch = function dispatch(location) {
-    var _this3 = this;
-
-    if (this.equal(location, this._location)) {
-      return Promise.reject();
+  _proto._uriToUrl = function _uriToUrl(uri) {
+    if (uri === void 0) {
+      uri = '';
     }
 
-    return Promise.all(Object.values(this._blockerList).map(function (fn) {
-      return fn(location, _this3._location);
-    })).then(function () {
-      _this3._location = location;
-      Object.values(_this3._listenList).forEach(function (listener) {
-        return listener(location);
-      });
+    return uri.substr(uri.indexOf(this._RSP) + 1);
+  };
+
+  _proto._uriToPathname = function _uriToPathname(uri) {
+    if (uri === void 0) {
+      uri = '';
+    }
+
+    var url = this._uriToUrl(uri);
+
+    return url.split(/[?#]/)[0];
+  };
+
+  _proto._uriToKey = function _uriToKey(uri) {
+    if (uri === void 0) {
+      uri = '';
+    }
+
+    return uri.substr(0, uri.indexOf(this._RSP));
+  };
+
+  _proto.findHistoryByKey = function findHistoryByKey(key) {
+    var _this4 = this;
+
+    var index = this._history.findIndex(function (uri) {
+      return uri.startsWith("" + key + _this4._RSP);
     });
+
+    return {
+      index: index,
+      url: index > -1 ? this._uriToUrl(this._history[index]) : ''
+    };
+  };
+
+  _proto._toNativeLocation = function _toNativeLocation(location) {
+    if (this.locationMap) {
+      var nLocation = checkLocation(this.locationMap.out(location));
+      return Object.assign(Object.assign({}, nLocation), {}, {
+        action: location.action,
+        url: locationToUrl(nLocation),
+        key: location.key
+      });
+    }
+
+    return location;
+  };
+
+  _proto.dispatch = function dispatch(safeLocation, action, key, callNative) {
+    var _this5 = this;
+
+    if (key === void 0) {
+      key = '';
+    }
+
+    key = key || this._createKey();
+
+    var data = this._getEfficientLocation(safeLocation);
+
+    var location = Object.assign(Object.assign({}, data.location), {}, {
+      action: action,
+      url: locationToUrl(data.location),
+      key: key
+    });
+    var routeData = Object.assign(Object.assign({}, data.routeData), {}, {
+      action: action,
+      key: key
+    });
+    return Promise.all(Object.values(this._blockerList).map(function (fn) {
+      return fn(location, _this5.getLocation(), routeData, _this5.getRouteData());
+    })).then(function () {
+      _this5._location = location;
+      _this5._routeData = routeData;
+
+      if (!_this5._startupLocation) {
+        _this5._startupLocation = location;
+        _this5._startupRouteData = routeData;
+      }
+
+      var _this5$_buildHistory = _this5._buildHistory(location),
+          history = _this5$_buildHistory.history,
+          stack = _this5$_buildHistory.stack;
+
+      _this5._history = history;
+      _this5._stack = stack;
+      Object.values(_this5._listenList).forEach(function (listener) {
+        return listener({
+          location: location,
+          data: routeData,
+          history: _this5._history,
+          stack: _this5._stack
+        });
+      });
+
+      if (callNative) {
+        var nativeLocation = _this5._toNativeLocation(location);
+
+        if (typeof callNative === 'number') {
+          _this5.nativeHistory.pop && _this5.nativeHistory.pop(nativeLocation, callNative);
+        } else {
+          _this5.nativeHistory[callNative] && _this5.nativeHistory[callNative](nativeLocation);
+        }
+      }
+
+      return location;
+    });
+  };
+
+  _proto.relaunch = function relaunch(data, disableNative) {
+    var paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
+  };
+
+  _proto.push = function push(data, disableNative) {
+    var paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
+  };
+
+  _proto.replace = function replace(data, disableNative) {
+    var paLocation = this.payloadToLocation(data);
+    return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
+  };
+
+  _proto.pop = function pop(n, root, disableNative) {
+    if (n === void 0) {
+      n = 1;
+    }
+
+    if (root === void 0) {
+      root = 'FIRST';
+    }
+
+    n = n || 1;
+    var uri = this._history[n];
+
+    if (uri) {
+      var _url = this._uriToUrl(uri);
+
+      var _key2 = this._uriToKey(uri);
+
+      var paLocation = urlToLocation(_url);
+      return this.dispatch(paLocation, "POP" + n, _key2, disableNative ? '' : n);
+    }
+
+    var url = root;
+
+    if (root === 'HOME') {
+      url = this.homeUrl;
+    } else if (root === 'FIRST') {
+      url = this._startupLocation.url;
+    }
+
+    if (!url) {
+      return Promise.reject(1);
+    }
+
+    return this.relaunch(url, disableNative);
+  };
+
+  _proto.home = function home(root, disableNative) {
+    if (root === void 0) {
+      root = 'FIRST';
+    }
+
+    return this.relaunch(root === 'HOME' ? this.homeUrl : this._startupLocation.url, disableNative);
   };
 
   return BaseHistoryActions;
@@ -4446,224 +4692,174 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
 };
 var exportModule$1 = exportModule;
 
-var Action;
+var WebNativeHistory = function () {
+  function WebNativeHistory(createHistory, locationMap) {
+    this.locationMap = locationMap;
 
-(function (Action) {
-  Action["Push"] = "PUSH";
-  Action["Pop"] = "POP";
-  Action["Replace"] = "REPLACE";
-})(Action || (Action = {}));
+    _defineProperty(this, "history", void 0);
 
-var WebHistoryActions = function (_BaseHistoryActions) {
-  _inheritsLoose(WebHistoryActions, _BaseHistoryActions);
+    _defineProperty(this, "initLocation", void 0);
 
-  function WebHistoryActions(_history, _transformRoute, _locationMap) {
-    var _this;
+    _defineProperty(this, "actions", void 0);
 
-    _this = _BaseHistoryActions.call(this, _locationMap ? _locationMap.in(Object.assign(Object.assign({}, _history.location), {}, {
-      action: _history.action
-    })) : Object.assign(Object.assign({}, _history.location), {}, {
-      action: _history.action
-    }), true, _transformRoute) || this;
-    _this._history = _history;
-    _this._locationMap = _locationMap;
+    if (createHistory === 'Hash') {
+      this.history = history.createHashHistory();
+    } else if (createHistory === 'Memory') {
+      this.history = history.createMemoryHistory();
+    } else if (createHistory === 'Browser') {
+      this.history = history.createBrowserHistory();
+    } else {
+      var _createHistory$split = createHistory.split('?'),
+          pathname = _createHistory$split[0],
+          _createHistory$split$ = _createHistory$split[1],
+          search = _createHistory$split$ === void 0 ? '' : _createHistory$split$;
 
-    _defineProperty(_assertThisInitialized(_this), "_unlistenHistory", void 0);
+      this.history = {
+        action: 'PUSH',
+        length: 0,
+        listen: function listen() {
+          return function () {
+            return undefined;
+          };
+        },
+        createHref: function createHref() {
+          return '';
+        },
+        push: function push() {},
+        replace: function replace() {},
+        go: function go() {},
+        goBack: function goBack() {},
+        goForward: function goForward() {},
+        block: function block() {
+          return function () {
+            return undefined;
+          };
+        },
+        location: {
+          state: null,
+          pathname: pathname,
+          search: search && "?" + search,
+          hash: ''
+        }
+      };
+    }
 
-    _this._unlistenHistory = _this._history.block(function (location, action) {
-      var meduxLocation = _locationMap ? _locationMap.in(Object.assign(Object.assign({}, location), {}, {
-        action: action
-      })) : Object.assign(Object.assign({}, location), {}, {
-        action: action
-      });
+    var location = this.hsLocationToPaLocation(this.history.location);
+    this.initLocation = this.locationMap ? this.locationMap.in(location) : location;
+  }
 
-      if (!_this.equal(meduxLocation, _this.getLocation())) {
-        return meduxLocation.action + "::" + safelocationToUrl(meduxLocation);
+  var _proto = WebNativeHistory.prototype;
+
+  _proto.block = function block(blocker) {
+    var _this = this;
+
+    return this.history.block(function (location, action) {
+      return blocker(_this.hsLocationToPaLocation(location), _this.getKey(location), action);
+    });
+  };
+
+  _proto.hsLocationToPaLocation = function hsLocationToPaLocation(historyLocation) {
+    return {
+      pathname: historyLocation.pathname,
+      search: historyLocation.search,
+      hash: historyLocation.hash
+    };
+  };
+
+  _proto.getKey = function getKey(location) {
+    return location.state || '';
+  };
+
+  _proto.push = function push(location) {
+    this.history.push(locationToUrl(location), location.key);
+  };
+
+  _proto.replace = function replace(location) {
+    this.history.replace(locationToUrl(location), location.key);
+  };
+
+  _proto.relaunch = function relaunch(location) {
+    this.history.push(locationToUrl(location), location.key);
+  };
+
+  _proto.pop = function pop(location, n) {
+    this.history.go(-n);
+  };
+
+  return WebNativeHistory;
+}();
+var HistoryActions = function (_BaseHistoryActions) {
+  _inheritsLoose(HistoryActions, _BaseHistoryActions);
+
+  function HistoryActions(nativeHistory, homeUrl, routeConfig, maxLength, locationMap) {
+    var _this2;
+
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, homeUrl, routeConfig, maxLength, locationMap) || this;
+    _this2.nativeHistory = nativeHistory;
+    _this2.homeUrl = homeUrl;
+    _this2.routeConfig = routeConfig;
+    _this2.maxLength = maxLength;
+    _this2.locationMap = locationMap;
+
+    _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);
+
+    _this2._unlistenHistory = _this2.nativeHistory.block(function (location, key, action) {
+      if (key !== _this2.getCurKey()) {
+        var callback;
+        var index = 0;
+
+        if (action === 'POP') {
+          index = _this2.findHistoryByKey(key).index;
+        }
+
+        if (index > 0) {
+          callback = function callback() {
+            _this2.pop(index);
+          };
+        } else {
+          var paLocation = _this2.locationMap ? _this2.locationMap.in(location) : location;
+
+          if (action === 'REPLACE') {
+            callback = function callback() {
+              _this2.replace(paLocation);
+            };
+          } else if (action === 'PUSH') {
+            callback = function callback() {
+              _this2.push(paLocation);
+            };
+          } else {
+            callback = function callback() {
+              _this2.relaunch(paLocation);
+            };
+          }
+        }
+
+        callback && env.setTimeout(callback, 0);
+        return false;
       }
 
       return undefined;
     });
-    return _this;
+    return _this2;
   }
 
-  var _proto = WebHistoryActions.prototype;
+  var _proto2 = HistoryActions.prototype;
 
-  _proto.getHistory = function getHistory() {
-    return this._history;
-  };
-
-  _proto.destroy = function destroy() {
+  _proto2.destroy = function destroy() {
     this._unlistenHistory();
   };
 
-  _proto.toUrl = function toUrl(data) {
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    location = this._locationMap ? this._locationMap.out(location) : location;
-    return location.pathname + location.search + location.hash;
-  };
-
-  _proto.patch = function patch(location, routeData) {
-    this.push(location);
-  };
-
-  _proto.push = function push(data) {
-    var _this2 = this;
-
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
-      action: Action.Push
-    })).then(function () {
-      _this2._history.push(_this2._locationMap ? _this2._locationMap.out(location) : location);
-    });
-  };
-
-  _proto.replace = function replace(data) {
-    var _this3 = this;
-
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
-      action: Action.Replace
-    })).then(function () {
-      _this3._history.replace(_this3._locationMap ? _this3._locationMap.out(location) : location);
-    });
-  };
-
-  _proto.go = function go(n) {
-    this._history.go(n);
-  };
-
-  _proto.back = function back() {
-    this._history.goBack();
-  };
-
-  _proto.forward = function forward() {
-    this._history.goForward();
-  };
-
-  _proto.passive = function passive() {
-    throw 1;
-  };
-
-  return WebHistoryActions;
+  return HistoryActions;
 }(BaseHistoryActions);
-
-function createRouter(createHistory, routeConfig, locationMap) {
-  var history$1;
-  var historyOptions = {
-    getUserConfirmation: function getUserConfirmation(str, callback) {
-      var _str$split = str.split('::'),
-          action = _str$split[0],
-          pathname = _str$split[1];
-
-      var location = safeurlToLocation(pathname);
-      location.action = action;
-      historyActions.dispatch(location).then(function () {
-        callback(true);
-      }).catch(function (e) {
-        callback(false);
-        throw e;
-      });
-    }
-  };
-
-  if (createHistory === 'Hash') {
-    history$1 = history.createHashHistory(historyOptions);
-  } else if (createHistory === 'Memory') {
-    history$1 = history.createMemoryHistory(historyOptions);
-  } else if (createHistory === 'Browser') {
-    history$1 = history.createBrowserHistory(historyOptions);
-  } else {
-    var _createHistory$split = createHistory.split('?'),
-        pathname = _createHistory$split[0],
-        _createHistory$split$ = _createHistory$split[1],
-        search = _createHistory$split$ === void 0 ? '' : _createHistory$split$;
-
-    history$1 = {
-      action: 'PUSH',
-      length: 0,
-      listen: function listen() {
-        return function () {
-          return undefined;
-        };
-      },
-      createHref: function createHref() {
-        return '';
-      },
-      push: function push() {},
-      replace: function replace() {},
-      go: function go() {},
-      goBack: function goBack() {},
-      goForward: function goForward() {},
-      block: function block() {
-        return function () {
-          return undefined;
-        };
-      },
-      location: {
-        state: null,
-        pathname: pathname,
-        search: search && "?" + search,
-        hash: ''
-      }
-    };
-  }
-
-  var getCurPathname = function getCurPathname() {
-    return historyActions.getLocation().pathname;
-  };
-
-  var _locationMap = locationMap;
-
-  if (locationMap && _locationMap) {
-    _locationMap.in = function (location) {
-      return checkLocation(locationMap.in(location), getCurPathname());
-    };
-
-    _locationMap.out = function (location) {
-      return checkLocation(locationMap.out(location), getCurPathname());
-    };
-  }
-
-  var transformRoute = buildTransformRoute(routeConfig, getCurPathname);
-  var historyActions = new WebHistoryActions(history$1, transformRoute, _locationMap);
-  return {
-    transformRoute: transformRoute,
-    historyActions: historyActions
-  };
+function createRouter(createHistory, homeUrl, routeConfig, locationMap) {
+  var nativeHistory = new WebNativeHistory(createHistory);
+  var historyActions = new HistoryActions(nativeHistory, homeUrl, routeConfig, 10, locationMap);
+  nativeHistory.actions = historyActions;
+  historyActions.relaunch(nativeHistory.initLocation);
+  return historyActions;
 }
 
 var historyActions;
-var transformRoute;
-
-var redirectMiddleware = function redirectMiddleware() {
-  return function (next) {
-    return function (action) {
-      if (action.type === ActionTypes.RouteChange) {
-        var routeState = action.payload[0];
-        var views = routeState.data.views;
-
-        if (views['@']) {
-          var url = Object.keys(views['@'])[0];
-
-          if (isServer()) {
-            throw {
-              code: '301',
-              message: url,
-              detail: url
-            };
-          } else {
-            historyActions.replace(url);
-          }
-
-          return;
-        }
-      }
-
-      return next(action);
-    };
-  };
-};
-
 function buildApp(_ref) {
   var moduleGetter = _ref.moduleGetter,
       _ref$appModuleName = _ref.appModuleName,
@@ -4672,6 +4868,8 @@ function buildApp(_ref) {
       appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
       _ref$historyType = _ref.historyType,
       historyType = _ref$historyType === void 0 ? 'Browser' : _ref$historyType,
+      _ref$homeUrl = _ref.homeUrl,
+      homeUrl = _ref$homeUrl === void 0 ? '/' : _ref$homeUrl,
       _ref$routeConfig = _ref.routeConfig,
       routeConfig = _ref$routeConfig === void 0 ? {} : _ref$routeConfig,
       locationMap = _ref.locationMap,
@@ -4684,20 +4882,11 @@ function buildApp(_ref) {
   setRouteConfig({
     defaultRouteParams: defaultRouteParams
   });
-  var router = createRouter(historyType, routeConfig, locationMap);
-  historyActions = router.historyActions;
-  transformRoute = router.transformRoute;
-
-  if (!storeOptions.middlewares) {
-    storeOptions.middlewares = [];
-  }
-
-  storeOptions.middlewares.unshift(redirectMiddleware);
+  historyActions = createRouter(historyType, homeUrl, routeConfig, locationMap);
   return renderApp$1(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, function (store) {
     return beforeRender ? beforeRender({
       store: store,
-      historyActions: historyActions,
-      transformRoute: transformRoute
+      historyActions: historyActions
     }) : store;
   });
 }
@@ -4720,14 +4909,11 @@ function buildSSR(_ref2) {
   setRouteConfig({
     defaultRouteParams: defaultRouteParams
   });
-  var router = createRouter(location, routeConfig, locationMap);
-  historyActions = router.historyActions;
-  transformRoute = router.transformRoute;
+  historyActions = createRouter(location, '/', routeConfig, locationMap);
   return renderSSR$1(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, function (store) {
     return beforeRender ? beforeRender({
       store: store,
-      historyActions: historyActions,
-      transformRoute: transformRoute
+      historyActions: historyActions
     }) : store;
   });
 }

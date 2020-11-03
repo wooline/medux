@@ -463,12 +463,6 @@ export var BaseHistoryActions = function () {
     return ((_this$getLocation = this.getLocation()) === null || _this$getLocation === void 0 ? void 0 : _this$getLocation.key) || '';
   };
 
-  _proto._getCurPathname = function _getCurPathname() {
-    var _this$getLocation2;
-
-    return ((_this$getLocation2 = this.getLocation()) === null || _this$getLocation2 === void 0 ? void 0 : _this$getLocation2.pathname) || '';
-  };
-
   _proto.getLocation = function getLocation(startup) {
     return startup ? this._startupLocation : this._location;
   };
@@ -544,6 +538,14 @@ export var BaseHistoryActions = function () {
   };
 
   _proto.payloadToRoute = function payloadToRoute(data) {
+    if (typeof data === 'string') {
+      return this.locationToRoute(urlToLocation(data));
+    }
+
+    if (dataIsLocation(data)) {
+      return this.locationToRoute(checkLocation(data));
+    }
+
     var params = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
     var paths = [];
 
@@ -575,13 +577,13 @@ export var BaseHistoryActions = function () {
     return "" + this._tid;
   };
 
-  _proto._getEfficientLocation = function _getEfficientLocation(safeLocation, curPathname) {
+  _proto._getEfficientLocation = function _getEfficientLocation(safeLocation) {
     var routeData = this.locationToRoute(safeLocation);
 
     if (routeData.views['@']) {
       var url = Object.keys(routeData.views['@'])[0];
       var reLocation = urlToLocation(url);
-      return this._getEfficientLocation(reLocation, safeLocation.pathname);
+      return this._getEfficientLocation(reLocation);
     }
 
     return {
@@ -747,7 +749,7 @@ export var BaseHistoryActions = function () {
     return location;
   };
 
-  _proto.dispatch = function dispatch(paLocation, action, key, callNative) {
+  _proto.dispatch = function dispatch(safeLocation, action, key, callNative) {
     var _this5 = this;
 
     if (key === void 0) {
@@ -756,7 +758,7 @@ export var BaseHistoryActions = function () {
 
     key = key || this._createKey();
 
-    var data = this._getEfficientLocation(paLocation, this._getCurPathname());
+    var data = this._getEfficientLocation(safeLocation);
 
     var location = Object.assign(Object.assign({}, data.location), {}, {
       action: action,

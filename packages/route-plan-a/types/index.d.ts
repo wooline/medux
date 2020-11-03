@@ -61,11 +61,11 @@ export interface NativeHistory {
     pop(location: Location, n: number): void;
 }
 export declare abstract class BaseHistoryActions<P extends RouteParams = RouteParams> implements HistoryProxy {
-    nativeHistory: NativeHistory;
+    protected nativeHistory: NativeHistory;
     homeUrl: string;
-    routeConfig: RouteConfig;
-    maxLength: number;
-    locationMap?: LocationMap | undefined;
+    protected routeConfig: RouteConfig;
+    protected maxLength: number;
+    protected locationMap?: LocationMap | undefined;
     private _tid;
     private _uid;
     private _RSP;
@@ -81,13 +81,12 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     private _ruleToKeys;
     constructor(nativeHistory: NativeHistory, homeUrl: string, routeConfig: RouteConfig, maxLength: number, locationMap?: LocationMap | undefined);
     protected getCurKey(): string;
-    private _getCurPathname;
     getLocation(startup?: boolean): Location | undefined;
     getRouteData(startup?: boolean): RouteData<P> | undefined;
     getRouteState(): RouteState<Location, P> | undefined;
-    locationToRoute(safeLocation: PaLocation): PaRouteData<P>;
-    routeToLocation(paths: string[] | string, params?: RouteParams): PaLocation;
-    payloadToRoute(data: RoutePayload<P>): PaRouteData<P>;
+    protected locationToRoute(safeLocation: PaLocation): PaRouteData<P>;
+    protected routeToLocation(paths: string[] | string, params?: RouteParams): PaLocation;
+    payloadToRoute(data: RoutePayload<P> | LocationPayload | string): PaRouteData<P>;
     payloadToLocation(data: RoutePayload<P> | LocationPayload | string): PaLocation;
     private _createKey;
     private _getEfficientLocation;
@@ -103,7 +102,7 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
         url: string;
     };
     private _toNativeLocation;
-    protected dispatch(paLocation: PaLocation, action: HistoryAction, key?: string, callNative?: string | number): Promise<Location>;
+    protected dispatch(safeLocation: PaLocation, action: HistoryAction, key?: string, callNative?: string | number): Promise<Location>;
     relaunch(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
     push(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
     replace(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;

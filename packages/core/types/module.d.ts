@@ -1,5 +1,5 @@
 import { Middleware, ReducersMapObject, Store, StoreEnhancer } from 'redux';
-import { Action, ActionCreatorList, BaseModelState, CommonModule, ModelStore, RouteState, StoreState } from './basic';
+import { Action, ActionCreatorList, BaseModelState, CommonModule, HistoryAction, ModelStore, RouteState, StoreState } from './basic';
 import { HistoryProxy } from './store';
 export interface Model<ModelState extends BaseModelState = BaseModelState> {
     moduleName: string;
@@ -36,6 +36,7 @@ export declare type RouteViews<G extends ModuleGetter> = {
 export declare type RootState<G extends ModuleGetter, L> = {
     route: {
         history: string[];
+        stack: string[];
         location: L;
         data: {
             views: RouteViews<G>;
@@ -43,6 +44,8 @@ export declare type RootState<G extends ModuleGetter, L> = {
                 [key in keyof G]?: ModuleParams<ReturnModule<G[key]>>;
             };
             paths: string[];
+            key: string;
+            action: HistoryAction;
         };
     };
 } & {

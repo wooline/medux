@@ -67,7 +67,8 @@ var WebNativeHistory = function () {
       };
     }
 
-    this.initLocation = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+    var location = this.hsLocationToPaLocation(this.history.location);
+    this.initLocation = this.locationMap ? this.locationMap.in(location) : location;
   }
 
   var _proto = WebNativeHistory.prototype;
@@ -76,8 +77,16 @@ var WebNativeHistory = function () {
     var _this = this;
 
     return this.history.block(function (location, action) {
-      return blocker(location, _this.getKey(location), action);
+      return blocker(_this.hsLocationToPaLocation(location), _this.getKey(location), action);
     });
+  };
+
+  _proto.hsLocationToPaLocation = function hsLocationToPaLocation(historyLocation) {
+    return {
+      pathname: historyLocation.pathname,
+      search: historyLocation.search,
+      hash: historyLocation.hash
+    };
   };
 
   _proto.getKey = function getKey(location) {
