@@ -25,10 +25,6 @@ export interface Location extends BaseLocation {
     search: string;
     hash: string;
 }
-export interface NativeLocation {
-    key: string;
-    url: string;
-}
 export declare function checkLocation(location: LocationPayload): PaLocation;
 export declare function urlToLocation(url: string): PaLocation;
 export declare function locationToUrl(safeLocation: PaLocation): string;
@@ -62,12 +58,13 @@ export interface NativeHistory {
     push(location: Location): void;
     replace(location: Location): void;
     relaunch(location: Location): void;
-    pop(n: number): void;
+    pop(location: Location, n: number): void;
 }
 export declare abstract class BaseHistoryActions<P extends RouteParams = RouteParams> implements HistoryProxy {
-    private _homeUrl;
     nativeHistory: NativeHistory;
+    homeUrl: string;
     routeConfig: RouteConfig;
+    maxLength: number;
     locationMap?: LocationMap | undefined;
     private _tid;
     private _uid;
@@ -82,9 +79,8 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     private _stack;
     private _viewToRule;
     private _ruleToKeys;
-    constructor(_homeUrl: string, nativeHistory: NativeHistory, routeConfig: RouteConfig, locationMap?: LocationMap | undefined);
-    init(initLocation: PaLocation): void;
-    private _getCurKey;
+    constructor(nativeHistory: NativeHistory, homeUrl: string, routeConfig: RouteConfig, maxLength: number, locationMap?: LocationMap | undefined);
+    protected getCurKey(): string;
     private _getCurPathname;
     getLocation(startup?: boolean): Location | undefined;
     getRouteData(startup?: boolean): RouteData<P> | undefined;
@@ -100,15 +96,19 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     block(listener: LocationBlocker<P>): () => void;
     private _urlToUri;
     private _uriToUrl;
+    private _uriToPathname;
     private _uriToKey;
-    private _findHistoryByKey;
+    protected findHistoryByKey(key: string): {
+        index: number;
+        url: string;
+    };
+    private _toNativeLocation;
     protected dispatch(paLocation: PaLocation, action: HistoryAction, key?: string, callNative?: string | number): Promise<Location>;
-    protected passive(nativeLocation: NativeLocation, action: HistoryAction): void;
-    relaunch(data: RoutePayload<P> | LocationPayload | string): Promise<Location>;
-    push(data: RoutePayload<P> | LocationPayload | string): Promise<Location>;
-    replace(data: RoutePayload<P> | LocationPayload | string): Promise<Location>;
-    pop(n?: number, root?: 'HOME' | 'FIRST' | ''): Promise<Location>;
-    home(root?: 'HOME' | 'FIRST'): Promise<Location>;
+    relaunch(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
+    push(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
+    replace(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
+    pop(n?: number, root?: 'HOME' | 'FIRST' | '', disableNative?: boolean): Promise<Location>;
+    home(root?: 'HOME' | 'FIRST', disableNative?: boolean): Promise<Location>;
     abstract destroy(): void;
 }
 export {};

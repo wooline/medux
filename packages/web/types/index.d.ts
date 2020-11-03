@@ -1,28 +1,27 @@
-import { LocationPayload, MeduxLocation, RouteConfig, RoutePayload, TransformRoute } from '@medux/route-plan-a';
-import { History } from 'history';
-import { HistoryProxy, RouteData, RouteParams } from '@medux/core';
-export declare enum Action {
-    Push = "PUSH",
-    Pop = "POP",
-    Replace = "REPLACE"
+import { BaseHistoryActions, Location, RouteConfig, NativeHistory, LocationMap, PaLocation } from '@medux/route-plan-a';
+import { History, Location as HistoryLocation } from 'history';
+import { RouteParams } from '@medux/core';
+export declare class WebNativeHistory implements NativeHistory {
+    locationMap?: LocationMap | undefined;
+    history: History;
+    initLocation: PaLocation;
+    actions: HistoryActions | undefined;
+    constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationMap?: LocationMap | undefined);
+    block(blocker: (location: HistoryLocation, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void): import("history").UnregisterCallback;
+    getKey(location: HistoryLocation): string;
+    push(location: Location): void;
+    replace(location: Location): void;
+    relaunch(location: Location): void;
+    pop(location: Location, n: number): void;
 }
-export declare type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
-export declare type LocationMap = {
-    in: LocationToLocation;
-    out: LocationToLocation;
-};
-export interface HistoryActions<P extends RouteParams = any> extends HistoryProxy<MeduxLocation> {
-    getHistory(): History;
-    getRouteData(): RouteData;
-    push(data: RoutePayload<P> | LocationPayload | string): Promise<void>;
-    replace(data: RoutePayload<P> | LocationPayload | string): Promise<void>;
-    toUrl(data: RoutePayload<P> | LocationPayload | string): string;
-    go(n: number): void;
-    back(): void;
-    forward(): void;
-    dispatch(location: MeduxLocation): Promise<void>;
+export declare class HistoryActions<P extends RouteParams = RouteParams> extends BaseHistoryActions<P> {
+    nativeHistory: WebNativeHistory;
+    homeUrl: string;
+    routeConfig: RouteConfig;
+    maxLength: number;
+    locationMap?: LocationMap | undefined;
+    private _unlistenHistory;
+    constructor(nativeHistory: WebNativeHistory, homeUrl: string, routeConfig: RouteConfig, maxLength: number, locationMap?: LocationMap | undefined);
+    destroy(): void;
 }
-export declare function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, routeConfig: RouteConfig, locationMap?: LocationMap): {
-    transformRoute: TransformRoute<any>;
-    historyActions: HistoryActions<any>;
-};
+export declare function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, homeUrl: string, routeConfig: RouteConfig, locationMap?: LocationMap): HistoryActions<RouteParams>;

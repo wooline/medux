@@ -24,6 +24,12 @@ function dataIsLocation(data) {
 
 function checkLocation(location) {
   var data = Object.assign({}, location);
+  data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
+
+  if (data.pathname !== '/') {
+    data.pathname = data.pathname.replace(/\/$/, '');
+  }
+
   data.search = ("?" + (location.search || '')).replace('??', '?');
   data.hash = ("#" + (location.hash || '')).replace('##', '#');
 
@@ -39,7 +45,7 @@ function checkLocation(location) {
 }
 
 function urlToLocation(url) {
-  url = url.replace(/\/(?=[?#]|$)/, '');
+  url = ("/" + url).replace(/\/+/g, '/');
 
   if (!url) {
     return {
@@ -428,10 +434,11 @@ function pathsToPathname(paths, params, viewToRule, ruleToKeys) {
 }
 
 var BaseHistoryActions = function () {
-  function BaseHistoryActions(_homeUrl, nativeHistory, routeConfig, locationMap) {
-    this._homeUrl = _homeUrl;
+  function BaseHistoryActions(nativeHistory, homeUrl, routeConfig, maxLength, locationMap) {
     this.nativeHistory = nativeHistory;
+    this.homeUrl = homeUrl;
     this.routeConfig = routeConfig;
+    this.maxLength = maxLength;
     this.locationMap = locationMap;
     (0, _defineProperty2.default)(this, "_tid", 0);
     (0, _defineProperty2.default)(this, "_uid", 0);
@@ -457,11 +464,7 @@ var BaseHistoryActions = function () {
 
   var _proto = BaseHistoryActions.prototype;
 
-  _proto.init = function init(initLocation) {
-    this.relaunch(this.locationMap ? this.locationMap.in(initLocation) : initLocation);
-  };
-
-  _proto._getCurKey = function _getCurKey() {
+  _proto.getCurKey = function getCurKey() {
     var _this$getLocation;
 
     return ((_this$getLocation = this.getLocation()) === null || _this$getLocation === void 0 ? void 0 : _this$getLocation.key) || '';
@@ -597,6 +600,7 @@ var BaseHistoryActions = function () {
   _proto._buildHistory = function _buildHistory(location) {
     var _this = this;
 
+    var maxLength = this.maxLength;
     var action = location.action,
         url = location.url,
         pathname = location.pathname,
@@ -613,22 +617,22 @@ var BaseHistoryActions = function () {
     } else if (action === 'PUSH') {
       historyList.unshift(uri);
 
-      if (historyList.length > 10) {
-        historyList.length = 10;
+      if (historyList.length > maxLength) {
+        historyList.length = maxLength;
       }
 
       if (stackList[0] !== pathname) {
         stackList.unshift(pathname);
       }
 
-      if (stackList.length > 10) {
-        stackList.length = 10;
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
       }
     } else if (action === 'REPLACE') {
       historyList[0] = uri;
 
       if (stackList[0] !== pathname) {
-        var cpathname = this._uriToUrl(historyList[1]).split('?')[0];
+        var cpathname = this._uriToPathname(historyList[1]);
 
         if (cpathname !== stackList[0]) {
           stackList.shift();
@@ -638,24 +642,24 @@ var BaseHistoryActions = function () {
           stackList.unshift(pathname);
         }
 
-        if (stackList.length > 10) {
-          stackList.length = 10;
+        if (stackList.length > maxLength) {
+          stackList.length = maxLength;
         }
       }
     } else if (action.startsWith('POP')) {
       var _n = parseInt(action.replace('POP', ''), 10) || 1;
 
       var arr = historyList.splice(0, _n + 1, uri).reduce(function (pre, curUri) {
-        var pn = _this._uriToUrl(curUri).split('?')[0];
+        var cpathname = _this._uriToPathname(curUri);
 
-        if (pre[pre.length - 1] !== pn) {
-          pre.push(pn);
+        if (pre[pre.length - 1] !== cpathname) {
+          pre.push(cpathname);
         }
 
         return pre;
       }, []);
 
-      if (arr[arr.length - 1] === this._uriToUrl(historyList[1]).split('?')[0]) {
+      if (arr[arr.length - 1] === this._uriToPathname(historyList[1])) {
         arr.pop();
       }
 
@@ -706,6 +710,16 @@ var BaseHistoryActions = function () {
     return uri.substr(uri.indexOf(this._RSP) + 1);
   };
 
+  _proto._uriToPathname = function _uriToPathname(uri) {
+    if (uri === void 0) {
+      uri = '';
+    }
+
+    var url = this._uriToUrl(uri);
+
+    return url.split(/[?#]/)[0];
+  };
+
   _proto._uriToKey = function _uriToKey(uri) {
     if (uri === void 0) {
       uri = '';
@@ -714,7 +728,7 @@ var BaseHistoryActions = function () {
     return uri.substr(0, uri.indexOf(this._RSP));
   };
 
-  _proto._findHistoryByKey = function _findHistoryByKey(key) {
+  _proto.findHistoryByKey = function findHistoryByKey(key) {
     var _this4 = this;
 
     var index = this._history.findIndex(function (uri) {
@@ -725,6 +739,19 @@ var BaseHistoryActions = function () {
       index: index,
       url: index > -1 ? this._uriToUrl(this._history[index]) : ''
     };
+  };
+
+  _proto._toNativeLocation = function _toNativeLocation(location) {
+    if (this.locationMap) {
+      var nLocation = checkLocation(this.locationMap.out(location));
+      return Object.assign(Object.assign({}, nLocation), {}, {
+        action: location.action,
+        url: locationToUrl(nLocation),
+        key: location.key
+      });
+    }
+
+    return location;
   };
 
   _proto.dispatch = function dispatch(paLocation, action, key, callNative) {
@@ -774,10 +801,12 @@ var BaseHistoryActions = function () {
       });
 
       if (callNative) {
+        var nativeLocation = _this5._toNativeLocation(location);
+
         if (typeof callNative === 'number') {
-          _this5.nativeHistory.pop(callNative);
+          _this5.nativeHistory.pop && _this5.nativeHistory.pop(nativeLocation, callNative);
         } else {
-          _this5.nativeHistory[callNative](_this5.locationMap ? _this5.locationMap.out(location) : location);
+          _this5.nativeHistory[callNative] && _this5.nativeHistory[callNative](nativeLocation);
         }
       }
 
@@ -785,45 +814,22 @@ var BaseHistoryActions = function () {
     });
   };
 
-  _proto.passive = function passive(nativeLocation, action) {
-    if (nativeLocation.key !== this._getCurKey()) {
-      if (action === 'POP') {
-        if (nativeLocation.key) {
-          var _this$_findHistoryByK = this._findHistoryByKey(nativeLocation.key),
-              index = _this$_findHistoryByK.index,
-              url = _this$_findHistoryByK.url;
-
-          if (index > 0) {
-            this.dispatch(urlToLocation(url), "POP" + index, nativeLocation.key);
-            return;
-          }
-        }
-
-        action = 'RELAUNCH';
-      }
-
-      var _location = urlToLocation(nativeLocation.url);
-
-      this.dispatch(this.locationMap ? this.locationMap.in(_location) : _location, action, nativeLocation.key);
-    }
-  };
-
-  _proto.relaunch = function relaunch(data) {
+  _proto.relaunch = function relaunch(data, disableNative) {
     var paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'RELAUNCH', '', 'relaunch');
+    return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
   };
 
-  _proto.push = function push(data) {
+  _proto.push = function push(data, disableNative) {
     var paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'PUSH', '', 'PUSH');
+    return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
   };
 
-  _proto.replace = function replace(data) {
+  _proto.replace = function replace(data, disableNative) {
     var paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'REPLACE', '', 'replace');
+    return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
   };
 
-  _proto.pop = function pop(n, root) {
+  _proto.pop = function pop(n, root, disableNative) {
     if (n === void 0) {
       n = 1;
     }
@@ -841,13 +847,13 @@ var BaseHistoryActions = function () {
       var _key2 = this._uriToKey(uri);
 
       var paLocation = urlToLocation(_url);
-      return this.dispatch(paLocation, "POP" + n, _key2, n);
+      return this.dispatch(paLocation, "POP" + n, _key2, disableNative ? '' : n);
     }
 
     var url = root;
 
     if (root === 'HOME') {
-      url = this._homeUrl;
+      url = this.homeUrl;
     } else if (root === 'FIRST') {
       url = this._startupLocation.url;
     }
@@ -856,15 +862,15 @@ var BaseHistoryActions = function () {
       return Promise.reject(1);
     }
 
-    return this.relaunch(url);
+    return this.relaunch(url, disableNative);
   };
 
-  _proto.home = function home(root) {
+  _proto.home = function home(root, disableNative) {
     if (root === void 0) {
       root = 'FIRST';
     }
 
-    return this.relaunch(root === 'HOME' ? this._homeUrl : this._startupLocation.url);
+    return this.relaunch(root === 'HOME' ? this.homeUrl : this._startupLocation.url, disableNative);
   };
 
   return BaseHistoryActions;

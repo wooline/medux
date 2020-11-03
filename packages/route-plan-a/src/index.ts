@@ -29,10 +29,10 @@ export interface Location extends BaseLocation {
   search: string;
   hash: string;
 }
-export interface NativeLocation {
-  key: string;
-  url: string;
-}
+// export interface NativeLocation {
+//   key: string;
+//   url: string;
+// }
 function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload {
   return !!data['pathname'];
 }
@@ -389,7 +389,7 @@ export interface NativeHistory {
   push(location: Location): void;
   replace(location: Location): void;
   relaunch(location: Location): void;
-  pop(n: number): void;
+  pop(location: Location, n: number): void;
 }
 
 export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> implements HistoryProxy {
@@ -423,21 +423,13 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     [rule: string]: (string | number)[];
   };
 
-  constructor(private _homeUrl: string, public nativeHistory: NativeHistory, public routeConfig: RouteConfig, public locationMap?: LocationMap) {
-    // if (locationMap && _locationMap) {
-    //   _locationMap.in = (location) => checkLocation(locationMap.in(location), getCurPathname());
-    //   _locationMap.out = (location) => checkLocation(locationMap.out(location), getCurPathname());
-    // }
+  constructor(public nativeHistory: NativeHistory, public homeUrl: string, public routeConfig: RouteConfig, public maxLength: number, public locationMap?: LocationMap) {
     const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
   }
 
-  init(initLocation: PaLocation) {
-    return this.relaunch(this.locationMap ? this.locationMap.in(initLocation) : initLocation);
-  }
-
-  private _getCurKey(): string {
+  protected getCurKey(): string {
     return this.getLocation()?.key || '';
   }
 
@@ -542,6 +534,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
   }
 
   private _buildHistory(location: Location) {
+    const maxLength = this.maxLength;
     const {action, url, pathname, key} = location;
     const uri = this._urlToUri(url, key);
     let historyList: string[] = [...this._history];
@@ -551,39 +544,39 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
       stackList = [pathname];
     } else if (action === 'PUSH') {
       historyList.unshift(uri);
-      if (historyList.length > 10) {
-        historyList.length = 10;
+      if (historyList.length > maxLength) {
+        historyList.length = maxLength;
       }
       if (stackList[0] !== pathname) {
         stackList.unshift(pathname);
       }
-      if (stackList.length > 10) {
-        stackList.length = 10;
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
       }
     } else if (action === 'REPLACE') {
       historyList[0] = uri;
       if (stackList[0] !== pathname) {
-        const cpathname = this._uriToUrl(historyList[1]).split('?')[0];
+        const cpathname = this._uriToPathname(historyList[1]);
         if (cpathname !== stackList[0]) {
           stackList.shift();
         }
         if (stackList[0] !== pathname) {
           stackList.unshift(pathname);
         }
-        if (stackList.length > 10) {
-          stackList.length = 10;
+        if (stackList.length > maxLength) {
+          stackList.length = maxLength;
         }
       }
     } else if (action.startsWith('POP')) {
       const n = parseInt(action.replace('POP', ''), 10) || 1;
       const arr = historyList.splice(0, n + 1, uri).reduce((pre: string[], curUri) => {
-        const pn = this._uriToUrl(curUri).split('?')[0];
-        if (pre[pre.length - 1] !== pn) {
-          pre.push(pn);
+        const cpathname = this._uriToPathname(curUri);
+        if (pre[pre.length - 1] !== cpathname) {
+          pre.push(cpathname);
         }
         return pre;
       }, []);
-      if (arr[arr.length - 1] === this._uriToUrl(historyList[1]).split('?')[0]) {
+      if (arr[arr.length - 1] === this._uriToPathname(historyList[1])) {
         arr.pop();
       }
       stackList.splice(0, arr.length, pathname);
@@ -620,16 +613,29 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     return uri.substr(uri.indexOf(this._RSP) + 1);
   }
 
+  private _uriToPathname(uri = '') {
+    const url = this._uriToUrl(uri);
+    return url.split(/[?#]/)[0];
+  }
+
   private _uriToKey(uri = '') {
     return uri.substr(0, uri.indexOf(this._RSP));
   }
 
-  private _findHistoryByKey(key: string): {index: number; url: string} {
+  protected findHistoryByKey(key: string): {index: number; url: string} {
     const index = this._history.findIndex((uri) => uri.startsWith(`${key}${this._RSP}`));
     return {index, url: index > -1 ? this._uriToUrl(this._history[index]) : ''};
   }
 
-  protected dispatch(paLocation: PaLocation, action: HistoryAction, key = '', callNative?: string | number): Promise<Location> {
+  private _toNativeLocation(location: Location): Location {
+    if (this.locationMap) {
+      const nLocation = checkLocation(this.locationMap.out(location));
+      return {...nLocation, action: location.action, url: locationToUrl(nLocation), key: location.key};
+    }
+    return location;
+  }
+
+  protected dispatch(paLocation: PaLocation, action: HistoryAction, key: string = '', callNative?: string | number): Promise<Location> {
     key = key || this._createKey();
     const data = this._getEfficientLocation(paLocation, this._getCurPathname());
     const location: Location = {...data.location, action, url: locationToUrl(data.location), key};
@@ -647,71 +653,72 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
       this._stack = stack;
       Object.values(this._listenList).forEach((listener) => listener({location, data: routeData, history: this._history, stack: this._stack}));
       if (callNative) {
+        const nativeLocation = this._toNativeLocation(location);
         if (typeof callNative === 'number') {
-          this.nativeHistory.pop(callNative);
+          this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
         } else {
-          this.nativeHistory[callNative](this.locationMap ? this.locationMap.out(location) : location);
+          this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
         }
       }
       return location;
     });
   }
 
-  protected passive(nativeLocation: NativeLocation, action: HistoryAction) {
-    if (nativeLocation.key !== this._getCurKey()) {
-      if (action === 'POP') {
-        if (nativeLocation.key) {
-          const {index, url} = this._findHistoryByKey(nativeLocation.key);
-          if (index > 0) {
-            this.dispatch(urlToLocation(url), `POP${index}` as any, nativeLocation.key);
-            return;
-          }
-        }
-        action = 'RELAUNCH';
-      }
-      const location = urlToLocation(nativeLocation.url);
-      this.dispatch(this.locationMap ? this.locationMap.in(location) : location, action, nativeLocation.key);
-    }
-  }
+  // protected passive(nativeLocation: NativeLocation, action: HistoryAction) {
+  //   if (nativeLocation.key !== this.getCurKey()) {
+  //     if (action === 'POP') {
+  //       if (nativeLocation.key) {
+  //         const {index, url} = this._findHistoryByKey(nativeLocation.key);
+  //         if (index > 0) {
+  //           this.dispatch(urlToLocation(url), `POP${index}` as any, nativeLocation.key);
+  //           return;
+  //         }
+  //       }
+  //       action = 'RELAUNCH';
+  //     }
+  //     const location = urlToLocation(nativeLocation.url);
+  //     this.dispatch(this.locationMap ? this.locationMap.in(location) : location, action, nativeLocation.key);
+  //   }
+  // }
 
-  relaunch(data: RoutePayload<P> | LocationPayload | string): Promise<Location> {
+  relaunch(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location> {
     const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'RELAUNCH', '', 'relaunch');
+    return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
   }
 
-  push(data: RoutePayload<P> | LocationPayload | string): Promise<Location> {
+  push(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location> {
     const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'PUSH', '', 'push');
+    return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
   }
 
-  replace(data: RoutePayload<P> | LocationPayload | string): Promise<Location> {
+  replace(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location> {
     const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'REPLACE', '', 'replace');
+    return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
   }
 
-  pop(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST'): Promise<Location> {
+  pop(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean): Promise<Location> {
     n = n || 1;
     const uri = this._history[n];
     if (uri) {
       const url = this._uriToUrl(uri);
       const key = this._uriToKey(uri);
       const paLocation = urlToLocation(url);
-      return this.dispatch(paLocation, `POP${n}` as any, key, n);
+      return this.dispatch(paLocation, `POP${n}` as any, key, disableNative ? '' : n);
     }
     let url: string = root;
     if (root === 'HOME') {
-      url = this._homeUrl;
+      url = this.homeUrl;
     } else if (root === 'FIRST') {
       url = this._startupLocation!.url;
     }
     if (!url) {
       return Promise.reject(1);
     }
-    return this.relaunch(url);
+    return this.relaunch(url, disableNative);
   }
 
-  home(root: 'HOME' | 'FIRST' = 'FIRST'): Promise<Location> {
-    return this.relaunch(root === 'HOME' ? this._homeUrl : this._startupLocation!.url);
+  home(root: 'HOME' | 'FIRST' = 'FIRST', disableNative?: boolean): Promise<Location> {
+    return this.relaunch(root === 'HOME' ? this.homeUrl : this._startupLocation!.url, disableNative);
   }
   // locationToRouteData(location: Location): RouteData<P> {
   //   const data = this._transformRoute.locationToRoute(location);

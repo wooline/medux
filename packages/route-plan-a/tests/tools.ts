@@ -1,30 +1,12 @@
 import {RouteConfig, BaseHistoryActions, setRouteConfig} from 'src/index';
-import {Location, RouteState} from '@medux/core';
+import {RouteState} from '@medux/core';
 
 let _curRouteState: RouteState;
-const _nativeHistory: string[] = [];
-let _nativeHistory2: string[] = [];
 
 export class HistoryActions extends BaseHistoryActions {
   destroy() {}
 }
-export const nativeHistory = {
-  push(location: Location) {
-    _nativeHistory2 = [];
-    _nativeHistory.unshift(`${location.key}|${location.url}`);
-  },
-  replace(location: Location) {
-    _nativeHistory[0] = `${location.key}|${location.url}`;
-  },
-  relaunch(location: Location) {
-    _nativeHistory2 = [];
-    _nativeHistory.unshift(`${location.key}|${location.url}`);
-  },
-  pop(n: number) {
-    const arr = _nativeHistory.splice(0, n);
-    _nativeHistory2.push(...arr);
-  },
-};
+export const nativeHistory: any = {};
 
 export enum ViewNames {
   'appMain' = 'app.Main',
@@ -113,7 +95,7 @@ export const defaultRouteParams = {
 
 setRouteConfig({escape: false, defaultRouteParams});
 
-export const historyActions = new HistoryActions('/home', nativeHistory, routeConfig);
+export const historyActions = new HistoryActions(nativeHistory, '/home', routeConfig, 10);
 
 historyActions.subscribe((routeState) => {
   _curRouteState = routeState;
@@ -121,11 +103,4 @@ historyActions.subscribe((routeState) => {
 
 export function getCurRouteState() {
   return _curRouteState;
-}
-
-export function getNativeHistory() {
-  return _nativeHistory;
-}
-export function getNativeHistory2() {
-  return _nativeHistory2;
 }

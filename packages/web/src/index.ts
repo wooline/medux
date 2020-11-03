@@ -1,55 +1,114 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {
-  BaseHistoryActions,
-  LocationPayload,
-  Location,
-  PaLocation,
-  RouteConfig,
-  RoutePayload,
-  LocationMap,
-  buildTransformRoute,
-  checkLocation,
-  safelocationToUrl,
-  safeurlToLocation,
-} from '@medux/route-plan-a';
-import {History, createBrowserHistory, createHashHistory, createMemoryHistory} from 'history';
-import {HistoryProxy, RouteData, RouteParams} from '@medux/core';
+import {BaseHistoryActions, Location, RouteConfig, NativeHistory, LocationMap, locationToUrl, PaLocation} from '@medux/route-plan-a';
+import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
+import {RouteParams, env} from '@medux/core';
 
 type UnregisterCallback = () => void;
 
-// export enum Action {
-//   Push = 'PUSH',
-//   Pop = 'POP',
-//   Replace = 'REPLACE',
-// }
-// export type LocationToLocation = (location: PaLocation) => PaLocation;
-// export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
+export class WebNativeHistory implements NativeHistory {
+  public history: History;
 
-// /**
-//  * 经过封装后的HistoryAPI比浏览器自带的history更强大
-//  */
-// export interface HistoryActions<P extends RouteParams = any> extends HistoryProxy<MeduxLocation> {
-//   getHistory(): History;
-//   getRouteData(): RouteData;
-//   push(data: RoutePayload<P> | LocationPayload | string): Promise<void>;
-//   replace(data: RoutePayload<P> | LocationPayload | string): Promise<void>;
-//   toUrl(data: RoutePayload<P> | LocationPayload | string): string;
-//   go(n: number): void;
-//   back(): void;
-//   forward(): void;
-//   dispatch(location: MeduxLocation): Promise<void>;
-// }
+  public initLocation: PaLocation;
 
+  public actions: HistoryActions | undefined;
+
+  constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string, public locationMap?: LocationMap) {
+    if (createHistory === 'Hash') {
+      this.history = createHashHistory();
+    } else if (createHistory === 'Memory') {
+      this.history = createMemoryHistory();
+    } else if (createHistory === 'Browser') {
+      this.history = createBrowserHistory();
+    } else {
+      const [pathname, search = ''] = createHistory.split('?');
+      this.history = {
+        action: 'PUSH',
+        length: 0,
+        listen() {
+          return () => undefined;
+        },
+        createHref() {
+          return '';
+        },
+        push() {},
+        replace() {},
+        go() {},
+        goBack() {},
+        goForward() {},
+        block() {
+          return () => undefined;
+        },
+        location: {
+          state: null,
+          pathname,
+          search: search && `?${search}`,
+          hash: '',
+        },
+      };
+    }
+    this.initLocation = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+  }
+
+  block(blocker: (location: HistoryLocation, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void) {
+    return this.history.block((location, action) => {
+      return blocker(location, this.getKey(location), action);
+    });
+  }
+
+  getKey(location: HistoryLocation): string {
+    return (location.state || '') as string;
+  }
+
+  push(location: Location): void {
+    this.history.push(locationToUrl(location), location.key);
+  }
+
+  replace(location: Location): void {
+    this.history.replace(locationToUrl(location), location.key);
+  }
+
+  relaunch(location: Location): void {
+    this.history.push(locationToUrl(location), location.key);
+  }
+
+  pop(location: Location, n: number): void {
+    this.history.go(-n);
+  }
+}
 export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHistoryActions<P> {
   private _unlistenHistory: UnregisterCallback;
 
-  constructor(public nativeHistory: History, private routeConfig: RouteConfig, locationMap?: LocationMap) {
-    super(nativeHistory, true, routeConfig, locationMap);
-    this._unlistenHistory = nativeHistory.block((location, action) => {
-      const paLocation = locationMap ? locationMap.in(location) : location;
-      if (!this.equal(paLocation, this.getLocation())) {
-        // 如果宿主路由未经过本系统而先变化，此时需要经过确认
-        return `${action}::${safelocationToUrl(paLocation)}`;
+  constructor(public nativeHistory: WebNativeHistory, public homeUrl: string, public routeConfig: RouteConfig, public maxLength: number, public locationMap?: LocationMap) {
+    super(nativeHistory, homeUrl, routeConfig, maxLength, locationMap);
+    this._unlistenHistory = this.nativeHistory.block((location, key, action) => {
+      if (key !== this.getCurKey()) {
+        let callback: (() => void) | undefined;
+        let index: number = 0;
+        if (action === 'POP') {
+          index = this.findHistoryByKey(key).index;
+        }
+        if (index > 0) {
+          callback = () => {
+            this.pop(index);
+          };
+        } else {
+          const paLocation = this.locationMap ? this.locationMap.in(location) : location;
+          if (action === 'REPLACE') {
+            callback = () => {
+              this.replace(paLocation);
+            };
+          } else if (action === 'PUSH') {
+            callback = () => {
+              this.push(paLocation);
+            };
+          } else {
+            callback = () => {
+              this.relaunch(paLocation);
+            };
+          }
+        }
+        callback && env.setTimeout(callback, 0);
+        return false;
       }
       return undefined;
     });
@@ -58,108 +117,12 @@ export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHis
   destroy() {
     this._unlistenHistory();
   }
-
-  toUrl(data: string | LocationPayload | RoutePayload<any>): string {
-    let location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    location = this._locationMap ? this._locationMap.out(location) : location;
-    return location.pathname + location.search + location.hash;
-  }
-
-  patch(location: MeduxLocation, routeData: RouteData<any>): void {
-    this.push(location);
-  }
-
-  push(data: RoutePayload<any> | LocationPayload | string): Promise<void> {
-    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    return this.dispatch({...location, action: 'PUSH'}).then(() => {
-      this.nativeHistory.push(this._locationMap ? this._locationMap.out(location) : location);
-    });
-  }
-
-  replace(data: RoutePayload<any> | LocationPayload | string): Promise<void> {
-    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    return this.dispatch({...location, action: 'REPLACE'}).then(() => {
-      this._history.replace(this._locationMap ? this._locationMap.out(location) : location);
-    });
-  }
-
-  relaunch(data: RoutePayload<any> | LocationPayload | string): Promise<void> {
-    const location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    return this.dispatch({...location, action: 'RELAUNCH'}).then(() => {
-      this._history.replace(this._locationMap ? this._locationMap.out(location) : location);
-    });
-  }
-
-  go(n: number) {
-    this._history.go(n);
-  }
-
-  back() {
-    this._history.goBack();
-  }
-
-  forward() {
-    this._history.goForward();
-  }
-
-  passive() {
-    throw 1;
-  }
 }
 
-export function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, routeConfig: RouteConfig, locationMap?: LocationMap) {
-  let navtiveHistory: History;
-  let historyActions: HistoryActions;
-
-  const historyOptions = {
-    getUserConfirmation(str: string, callback: (result: boolean) => void) {
-      const [action, url] = str.split('::');
-      const location: Location = {...safeurlToLocation(url), action: action as any, key: '', url};
-
-      historyActions
-        .dispatch(location)
-        .then(() => {
-          callback(true);
-        })
-        .catch((e) => {
-          callback(false);
-          throw e;
-        });
-    },
-  };
-  if (createHistory === 'Hash') {
-    navtiveHistory = createHashHistory(historyOptions);
-  } else if (createHistory === 'Memory') {
-    navtiveHistory = createMemoryHistory(historyOptions);
-  } else if (createHistory === 'Browser') {
-    navtiveHistory = createBrowserHistory(historyOptions);
-  } else {
-    const [pathname, search = ''] = createHistory.split('?');
-    navtiveHistory = {
-      action: 'PUSH',
-      length: 0,
-      listen() {
-        return () => undefined;
-      },
-      createHref() {
-        return '';
-      },
-      push() {},
-      replace() {},
-      go() {},
-      goBack() {},
-      goForward() {},
-      block() {
-        return () => undefined;
-      },
-      location: {
-        state: null,
-        pathname,
-        search: search && `?${search}`,
-        hash: '',
-      },
-    };
-  }
-  historyActions = new HistoryActions(navtiveHistory, routeConfig, locationMap);
+export function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, homeUrl: string, routeConfig: RouteConfig, locationMap?: LocationMap) {
+  const nativeHistory = new WebNativeHistory(createHistory);
+  const historyActions = new HistoryActions(nativeHistory, homeUrl, routeConfig, 10, locationMap);
+  nativeHistory.actions = historyActions;
+  historyActions.relaunch(nativeHistory.initLocation);
   return historyActions;
 }

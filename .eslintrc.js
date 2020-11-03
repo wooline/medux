@@ -9,7 +9,6 @@ module.exports = {
     project: `${__dirname}/tsconfig.json`,
   },
   rules: {
-    'global-require': 'off',
   },
   ignorePatterns: ['/packages'],
 };

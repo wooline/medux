@@ -1,190 +1,163 @@
 import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseHistoryActions, buildTransformRoute, checkLocation, safelocationToUrl, safeurlToLocation } from '@medux/route-plan-a';
+import { BaseHistoryActions, locationToUrl } from '@medux/route-plan-a';
 import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
-export var Action;
+import { env } from '@medux/core';
+export var WebNativeHistory = function () {
+  function WebNativeHistory(createHistory, locationMap) {
+    this.locationMap = locationMap;
 
-(function (Action) {
-  Action["Push"] = "PUSH";
-  Action["Pop"] = "POP";
-  Action["Replace"] = "REPLACE";
-})(Action || (Action = {}));
+    _defineProperty(this, "history", void 0);
 
-var WebHistoryActions = function (_BaseHistoryActions) {
-  _inheritsLoose(WebHistoryActions, _BaseHistoryActions);
+    _defineProperty(this, "initLocation", void 0);
 
-  function WebHistoryActions(_history, _transformRoute, _locationMap) {
-    var _this;
+    _defineProperty(this, "actions", void 0);
 
-    _this = _BaseHistoryActions.call(this, _locationMap ? _locationMap.in(Object.assign(Object.assign({}, _history.location), {}, {
-      action: _history.action
-    })) : Object.assign(Object.assign({}, _history.location), {}, {
-      action: _history.action
-    }), true, _transformRoute) || this;
-    _this._history = _history;
-    _this._locationMap = _locationMap;
+    if (createHistory === 'Hash') {
+      this.history = createHashHistory();
+    } else if (createHistory === 'Memory') {
+      this.history = createMemoryHistory();
+    } else if (createHistory === 'Browser') {
+      this.history = createBrowserHistory();
+    } else {
+      var _createHistory$split = createHistory.split('?'),
+          pathname = _createHistory$split[0],
+          _createHistory$split$ = _createHistory$split[1],
+          search = _createHistory$split$ === void 0 ? '' : _createHistory$split$;
 
-    _defineProperty(_assertThisInitialized(_this), "_unlistenHistory", void 0);
+      this.history = {
+        action: 'PUSH',
+        length: 0,
+        listen: function listen() {
+          return function () {
+            return undefined;
+          };
+        },
+        createHref: function createHref() {
+          return '';
+        },
+        push: function push() {},
+        replace: function replace() {},
+        go: function go() {},
+        goBack: function goBack() {},
+        goForward: function goForward() {},
+        block: function block() {
+          return function () {
+            return undefined;
+          };
+        },
+        location: {
+          state: null,
+          pathname: pathname,
+          search: search && "?" + search,
+          hash: ''
+        }
+      };
+    }
 
-    _this._unlistenHistory = _this._history.block(function (location, action) {
-      var meduxLocation = _locationMap ? _locationMap.in(Object.assign(Object.assign({}, location), {}, {
-        action: action
-      })) : Object.assign(Object.assign({}, location), {}, {
-        action: action
-      });
+    this.initLocation = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+  }
 
-      if (!_this.equal(meduxLocation, _this.getLocation())) {
-        return meduxLocation.action + "::" + safelocationToUrl(meduxLocation);
+  var _proto = WebNativeHistory.prototype;
+
+  _proto.block = function block(blocker) {
+    var _this = this;
+
+    return this.history.block(function (location, action) {
+      return blocker(location, _this.getKey(location), action);
+    });
+  };
+
+  _proto.getKey = function getKey(location) {
+    return location.state || '';
+  };
+
+  _proto.push = function push(location) {
+    this.history.push(locationToUrl(location), location.key);
+  };
+
+  _proto.replace = function replace(location) {
+    this.history.replace(locationToUrl(location), location.key);
+  };
+
+  _proto.relaunch = function relaunch(location) {
+    this.history.push(locationToUrl(location), location.key);
+  };
+
+  _proto.pop = function pop(location, n) {
+    this.history.go(-n);
+  };
+
+  return WebNativeHistory;
+}();
+export var HistoryActions = function (_BaseHistoryActions) {
+  _inheritsLoose(HistoryActions, _BaseHistoryActions);
+
+  function HistoryActions(nativeHistory, homeUrl, routeConfig, maxLength, locationMap) {
+    var _this2;
+
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, homeUrl, routeConfig, maxLength, locationMap) || this;
+    _this2.nativeHistory = nativeHistory;
+    _this2.homeUrl = homeUrl;
+    _this2.routeConfig = routeConfig;
+    _this2.maxLength = maxLength;
+    _this2.locationMap = locationMap;
+
+    _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);
+
+    _this2._unlistenHistory = _this2.nativeHistory.block(function (location, key, action) {
+      if (key !== _this2.getCurKey()) {
+        var callback;
+        var index = 0;
+
+        if (action === 'POP') {
+          index = _this2.findHistoryByKey(key).index;
+        }
+
+        if (index > 0) {
+          callback = function callback() {
+            _this2.pop(index);
+          };
+        } else {
+          var paLocation = _this2.locationMap ? _this2.locationMap.in(location) : location;
+
+          if (action === 'REPLACE') {
+            callback = function callback() {
+              _this2.replace(paLocation);
+            };
+          } else if (action === 'PUSH') {
+            callback = function callback() {
+              _this2.push(paLocation);
+            };
+          } else {
+            callback = function callback() {
+              _this2.relaunch(paLocation);
+            };
+          }
+        }
+
+        callback && env.setTimeout(callback, 0);
+        return false;
       }
 
       return undefined;
     });
-    return _this;
+    return _this2;
   }
 
-  var _proto = WebHistoryActions.prototype;
+  var _proto2 = HistoryActions.prototype;
 
-  _proto.getHistory = function getHistory() {
-    return this._history;
-  };
-
-  _proto.destroy = function destroy() {
+  _proto2.destroy = function destroy() {
     this._unlistenHistory();
   };
 
-  _proto.toUrl = function toUrl(data) {
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    location = this._locationMap ? this._locationMap.out(location) : location;
-    return location.pathname + location.search + location.hash;
-  };
-
-  _proto.patch = function patch(location, routeData) {
-    this.push(location);
-  };
-
-  _proto.push = function push(data) {
-    var _this2 = this;
-
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
-      action: Action.Push
-    })).then(function () {
-      _this2._history.push(_this2._locationMap ? _this2._locationMap.out(location) : location);
-    });
-  };
-
-  _proto.replace = function replace(data) {
-    var _this3 = this;
-
-    var location = typeof data === 'string' ? this._transformRoute.urlToLocation(data) : this._transformRoute.payloadToLocation(data);
-    return this.dispatch(Object.assign(Object.assign({}, location), {}, {
-      action: Action.Replace
-    })).then(function () {
-      _this3._history.replace(_this3._locationMap ? _this3._locationMap.out(location) : location);
-    });
-  };
-
-  _proto.go = function go(n) {
-    this._history.go(n);
-  };
-
-  _proto.back = function back() {
-    this._history.goBack();
-  };
-
-  _proto.forward = function forward() {
-    this._history.goForward();
-  };
-
-  _proto.passive = function passive() {
-    throw 1;
-  };
-
-  return WebHistoryActions;
+  return HistoryActions;
 }(BaseHistoryActions);
-
-export function createRouter(createHistory, routeConfig, locationMap) {
-  var history;
-  var historyOptions = {
-    getUserConfirmation: function getUserConfirmation(str, callback) {
-      var _str$split = str.split('::'),
-          action = _str$split[0],
-          pathname = _str$split[1];
-
-      var location = safeurlToLocation(pathname);
-      location.action = action;
-      historyActions.dispatch(location).then(function () {
-        callback(true);
-      }).catch(function (e) {
-        callback(false);
-        throw e;
-      });
-    }
-  };
-
-  if (createHistory === 'Hash') {
-    history = createHashHistory(historyOptions);
-  } else if (createHistory === 'Memory') {
-    history = createMemoryHistory(historyOptions);
-  } else if (createHistory === 'Browser') {
-    history = createBrowserHistory(historyOptions);
-  } else {
-    var _createHistory$split = createHistory.split('?'),
-        pathname = _createHistory$split[0],
-        _createHistory$split$ = _createHistory$split[1],
-        search = _createHistory$split$ === void 0 ? '' : _createHistory$split$;
-
-    history = {
-      action: 'PUSH',
-      length: 0,
-      listen: function listen() {
-        return function () {
-          return undefined;
-        };
-      },
-      createHref: function createHref() {
-        return '';
-      },
-      push: function push() {},
-      replace: function replace() {},
-      go: function go() {},
-      goBack: function goBack() {},
-      goForward: function goForward() {},
-      block: function block() {
-        return function () {
-          return undefined;
-        };
-      },
-      location: {
-        state: null,
-        pathname: pathname,
-        search: search && "?" + search,
-        hash: ''
-      }
-    };
-  }
-
-  var getCurPathname = function getCurPathname() {
-    return historyActions.getLocation().pathname;
-  };
-
-  var _locationMap = locationMap;
-
-  if (locationMap && _locationMap) {
-    _locationMap.in = function (location) {
-      return checkLocation(locationMap.in(location), getCurPathname());
-    };
-
-    _locationMap.out = function (location) {
-      return checkLocation(locationMap.out(location), getCurPathname());
-    };
-  }
-
-  var transformRoute = buildTransformRoute(routeConfig, getCurPathname);
-  var historyActions = new WebHistoryActions(history, transformRoute, _locationMap);
-  return {
-    transformRoute: transformRoute,
-    historyActions: historyActions
-  };
+export function createRouter(createHistory, homeUrl, routeConfig, locationMap) {
+  var nativeHistory = new WebNativeHistory(createHistory);
+  var historyActions = new HistoryActions(nativeHistory, homeUrl, routeConfig, 10, locationMap);
+  nativeHistory.actions = historyActions;
+  historyActions.relaunch(nativeHistory.initLocation);
+  return historyActions;
 }

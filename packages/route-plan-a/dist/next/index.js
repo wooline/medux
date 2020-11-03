@@ -9,6 +9,12 @@ function dataIsLocation(data) {
 
 export function checkLocation(location) {
   const data = Object.assign({}, location);
+  data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
+
+  if (data.pathname !== '/') {
+    data.pathname = data.pathname.replace(/\/$/, '');
+  }
+
   data.search = `?${location.search || ''}`.replace('??', '?');
   data.hash = `#${location.hash || ''}`.replace('##', '#');
 
@@ -23,7 +29,7 @@ export function checkLocation(location) {
   return data;
 }
 export function urlToLocation(url) {
-  url = url.replace(/\/(?=[?#]|$)/, '');
+  url = `/${url}`.replace(/\/+/g, '/');
 
   if (!url) {
     return {
@@ -365,10 +371,11 @@ function pathsToPathname(paths, params = {}, viewToRule, ruleToKeys) {
 }
 
 export class BaseHistoryActions {
-  constructor(_homeUrl, nativeHistory, routeConfig, locationMap) {
-    this._homeUrl = _homeUrl;
+  constructor(nativeHistory, homeUrl, routeConfig, maxLength, locationMap) {
     this.nativeHistory = nativeHistory;
+    this.homeUrl = homeUrl;
     this.routeConfig = routeConfig;
+    this.maxLength = maxLength;
     this.locationMap = locationMap;
 
     _defineProperty(this, "_tid", 0);
@@ -405,11 +412,7 @@ export class BaseHistoryActions {
     this._ruleToKeys = ruleToKeys;
   }
 
-  init(initLocation) {
-    this.relaunch(this.locationMap ? this.locationMap.in(initLocation) : initLocation);
-  }
-
-  _getCurKey() {
+  getCurKey() {
     var _this$getLocation;
 
     return ((_this$getLocation = this.getLocation()) === null || _this$getLocation === void 0 ? void 0 : _this$getLocation.key) || '';
@@ -542,6 +545,7 @@ export class BaseHistoryActions {
   }
 
   _buildHistory(location) {
+    const maxLength = this.maxLength;
     const {
       action,
       url,
@@ -560,22 +564,22 @@ export class BaseHistoryActions {
     } else if (action === 'PUSH') {
       historyList.unshift(uri);
 
-      if (historyList.length > 10) {
-        historyList.length = 10;
+      if (historyList.length > maxLength) {
+        historyList.length = maxLength;
       }
 
       if (stackList[0] !== pathname) {
         stackList.unshift(pathname);
       }
 
-      if (stackList.length > 10) {
-        stackList.length = 10;
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
       }
     } else if (action === 'REPLACE') {
       historyList[0] = uri;
 
       if (stackList[0] !== pathname) {
-        const cpathname = this._uriToUrl(historyList[1]).split('?')[0];
+        const cpathname = this._uriToPathname(historyList[1]);
 
         if (cpathname !== stackList[0]) {
           stackList.shift();
@@ -585,23 +589,23 @@ export class BaseHistoryActions {
           stackList.unshift(pathname);
         }
 
-        if (stackList.length > 10) {
-          stackList.length = 10;
+        if (stackList.length > maxLength) {
+          stackList.length = maxLength;
         }
       }
     } else if (action.startsWith('POP')) {
       const n = parseInt(action.replace('POP', ''), 10) || 1;
       const arr = historyList.splice(0, n + 1, uri).reduce((pre, curUri) => {
-        const pn = this._uriToUrl(curUri).split('?')[0];
+        const cpathname = this._uriToPathname(curUri);
 
-        if (pre[pre.length - 1] !== pn) {
-          pre.push(pn);
+        if (pre[pre.length - 1] !== cpathname) {
+          pre.push(cpathname);
         }
 
         return pre;
       }, []);
 
-      if (arr[arr.length - 1] === this._uriToUrl(historyList[1]).split('?')[0]) {
+      if (arr[arr.length - 1] === this._uriToPathname(historyList[1])) {
         arr.pop();
       }
 
@@ -644,17 +648,36 @@ export class BaseHistoryActions {
     return uri.substr(uri.indexOf(this._RSP) + 1);
   }
 
+  _uriToPathname(uri = '') {
+    const url = this._uriToUrl(uri);
+
+    return url.split(/[?#]/)[0];
+  }
+
   _uriToKey(uri = '') {
     return uri.substr(0, uri.indexOf(this._RSP));
   }
 
-  _findHistoryByKey(key) {
+  findHistoryByKey(key) {
     const index = this._history.findIndex(uri => uri.startsWith(`${key}${this._RSP}`));
 
     return {
       index,
       url: index > -1 ? this._uriToUrl(this._history[index]) : ''
     };
+  }
+
+  _toNativeLocation(location) {
+    if (this.locationMap) {
+      const nLocation = checkLocation(this.locationMap.out(location));
+      return Object.assign(Object.assign({}, nLocation), {}, {
+        action: location.action,
+        url: locationToUrl(nLocation),
+        key: location.key
+      });
+    }
+
+    return location;
   }
 
   dispatch(paLocation, action, key = '', callNative) {
@@ -695,10 +718,12 @@ export class BaseHistoryActions {
       }));
 
       if (callNative) {
+        const nativeLocation = this._toNativeLocation(location);
+
         if (typeof callNative === 'number') {
-          this.nativeHistory.pop(callNative);
+          this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
         } else {
-          this.nativeHistory[callNative](this.locationMap ? this.locationMap.out(location) : location);
+          this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
         }
       }
 
@@ -706,45 +731,22 @@ export class BaseHistoryActions {
     });
   }
 
-  passive(nativeLocation, action) {
-    if (nativeLocation.key !== this._getCurKey()) {
-      if (action === 'POP') {
-        if (nativeLocation.key) {
-          const {
-            index,
-            url
-          } = this._findHistoryByKey(nativeLocation.key);
-
-          if (index > 0) {
-            this.dispatch(urlToLocation(url), `POP${index}`, nativeLocation.key);
-            return;
-          }
-        }
-
-        action = 'RELAUNCH';
-      }
-
-      const location = urlToLocation(nativeLocation.url);
-      this.dispatch(this.locationMap ? this.locationMap.in(location) : location, action, nativeLocation.key);
-    }
-  }
-
-  relaunch(data) {
+  relaunch(data, disableNative) {
     const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'RELAUNCH', '', 'relaunch');
+    return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
   }
 
-  push(data) {
+  push(data, disableNative) {
     const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'PUSH', '', 'PUSH');
+    return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
   }
 
-  replace(data) {
+  replace(data, disableNative) {
     const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'REPLACE', '', 'replace');
+    return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
   }
 
-  pop(n = 1, root = 'FIRST') {
+  pop(n = 1, root = 'FIRST', disableNative) {
     n = n || 1;
     const uri = this._history[n];
 
@@ -754,13 +756,13 @@ export class BaseHistoryActions {
       const key = this._uriToKey(uri);
 
       const paLocation = urlToLocation(url);
-      return this.dispatch(paLocation, `POP${n}`, key, n);
+      return this.dispatch(paLocation, `POP${n}`, key, disableNative ? '' : n);
     }
 
     let url = root;
 
     if (root === 'HOME') {
-      url = this._homeUrl;
+      url = this.homeUrl;
     } else if (root === 'FIRST') {
       url = this._startupLocation.url;
     }
@@ -769,11 +771,11 @@ export class BaseHistoryActions {
       return Promise.reject(1);
     }
 
-    return this.relaunch(url);
+    return this.relaunch(url, disableNative);
   }
 
-  home(root = 'FIRST') {
-    return this.relaunch(root === 'HOME' ? this._homeUrl : this._startupLocation.url);
+  home(root = 'FIRST', disableNative) {
+    return this.relaunch(root === 'HOME' ? this.homeUrl : this._startupLocation.url, disableNative);
   }
 
 }
