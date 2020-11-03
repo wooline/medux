@@ -1,12 +1,26 @@
 /* global process */
-import {BaseHistoryActions, Dispatcher, LocationPayload, MeduxLocation, RouteConfig, RoutePayload, TransformRoute, buildTransformRoute, checkUrl} from '@medux/route-plan-a';
+import {BaseHistoryActions, NativeHistory, LocationPayload, Location, RouteConfig, RoutePayload, TransformRoute, buildTransformRoute, checkUrl} from '@medux/route-plan-a';
 import {HistoryProxy, RouteData, RouteParams} from '@medux/core';
 
 type UnregisterCallback = () => void;
 
-export type LocationToLocation = (location: MeduxLocation) => MeduxLocation;
-export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
-type LocationBlocker = (location: MeduxLocation, curLocation: MeduxLocation) => boolean | Promise<boolean>;
+export class WebNativeHistory implements NativeHistory {
+  push(location: Location): void {
+    throw new Error('Method not implemented.');
+  }
+
+  replace(location: Location): void {
+    throw new Error('Method not implemented.');
+  }
+
+  relaunch(location: Location): void {
+    throw new Error('Method not implemented.');
+  }
+
+  pop(location: Location, n: number): void {
+    throw new Error('Method not implemented.');
+  }
+}
 
 export interface HistoryActions<P extends RouteParams = any> extends HistoryProxy<MeduxLocation> {
   getRouteData(): RouteData;
@@ -22,55 +36,71 @@ export interface HistoryActions<P extends RouteParams = any> extends HistoryProx
   _dispatch(location: MeduxLocation, action: string): Promise<void>;
 }
 
-class MPHistoryActions extends BaseHistoryActions {
+export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHistoryActions<P> {
   constructor(private startupUrl: string, _transformRoute: TransformRoute<any>, _locationMap: LocationMap | undefined) {
     super(_transformRoute.urlToLocation(startupUrl), true, _transformRoute, _locationMap);
   }
+
   getLocation(): MeduxLocation {
     return this._location;
   }
+
   getRouteData() {
     return this._transformRoute.locationToRoute(this.getLocation());
   }
+
   subscribe(listener: (location: MeduxLocation) => void): () => void {
     return this._dispatcher.subscribe(listener);
   }
+
   locationToRouteData(location: MeduxLocation): RouteData<any> {
     return this._transformRoute.locationToRoute(location);
   }
+
   equal(a: MeduxLocation, b: MeduxLocation): boolean {
     return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
   }
+
   patch(location: MeduxLocation, routeData: RouteData<any>): void {
     this.reLaunch(location);
   }
+
   switchTab(option: string | LocationPayload | RoutePayload<any>): Promise<void> {
     throw new Error('Method not implemented.');
   }
+
   reLaunch(option: string | LocationPayload | RoutePayload<any>): Promise<void> {
     throw new Error('Method not implemented.');
   }
+
   redirectTo(option: string | LocationPayload | RoutePayload<any>): Promise<void> {
     throw new Error('Method not implemented.');
   }
+
   navigateTo(option: string | LocationPayload | RoutePayload<any>): Promise<void> {
     throw new Error('Method not implemented.');
   }
+
   navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void> {
     throw new Error('Method not implemented.');
   }
+
   refresh(method: 'switchTab' | 'reLaunch' | 'redirectTo' | 'navigateTo'): Promise<void> {
     throw new Error('Method not implemented.');
   }
+
   toUrl(data: string | LocationPayload | RoutePayload<any>): string {
     throw new Error('Method not implemented.');
   }
+
   passive(location: MeduxLocation): void {
     throw new Error('Method not implemented.');
   }
+
   block(blocker: LocationBlocker): UnregisterCallback {
     throw new Error('Method not implemented.');
   }
+
   _dispatch(location: MeduxLocation, action: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
@@ -91,22 +121,29 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
 
   class History<P = {}> implements HistoryActions2 {
     private _uid = 0;
+
     private _listenList: {[key: string]: LocationListener} = {};
+
     private _blockerList: {[key: string]: LocationBlocker} = {};
 
     public location: MeduxLocation;
+
     public readonly indexLocation: MeduxLocation;
+
     constructor() {
       const url = checkUrl(startupUrl);
       this.location = urlToLocation(url)!;
       this.indexLocation = this.location;
     }
+
     getLocation() {
       return this.location;
     }
+
     getRouteData() {
       return transformRoute.locationToRoute(locationMap ? locationMap.in(this.location) : this.location);
     }
+
     private urlToLocation(str: string): {location: MeduxLocation; url: string} {
       let url = checkUrl(str, this.location.pathname);
       let location = urlToLocation(url);
@@ -116,11 +153,13 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
       }
       return {url, location};
     }
+
     private createWechatRouteOption(data: string | BrowserRoutePayload<P> | meduxCore.RouteOption): {location: MeduxLocation; option: meduxCore.RouteOption} {
       if (typeof data === 'string') {
         const {url, location} = this.urlToLocation(data);
         return {option: {url}, location};
-      } else if (isBrowserRoutePayload(data)) {
+      }
+      if (isBrowserRoutePayload(data)) {
         const routeData = fillBrowserRouteData(data);
         let location = transformRoute!.routeToLocation(routeData);
         if (locationMap) {
@@ -128,27 +167,31 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
         }
         const option: meduxCore.RouteOption = {url: checkUrl(locationToUrl(location))};
         return {option, location};
-      } else {
-        const {url, location} = this.urlToLocation(data.url);
-        return {option: {...data, url}, location};
       }
+      const {url, location} = this.urlToLocation(data.url);
+      return {option: {...data, url}, location};
     }
+
     switchTab(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
       return this._dispatch(location, 'PUSH').then(() => env.switchTab(option));
     }
+
     reLaunch(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
       return this._dispatch(location, 'PUSH').then(() => env.reLaunch(option));
     }
+
     redirectTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
       return this._dispatch(location, 'PUSH').then(() => env.redirectTo(option));
     }
+
     navigateTo(args: string | BrowserRoutePayload<P> | meduxCore.RouteOption): Promise<void> {
       const {location, option} = this.createWechatRouteOption(args);
       return this._dispatch(location, 'PUSH').then(() => env.navigateTo(option));
     }
+
     navigateBack(option: number | meduxCore.NavigateBackOption): Promise<void> {
       const routeOption: meduxCore.NavigateBackOption = typeof option === 'number' ? {delta: option} : option;
       const pages = env.getCurrentPages();
@@ -160,19 +203,21 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
       if (currentPage) {
         const {route, options} = currentPage;
         const search = Object.keys(options)
-          .map((key) => key + '=' + options[key])
+          .map((key) => `${key}=${options[key]}`)
           .join('&');
-        const url = checkUrl(route + '?' + search);
+        const url = checkUrl(`${route}?${search}`);
         location = urlToLocation(url)!;
       } else {
         location = this.indexLocation;
       }
       return this._dispatch(location, 'POP').then(() => env.navigateBack(routeOption));
     }
+
     refresh(method: 'switchTab' | 'reLaunch' | 'redirectTo' | 'navigateTo') {
       const option: meduxCore.RouteOption = {url: this.location.pathname + this.location.search};
       return this._dispatch(this.location, 'PUSH').then(() => env[method](option));
     }
+
     passive(location: MeduxLocation) {
       if (!this.equal(location, this.location)) {
         this._dispatch(location, location.action || 'POP').catch(() => {
@@ -180,9 +225,11 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
         });
       }
     }
+
     equal(a: MeduxLocation, b: MeduxLocation) {
       return a.pathname == b.pathname && a.search == b.search && a.hash == b.hash && a.action == b.action;
     }
+
     async _dispatch(location: MeduxLocation, action: string) {
       const newLocation = {...location, action};
       for (const key in this._blockerList) {
@@ -202,6 +249,7 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
         }
       }
     }
+
     listen(listener: LocationListener): UnregisterCallback {
       this._uid++;
       const uid = this._uid;
@@ -210,6 +258,7 @@ export function createRouter(routeConfig: RouteConfig, startupUrl: string, locat
         delete this._listenList[uid];
       };
     }
+
     block(listener: LocationBlocker): UnregisterCallback {
       this._uid++;
       const uid = this._uid;
