@@ -43,7 +43,7 @@
     "react-redux": "^7.0.0"
   },
   "dependencies": {
-    "@babel/runtime": "7.12.5",
+    "@babel/runtime": "~7.12.5",
     "@medux/core": "^1.1.1-alpha.5"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"

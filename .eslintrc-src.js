@@ -6,7 +6,6 @@ module.exports = {
     node: false,
   },
   rules: {
-    'prefer-object-spread': 'off',
     'import/prefer-default-export': 'off',
   },
 };

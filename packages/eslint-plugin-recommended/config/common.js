@@ -33,7 +33,6 @@ module.exports = {
     'prefer-destructuring': 'off',
     'prefer-promise-reject-errors': 'off',
     'global-require': 'off',
-    'prefer-object-spread': 'off',
     'import/no-dynamic-require': 'off',
     'import/no-extraneous-dependencies': 'off',
     'import/no-cycle': 'off',

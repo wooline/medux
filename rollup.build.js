@@ -9,10 +9,9 @@ import alias from '@rollup/plugin-alias';
 
 const tag = process.env.NODE_TAG || process.env.NODE_ENV;
 const cfg = {
-  next: {module: 'esm'},
-  esm: {module: 'esm'},
-  cjs: {module: 'cjs'},
-  test: {module: 'cjs'},
+  next: {module: 'esm', outDir: 'next'},
+  esm: {module: 'esm', outDir: 'esm'},
+  cjs: {module: 'cjs', outDir: 'cjs'},
 };
 const env = cfg[tag];
 
@@ -26,7 +25,7 @@ export default function (root, replaceNodeEnv, aliasEntries) {
   const externals = Object.keys(pkg.externals ? pkg.externals : {...pkg.dependencies, ...pkg.peerDependencies});
   const config = {
     input: 'src/',
-    output: [{file: 'dist/cjs/index.js', format: 'cjs'}].filter(Boolean),
+    output: [{file: `dist/${env.outDir}/index.js`, format: env.module}].filter(Boolean),
     external: (id) => {
       const hit = externals.some((mod) => mod === id || id.startsWith(`${mod}/`));
       if (hit) {
