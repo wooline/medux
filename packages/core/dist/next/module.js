@@ -89,7 +89,7 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   let initData = storeOptions.initData || {};
 
   if (client[ssrInitStoreKey]) {
-    initData = Object.assign(Object.assign({}, client[ssrInitStoreKey]), initData);
+    initData = Object.assign({}, initData, client[ssrInitStoreKey]);
   }
 
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);

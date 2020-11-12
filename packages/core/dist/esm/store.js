@@ -62,12 +62,12 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
       if (result !== rootState[moduleName]) {
         var _Object$assign;
 
-        meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
+        meta.currentState = Object.assign({}, meta.currentState, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
       }
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-    var handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
+    var handlers = Object.assign({}, handlersCommon, handlersEvery);
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -97,7 +97,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
           if (result !== rootState[moduleName]) {
             var _Object$assign2;
 
-            meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
+            meta.currentState = Object.assign({}, meta.currentState, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
           }
         }
       });
@@ -125,7 +125,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
         var action = next(originalAction);
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-        var handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
+        var handlers = Object.assign({}, handlersCommon, handlersEvery);
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {

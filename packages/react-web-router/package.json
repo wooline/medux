@@ -13,11 +13,9 @@
   },
   "main": "main.js",
   "module": "dist/esm/index.js",
-  "jsnext": "dist/next/index.js",
-  "tsSource": "src/",
+  "jsnext:main": "dist/next/index.js",
   "types": "types/",
   "files": [
-    "src/",
     "env/",
     "types/",
     "dist/",
@@ -30,10 +28,11 @@
     "eslintSrc": "eslint --cache ./src",
     "buildTypes": "tsc --project ./src/tsconfig.types.json && copyfiles -f ./src/*.d.ts ./types",
     "prebuild": "node ../../preBuild && yarn type & yarn typeSrc & yarn eslint & yarn eslintSrc && rimraf ./dist ./types && yarn buildTypes",
-    "build:next": "cross-env NODE_ENV=production NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
-    "build:esm": "cross-env NODE_ENV=production NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
-    "build:pkg": "cross-env NODE_ENV=development NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c",
-    "build": "yarn build:next & yarn build:esm & yarn build:pkg",
+    "build:pkg": "cross-env NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c",
+    "build:next": "cross-env NODE_TAG=next rollup -c",
+    "build:esm": "cross-env NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
+    "build:cjs": "cross-env NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
+    "build": "yarn build:next",
     "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.tsx --hideSources --theme markdown && node fixDocs"
   },
   "externals": {
@@ -50,7 +49,7 @@
     "react-redux": "^7.0.0"
   },
   "dependencies": {
-    "@babel/runtime": "~7.12.5",
+    "@babel/runtime": "7.12.5",
     "@medux/core": "^1.1.1-alpha.5",
     "@medux/react": "^1.1.1-alpha.5",
     "@medux/route-plan-a": "^1.1.1-alpha.5",

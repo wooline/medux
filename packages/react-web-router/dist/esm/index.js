@@ -3,7 +3,7 @@ import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWith
 import { routeMiddleware, routeReducer } from '@medux/route-plan-a';
 import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
-import { createRouter, HistoryActions } from '@medux/web';
+import { createRouter } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, exportActions, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
 export { setRouteConfig, RouteModelHandlers as BaseModelHandlers } from '@medux/route-plan-a';
@@ -114,7 +114,7 @@ export var Link = React.forwardRef(function (_ref4, ref) {
       rest = _objectWithoutPropertiesLoose(_ref4, ["onClick", "replace"]);
 
   var target = rest.target;
-  var props = Object.assign(Object.assign({}, rest), {}, {
+  var props = Object.assign({}, rest, {
     onClick: function onClick(event) {
       try {
         _onClick && _onClick(event);

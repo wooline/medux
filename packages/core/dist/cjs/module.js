@@ -138,7 +138,7 @@ function _renderApp() {
             initData = storeOptions.initData || {};
 
             if (_env.client[ssrInitStoreKey]) {
-              initData = Object.assign(Object.assign({}, _env.client[ssrInitStoreKey]), initData);
+              initData = Object.assign({}, initData, _env.client[ssrInitStoreKey]);
             }
 
             store = (0, _store.buildStore)(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);

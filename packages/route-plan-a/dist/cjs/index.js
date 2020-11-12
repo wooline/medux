@@ -357,7 +357,7 @@ var BaseHistoryActions = function () {
 
   _proto.mergeInitState = function mergeInitState(initState) {
     var routeState = this.getRouteState();
-    var data = Object.assign(Object.assign({}, initState), {}, {
+    var data = Object.assign({}, initState, {
       route: routeState
     });
     Object.keys(routeState.views).forEach(function (moduleName) {
@@ -365,7 +365,7 @@ var BaseHistoryActions = function () {
         data[moduleName] = {};
       }
 
-      data[moduleName] = Object.assign(Object.assign({}, data[moduleName]), {}, {
+      data[moduleName] = Object.assign({}, data[moduleName], {
         routeParams: routeState.params[moduleName]
       });
     });
@@ -618,7 +618,7 @@ var BaseHistoryActions = function () {
   _proto._toNativeLocation = function _toNativeLocation(location) {
     if (this.locationMap) {
       var nLocation = (0, _basic.checkLocation)(this.locationMap.out(location));
-      return Object.assign(Object.assign({}, nLocation), {}, {
+      return Object.assign({}, nLocation, {
         action: location.action,
         url: (0, _basic.locationToUrl)(nLocation),
         key: location.key
@@ -633,7 +633,7 @@ var BaseHistoryActions = function () {
 
     var data = this._getEfficientLocation(safeLocation);
 
-    var location = Object.assign(Object.assign({}, data.location), {}, {
+    var location = Object.assign({}, data.location, {
       action: action,
       url: (0, _basic.locationToUrl)(data.location),
       key: key
@@ -643,7 +643,7 @@ var BaseHistoryActions = function () {
         history = _this$_buildHistory.history,
         stack = _this$_buildHistory.stack;
 
-    var routeState = Object.assign(Object.assign(Object.assign({}, location), data.routeData), {}, {
+    var routeState = Object.assign({}, location, data.routeData, {
       history: history,
       stack: stack
     });
@@ -834,7 +834,7 @@ var RouteModelHandlers = (0, _decorate2.default)(null, function (_initialize, _C
       value: function Init(initState) {
         var rootState = this.getRootState();
         var routeParams = rootState.route.params[this.moduleName];
-        return Object.assign(Object.assign({}, initState), {}, {
+        return Object.assign({}, initState, {
           routeParams: routeParams
         });
       }
@@ -844,7 +844,7 @@ var RouteModelHandlers = (0, _decorate2.default)(null, function (_initialize, _C
       key: "RouteParams",
       value: function RouteParams(payload) {
         var state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
+        return Object.assign({}, state, {
           routeParams: payload
         });
       }

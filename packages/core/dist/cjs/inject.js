@@ -238,7 +238,7 @@ var CoreModelHandlers = (0, _decorate2.default)(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload), key));
+        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.getState(), payload), key));
       }
     }, {
       kind: "method",
@@ -266,8 +266,8 @@ var CoreModelHandlers = (0, _decorate2.default)(null, function (_initialize) {
       key: "Loading",
       value: function Loading(payload) {
         var state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
-          loading: Object.assign(Object.assign({}, state.loading), payload)
+        return Object.assign({}, state, {
+          loading: Object.assign({}, state.loading, payload)
         });
       }
     }]
@@ -287,7 +287,7 @@ var exportModule = function exportModule(moduleName, initState, ActionHandles, v
 
       handlers.actions = _actions;
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign(Object.assign({}, initState), preModuleState);
+      var moduleState = Object.assign({}, initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;

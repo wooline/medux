@@ -33,6 +33,9 @@ declare type MountViews<M extends any> = {
     [key in keyof M['views']]?: boolean;
 };
 declare type ModuleParams<M extends any> = M['model']['initState']['routeParams'];
+export declare type RouteViews<G extends ModuleGetter> = {
+    [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
+};
 export declare type RootState<G extends ModuleGetter> = {
     route: {
         history: string[];

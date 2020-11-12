@@ -7,16 +7,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 import alias from '@rollup/plugin-alias';
 
-const tag = process.env.NODE_TAG || process.env.NODE_ENV;
-const cfg = {
-  next: {module: 'esm'},
-  esm: {module: 'esm'},
-  cjs: {module: 'cjs'},
-  test: {module: 'cjs'},
-};
-const env = cfg[tag];
-
-export default function (root, replaceNodeEnv, aliasEntries) {
+export default function (root, moduleName, globals, replaceNodeEnv, aliasEntries) {
   const nodeEnv = process.env.NODE_ENV;
   const extensions = ['.js', '.ts', '.tsx'];
   const pkgResult = {include: {}, external: {}};
@@ -26,7 +17,13 @@ export default function (root, replaceNodeEnv, aliasEntries) {
   const externals = Object.keys(pkg.externals ? pkg.externals : {...pkg.dependencies, ...pkg.peerDependencies});
   const config = {
     input: 'src/',
-    output: [{file: 'dist/cjs/index.js', format: 'cjs'}].filter(Boolean),
+    output:
+      nodeEnv === 'production'
+        ? [
+            moduleName && {file: 'dist/umd/index.min.js', format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
+            {file: 'dist/cjs/index.min.js', format: 'cjs', plugins: [terser()], sourcemap: true},
+          ].filter(Boolean)
+        : [moduleName && {file: 'dist/umd/index.js', format: 'umd', name: moduleName, globals}, {file: 'dist/cjs/index.js', format: 'cjs'}].filter(Boolean),
     external: (id) => {
       const hit = externals.some((mod) => mod === id || id.startsWith(`${mod}/`));
       if (hit) {
@@ -46,12 +43,11 @@ export default function (root, replaceNodeEnv, aliasEntries) {
           entries: aliasEntries,
         }),
       replaceNodeEnv && replace({'process.env.NODE_ENV': `'${nodeEnv}'`}),
-      resolve({extensions, mainFields: ['jsnext:main', 'module', 'main']}),
+      resolve({extensions}),
       babel({
         exclude: 'node_modules/**',
         extensions,
-        babelHelpers: 'runtime',
-        skipPreflightCheck: true,
+        babelHelpers: 'bundled',
         // externalHelpers: true,
       }),
       commonjs(),

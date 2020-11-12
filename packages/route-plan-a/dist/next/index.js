@@ -313,7 +313,7 @@ export class BaseHistoryActions {
 
   mergeInitState(initState) {
     const routeState = this.getRouteState();
-    const data = Object.assign(Object.assign({}, initState), {}, {
+    const data = Object.assign({}, initState, {
       route: routeState
     });
     Object.keys(routeState.views).forEach(moduleName => {
@@ -321,7 +321,7 @@ export class BaseHistoryActions {
         data[moduleName] = {};
       }
 
-      data[moduleName] = Object.assign(Object.assign({}, data[moduleName]), {}, {
+      data[moduleName] = Object.assign({}, data[moduleName], {
         routeParams: routeState.params[moduleName]
       });
     });
@@ -560,7 +560,7 @@ export class BaseHistoryActions {
   _toNativeLocation(location) {
     if (this.locationMap) {
       const nLocation = checkLocation(this.locationMap.out(location));
-      return Object.assign(Object.assign({}, nLocation), {}, {
+      return Object.assign({}, nLocation, {
         action: location.action,
         url: locationToUrl(nLocation),
         key: location.key
@@ -575,7 +575,7 @@ export class BaseHistoryActions {
 
     const data = this._getEfficientLocation(safeLocation);
 
-    const location = Object.assign(Object.assign({}, data.location), {}, {
+    const location = Object.assign({}, data.location, {
       action,
       url: locationToUrl(data.location),
       key
@@ -586,7 +586,7 @@ export class BaseHistoryActions {
       stack
     } = this._buildHistory(location);
 
-    const routeState = Object.assign(Object.assign(Object.assign({}, location), data.routeData), {}, {
+    const routeState = Object.assign({}, location, data.routeData, {
       history,
       stack
     });
@@ -714,7 +714,7 @@ export let RouteModelHandlers = _decorate(null, function (_initialize, _CoreMode
       value: function Init(initState) {
         const rootState = this.getRootState();
         const routeParams = rootState.route.params[this.moduleName];
-        return Object.assign(Object.assign({}, initState), {}, {
+        return Object.assign({}, initState, {
           routeParams
         });
       }
@@ -724,7 +724,7 @@ export let RouteModelHandlers = _decorate(null, function (_initialize, _CoreMode
       key: "RouteParams",
       value: function RouteParams(payload) {
         const state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
+        return Object.assign({}, state, {
           routeParams: payload
         });
       }

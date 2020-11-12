@@ -44,14 +44,14 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
       const result = storeReducers[moduleName](rootState[moduleName], action);
 
       if (result !== rootState[moduleName]) {
-        meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, {
+        meta.currentState = Object.assign({}, meta.currentState, {
           [moduleName]: result
         });
       }
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
+    const handlers = Object.assign({}, handlersCommon, handlersEvery);
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -79,7 +79,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
           const result = fun(...getActionData(action));
 
           if (result !== rootState[moduleName]) {
-            meta.currentState = Object.assign(Object.assign({}, meta.currentState), {}, {
+            meta.currentState = Object.assign({}, meta.currentState, {
               [moduleName]: result
             });
           }
@@ -106,7 +106,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     const action = next(originalAction);
     const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
+    const handlers = Object.assign({}, handlersCommon, handlersEvery);
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {

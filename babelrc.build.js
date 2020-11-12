@@ -2,11 +2,10 @@ const runtimeVersion = require('@babel/runtime/package.json').version;
 
 const tag = process.env.NODE_TAG || process.env.NODE_ENV;
 const cfg = {
-  next: {code: tag, targets: {chrome: 80}},
-  esm: {code: tag, targets: {ie: 11}},
-  cjs: {code: tag, targets: {ie: 11}},
-  pkg: {code: tag, targets: {ie: 11}},
-  test: {code: tag, targets: {ie: 11}},
+  next: {module: 'esm', targets: {chrome: 70}},
+  esm: {module: 'esm', targets: {ie: 11}},
+  cjs: {module: 'cjs', targets: {ie: 11}},
+  test: {module: 'cjs', targets: {ie: 11}},
 };
 const env = cfg[tag];
 
@@ -17,7 +16,7 @@ module.exports = (features = []) => {
         '@babel/preset-env',
         {
           loose: true,
-          modules: env.code === 'cjs' || env.code === 'test' ? 'cjs' : false,
+          modules: env.module === 'cjs' ? 'cjs' : false,
           targets: env.targets,
         },
       ],
@@ -41,7 +40,7 @@ module.exports = (features = []) => {
       [
         '@babel/plugin-transform-runtime',
         {
-          useESModules: env.code !== 'cjs' && env.code !== 'test',
+          useESModules: env.module === 'esm',
           version: runtimeVersion,
         },
       ],

@@ -209,7 +209,7 @@ export let CoreModelHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload), key));
+        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.getState(), payload), key));
       }
     }, {
       kind: "method",
@@ -237,8 +237,8 @@ export let CoreModelHandlers = _decorate(null, function (_initialize) {
       key: "Loading",
       value: function Loading(payload) {
         const state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
-          loading: Object.assign(Object.assign({}, state.loading), payload)
+        return Object.assign({}, state, {
+          loading: Object.assign({}, state.loading, payload)
         });
       }
     }]
@@ -254,7 +254,7 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
       const actions = injectActions(store, moduleName, handlers);
       handlers.actions = actions;
       const preModuleState = store.getState()[moduleName] || {};
-      const moduleState = Object.assign(Object.assign({}, initState), preModuleState);
+      const moduleState = Object.assign({}, initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;
