@@ -36,6 +36,7 @@ module.exports = {
     'import/no-dynamic-require': 'off',
     'import/no-extraneous-dependencies': 'off',
     'import/no-cycle': 'off',
+    'import/prefer-default-export': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/no-unused-vars': 'off',

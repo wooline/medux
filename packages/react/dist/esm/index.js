@@ -1,12 +1,12 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import * as core from '@medux/core';
-import { env, getView, isPromiseView } from '@medux/core';
+import { env, getView, isPromise } from '@medux/core';
 import React, { useEffect, useState } from 'react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
-export function renderApp(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, container, beforeRender) {
+export function renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
   }
@@ -29,9 +29,9 @@ export function renderApp(moduleGetter, appModuleName, appViewName, historyProxy
 
     reRender(AppView);
     return reRender;
-  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
-export function renderSSR(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, renderToStream, beforeRender) {
+export function renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -52,7 +52,7 @@ export function renderSSR(moduleGetter, appModuleName, appViewName, historyProxy
       data: data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
 
 var LoadViewOnError = function LoadViewOnError() {
@@ -61,8 +61,7 @@ var LoadViewOnError = function LoadViewOnError() {
 
 export var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
   var _ref = options || {},
-      forwardRef = _ref.forwardRef,
-      modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
+      forwardRef = _ref.forwardRef;
 
   var active = true;
 
@@ -74,9 +73,9 @@ export var loadView = function loadView(moduleName, viewName, options, Loading, 
     }, []);
 
     var _useState = useState(function () {
-      var moduleViewResult = getView(moduleName, viewName, modelOptions);
+      var moduleViewResult = getView(moduleName, viewName);
 
-      if (isPromiseView(moduleViewResult)) {
+      if (isPromise(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
           active && setView({
             Component: Component

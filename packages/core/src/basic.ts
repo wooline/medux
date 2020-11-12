@@ -2,40 +2,20 @@ import {Unsubscribe} from 'redux';
 import {LoadingState, TaskCountEvent, TaskCounter} from './sprite';
 import {env, isServerEnv} from './env';
 
-import {ModuleGetter} from './module';
-
-export function isServer(): boolean {
-  return isServerEnv;
-}
-
-const loadings: {[moduleName: string]: TaskCounter} = {};
-
-let depthTime = 2;
-
-/**
- * 设置深度加载的时间阀值
- * @param second 超过多少秒进入深度加载，默认为2秒
- */
-export function setLoadingDepthTime(second: number) {
-  depthTime = second;
-}
 /**
  * 可供设置的全局参数，参见setConfig
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
- * - RSP 默认为| 用于在路由中唯一标示一个url
  */
 export const config: {
   NSP: string;
   VSP: string;
   MSP: string;
-  RSP: string;
 } = {
   NSP: '.',
   VSP: '.',
   MSP: ',',
-  RSP: '|',
 };
 /**
  * 可供设置的全局参数
@@ -48,21 +28,8 @@ export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string; RS
   _config.NSP && (config.NSP = _config.NSP);
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
-  _config.RSP && (config.RSP = _config.RSP);
 }
-export const MetaData: {
-  actionCreatorMap: ActionCreatorMap;
-  clientStore: ModelStore;
-  appModuleName: string;
-  appViewName: string;
-  moduleGetter: ModuleGetter;
-} = {
-  appViewName: null as any,
-  actionCreatorMap: null as any,
-  clientStore: null as any,
-  appModuleName: null as any,
-  moduleGetter: null as any,
-};
+
 /**
  * 框架内置的几个ActionTypes
  */
@@ -76,18 +43,44 @@ export const ActionTypes = {
    */
   MInit: 'Init',
   /**
-   * 模块存放在路由中的参数发生变化时使用ActionType：{moduleName}.{MRouteParams}
-   */
-  MRouteParams: 'RouteParams',
-  /**
    * 全局捕获到错误时使用ActionType：{Error}
    */
   Error: `medux${config.NSP}Error`,
-  /**
-   * 全局路由发生变化时使用ActionType：{RouteChange}
-   */
-  RouteChange: `medux${config.NSP}RouteChange`,
 };
+
+/**
+ * 一个数据结构用来指示如何获取模块，允许同步或异步获取
+ */
+export interface ModuleGetter {
+  [moduleName: string]: () => Module | Promise<Module>;
+}
+
+export const MetaData: {
+  actionCreatorMap: ActionCreatorMap;
+  clientStore: ModelStore;
+  appModuleName: string;
+  appViewName: string;
+  moduleGetter: ModuleGetter;
+} = {
+  appViewName: null as any,
+  actionCreatorMap: null as any,
+  clientStore: null as any,
+  appModuleName: null as any,
+  moduleGetter: null as any,
+};
+
+const loadings: {[moduleName: string]: TaskCounter} = {};
+
+let depthTime = 2;
+
+/**
+ * 设置深度加载的时间阀值
+ * @param second 超过多少秒进入深度加载，默认为2秒
+ */
+export function setLoadingDepthTime(second: number) {
+  depthTime = second;
+}
+
 /**
  * 手动设置Loading状态，同一个key名的loading状态将自动合并
  * - 参见LoadingState
@@ -115,124 +108,6 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
   return item;
 }
 
-export interface ActionCreatorMap {
-  [moduleName: string]: ActionCreatorList;
-}
-export interface ActionCreatorList {
-  [actionName: string]: ActionCreator;
-}
-export type ActionCreator = (...args: any[]) => Action;
-interface Store {
-  dispatch(action: Action): Action | Promise<void>;
-  getState(): {[key: string]: any};
-  subscribe(listener: () => void): Unsubscribe;
-}
-export interface ModelStore extends Store {
-  _medux_: {
-    reducerMap: ReducerMap;
-    effectMap: EffectMap;
-    injectedModules: {[moduleName: string]: Record<string, any>};
-    beforeState: StoreState;
-    prevState: StoreState;
-    currentState: StoreState;
-    destroy: () => void;
-  };
-}
-export type RouteParams = {[moduleName: string]: {[key: string]: any} | undefined};
-export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
-/**
- * 框架内部使用的路由数据结构
- * - 用户需要通过HistoryProxy将宿主的路由数据结构转换为此数据结构
- */
-export interface RouteData<P extends RouteParams = any> {
-  /**
-   * 表示当前路由下加载了哪些views
-   */
-  views: DisplayViews;
-  /**
-   * 表示当前路由传递了哪些参数
-   */
-  params: P;
-  /**
-   * 表示当前路由下加载views的父子嵌套关系
-   */
-  paths: string[];
-  /**
-   * 路由的打开方式
-   */
-  action: HistoryAction;
-  key: string;
-}
-export interface Location {
-  url: string;
-  pathname: string;
-  action: HistoryAction;
-  key: string;
-}
-/**
- * Redux中保存的路由数据结构
- */
-export interface RouteState<L extends Location = Location, P extends RouteParams = RouteParams> {
-  /**
-   * 路由记录
-   */
-  history: string[];
-  /**
-   * pathname记录
-   */
-  stack: string[];
-  /**
-   * 宿主的原始路由数据结构
-   */
-  location: L;
-  /**
-   * medux使用的路由数据结构，通常它由HistoryProxy转换而来
-   */
-  data: RouteData<P>;
-}
-/**
- * medux使用的Store数据模型结构
- */
-export type StoreState = {
-  [moduleName: string]: BaseModelState;
-} & {route: RouteState};
-
-/**
- * 描述当前路由展示了哪些模块的哪些view，例如：
- * ```
- * {
- *    app: {
- *        Main: true,
- *        List: true
- *    },
- *    article: {
- *        Details: true
- *    }
- * }
- * ```
- */
-export interface DisplayViews {
-  [moduleName: string]: {[viewName: string]: boolean | undefined} | undefined;
-}
-
-export interface ReducerHandler extends ActionHandler {
-  (payload: any): BaseModelState;
-}
-export interface EffectHandler extends ActionHandler {
-  (payload: any, prevRootState: StoreState): Promise<any>;
-}
-export interface ActionHandlerList {
-  [actionName: string]: ActionHandler;
-}
-export interface ActionHandlerMap {
-  [actionName: string]: {[moduleName: string]: ActionHandler};
-}
-export interface ReducerMap extends ActionHandlerMap {
-  [actionName: string]: {[moduleName: string]: ReducerHandler};
-}
-export interface EffectMap extends ActionHandlerMap {
-  [actionName: string]: {[moduleName: string]: EffectHandler};
-}
 /**
  * Medux自动创建的action载体，比redux的action载体多一个priority属性
  *
@@ -246,6 +121,14 @@ export interface Action {
   priority?: string[];
   payload?: any[];
 }
+
+export interface Store {
+  dispatch(action: Action): Action | Promise<void>;
+  getState(): {[key: string]: any};
+  subscribe(listener: () => void): Unsubscribe;
+  destroy: () => void;
+}
+
 export interface ActionHandler {
   __actionName__: string;
   __isReducer__?: boolean;
@@ -256,50 +139,43 @@ export interface ActionHandler {
   (payload?: any): any;
 }
 
-export interface CommonModule {
-  default: {
-    moduleName: string;
-    model: {
-      moduleName: string;
-      initState: any;
-      (store: any, options?: any): void | Promise<void>;
-    };
-    views: {[key: string]: any};
-    actions: {
-      [actionName: string]: (...args: any[]) => Action;
-    };
+export interface ReducerHandler extends ActionHandler {
+  (payload: any): CoreModuleState;
+}
+export interface EffectHandler extends ActionHandler {
+  (payload: any, prevRootState: CoreRootState): Promise<any>;
+}
+
+export interface ActionHandlerMap {
+  [actionName: string]: {[moduleName: string]: ActionHandler};
+}
+
+export interface ReducerMap extends ActionHandlerMap {
+  [actionName: string]: {[moduleName: string]: ReducerHandler};
+}
+export interface EffectMap extends ActionHandlerMap {
+  [actionName: string]: {[moduleName: string]: EffectHandler};
+}
+
+export interface ModelStore extends Store {
+  _medux_: {
+    reducerMap: ReducerMap;
+    effectMap: EffectMap;
+    injectedModules: {[moduleName: string]: Record<string, any>};
+    beforeState: CoreRootState;
+    prevState: CoreRootState;
+    currentState: CoreRootState;
   };
 }
 
-export function cacheModule<T extends CommonModule>(module: T): () => T {
-  const moduleName = module.default.moduleName;
-  const moduleGetter: ModuleGetter = MetaData.moduleGetter;
-  let fn = moduleGetter[moduleName] as any;
-  if (fn.__module__ === module) {
-    return fn;
-  }
-  fn = () => module;
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
-}
 /**
  * 所有ModuleState的固定属性
  */
-export interface BaseModelState<R = {[key: string]: any}> {
+export interface CoreModuleState {
   /**
-   * 因为rootState节点下可能存在各个moduleState，也可能存在其他reducers
-   * - isModule用来标识该节点是一个moduleState，该标识由框架自动生成
+   * 如果已经初始化(如：SSR)，该值为true
    */
-  isModule?: boolean;
-  /**
-   * 如果存在预置数据(SSR)，该值为true
-   */
-  isHydrate?: boolean;
-  /**
-   * 由该模块抽离出的路由信息状态
-   */
-  routeParams?: R;
+  initialized?: boolean;
   /**
    * 该模块的各种loading状态，执行effect时会自动注入loading状态
    */
@@ -308,16 +184,59 @@ export interface BaseModelState<R = {[key: string]: any}> {
   };
 }
 
-export function isPromise(data: any): data is Promise<any> {
-  return typeof data === 'object' && typeof data.then === 'function';
-}
+export type CoreRootState = {
+  [moduleName: string]: CoreModuleState;
+};
+
 /**
- * 在client中运行时，全局只有一个单例的Store对象，可通过该方法直接获得
+ * 模块Model的数据结构，该数据由ExportModule方法自动生成
  */
-export function getClientStore() {
-  return MetaData.clientStore;
+export interface ModuleModel<ModelState extends CoreModuleState = CoreModuleState> {
+  moduleName: string;
+  initState: ModelState;
+  /**
+   * model初始化函数
+   * - model初始化时会触发dispatch moduleName.Init的action，并返回执行结果
+   * @param store Store的引用
+   * @param options 该数据将与initState合并注入model初始状态
+   * @returns 如果模块已经初始化过，不再重复初始化并返回void，否则返回Promise
+   */
+  (store: ModelStore): void | Promise<void>;
 }
 
+export interface ActionCreatorMap {
+  [moduleName: string]: ActionCreatorList;
+}
+
+export interface ActionCreatorList {
+  [actionName: string]: ActionCreator;
+}
+
+export type ActionCreator = (...args: any[]) => Action;
+
+/**
+ * 模块的数据结构，该数据由ExportModule方法自动生成
+ */
+export interface Module<M extends ModuleModel = ModuleModel, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = Record<string, any>, N extends string = string> {
+  default: {
+    /**
+     * 模块名称
+     */
+    moduleName: N;
+    /**
+     * 模块model
+     */
+    model: M;
+    /**
+     * 模块供外部使用的views
+     */
+    views: VS;
+    /**
+     * 模块可供调用的actionCreator
+     */
+    actions: AS;
+  };
+}
 /**
  * 一个类方法的装饰器，用来指示该方法为一个reducerHandler
  * - reducerHandler必须通过dispatch Action来触发
@@ -425,67 +344,9 @@ export function delayPromise(second: number) {
     };
   };
 }
-export function isProcessedError(error: any): boolean | undefined {
-  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
-    return undefined;
-  }
-  return !!error.meduxProcessed;
+export function isPromise(data: any): data is Promise<any> {
+  return typeof data === 'object' && typeof data.then === 'function';
 }
-export function setProcessedError(error: any, meduxProcessed: boolean): {meduxProcessed: boolean; [key: string]: any} {
-  if (typeof error === 'object') {
-    error.meduxProcessed = meduxProcessed;
-    return error;
-  }
-  return {
-    meduxProcessed,
-    error,
-  };
-}
-function bindThis(fun: ActionHandler, thisObj: any) {
-  const newFun = fun.bind(thisObj);
-  Object.keys(fun).forEach((key) => {
-    newFun[key] = fun[key];
-  });
-
-  return newFun as ActionHandler;
-}
-function transformAction(actionName: string, action: ActionHandler, listenerModule: string, actionHandlerMap: ActionHandlerMap) {
-  if (!actionHandlerMap[actionName]) {
-    actionHandlerMap[actionName] = {};
-  }
-  if (actionHandlerMap[actionName][listenerModule]) {
-    throw new Error(`Action duplicate or conflict : ${actionName}.`);
-  }
-  actionHandlerMap[actionName][listenerModule] = action;
-}
-
-function addModuleActionCreatorList(moduleName: string, actionName: string) {
-  const actions = MetaData.actionCreatorMap[moduleName];
-  if (!actions[actionName]) {
-    actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
-  }
-}
-export function injectActions(store: ModelStore, moduleName: string, handlers: ActionHandlerList) {
-  for (const actionNames in handlers) {
-    if (typeof handlers[actionNames] === 'function') {
-      let handler = handlers[actionNames];
-      if (handler.__isReducer__ || handler.__isEffect__) {
-        handler = bindThis(handler, handlers);
-        actionNames.split(config.MSP).forEach((actionName) => {
-          // eslint-disable-next-line no-useless-escape
-          actionName = actionName.trim().replace(new RegExp(`^this\[${config.NSP}]`), `${moduleName}${config.NSP}`);
-          const arr = actionName.split(config.NSP);
-          if (arr[1]) {
-            handler.__isHandler__ = true;
-            transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-          } else {
-            handler.__isHandler__ = false;
-            transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            addModuleActionCreatorList(moduleName, actionName);
-          }
-        });
-      }
-    }
-  }
-  return MetaData.actionCreatorMap[moduleName];
+export function isServer(): boolean {
+  return isServerEnv;
 }

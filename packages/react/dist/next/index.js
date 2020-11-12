@@ -1,12 +1,12 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
 import * as core from '@medux/core';
-import { env, getView, isPromiseView } from '@medux/core';
+import { env, getView, isPromise } from '@medux/core';
 import React, { useEffect, useState } from 'react';
 import { renderToNodeStream, renderToString } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom';
-export function renderApp(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, container = 'root', beforeRender) {
+export function renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container = 'root', beforeRender) {
   return core.renderApp((store, appModel, AppView, ssrInitStoreKey) => {
     const reRender = View => {
       const reduxProvider = React.createElement(Provider, {
@@ -25,9 +25,9 @@ export function renderApp(moduleGetter, appModuleName, appViewName, historyProxy
 
     reRender(AppView);
     return reRender;
-  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
-export function renderSSR(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions = {}, renderToStream = false, beforeRender) {
+export function renderSSR(moduleGetter, appModuleName, appViewName, storeOptions = {}, renderToStream = false, beforeRender) {
   return core.renderSSR((store, appModel, AppView, ssrInitStoreKey) => {
     const data = store.getState();
     const reduxProvider = React.createElement(Provider, {
@@ -40,7 +40,7 @@ export function renderSSR(moduleGetter, appModuleName, appViewName, historyProxy
       data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
 
 const LoadViewOnError = () => {
@@ -48,12 +48,9 @@ const LoadViewOnError = () => {
 };
 
 export const loadView = (moduleName, viewName, options, Loading, Error) => {
-  const _ref = options || {},
-        {
+  const {
     forwardRef
-  } = _ref,
-        modelOptions = _objectWithoutPropertiesLoose(_ref, ["forwardRef"]);
-
+  } = options || {};
   let active = true;
 
   const Loader = function ViewLoader(props) {
@@ -63,9 +60,9 @@ export const loadView = (moduleName, viewName, options, Loading, Error) => {
       };
     }, []);
     const [view, setView] = useState(() => {
-      const moduleViewResult = getView(moduleName, viewName, modelOptions);
+      const moduleViewResult = getView(moduleName, viewName);
 
-      if (isPromiseView(moduleViewResult)) {
+      if (isPromise(moduleViewResult)) {
         moduleViewResult.then(Component => {
           active && setView({
             Component

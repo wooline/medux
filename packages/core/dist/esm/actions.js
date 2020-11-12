@@ -5,15 +5,9 @@ export function errorAction(error) {
     payload: [error]
   };
 }
-export function routeChangeAction(routeState) {
+export function moduleInitAction(moduleName, initState) {
   return {
-    type: ActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
-export function routeParamsAction(moduleName, params, action) {
-  return {
-    type: "" + moduleName + config.NSP + ActionTypes.MRouteParams,
-    payload: [params, action]
+    type: "" + moduleName + config.NSP + ActionTypes.MInit,
+    payload: [initState]
   };
 }

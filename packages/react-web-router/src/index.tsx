@@ -1,12 +1,11 @@
 /// <reference path="../env/global.d.ts" />
-import {Location, setRouteConfig} from '@medux/route-plan-a';
-import {RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState} from '@medux/core';
+import {routeMiddleware, routeReducer} from '@medux/route-plan-a';
+import {ModuleGetter, StoreOptions} from '@medux/core';
 import {Store} from 'redux';
 import React, {ReactElement} from 'react';
 import {renderApp, renderSSR} from '@medux/react';
-import {createRouter} from '@medux/web';
-import type {LocationMap, RouteConfig} from '@medux/route-plan-a';
-import type {HistoryActions} from '@medux/web';
+import {createRouter, HistoryActions} from '@medux/web';
+import type {LocationMap, RouteRule} from '@medux/route-plan-a';
 
 export {loadView, exportModule} from '@medux/react';
 export {
@@ -14,7 +13,6 @@ export {
   delayPromise,
   LoadingState,
   exportActions,
-  BaseModelHandlers,
   modelHotReplacement,
   effect,
   errorAction,
@@ -25,11 +23,11 @@ export {
   logger,
   setLoadingDepthTime,
 } from '@medux/core';
-export {setRouteConfig} from '@medux/route-plan-a';
+export {setRouteConfig, RouteModelHandlers as BaseModelHandlers} from '@medux/route-plan-a';
 
-export type {Actions, RouteData, RouteViews, BaseModelState} from '@medux/core';
+export type {Actions} from '@medux/core';
 export type {LoadView} from '@medux/react';
-export type {RouteConfig, LocationMap} from '@medux/route-plan-a';
+export type {RootState, RouteRule, LocationMap} from '@medux/route-plan-a';
 export type {HistoryActions} from '@medux/web';
 
 let historyActions: HistoryActions | undefined;
@@ -39,10 +37,9 @@ export function buildApp({
   appModuleName = 'app',
   appViewName = 'main',
   historyType = 'Browser',
-  homeUrl = '/',
-  routeConfig = {},
+  routeRule = {},
   locationMap,
-  defaultRouteParams,
+  defaultRouteParams = {},
   storeOptions = {},
   container = 'root',
   beforeRender,
@@ -51,18 +48,30 @@ export function buildApp({
   appModuleName?: string;
   appViewName?: string;
   historyType?: 'Browser' | 'Hash' | 'Memory';
-  homeUrl?: string;
-  routeConfig?: RouteConfig;
+  routeRule?: RouteRule;
   locationMap?: LocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   container?: string | Element | ((component: ReactElement<any>) => void);
-  beforeRender?: (data: {store: Store<StoreState>; historyActions: HistoryActions}) => Store<StoreState>;
+  beforeRender?: (data: {store: Store; historyActions: HistoryActions}) => Store;
 }) {
-  setRouteConfig({defaultRouteParams});
-  historyActions = createRouter(historyType, homeUrl, routeConfig, locationMap);
-  return renderApp(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, (store) => {
-    return beforeRender ? beforeRender({store, historyActions: historyActions!}) : store;
+  historyActions = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+  if (!storeOptions.middlewares) {
+    storeOptions.middlewares = [];
+  }
+  storeOptions.middlewares.unshift(routeMiddleware);
+  if (!storeOptions.reducers) {
+    storeOptions.reducers = {};
+  }
+  storeOptions.reducers.route = routeReducer;
+  if (!storeOptions.initData) {
+    storeOptions.initData = {};
+  }
+  storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
+  return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
+    const newStore = beforeRender ? beforeRender({store, historyActions: historyActions!}) : store;
+    historyActions?.setStore(newStore);
+    return newStore;
   });
 }
 
@@ -71,9 +80,9 @@ export function buildSSR({
   appModuleName = 'app',
   appViewName = 'main',
   location,
-  routeConfig = {},
+  routeRule = {},
   locationMap,
-  defaultRouteParams,
+  defaultRouteParams = {},
   storeOptions = {},
   renderToStream = false,
   beforeRender,
@@ -82,21 +91,24 @@ export function buildSSR({
   appModuleName?: string;
   appViewName?: string;
   location: string;
-  routeConfig?: RouteConfig;
+  routeRule?: RouteRule;
   locationMap?: LocationMap;
   defaultRouteParams?: {[moduleName: string]: any};
   storeOptions?: StoreOptions;
   renderToStream?: boolean;
-  beforeRender?: (data: {store: Store<StoreState>; historyActions: HistoryActions}) => Store<StoreState>;
+  beforeRender?: (data: {store: Store; historyActions: HistoryActions}) => Store;
 }): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
-  setRouteConfig({defaultRouteParams});
-  historyActions = createRouter(location, '/', routeConfig, locationMap);
-  return renderSSR(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, (store) => {
-    return beforeRender ? beforeRender({store, historyActions: historyActions!}) : store;
+  historyActions = createRouter(location, defaultRouteParams, routeRule, locationMap);
+  if (!storeOptions.initData) {
+    storeOptions.initData = {};
+  }
+  storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
+  return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, (store) => {
+    const newStore = beforeRender ? beforeRender({store, historyActions: historyActions!}) : store;
+    historyActions?.setStore(newStore);
+    return newStore;
   });
 }
-
-export type RootState<G extends ModuleGetter> = BaseRootState<G, Location>;
 
 interface SwitchProps {
   elseView?: React.ReactNode;

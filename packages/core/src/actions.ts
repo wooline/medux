@@ -1,4 +1,4 @@
-import {ActionTypes, RouteState, config} from './basic';
+import {ActionTypes, config} from './basic';
 
 /**
  * 框架定义的全局错误ActionCreator，拥有固定的type
@@ -10,24 +10,9 @@ export function errorAction(error: any) {
     payload: [error],
   };
 }
-/**
- * 框架定义的全局路由切换ActionCreator，拥有固定的type
- * @param route 路由数据
- */
-export function routeChangeAction(routeState: RouteState) {
+export function moduleInitAction(moduleName: string, initState: any) {
   return {
-    type: ActionTypes.RouteChange,
-    payload: [routeState],
-  };
-}
-/**
- * 当路由发生变化时，通过该action触发相关模块的状态发生变化
- * @param moduleName 模块名称
- * @param params 存放在路由上的数据
- */
-export function routeParamsAction(moduleName: string, params: any, action?: string) {
-  return {
-    type: `${moduleName}${config.NSP}${ActionTypes.MRouteParams}`,
-    payload: [params, action],
+    type: `${moduleName}${config.NSP}${ActionTypes.MInit}`,
+    payload: [initState],
   };
 }

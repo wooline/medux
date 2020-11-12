@@ -5,21 +5,17 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 exports.__esModule = true;
 exports.modelHotReplacement = modelHotReplacement;
 exports.viewHotReplacement = viewHotReplacement;
-exports.isPromiseModule = isPromiseModule;
-exports.isPromiseView = isPromiseView;
 exports.exportActions = exportActions;
-exports.getView = getView;
 exports.renderApp = renderApp;
 exports.renderSSR = renderSSR;
-exports.BaseModelHandlers = exports.exportModule = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 
-var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
-
 var _basic = require("./basic");
+
+var _inject = require("./inject");
 
 var _store = require("./store");
 
@@ -37,7 +33,6 @@ function clearHandlers(key, actionHandlerMap) {
 function modelHotReplacement(moduleName, initState, ActionHandles) {
   var store = _basic.MetaData.clientStore;
   var prevInitState = store._medux_.injectedModules[moduleName];
-  initState.isModule = true;
 
   if (prevInitState) {
     if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
@@ -47,7 +42,7 @@ function modelHotReplacement(moduleName, initState, ActionHandles) {
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     var handlers = new ActionHandles(moduleName, store);
-    var actions = (0, _basic.injectActions)(store, moduleName, handlers);
+    var actions = (0, _inject.injectActions)(store, moduleName, handlers);
     handlers.actions = actions;
 
     _env.env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
@@ -84,230 +79,14 @@ function viewHotReplacement(moduleName, views) {
   }
 }
 
-var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
-  var model = function model(store, options) {
-    var hasInjected = !!store._medux_.injectedModules[moduleName];
-
-    if (!hasInjected) {
-      var _store$_medux_$prevSt;
-
-      store._medux_.injectedModules[moduleName] = initState;
-      var moduleState = store.getState()[moduleName];
-      var handlers = new ActionHandles(moduleName, store);
-
-      var _actions = (0, _basic.injectActions)(store, moduleName, handlers);
-
-      handlers.actions = _actions;
-      var params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
-
-      if (!moduleState) {
-        moduleState = initState;
-        moduleState.isModule = true;
-      } else {
-        moduleState = Object.assign(Object.assign({}, moduleState), {}, {
-          isHydrate: true
-        });
-      }
-
-      var initAction = _actions.Init(moduleState, params[moduleName], options);
-
-      return store.dispatch(initAction);
-    }
-
-    return undefined;
-  };
-
-  model.moduleName = moduleName;
-  model.initState = initState;
-  var actions = {};
-  return {
-    moduleName: moduleName,
-    model: model,
-    views: views,
-    actions: actions
-  };
-};
-
-exports.exportModule = exportModule;
-var BaseModelHandlers = (0, _decorate2.default)(null, function (_initialize) {
-  var BaseModelHandlers = function BaseModelHandlers(moduleName, store) {
-    this.moduleName = moduleName;
-    this.store = store;
-
-    _initialize(this);
-
-    this.actions = null;
-  };
-
-  return {
-    F: BaseModelHandlers,
-    d: [{
-      kind: "field",
-      key: "actions",
-      value: void 0
-    }, {
-      kind: "get",
-      key: "state",
-      value: function state() {
-        return this.getState();
-      }
-    }, {
-      kind: "method",
-      key: "getState",
-      value: function getState() {
-        return this.store._medux_.prevState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "rootState",
-      value: function rootState() {
-        return this.getRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getRootState",
-      value: function getRootState() {
-        return this.store._medux_.prevState;
-      }
-    }, {
-      kind: "get",
-      key: "currentState",
-      value: function currentState() {
-        return this.getCurrentState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentState",
-      value: function getCurrentState() {
-        return this.store._medux_.currentState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "currentRootState",
-      value: function currentRootState() {
-        return this.getCurrentRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentRootState",
-      value: function getCurrentRootState() {
-        return this.store._medux_.currentState;
-      }
-    }, {
-      kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return this.getPrevState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevState",
-      value: function getPrevState() {
-        return this.store._medux_.beforeState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return this.getPrevRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevRootState",
-      value: function getPrevRootState() {
-        return this.store._medux_.beforeState;
-      }
-    }, {
-      kind: "method",
-      key: "dispatch",
-      value: function dispatch(action) {
-        return this.store.dispatch(action);
-      }
-    }, {
-      kind: "method",
-      key: "callThisAction",
-      value: function callThisAction(handler) {
-        var actions = _basic.MetaData.actionCreatorMap[this.moduleName];
-
-        for (var _len = arguments.length, rest = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-          rest[_key - 1] = arguments[_key];
-        }
-
-        return actions[handler.__actionName__].apply(actions, rest);
-      }
-    }, {
-      kind: "method",
-      key: "updateState",
-      value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload), key));
-      }
-    }, {
-      kind: "method",
-      key: "loadModel",
-      value: function loadModel(moduleName, options) {
-        return (0, _store.loadModel)(moduleName, this.store, options);
-      }
-    }, {
-      kind: "method",
-      decorators: [_basic.reducer],
-      key: "Init",
-      value: function Init(initState, routeParams, options) {
-        if (initState.isHydrate) {
-          return initState;
-        }
-
-        return Object.assign(Object.assign({}, initState), {}, {
-          routeParams: routeParams || initState.routeParams
-        }, options);
-      }
-    }, {
-      kind: "method",
-      decorators: [_basic.reducer],
-      key: "Update",
-      value: function Update(payload, key) {
-        return payload;
-      }
-    }, {
-      kind: "method",
-      decorators: [_basic.reducer],
-      key: "RouteParams",
-      value: function RouteParams(payload, action) {
-        var state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
-          routeParams: payload
-        });
-      }
-    }, {
-      kind: "method",
-      decorators: [_basic.reducer],
-      key: "Loading",
-      value: function Loading(payload) {
-        var state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
-          loading: Object.assign(Object.assign({}, state.loading), payload)
-        });
-      }
-    }]
-  };
-});
-exports.BaseModelHandlers = BaseModelHandlers;
-
-function isPromiseModule(module) {
-  return typeof module['then'] === 'function';
-}
-
-function isPromiseView(moduleView) {
-  return typeof moduleView['then'] === 'function';
-}
-
 function exportActions(moduleGetter) {
   _basic.MetaData.moduleGetter = moduleGetter;
   _basic.MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
     maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
       get: function get(target, key) {
         return function () {
-          for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-            payload[_key2] = arguments[_key2];
+          for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+            payload[_key] = arguments[_key];
           }
 
           return {
@@ -325,70 +104,13 @@ function exportActions(moduleGetter) {
   return _basic.MetaData.actionCreatorMap;
 }
 
-function getView(moduleName, viewName, modelOptions) {
-  var moduleGetter = _basic.MetaData.moduleGetter;
-  var result = moduleGetter[moduleName]();
-
-  if (isPromiseModule(result)) {
-    return result.then(function (module) {
-      (0, _basic.cacheModule)(module);
-      var view = module.default.views[viewName];
-
-      if (_env.isServerEnv) {
-        return view;
-      }
-
-      var initModel = module.default.model(_basic.MetaData.clientStore, modelOptions);
-
-      if ((0, _basic.isPromise)(initModel)) {
-        return initModel.then(function () {
-          return view;
-        });
-      }
-
-      return view;
-    });
-  }
-
-  (0, _basic.cacheModule)(result);
-  var view = result.default.views[viewName];
-
-  if (_env.isServerEnv) {
-    return view;
-  }
-
-  var initModel = result.default.model(_basic.MetaData.clientStore, modelOptions);
-
-  if ((0, _basic.isPromise)(initModel)) {
-    return initModel.then(function () {
-      return view;
-    });
-  }
-
-  return view;
-}
-
-function getModuleByName(moduleName, moduleGetter) {
-  var result = moduleGetter[moduleName]();
-
-  if (isPromiseModule(result)) {
-    return result.then(function (module) {
-      (0, _basic.cacheModule)(module);
-      return module;
-    });
-  }
-
-  (0, _basic.cacheModule)(result);
-  return result;
-}
-
-function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
+function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
   return _renderApp.apply(this, arguments);
 }
 
 function _renderApp() {
-  _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, history, storeOptions, beforeRender) {
-    var appModuleName, ssrInitStoreKey, initData, store, reduxStore, preModuleNames, appModule, i, k, _moduleName, module;
+  _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
+    var appModuleName, ssrInitStoreKey, initData, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName, module;
 
     return _regenerator.default.wrap(function _callee$(_context) {
       while (1) {
@@ -409,57 +131,54 @@ function _renderApp() {
             _basic.MetaData.appViewName = appViewName;
 
             if (typeof appModuleOrName !== 'string') {
-              (0, _basic.cacheModule)(appModuleOrName);
+              (0, _inject.cacheModule)(appModuleOrName);
             }
 
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-            initData = {};
+            initData = storeOptions.initData || {};
 
-            if (storeOptions.initData || _env.client[ssrInitStoreKey]) {
-              initData = Object.assign(Object.assign({}, _env.client[ssrInitStoreKey]), storeOptions.initData);
+            if (_env.client[ssrInitStoreKey]) {
+              initData = Object.assign(Object.assign({}, _env.client[ssrInitStoreKey]), initData);
             }
 
-            store = (0, _store.buildStore)(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            store = (0, _store.buildStore)(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             reduxStore = beforeRender ? beforeRender(store) : store;
-            preModuleNames = [appModuleName];
-
-            if (initData) {
-              preModuleNames.push.apply(preModuleNames, Object.keys(initData).filter(function (key) {
-                return key !== appModuleName && initData[key].isModule;
-              }));
-            }
-
+            storeState = reduxStore.getState();
+            preModuleNames = Object.keys(storeState).filter(function (key) {
+              return key !== appModuleName && moduleGetter[key];
+            });
+            preModuleNames.unshift(appModuleName);
             i = 0, k = preModuleNames.length;
 
-          case 14:
+          case 15:
             if (!(i < k)) {
-              _context.next = 25;
+              _context.next = 26;
               break;
             }
 
             _moduleName = preModuleNames[i];
-            _context.next = 18;
-            return getModuleByName(_moduleName, moduleGetter);
+            _context.next = 19;
+            return (0, _inject.getModuleByName)(_moduleName, moduleGetter);
 
-          case 18:
+          case 19:
             module = _context.sent;
-            _context.next = 21;
-            return module.default.model(reduxStore, undefined);
+            _context.next = 22;
+            return module.default.model(reduxStore);
 
-          case 21:
+          case 22:
             if (i === 0) {
               appModule = module;
             }
 
-          case 22:
+          case 23:
             i++;
-            _context.next = 14;
+            _context.next = 15;
             break;
 
-          case 25:
+          case 26:
             reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 
-          case 26:
+          case 27:
           case "end":
             return _context.stop();
         }
@@ -469,13 +188,13 @@ function _renderApp() {
   return _renderApp.apply(this, arguments);
 }
 
-function renderSSR(_x8, _x9, _x10, _x11, _x12, _x13, _x14) {
+function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
   return _renderSSR.apply(this, arguments);
 }
 
 function _renderSSR() {
-  _renderSSR = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, history, storeOptions, beforeRender) {
-    var ssrInitStoreKey, store, reduxStore, storeState, paths, appModule, inited, i, k, _paths$i$split, _moduleName2, module;
+  _renderSSR = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
+    var ssrInitStoreKey, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName2, module;
 
     return _regenerator.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -488,46 +207,40 @@ function _renderSSR() {
             _basic.MetaData.appModuleName = appModuleName;
             _basic.MetaData.appViewName = appViewName;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-            store = (0, _store.buildStore)(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            store = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             reduxStore = beforeRender ? beforeRender(store) : store;
             storeState = reduxStore.getState();
-            paths = storeState.route.data.paths;
-            paths.length === 0 && paths.push(appModuleName);
-            inited = {};
-            i = 0, k = paths.length;
+            preModuleNames = Object.keys(storeState).filter(function (key) {
+              return key !== appModuleName && moduleGetter[key];
+            });
+            preModuleNames.unshift(appModuleName);
+            i = 0, k = preModuleNames.length;
 
-          case 11:
+          case 10:
             if (!(i < k)) {
-              _context2.next = 22;
-              break;
-            }
-
-            _paths$i$split = paths[i].split(_basic.config.VSP), _moduleName2 = _paths$i$split[0];
-
-            if (inited[_moduleName2]) {
               _context2.next = 19;
               break;
             }
 
-            inited[_moduleName2] = true;
+            _moduleName2 = preModuleNames[i];
             module = moduleGetter[_moduleName2]();
-            _context2.next = 18;
-            return module.default.model(reduxStore, undefined);
+            _context2.next = 15;
+            return module.default.model(reduxStore);
 
-          case 18:
+          case 15:
             if (i === 0) {
               appModule = module;
             }
 
-          case 19:
+          case 16:
             i++;
-            _context2.next = 11;
+            _context2.next = 10;
             break;
 
-          case 22:
+          case 19:
             return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 23:
+          case 20:
           case "end":
             return _context2.stop();
         }

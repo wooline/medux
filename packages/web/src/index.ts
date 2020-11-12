@@ -1,16 +1,15 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {BaseHistoryActions, Location, RouteConfig, NativeHistory, LocationMap, locationToUrl, PaLocation} from '@medux/route-plan-a';
+import {BaseHistoryActions, Location, RouteRule, NativeHistory, LocationMap, PaLocation, RouteParams} from '@medux/route-plan-a';
 import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
-import {RouteParams, env} from '@medux/core';
+import {env} from '@medux/core';
 
 type UnregisterCallback = () => void;
 
+function locationToUrl(loaction: PaLocation): string {
+  return loaction.pathname + loaction.search + loaction.hash;
+}
 export class WebNativeHistory implements NativeHistory {
-  public history: History;
-
-  public initLocation: PaLocation;
-
-  public actions: HistoryActions | undefined;
+  public history: History<never>;
 
   constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string, public locationMap?: LocationMap) {
     if (createHistory === 'Hash') {
@@ -39,25 +38,23 @@ export class WebNativeHistory implements NativeHistory {
           return () => undefined;
         },
         location: {
-          state: null,
           pathname,
           search: search && `?${search}`,
           hash: '',
-        },
+        } as any,
       };
     }
-    const location = this.hsLocationToPaLocation(this.history.location);
-    this.initLocation = this.locationMap ? this.locationMap.in(location) : location;
   }
 
   block(blocker: (location: PaLocation, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void) {
     return this.history.block((location, action) => {
-      return blocker(this.hsLocationToPaLocation(location), this.getKey(location), action);
+      return blocker({pathname: location.pathname, search: location.search, hash: location.hash}, this.getKey(location), action);
     });
   }
 
-  hsLocationToPaLocation(historyLocation: HistoryLocation): PaLocation {
-    return {pathname: historyLocation.pathname, search: historyLocation.search, hash: historyLocation.hash};
+  getUrl() {
+    const location = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+    return locationToUrl(location);
   }
 
   getKey(location: HistoryLocation): string {
@@ -65,15 +62,15 @@ export class WebNativeHistory implements NativeHistory {
   }
 
   push(location: Location): void {
-    this.history.push(locationToUrl(location), location.key);
+    this.history.push(locationToUrl(location), location.key as any);
   }
 
   replace(location: Location): void {
-    this.history.replace(locationToUrl(location), location.key);
+    this.history.replace(locationToUrl(location), location.key as any);
   }
 
   relaunch(location: Location): void {
-    this.history.push(locationToUrl(location), location.key);
+    this.history.push(locationToUrl(location), location.key as any);
   }
 
   pop(location: Location, n: number): void {
@@ -85,8 +82,8 @@ export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHis
 
   private _timer: number = 0;
 
-  constructor(public nativeHistory: WebNativeHistory, public homeUrl: string, public routeConfig: RouteConfig, public maxLength: number, public locationMap?: LocationMap) {
-    super(nativeHistory, homeUrl, routeConfig, maxLength, locationMap);
+  constructor(protected nativeHistory: WebNativeHistory, protected defaultRouteParams: {[moduleName: string]: any}, protected routeRule: RouteRule, protected locationMap?: LocationMap) {
+    super(nativeHistory, defaultRouteParams, nativeHistory.getUrl(), routeRule, locationMap);
     this._unlistenHistory = this.nativeHistory.block((location, key, action) => {
       if (key !== this.getCurKey()) {
         let callback: (() => void) | undefined;
@@ -127,15 +124,17 @@ export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHis
     });
   }
 
+  getNativeHistory() {
+    return this.nativeHistory.history;
+  }
+
   destroy() {
     this._unlistenHistory();
   }
 }
 
-export function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, homeUrl: string, routeConfig: RouteConfig, locationMap?: LocationMap) {
+export function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, defaultRouteParams: {[moduleName: string]: any}, routeRule: RouteRule, locationMap?: LocationMap) {
   const nativeHistory = new WebNativeHistory(createHistory);
-  const historyActions = new HistoryActions(nativeHistory, homeUrl, routeConfig, 10, locationMap);
-  nativeHistory.actions = historyActions;
-  historyActions.relaunch(nativeHistory.initLocation);
+  const historyActions = new HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap);
   return historyActions;
 }

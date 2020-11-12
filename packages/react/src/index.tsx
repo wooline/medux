@@ -1,7 +1,7 @@
 /// <reference path="../env/global.d.ts" />
 import * as core from '@medux/core';
 
-import {ExportModule, HistoryProxy, ModuleGetter, StoreOptions, StoreState, env, getView, isPromiseView} from '@medux/core';
+import {ExportModule, ModuleGetter, StoreOptions, CoreRootState, env, getView, isPromise} from '@medux/core';
 import React, {ComponentType, FC, ReactElement, useEffect, useState} from 'react';
 
 import {renderToNodeStream, renderToString} from 'react-dom/server';
@@ -14,10 +14,9 @@ export function renderApp(
   moduleGetter: ModuleGetter,
   appModuleName: string,
   appViewName: string,
-  historyProxy: HistoryProxy,
   storeOptions: StoreOptions,
   container: string | Element | ((component: ReactElement<any>) => void) = 'root',
-  beforeRender?: (store: Store<StoreState>) => Store<StoreState>
+  beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>
 ) {
   return core.renderApp<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
@@ -42,7 +41,6 @@ export function renderApp(
     moduleGetter,
     appModuleName,
     appViewName,
-    historyProxy,
     storeOptions,
     beforeRender
   );
@@ -52,10 +50,9 @@ export function renderSSR(
   moduleGetter: ModuleGetter,
   appModuleName: string,
   appViewName: string,
-  historyProxy: HistoryProxy,
   storeOptions: StoreOptions = {},
   renderToStream = false,
-  beforeRender?: (store: Store<StoreState>) => Store<StoreState>
+  beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>
 ) {
   return core.renderSSR<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
@@ -76,7 +73,6 @@ export function renderSSR(
     moduleGetter,
     appModuleName,
     appViewName,
-    historyProxy,
     storeOptions,
     beforeRender
   );
@@ -88,7 +84,7 @@ const LoadViewOnError: ComponentType<any> = () => {
   return <div>error</div>;
 };
 export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, Error) => {
-  const {forwardRef, ...modelOptions} = options || {};
+  const {forwardRef} = options || {};
   // Can't perform a React state update on an unmounted component.
   let active = true;
   const Loader: FC<any> = function ViewLoader(props: any) {
@@ -98,8 +94,8 @@ export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, 
       };
     }, []);
     const [view, setView] = useState<{Component: ComponentType<any>} | null>(() => {
-      const moduleViewResult = getView<ComponentType>(moduleName, viewName, modelOptions);
-      if (isPromiseView<ComponentType>(moduleViewResult)) {
+      const moduleViewResult = getView<ComponentType>(moduleName, viewName);
+      if (isPromise(moduleViewResult)) {
         moduleViewResult
           .then((Component) => {
             // loader.propTypes = Component.propTypes;

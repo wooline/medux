@@ -1,67 +1,36 @@
 import { applyMiddleware, compose, createStore } from 'redux';
-import { ActionTypes, MetaData, cacheModule, config, isProcessedError, isPromise, setProcessedError } from './basic';
+import { ActionTypes, MetaData, config, isPromise } from './basic';
+import { loadModel } from './inject';
 import { client, isDevelopmentEnv, isServerEnv } from './env';
-import { errorAction, routeChangeAction, routeParamsAction } from './actions';
-
-function isPromiseModule(module) {
-  return typeof module['then'] === 'function';
-}
-
-export function loadModel(moduleName, storeInstance, options) {
-  const store = storeInstance || MetaData.clientStore;
-  const hasInjected = !!store._medux_.injectedModules[moduleName];
-
-  if (!hasInjected) {
-    const moduleGetter = MetaData.moduleGetter;
-    const result = moduleGetter[moduleName]();
-
-    if (isPromiseModule(result)) {
-      return result.then(module => {
-        cacheModule(module);
-        return module.default.model(store, options);
-      });
-    }
-
-    cacheModule(result);
-    return result.default.model(store, options);
-  }
-
-  return undefined;
-}
+import { errorAction } from './actions';
 export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function bindHistory(store, historyProxy) {
-  const handleLocationChange = routeState => {
-    store.dispatch(routeChangeAction(routeState));
-  };
-
-  historyProxy.subscribe(handleLocationChange);
-  store._medux_.destroy = historyProxy.destroy;
-  const initData = historyProxy.getRouteState();
-
-  if (initData) {
-    handleLocationChange(initData);
+function isProcessedError(error) {
+  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
+    return undefined;
   }
+
+  return !!error.meduxProcessed;
 }
 
-export function buildStore(history, preloadedState = {}, storeReducers = {}, storeMiddlewares = [], storeEnhancers = []) {
-  if (MetaData.clientStore) {
-    MetaData.clientStore._medux_.destroy();
+function setProcessedError(error, meduxProcessed) {
+  if (typeof error === 'object') {
+    error.meduxProcessed = meduxProcessed;
+    return error;
   }
 
-  if (storeReducers.route) {
-    throw new Error("the reducer name 'route' is not allowed");
-  }
-
-  storeReducers.route = (state, action) => {
-    if (action.type === ActionTypes.RouteChange) {
-      return getActionData(action)[0];
-    }
-
-    return state;
+  return {
+    meduxProcessed,
+    error
   };
+}
+
+export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = [], storeEnhancers = []) {
+  if (MetaData.clientStore) {
+    MetaData.clientStore.destroy();
+  }
 
   const combineReducers = (rootState, action) => {
     if (!store) {
@@ -135,19 +104,6 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
     const meta = store._medux_;
     meta.beforeState = meta.prevState;
     const action = next(originalAction);
-
-    if (action.type === ActionTypes.RouteChange) {
-      const routeData = meta.prevState.route.data;
-      const rootRouteParams = routeData.params;
-      Object.keys(rootRouteParams).forEach(moduleName => {
-        const routeParams = rootRouteParams[moduleName];
-
-        if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-          dispatch(routeParamsAction(moduleName, routeParams, routeData.action));
-        }
-      });
-    }
-
     const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
     const handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
@@ -238,10 +194,18 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
     const [moduleName, actionName] = action.type.split(config.NSP);
 
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const initModel = loadModel(moduleName, store, undefined);
+      const hasInjected = !!store._medux_.injectedModules[moduleName];
 
-      if (isPromise(initModel)) {
-        return initModel.then(() => next(action));
+      if (!hasInjected) {
+        if (actionName === ActionTypes.MInit) {
+          return loadModel(moduleName, store);
+        }
+
+        const initModel = loadModel(moduleName, store);
+
+        if (isPromise(initModel)) {
+          return initModel.then(() => next(action));
+        }
       }
     }
 
@@ -260,8 +224,7 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
         currentState: {},
         reducerMap: {},
         effectMap: {},
-        injectedModules: {},
-        destroy: () => undefined
+        injectedModules: {}
       };
       return newStore;
     };
@@ -274,7 +237,8 @@ export function buildStore(history, preloadedState = {}, storeReducers = {}, sto
   }
 
   const store = createStore(combineReducers, preloadedState, compose(...enhancers));
-  bindHistory(store, history);
+
+  store.destroy = () => undefined;
 
   if (!isServerEnv) {
     MetaData.clientStore = store;

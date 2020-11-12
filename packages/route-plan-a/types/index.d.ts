@@ -1,54 +1,16 @@
-import { DisplayViews, HistoryProxy, RouteState, RouteParams, RouteData, Location as BaseLocation, HistoryAction } from '@medux/core';
+import { CoreModelHandlers, CoreModuleState, CoreRootState } from '@medux/core';
+import { Middleware, Reducer } from 'redux';
+import { HistoryAction, RouteState } from './basic';
 import assignDeep from './deep-extend';
-export interface PaRouteData<P extends RouteParams = RouteParams> {
-    views: DisplayViews;
-    params: P;
-    paths: string[];
-}
-export interface PaLocation {
-    pathname: string;
-    search: string;
-    hash: string;
-}
-export interface LocationPayload {
-    pathname: string;
-    search?: string;
-    hash?: string;
-}
-export interface RoutePayload<P extends RouteParams = RouteParams> {
-    paths: string[] | string;
-    params?: DeepPartial<P>;
-    extend?: RouteData<P>;
-}
-export interface Location extends BaseLocation {
-    pathname: string;
-    search: string;
-    hash: string;
-}
-export declare function checkLocation(location: LocationPayload): PaLocation;
-export declare function urlToLocation(url: string): PaLocation;
-export declare function locationToUrl(safeLocation: PaLocation): string;
+import type { RouteParams, Location, PaRouteData, PaLocation, LocationPayload, RoutePayload, RouteRule } from './basic';
 export declare const deepAssign: typeof assignDeep;
-export declare function setRouteConfig(conf: {
-    escape?: boolean;
-    dateParse?: boolean;
-    splitKey?: string;
-    homeUrl?: string;
-    defaultRouteParams?: {
-        [moduleName: string]: any;
-    };
-}): void;
-export interface RouteConfig {
-    [path: string]: string | [string, RouteConfig];
-}
-declare type DeepPartial<T> = {
-    [P in keyof T]?: DeepPartial<T[P]>;
-};
+export type { RootState, PaRouteData, PaLocation, LocationPayload, RoutePayload, Location, RouteRule, RouteParams } from './basic';
+export { setRouteConfig } from './basic';
 export declare function assignRouteData(paths: string[], params: {
     [moduleName: string]: any;
+}, defaultRouteParams: {
+    [moduleName: string]: any;
 }): PaRouteData;
-export declare type LocationListener<P extends RouteParams> = (routeState: RouteState<Location, P>) => void;
-export declare type LocationBlocker<P extends RouteParams> = (location: Location, curLocation: Location | undefined, routeData: RouteData<P>, curRouteData: RouteData<P> | undefined) => void | Promise<void>;
 export declare type LocationToLocation = (location: PaLocation) => PaLocation;
 export declare type LocationMap = {
     in: LocationToLocation;
@@ -60,30 +22,32 @@ export interface NativeHistory {
     relaunch(location: Location): void;
     pop(location: Location, n: number): void;
 }
-export declare abstract class BaseHistoryActions<P extends RouteParams = RouteParams> implements HistoryProxy {
+export interface Store {
+    dispatch(action: {
+        type: string;
+    }): any;
+}
+export declare abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     protected nativeHistory: NativeHistory;
-    homeUrl: string;
-    protected routeConfig: RouteConfig;
-    protected maxLength: number;
+    protected defaultRouteParams: {
+        [moduleName: string]: any;
+    };
+    protected initUrl: string;
+    protected routeRule: RouteRule;
     protected locationMap?: LocationMap | undefined;
     private _tid;
-    private _uid;
-    private _RSP;
-    private _listenList;
-    private _blockerList;
-    private _location;
-    private _routeData;
-    private _startupLocation;
-    private _startupRouteData;
-    private _history;
-    private _stack;
+    private _routeState;
+    private _startupRouteState;
+    protected store: Store | undefined;
     private _viewToRule;
     private _ruleToKeys;
-    constructor(nativeHistory: NativeHistory, homeUrl: string, routeConfig: RouteConfig, maxLength: number, locationMap?: LocationMap | undefined);
+    constructor(nativeHistory: NativeHistory, defaultRouteParams: {
+        [moduleName: string]: any;
+    }, initUrl: string, routeRule: RouteRule, locationMap?: LocationMap | undefined);
+    setStore(_store: Store): void;
+    mergeInitState<T extends CoreRootState>(initState: T): RouteRootState;
     protected getCurKey(): string;
-    getLocation(startup?: boolean): Location | undefined;
-    getRouteData(startup?: boolean): RouteData<P> | undefined;
-    getRouteState(): RouteState<Location, P> | undefined;
+    getRouteState(): RouteState<P>;
     protected locationToRoute(safeLocation: PaLocation): PaRouteData<P>;
     protected routeToLocation(paths: string[] | string, params?: RouteParams): PaLocation;
     payloadToRoute(data: RoutePayload<P> | LocationPayload | string): PaRouteData<P>;
@@ -91,8 +55,6 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     private _createKey;
     private _getEfficientLocation;
     private _buildHistory;
-    subscribe(listener: LocationListener<P>): () => void;
-    block(listener: LocationBlocker<P>): () => void;
     private _urlToUri;
     private _uriToUrl;
     private _uriToPathname;
@@ -102,7 +64,8 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
         url: string;
     };
     private _toNativeLocation;
-    protected dispatch(safeLocation: PaLocation, action: HistoryAction, key?: string, callNative?: string | number): Promise<Location>;
+    private _createRouteState;
+    protected dispatch(safeLocation: PaLocation, action: HistoryAction, key?: string, callNative?: string | number): Promise<RouteState<P>>;
     relaunch(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
     push(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
     replace(data: RoutePayload<P> | LocationPayload | string, disableNative?: boolean): Promise<Location>;
@@ -110,4 +73,19 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     home(root?: 'HOME' | 'FIRST', disableNative?: boolean): Promise<Location>;
     abstract destroy(): void;
 }
-export {};
+export declare const routeMiddleware: Middleware;
+export declare const routeReducer: Reducer;
+export interface RouteModuleState<P extends RouteParams = RouteParams> extends CoreModuleState {
+    routeParams?: P;
+}
+export declare type RouteRootState<P extends RouteParams = RouteParams> = {
+    [moduleName: string]: RouteModuleState;
+} & {
+    route: RouteState<P>;
+};
+export declare class RouteModelHandlers<S extends RouteModuleState, R extends RouteRootState> extends CoreModelHandlers<S, R> {
+    protected Init(initState: S): S;
+    RouteParams(payload: {
+        [key: string]: any;
+    }): S;
+}

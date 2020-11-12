@@ -1,36 +1,38 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
-import {Action, ActionTypes, MetaData, ModelStore, RouteState, StoreState, cacheModule, config, isProcessedError, isPromise, setProcessedError} from './basic';
-import {Module, ModuleGetter} from './module';
+import {Action, ActionTypes, MetaData, ModelStore, CoreRootState, config, isPromise} from './basic';
+import {loadModel} from './inject';
 import {client, isDevelopmentEnv, isServerEnv} from './env';
-import {errorAction, routeChangeAction, routeParamsAction} from './actions';
+import {errorAction} from './actions';
 
-function isPromiseModule(module: Module | Promise<Module>): module is Promise<Module> {
-  return typeof module['then'] === 'function';
-}
 /**
- * 动态加载并初始化其他模块的model
- * @param moduleName 要加载的模块名
- * @param store 当前Store的引用
- * @param options model初始化时可以传入的数据，参见Model接口
+ * 创建Store时的选项，通过renderApp或renderSSR传入
  */
-export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, storeInstance?: ModelStore, options?: any): void | Promise<void> {
-  const store = storeInstance || MetaData.clientStore;
-  const hasInjected = !!store._medux_.injectedModules[moduleName];
-  if (!hasInjected) {
-    const moduleGetter = MetaData.moduleGetter;
-    const result = moduleGetter[moduleName]();
-    if (isPromiseModule(result)) {
-      return result.then((module) => {
-        cacheModule(module);
-        return module.default.model(store, options);
-      });
-    }
-    cacheModule(result);
-    return result.default.model(store, options);
-  }
-  return undefined;
+export interface StoreOptions {
+  /**
+   * ssr时使用的全局key，用来保存server输出的初始Data
+   * - 默认为'meduxInitStore'
+   */
+  ssrInitStoreKey?: string;
+  /**
+   * 如果你需要独立的第三方reducers可以通过此注入
+   * - store根节点下reducers数据和module数据，可通过isModule来区分
+   */
+  reducers?: ReducersMapObject;
+  /**
+   * redux中间件
+   */
+  middlewares?: Middleware[];
+  /**
+   * redux增强器
+   */
+  enhancers?: StoreEnhancer[];
+  /**
+   * store的初始数据
+   */
+  initData?: {[key: string]: any};
 }
+
 /**
  * 从redux action上获取有效数据载体
  * @param action redux的action
@@ -39,62 +41,33 @@ export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-/**
- * 路由抽象代理。
- * - 路由系统通常由宿主平台自己提供，由于各个平台的路由实现方式不同，为了支持跨平台使用，框架抽象了路由代理
- * - 该代理用来实现medux与宿主路由系统的对接
- */
-export interface HistoryProxy {
-  /**
-   * @returns bool 是否初始化完成了，有些平台路由自动被初始化，如web。有些平台路由需要手动代理，如app
-   */
-  getRouteState(): RouteState | undefined;
-  // /**
-  //  * 宿主路由系统的原始数据
-  //  */
-  // getLocation(): L;
-  // getRouteData(): R;
-  /**
-   * 监听宿主路由系统的变化
-   * @returns 卸载监听
-   */
-  subscribe(listener: (routeState: RouteState) => void): () => void;
-  destroy(): void;
-}
-
-function bindHistory(store: ModelStore, historyProxy: HistoryProxy) {
-  const handleLocationChange = (routeState: RouteState) => {
-    store.dispatch(routeChangeAction(routeState));
-  };
-  historyProxy.subscribe(handleLocationChange);
-  store._medux_.destroy = historyProxy.destroy;
-  const initData = historyProxy.getRouteState();
-  if (initData) {
-    handleLocationChange(initData);
+function isProcessedError(error: any): boolean | undefined {
+  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
+    return undefined;
   }
+  return !!error.meduxProcessed;
 }
-
+function setProcessedError(error: any, meduxProcessed: boolean): {meduxProcessed: boolean; [key: string]: any} {
+  if (typeof error === 'object') {
+    error.meduxProcessed = meduxProcessed;
+    return error;
+  }
+  return {
+    meduxProcessed,
+    error,
+  };
+}
 export function buildStore(
-  history: HistoryProxy,
   preloadedState: {[key: string]: any} = {},
   storeReducers: ReducersMapObject<any, any> = {},
   storeMiddlewares: Middleware[] = [],
   storeEnhancers: StoreEnhancer[] = []
 ): ModelStore {
   if (MetaData.clientStore) {
-    MetaData.clientStore._medux_.destroy();
+    MetaData.clientStore.destroy();
   }
-  if (storeReducers.route) {
-    throw new Error("the reducer name 'route' is not allowed");
-  }
-  storeReducers.route = (state: RouteState, action: Action) => {
-    if (action.type === ActionTypes.RouteChange) {
-      return getActionData(action)[0];
-    }
-    return state;
-  };
 
-  const combineReducers = (rootState: StoreState, action: Action) => {
+  const combineReducers = (rootState: CoreRootState, action: Action) => {
     if (!store) {
       return rootState;
     }
@@ -156,16 +129,7 @@ export function buildStore(
     const meta = store._medux_;
     meta.beforeState = meta.prevState;
     const action: Action = next(originalAction);
-    if (action.type === ActionTypes.RouteChange) {
-      const routeData = meta.prevState.route.data;
-      const rootRouteParams = routeData.params;
-      Object.keys(rootRouteParams).forEach((moduleName) => {
-        const routeParams = rootRouteParams[moduleName];
-        if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-          dispatch(routeParamsAction(moduleName, routeParams, routeData.action));
-        }
-      });
-    }
+
     const handlersCommon = meta.effectMap[action.type] || {};
     // 支持泛监听，形如 */loading
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -252,9 +216,15 @@ export function buildStore(
   const preLoadMiddleware: Middleware = () => (next) => (action) => {
     const [moduleName, actionName] = action.type.split(config.NSP);
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const initModel = loadModel(moduleName, store, undefined);
-      if (isPromise(initModel)) {
-        return initModel.then(() => next(action));
+      const hasInjected = !!store._medux_.injectedModules[moduleName];
+      if (!hasInjected) {
+        if (actionName === ActionTypes.MInit) {
+          return loadModel(moduleName, store);
+        }
+        const initModel = loadModel(moduleName, store);
+        if (isPromise(initModel)) {
+          return initModel.then(() => next(action));
+        }
       }
     }
     return next(action);
@@ -272,7 +242,6 @@ export function buildStore(
         reducerMap: {},
         effectMap: {},
         injectedModules: {},
-        destroy: () => undefined,
       };
       return newStore;
     };
@@ -282,7 +251,7 @@ export function buildStore(
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
   const store: ModelStore = createStore(combineReducers as any, preloadedState, compose(...enhancers));
-  bindHistory(store, history);
+  store.destroy = () => undefined;
   if (!isServerEnv) {
     MetaData.clientStore = store;
   }

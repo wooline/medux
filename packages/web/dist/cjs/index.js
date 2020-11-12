@@ -18,12 +18,14 @@ var _history = require("history");
 
 var _core = require("@medux/core");
 
+function locationToUrl(loaction) {
+  return loaction.pathname + loaction.search + loaction.hash;
+}
+
 var WebNativeHistory = function () {
   function WebNativeHistory(createHistory, locationMap) {
     this.locationMap = locationMap;
     (0, _defineProperty2.default)(this, "history", void 0);
-    (0, _defineProperty2.default)(this, "initLocation", void 0);
-    (0, _defineProperty2.default)(this, "actions", void 0);
 
     if (createHistory === 'Hash') {
       this.history = (0, _history.createHashHistory)();
@@ -59,16 +61,12 @@ var WebNativeHistory = function () {
           };
         },
         location: {
-          state: null,
           pathname: pathname,
           search: search && "?" + search,
           hash: ''
         }
       };
     }
-
-    var location = this.hsLocationToPaLocation(this.history.location);
-    this.initLocation = this.locationMap ? this.locationMap.in(location) : location;
   }
 
   var _proto = WebNativeHistory.prototype;
@@ -77,16 +75,17 @@ var WebNativeHistory = function () {
     var _this = this;
 
     return this.history.block(function (location, action) {
-      return blocker(_this.hsLocationToPaLocation(location), _this.getKey(location), action);
+      return blocker({
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash
+      }, _this.getKey(location), action);
     });
   };
 
-  _proto.hsLocationToPaLocation = function hsLocationToPaLocation(historyLocation) {
-    return {
-      pathname: historyLocation.pathname,
-      search: historyLocation.search,
-      hash: historyLocation.hash
-    };
+  _proto.getUrl = function getUrl() {
+    var location = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+    return locationToUrl(location);
   };
 
   _proto.getKey = function getKey(location) {
@@ -94,15 +93,15 @@ var WebNativeHistory = function () {
   };
 
   _proto.push = function push(location) {
-    this.history.push((0, _routePlanA.locationToUrl)(location), location.key);
+    this.history.push(locationToUrl(location), location.key);
   };
 
   _proto.replace = function replace(location) {
-    this.history.replace((0, _routePlanA.locationToUrl)(location), location.key);
+    this.history.replace(locationToUrl(location), location.key);
   };
 
   _proto.relaunch = function relaunch(location) {
-    this.history.push((0, _routePlanA.locationToUrl)(location), location.key);
+    this.history.push(locationToUrl(location), location.key);
   };
 
   _proto.pop = function pop(location, n) {
@@ -117,14 +116,13 @@ exports.WebNativeHistory = WebNativeHistory;
 var HistoryActions = function (_BaseHistoryActions) {
   (0, _inheritsLoose2.default)(HistoryActions, _BaseHistoryActions);
 
-  function HistoryActions(nativeHistory, homeUrl, routeConfig, maxLength, locationMap) {
+  function HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, homeUrl, routeConfig, maxLength, locationMap) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, defaultRouteParams, nativeHistory.getUrl(), routeRule, locationMap) || this;
     _this2.nativeHistory = nativeHistory;
-    _this2.homeUrl = homeUrl;
-    _this2.routeConfig = routeConfig;
-    _this2.maxLength = maxLength;
+    _this2.defaultRouteParams = defaultRouteParams;
+    _this2.routeRule = routeRule;
     _this2.locationMap = locationMap;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_unlistenHistory", void 0);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_timer", 0);
@@ -181,6 +179,10 @@ var HistoryActions = function (_BaseHistoryActions) {
 
   var _proto2 = HistoryActions.prototype;
 
+  _proto2.getNativeHistory = function getNativeHistory() {
+    return this.nativeHistory.history;
+  };
+
   _proto2.destroy = function destroy() {
     this._unlistenHistory();
   };
@@ -190,10 +192,8 @@ var HistoryActions = function (_BaseHistoryActions) {
 
 exports.HistoryActions = HistoryActions;
 
-function createRouter(createHistory, homeUrl, routeConfig, locationMap) {
+function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {
   var nativeHistory = new WebNativeHistory(createHistory);
-  var historyActions = new HistoryActions(nativeHistory, homeUrl, routeConfig, 10, locationMap);
-  nativeHistory.actions = historyActions;
-  historyActions.relaunch(nativeHistory.initLocation);
+  var historyActions = new HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap);
   return historyActions;
 }

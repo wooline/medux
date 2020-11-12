@@ -1,16 +1,17 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseHistoryActions, locationToUrl } from '@medux/route-plan-a';
+import { BaseHistoryActions } from '@medux/route-plan-a';
 import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
 import { env } from '@medux/core';
+
+function locationToUrl(loaction) {
+  return loaction.pathname + loaction.search + loaction.hash;
+}
+
 export class WebNativeHistory {
   constructor(createHistory, locationMap) {
     this.locationMap = locationMap;
 
     _defineProperty(this, "history", void 0);
-
-    _defineProperty(this, "initLocation", void 0);
-
-    _defineProperty(this, "actions", void 0);
 
     if (createHistory === 'Hash') {
       this.history = createHashHistory();
@@ -47,30 +48,27 @@ export class WebNativeHistory {
         },
 
         location: {
-          state: null,
           pathname,
           search: search && `?${search}`,
           hash: ''
         }
       };
     }
-
-    const location = this.hsLocationToPaLocation(this.history.location);
-    this.initLocation = this.locationMap ? this.locationMap.in(location) : location;
   }
 
   block(blocker) {
     return this.history.block((location, action) => {
-      return blocker(this.hsLocationToPaLocation(location), this.getKey(location), action);
+      return blocker({
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash
+      }, this.getKey(location), action);
     });
   }
 
-  hsLocationToPaLocation(historyLocation) {
-    return {
-      pathname: historyLocation.pathname,
-      search: historyLocation.search,
-      hash: historyLocation.hash
-    };
+  getUrl() {
+    const location = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+    return locationToUrl(location);
   }
 
   getKey(location) {
@@ -95,12 +93,11 @@ export class WebNativeHistory {
 
 }
 export class HistoryActions extends BaseHistoryActions {
-  constructor(nativeHistory, homeUrl, routeConfig, maxLength, locationMap) {
-    super(nativeHistory, homeUrl, routeConfig, maxLength, locationMap);
+  constructor(nativeHistory, defaultRouteParams, routeRule, locationMap) {
+    super(nativeHistory, defaultRouteParams, nativeHistory.getUrl(), routeRule, locationMap);
     this.nativeHistory = nativeHistory;
-    this.homeUrl = homeUrl;
-    this.routeConfig = routeConfig;
-    this.maxLength = maxLength;
+    this.defaultRouteParams = defaultRouteParams;
+    this.routeRule = routeRule;
     this.locationMap = locationMap;
 
     _defineProperty(this, "_unlistenHistory", void 0);
@@ -153,15 +150,17 @@ export class HistoryActions extends BaseHistoryActions {
     });
   }
 
+  getNativeHistory() {
+    return this.nativeHistory.history;
+  }
+
   destroy() {
     this._unlistenHistory();
   }
 
 }
-export function createRouter(createHistory, homeUrl, routeConfig, locationMap) {
+export function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {
   const nativeHistory = new WebNativeHistory(createHistory);
-  const historyActions = new HistoryActions(nativeHistory, homeUrl, routeConfig, 10, locationMap);
-  nativeHistory.actions = historyActions;
-  historyActions.relaunch(nativeHistory.initLocation);
+  const historyActions = new HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap);
   return historyActions;
 }

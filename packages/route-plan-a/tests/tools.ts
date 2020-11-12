@@ -1,7 +1,4 @@
-import {RouteConfig, BaseHistoryActions, setRouteConfig} from 'src/index';
-import {RouteState} from '@medux/core';
-
-let _curRouteState: RouteState;
+import {RouteRule, BaseHistoryActions, setRouteConfig} from 'src/index';
 
 export class HistoryActions extends BaseHistoryActions<RouteParams> {
   destroy() {}
@@ -18,7 +15,7 @@ export enum ViewNames {
   'commentsDetailsList' = 'comments.DetailsList',
 }
 
-export const routeConfig: RouteConfig = {
+export const routeRule: RouteRule = {
   '/$': '@./photos',
   '/': [
     ViewNames.appMain,
@@ -95,14 +92,11 @@ export const defaultRouteParams = {
 
 type RouteParams = typeof defaultRouteParams;
 
-setRouteConfig({escape: false, defaultRouteParams});
+setRouteConfig({escape: false});
 
-export const historyActions = new HistoryActions(nativeHistory, '/home', routeConfig, 10);
-
-historyActions.subscribe((routeState) => {
-  _curRouteState = routeState;
+export const historyActions = new HistoryActions(nativeHistory, defaultRouteParams, '/', routeRule);
+historyActions.setStore({
+  dispatch() {
+    return undefined;
+  },
 });
-
-export function getCurRouteState() {
-  return _curRouteState;
-}

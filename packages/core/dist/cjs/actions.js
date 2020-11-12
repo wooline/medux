@@ -2,8 +2,7 @@
 
 exports.__esModule = true;
 exports.errorAction = errorAction;
-exports.routeChangeAction = routeChangeAction;
-exports.routeParamsAction = routeParamsAction;
+exports.moduleInitAction = moduleInitAction;
 
 var _basic = require("./basic");
 
@@ -14,16 +13,9 @@ function errorAction(error) {
   };
 }
 
-function routeChangeAction(routeState) {
+function moduleInitAction(moduleName, initState) {
   return {
-    type: _basic.ActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
-
-function routeParamsAction(moduleName, params, action) {
-  return {
-    type: "" + moduleName + _basic.config.NSP + _basic.ActionTypes.MRouteParams,
-    payload: [params, action]
+    type: "" + moduleName + _basic.config.NSP + _basic.ActionTypes.MInit,
+    payload: [initState]
   };
 }

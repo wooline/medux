@@ -1,7 +1,7 @@
-import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { MetaData, cacheModule, config, injectActions, isPromise, reducer } from './basic';
-import { buildStore, loadModel as _loadModel } from './store';
-import { client, env, isServerEnv } from './env';
+import { MetaData, config } from './basic';
+import { cacheModule, injectActions, getModuleByName } from './inject';
+import { buildStore } from './store';
+import { client, env } from './env';
 
 function clearHandlers(key, actionHandlerMap) {
   for (const actionName in actionHandlerMap) {
@@ -15,7 +15,6 @@ function clearHandlers(key, actionHandlerMap) {
 export function modelHotReplacement(moduleName, initState, ActionHandles) {
   const store = MetaData.clientStore;
   const prevInitState = store._medux_.injectedModules[moduleName];
-  initState.isModule = true;
 
   if (prevInitState) {
     if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
@@ -54,211 +53,6 @@ export function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-export const exportModule = (moduleName, initState, ActionHandles, views) => {
-  const model = (store, options) => {
-    const hasInjected = !!store._medux_.injectedModules[moduleName];
-
-    if (!hasInjected) {
-      var _store$_medux_$prevSt;
-
-      store._medux_.injectedModules[moduleName] = initState;
-      let moduleState = store.getState()[moduleName];
-      const handlers = new ActionHandles(moduleName, store);
-      const actions = injectActions(store, moduleName, handlers);
-      handlers.actions = actions;
-      const params = ((_store$_medux_$prevSt = store._medux_.prevState.route) === null || _store$_medux_$prevSt === void 0 ? void 0 : _store$_medux_$prevSt.data.params) || {};
-
-      if (!moduleState) {
-        moduleState = initState;
-        moduleState.isModule = true;
-      } else {
-        moduleState = Object.assign(Object.assign({}, moduleState), {}, {
-          isHydrate: true
-        });
-      }
-
-      const initAction = actions.Init(moduleState, params[moduleName], options);
-      return store.dispatch(initAction);
-    }
-
-    return undefined;
-  };
-
-  model.moduleName = moduleName;
-  model.initState = initState;
-  const actions = {};
-  return {
-    moduleName,
-    model,
-    views,
-    actions
-  };
-};
-export let BaseModelHandlers = _decorate(null, function (_initialize) {
-  class BaseModelHandlers {
-    constructor(moduleName, store) {
-      this.moduleName = moduleName;
-      this.store = store;
-
-      _initialize(this);
-
-      this.actions = null;
-    }
-
-  }
-
-  return {
-    F: BaseModelHandlers,
-    d: [{
-      kind: "field",
-      key: "actions",
-      value: void 0
-    }, {
-      kind: "get",
-      key: "state",
-      value: function state() {
-        return this.getState();
-      }
-    }, {
-      kind: "method",
-      key: "getState",
-      value: function getState() {
-        return this.store._medux_.prevState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "rootState",
-      value: function rootState() {
-        return this.getRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getRootState",
-      value: function getRootState() {
-        return this.store._medux_.prevState;
-      }
-    }, {
-      kind: "get",
-      key: "currentState",
-      value: function currentState() {
-        return this.getCurrentState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentState",
-      value: function getCurrentState() {
-        return this.store._medux_.currentState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "currentRootState",
-      value: function currentRootState() {
-        return this.getCurrentRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentRootState",
-      value: function getCurrentRootState() {
-        return this.store._medux_.currentState;
-      }
-    }, {
-      kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return this.getPrevState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevState",
-      value: function getPrevState() {
-        return this.store._medux_.beforeState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return this.getPrevRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevRootState",
-      value: function getPrevRootState() {
-        return this.store._medux_.beforeState;
-      }
-    }, {
-      kind: "method",
-      key: "dispatch",
-      value: function dispatch(action) {
-        return this.store.dispatch(action);
-      }
-    }, {
-      kind: "method",
-      key: "callThisAction",
-      value: function callThisAction(handler, ...rest) {
-        const actions = MetaData.actionCreatorMap[this.moduleName];
-        return actions[handler.__actionName__](...rest);
-      }
-    }, {
-      kind: "method",
-      key: "updateState",
-      value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign(Object.assign({}, this.getState()), payload), key));
-      }
-    }, {
-      kind: "method",
-      key: "loadModel",
-      value: function loadModel(moduleName, options) {
-        return _loadModel(moduleName, this.store, options);
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "Init",
-      value: function Init(initState, routeParams, options) {
-        if (initState.isHydrate) {
-          return initState;
-        }
-
-        return Object.assign(Object.assign({}, initState), {}, {
-          routeParams: routeParams || initState.routeParams
-        }, options);
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "Update",
-      value: function Update(payload, key) {
-        return payload;
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "RouteParams",
-      value: function RouteParams(payload, action) {
-        const state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
-          routeParams: payload
-        });
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "Loading",
-      value: function Loading(payload) {
-        const state = this.getState();
-        return Object.assign(Object.assign({}, state), {}, {
-          loading: Object.assign(Object.assign({}, state.loading), payload)
-        });
-      }
-    }]
-  };
-});
-export function isPromiseModule(module) {
-  return typeof module['then'] === 'function';
-}
-export function isPromiseView(moduleView) {
-  return typeof moduleView['then'] === 'function';
-}
 export function exportActions(moduleGetter) {
   MetaData.moduleGetter = moduleGetter;
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
@@ -277,60 +71,7 @@ export function exportActions(moduleGetter) {
   }, {});
   return MetaData.actionCreatorMap;
 }
-export function getView(moduleName, viewName, modelOptions) {
-  const moduleGetter = MetaData.moduleGetter;
-  const result = moduleGetter[moduleName]();
-
-  if (isPromiseModule(result)) {
-    return result.then(module => {
-      cacheModule(module);
-      const view = module.default.views[viewName];
-
-      if (isServerEnv) {
-        return view;
-      }
-
-      const initModel = module.default.model(MetaData.clientStore, modelOptions);
-
-      if (isPromise(initModel)) {
-        return initModel.then(() => view);
-      }
-
-      return view;
-    });
-  }
-
-  cacheModule(result);
-  const view = result.default.views[viewName];
-
-  if (isServerEnv) {
-    return view;
-  }
-
-  const initModel = result.default.model(MetaData.clientStore, modelOptions);
-
-  if (isPromise(initModel)) {
-    return initModel.then(() => view);
-  }
-
-  return view;
-}
-
-function getModuleByName(moduleName, moduleGetter) {
-  const result = moduleGetter[moduleName]();
-
-  if (isPromiseModule(result)) {
-    return result.then(module => {
-      cacheModule(module);
-      return module;
-    });
-  }
-
-  cacheModule(result);
-  return result;
-}
-
-export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, history, storeOptions = {}, beforeRender) {
+export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, beforeRender) {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -345,26 +86,23 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   }
 
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  let initData = {};
+  let initData = storeOptions.initData || {};
 
-  if (storeOptions.initData || client[ssrInitStoreKey]) {
-    initData = Object.assign(Object.assign({}, client[ssrInitStoreKey]), storeOptions.initData);
+  if (client[ssrInitStoreKey]) {
+    initData = Object.assign(Object.assign({}, client[ssrInitStoreKey]), initData);
   }
 
-  const store = buildStore(history, initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const reduxStore = beforeRender ? beforeRender(store) : store;
-  const preModuleNames = [appModuleName];
-
-  if (initData) {
-    preModuleNames.push(...Object.keys(initData).filter(key => key !== appModuleName && initData[key].isModule));
-  }
-
+  const storeState = reduxStore.getState();
+  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
+  preModuleNames.unshift(appModuleName);
   let appModule;
 
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
     const module = await getModuleByName(moduleName, moduleGetter);
-    await module.default.model(reduxStore, undefined);
+    await module.default.model(reduxStore);
 
     if (i === 0) {
       appModule = module;
@@ -373,31 +111,24 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
 
   reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }
-export async function renderSSR(render, moduleGetter, appModuleName, appViewName, history, storeOptions = {}, beforeRender) {
+export async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store = buildStore(history, storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const reduxStore = beforeRender ? beforeRender(store) : store;
   const storeState = reduxStore.getState();
-  const {
-    paths
-  } = storeState.route.data;
-  paths.length === 0 && paths.push(appModuleName);
+  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
+  preModuleNames.unshift(appModuleName);
   let appModule;
-  const inited = {};
 
-  for (let i = 0, k = paths.length; i < k; i++) {
-    const [moduleName] = paths[i].split(config.VSP);
+  for (let i = 0, k = preModuleNames.length; i < k; i++) {
+    const moduleName = preModuleNames[i];
+    const module = moduleGetter[moduleName]();
+    await module.default.model(reduxStore);
 
-    if (!inited[moduleName]) {
-      inited[moduleName] = true;
-      const module = moduleGetter[moduleName]();
-      await module.default.model(reduxStore, undefined);
-
-      if (i === 0) {
-        appModule = module;
-      }
+    if (i === 0) {
+      appModule = module;
     }
   }
 

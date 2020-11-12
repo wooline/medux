@@ -1,35 +1,53 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose";
-import { setRouteConfig } from '@medux/route-plan-a';
+import { routeMiddleware, routeReducer } from '@medux/route-plan-a';
 import React from 'react';
 import { renderApp, renderSSR } from '@medux/react';
-import { createRouter } from '@medux/web';
+import { createRouter, HistoryActions } from '@medux/web';
 export { loadView, exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
-export { setRouteConfig } from '@medux/route-plan-a';
+export { ActionTypes, delayPromise, LoadingState, exportActions, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
+export { setRouteConfig, RouteModelHandlers as BaseModelHandlers } from '@medux/route-plan-a';
 let historyActions;
 export function buildApp({
   moduleGetter,
   appModuleName = 'app',
   appViewName = 'main',
   historyType = 'Browser',
-  homeUrl = '/',
-  routeConfig = {},
+  routeRule = {},
   locationMap,
-  defaultRouteParams,
+  defaultRouteParams = {},
   storeOptions = {},
   container = 'root',
   beforeRender
 }) {
-  setRouteConfig({
-    defaultRouteParams
-  });
-  historyActions = createRouter(historyType, homeUrl, routeConfig, locationMap);
-  return renderApp(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, container, store => {
-    return beforeRender ? beforeRender({
+  historyActions = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+
+  if (!storeOptions.middlewares) {
+    storeOptions.middlewares = [];
+  }
+
+  storeOptions.middlewares.unshift(routeMiddleware);
+
+  if (!storeOptions.reducers) {
+    storeOptions.reducers = {};
+  }
+
+  storeOptions.reducers.route = routeReducer;
+
+  if (!storeOptions.initData) {
+    storeOptions.initData = {};
+  }
+
+  storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
+  return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, store => {
+    var _historyActions;
+
+    const newStore = beforeRender ? beforeRender({
       store,
       historyActions: historyActions
     }) : store;
+    (_historyActions = historyActions) === null || _historyActions === void 0 ? void 0 : _historyActions.setStore(newStore);
+    return newStore;
   });
 }
 export function buildSSR({
@@ -37,22 +55,29 @@ export function buildSSR({
   appModuleName = 'app',
   appViewName = 'main',
   location,
-  routeConfig = {},
+  routeRule = {},
   locationMap,
-  defaultRouteParams,
+  defaultRouteParams = {},
   storeOptions = {},
   renderToStream = false,
   beforeRender
 }) {
-  setRouteConfig({
-    defaultRouteParams
-  });
-  historyActions = createRouter(location, '/', routeConfig, locationMap);
-  return renderSSR(moduleGetter, appModuleName, appViewName, historyActions, storeOptions, renderToStream, store => {
-    return beforeRender ? beforeRender({
+  historyActions = createRouter(location, defaultRouteParams, routeRule, locationMap);
+
+  if (!storeOptions.initData) {
+    storeOptions.initData = {};
+  }
+
+  storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
+  return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, store => {
+    var _historyActions2;
+
+    const newStore = beforeRender ? beforeRender({
       store,
       historyActions: historyActions
     }) : store;
+    (_historyActions2 = historyActions) === null || _historyActions2 === void 0 ? void 0 : _historyActions2.setStore(newStore);
+    return newStore;
   });
 }
 export const Switch = ({

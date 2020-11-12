@@ -1,7 +1,6 @@
 "use strict";
 
 exports.__esModule = true;
-exports.loadModel = loadModel;
 exports.getActionData = getActionData;
 exports.buildStore = buildStore;
 
@@ -9,55 +8,37 @@ var _redux = require("redux");
 
 var _basic = require("./basic");
 
+var _inject = require("./inject");
+
 var _env = require("./env");
 
 var _actions = require("./actions");
-
-function isPromiseModule(module) {
-  return typeof module['then'] === 'function';
-}
-
-function loadModel(moduleName, storeInstance, options) {
-  var store = storeInstance || _basic.MetaData.clientStore;
-  var hasInjected = !!store._medux_.injectedModules[moduleName];
-
-  if (!hasInjected) {
-    var moduleGetter = _basic.MetaData.moduleGetter;
-    var result = moduleGetter[moduleName]();
-
-    if (isPromiseModule(result)) {
-      return result.then(function (module) {
-        (0, _basic.cacheModule)(module);
-        return module.default.model(store, options);
-      });
-    }
-
-    (0, _basic.cacheModule)(result);
-    return result.default.model(store, options);
-  }
-
-  return undefined;
-}
 
 function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function bindHistory(store, historyProxy) {
-  var handleLocationChange = function handleLocationChange(routeState) {
-    store.dispatch((0, _actions.routeChangeAction)(routeState));
-  };
-
-  historyProxy.subscribe(handleLocationChange);
-  store._medux_.destroy = historyProxy.destroy;
-  var initData = historyProxy.getRouteState();
-
-  if (initData) {
-    handleLocationChange(initData);
+function isProcessedError(error) {
+  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
+    return undefined;
   }
+
+  return !!error.meduxProcessed;
 }
 
-function buildStore(history, preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
+function setProcessedError(error, meduxProcessed) {
+  if (typeof error === 'object') {
+    error.meduxProcessed = meduxProcessed;
+    return error;
+  }
+
+  return {
+    meduxProcessed: meduxProcessed,
+    error: error
+  };
+}
+
+function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
   if (preloadedState === void 0) {
     preloadedState = {};
   }
@@ -75,20 +56,8 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
   }
 
   if (_basic.MetaData.clientStore) {
-    _basic.MetaData.clientStore._medux_.destroy();
+    _basic.MetaData.clientStore.destroy();
   }
-
-  if (storeReducers.route) {
-    throw new Error("the reducer name 'route' is not allowed");
-  }
-
-  storeReducers.route = function (state, action) {
-    if (action.type === _basic.ActionTypes.RouteChange) {
-      return getActionData(action)[0];
-    }
-
-    return state;
-  };
 
   var combineReducers = function combineReducers(rootState, action) {
     if (!store) {
@@ -165,19 +134,6 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         var meta = store._medux_;
         meta.beforeState = meta.prevState;
         var action = next(originalAction);
-
-        if (action.type === _basic.ActionTypes.RouteChange) {
-          var routeData = meta.prevState.route.data;
-          var rootRouteParams = routeData.params;
-          Object.keys(rootRouteParams).forEach(function (moduleName) {
-            var routeParams = rootRouteParams[moduleName];
-
-            if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
-              dispatch((0, _actions.routeParamsAction)(moduleName, routeParams, routeData.action));
-            }
-          });
-        }
-
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
         var handlers = Object.assign(Object.assign({}, handlersCommon), handlersEvery);
@@ -243,12 +199,12 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
                 }
 
                 if (action.type === _basic.ActionTypes.Error) {
-                  if ((0, _basic.isProcessedError)(error) === undefined) {
-                    error = (0, _basic.setProcessedError)(error, true);
+                  if (isProcessedError(error) === undefined) {
+                    error = setProcessedError(error, true);
                   }
 
                   throw error;
-                } else if ((0, _basic.isProcessedError)(error)) {
+                } else if (isProcessedError(error)) {
                   throw error;
                 } else {
                   return dispatch((0, _actions.errorAction)(error));
@@ -276,12 +232,20 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
             actionName = _action$type$split[1];
 
         if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
-          var initModel = loadModel(moduleName, store, undefined);
+          var hasInjected = !!store._medux_.injectedModules[moduleName];
 
-          if ((0, _basic.isPromise)(initModel)) {
-            return initModel.then(function () {
-              return next(action);
-            });
+          if (!hasInjected) {
+            if (actionName === _basic.ActionTypes.MInit) {
+              return (0, _inject.loadModel)(moduleName, store);
+            }
+
+            var initModel = (0, _inject.loadModel)(moduleName, store);
+
+            if ((0, _basic.isPromise)(initModel)) {
+              return initModel.then(function () {
+                return next(action);
+              });
+            }
           }
         }
 
@@ -302,10 +266,7 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
         currentState: {},
         reducerMap: {},
         effectMap: {},
-        injectedModules: {},
-        destroy: function destroy() {
-          return undefined;
-        }
+        injectedModules: {}
       };
       return newStore;
     };
@@ -318,7 +279,10 @@ function buildStore(history, preloadedState, storeReducers, storeMiddlewares, st
   }
 
   var store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
-  bindHistory(store, history);
+
+  store.destroy = function () {
+    return undefined;
+  };
 
   if (!_env.isServerEnv) {
     _basic.MetaData.clientStore = store;

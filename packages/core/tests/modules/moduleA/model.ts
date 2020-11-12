@@ -1,6 +1,6 @@
-import {BaseModelHandlers, BaseModelState, RouteState, reducer} from 'src/index';
+import {CoreModelHandlers, CoreModuleState, reducer} from 'src/index';
 
-export interface State extends BaseModelState {
+export interface State extends CoreModuleState {
   message: string;
   text: string;
   tips: string;
@@ -13,7 +13,7 @@ export const initModelState: State = {
 };
 
 // 定义本模块的Handlers
-export class ModelHandlers extends BaseModelHandlers<State, {route: RouteState}> {
+export class ModelHandlers extends CoreModelHandlers<State, {}> {
   @reducer
   public setMessage(message: string): State {
     return {...this.state, message};

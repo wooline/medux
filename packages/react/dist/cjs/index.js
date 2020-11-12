@@ -23,7 +23,7 @@ var _reactRedux = require("react-redux");
 
 var _reactDom = _interopRequireDefault(require("react-dom"));
 
-function renderApp(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, container, beforeRender) {
+function renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, beforeRender) {
   if (container === void 0) {
     container = 'root';
   }
@@ -48,10 +48,10 @@ function renderApp(moduleGetter, appModuleName, appViewName, historyProxy, store
 
     reRender(AppView);
     return reRender;
-  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
 
-function renderSSR(moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, renderToStream, beforeRender) {
+function renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
@@ -74,7 +74,7 @@ function renderSSR(moduleGetter, appModuleName, appViewName, historyProxy, store
       data: data,
       html: render(reduxProvider)
     };
-  }, moduleGetter, appModuleName, appViewName, historyProxy, storeOptions, beforeRender);
+  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
 
 var LoadViewOnError = function LoadViewOnError() {
@@ -83,8 +83,7 @@ var LoadViewOnError = function LoadViewOnError() {
 
 var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
   var _ref = options || {},
-      forwardRef = _ref.forwardRef,
-      modelOptions = (0, _objectWithoutPropertiesLoose2.default)(_ref, ["forwardRef"]);
+      forwardRef = _ref.forwardRef;
 
   var active = true;
 
@@ -96,9 +95,9 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
     }, []);
 
     var _useState = (0, _react.useState)(function () {
-      var moduleViewResult = (0, core.getView)(moduleName, viewName, modelOptions);
+      var moduleViewResult = (0, core.getView)(moduleName, viewName);
 
-      if ((0, core.isPromiseView)(moduleViewResult)) {
+      if ((0, core.isPromise)(moduleViewResult)) {
         moduleViewResult.then(function (Component) {
           active && setView({
             Component: Component

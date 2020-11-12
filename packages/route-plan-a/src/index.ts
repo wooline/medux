@@ -1,106 +1,29 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {DisplayViews, HistoryProxy, RouteState, RouteParams, RouteData, config as coreConfig, Location as BaseLocation, HistoryAction} from '@medux/core';
-import {compilePath, compileToPath, matchPath} from './matchPath';
-
+import {config, CoreModelHandlers, CoreModuleState, CoreRootState, reducer, moduleInitAction} from '@medux/core';
+import {Middleware, Reducer} from 'redux';
+import {compileToPath, matchPath} from './matchPath';
+import {
+  RouteActionTypes,
+  routeConfig,
+  checkLocation,
+  compileRule,
+  HistoryAction,
+  DisplayViews,
+  RouteState,
+  urlToLocation,
+  locationToUrl,
+  dataIsLocation,
+  routeChangeAction,
+  beforeRouteChangeAction,
+  routeParamsAction,
+} from './basic';
 import assignDeep from './deep-extend';
-
-export interface PaRouteData<P extends RouteParams = RouteParams> {
-  views: DisplayViews;
-  params: P;
-  paths: string[];
-}
-export interface PaLocation {
-  pathname: string;
-  search: string;
-  hash: string;
-}
-export interface LocationPayload {
-  pathname: string;
-  search?: string;
-  hash?: string;
-}
-export interface RoutePayload<P extends RouteParams = RouteParams> {
-  paths: string[] | string;
-  params?: DeepPartial<P>;
-  extend?: RouteData<P>;
-}
-export interface Location extends BaseLocation {
-  pathname: string;
-  search: string;
-  hash: string;
-}
-// export interface NativeLocation {
-//   key: string;
-//   url: string;
-// }
-function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload {
-  return !!data['pathname'];
-}
-export function checkLocation(location: LocationPayload): PaLocation {
-  const data: PaLocation = {...location} as any;
-  data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
-  if (data.pathname !== '/') {
-    data.pathname = data.pathname.replace(/\/$/, '');
-  }
-
-  data.search = `?${location.search || ''}`.replace('??', '?');
-  data.hash = `#${location.hash || ''}`.replace('##', '#');
-  if (data.search === '?') {
-    data.search = '';
-  }
-  if (data.hash === '#') {
-    data.hash = '';
-  }
-  return data;
-}
-export function urlToLocation(url: string): PaLocation {
-  url = `/${url}`.replace(/\/+/g, '/');
-  if (!url) {
-    return {
-      pathname: '/',
-      search: '',
-      hash: '',
-    };
-  }
-  const arr = url.split(/[?#]/);
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-  const [pathname, search = '', hash = ''] = arr;
-
-  return {
-    pathname,
-    search: search && `?${search}`,
-    hash: hash && `#${hash}`,
-  };
-}
-
-export function locationToUrl(safeLocation: PaLocation): string {
-  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
-}
+import type {RouteParams, Location, PaRouteData, PaLocation, LocationPayload, RoutePayload, RouteRule} from './basic';
 
 export const deepAssign = assignDeep;
 
-const config = {
-  escape: true,
-  dateParse: false,
-  splitKey: 'q',
-  defaultRouteParams: {},
-};
-
-/**
- * 可以配置的参数
- * - escape 是否对生成的url进行escape编码
- * - dateParse 是否自动解析url中的日期格式
- * - splitKey 使用一个key来作为数据的载体
- * - defaultRouteParams 默认的路由参数
- */
-export function setRouteConfig(conf: {escape?: boolean; dateParse?: boolean; splitKey?: string; homeUrl?: string; defaultRouteParams?: {[moduleName: string]: any}}) {
-  conf.escape !== undefined && (config.escape = conf.escape);
-  conf.dateParse !== undefined && (config.dateParse = conf.dateParse);
-  conf.splitKey && (config.splitKey = conf.splitKey);
-  conf.defaultRouteParams && (config.defaultRouteParams = conf.defaultRouteParams);
-}
+export type {RootState, PaRouteData, PaLocation, LocationPayload, RoutePayload, Location, RouteRule, RouteParams} from './basic';
+export {setRouteConfig} from './basic';
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
 // 如果最终moduleParams为空{}，能不能省去：
@@ -126,13 +49,6 @@ function excludeDefaultData(data: {[moduleName: string]: any}, def: {[moduleName
   return result;
 }
 
-/**
- * 定义一个路由配置文件的结构
- */
-export interface RouteConfig {
-  [path: string]: string | [string, RouteConfig];
-}
-
 const ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
 
 function dateParse(prop: any, value: any) {
@@ -149,11 +65,11 @@ function searchParse(search: string): {[moduleName: string]: {[key: string]: any
   if (!search) {
     return {};
   }
-  if (config.escape) {
+  if (routeConfig.escape) {
     search = unescape(search);
   }
   try {
-    return JSON.parse(search, config.dateParse ? dateParse : undefined);
+    return JSON.parse(search, routeConfig.dateParse ? dateParse : undefined);
   } catch (error) {
     return {};
   }
@@ -168,14 +84,14 @@ function searchStringify(searchData: any): string {
   if (str === '{}') {
     return '';
   }
-  if (config.escape) {
+  if (routeConfig.escape) {
     return escape(str);
   }
   return str;
 }
 
 function splitSearch(search: string) {
-  const reg = new RegExp(`[?&#]${config.splitKey}=([^&]+)`);
+  const reg = new RegExp(`[?&#]${routeConfig.splitKey}=([^&]+)`);
   const arr = search.match(reg);
   if (arr) {
     return searchParse(arr[1]);
@@ -207,16 +123,16 @@ function checkPathArgs(params: {[key: string]: string}): {[key: string]: any} {
   return obj;
 }
 // 将routeConfig逐层匹配pathname，可以得到viewPaths和pathArgs
-function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string[], args: {[moduleName: string]: {[key: string]: any} | undefined}) {
-  for (const rule in routeConfig) {
-    if (routeConfig.hasOwnProperty(rule)) {
-      const item = routeConfig[rule];
+function pathnameParse(pathname: string, routeRule: RouteRule, paths: string[], args: {[moduleName: string]: {[key: string]: any} | undefined}) {
+  for (const rule in routeRule) {
+    if (routeRule.hasOwnProperty(rule)) {
+      const item = routeRule[rule];
       const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
       const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: !pathConfig});
       // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
       if (match) {
         paths.push(viewName);
-        const moduleName = viewName.split(coreConfig.VSP)[0];
+        const moduleName = viewName.split(config.VSP)[0];
         const {params} = match;
         if (params && Object.keys(params).length > 0) {
           args[moduleName] = Object.assign(args[moduleName] || {}, checkPathArgs(params));
@@ -229,39 +145,14 @@ function pathnameParse(pathname: string, routeConfig: RouteConfig, paths: string
     }
   }
 }
-// 预先编译routeConfig，得到viewToRule及ruleToKeys
-function compileConfig(routeConfig: RouteConfig, parentAbsoluteViewName = '', viewToRule: {[viewName: string]: string} = {}, ruleToKeys: {[rule: string]: (string | number)[]} = {}) {
-  // ruleToKeys将每条rule中的params key解析出来
-  for (const rule in routeConfig) {
-    if (routeConfig.hasOwnProperty(rule)) {
-      const item = routeConfig[rule];
-      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-      if (!ruleToKeys[rule]) {
-        const {keys} = compilePath(rule, {end: true, strict: false, sensitive: false});
-        ruleToKeys[rule] = keys.reduce((prev: (string | number)[], cur) => {
-          prev.push(cur.name);
-          return prev;
-        }, []);
-      }
-      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
-      viewToRule[absoluteViewName] = rule;
-      if (pathConfig) {
-        compileConfig(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
-      }
-    }
-  }
-  return {viewToRule, ruleToKeys};
-}
-
-type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 /**
  * 为params加上默认值
  * 如果paths中包含某module，也加上默认值
  */
-export function assignRouteData(paths: string[], params: {[moduleName: string]: any}): PaRouteData {
+export function assignRouteData(paths: string[], params: {[moduleName: string]: any}, defaultRouteParams: {[moduleName: string]: any}): PaRouteData {
   const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
-    const [moduleName, viewName] = cur.split(coreConfig.VSP);
+    const [moduleName, viewName] = cur.split(config.VSP);
     if (moduleName && viewName) {
       if (!prev[moduleName]) {
         prev[moduleName] = {};
@@ -274,7 +165,7 @@ export function assignRouteData(paths: string[], params: {[moduleName: string]: 
     return prev;
   }, {});
   Object.keys(params).forEach((moduleName) => {
-    params[moduleName] = assignDeep({}, config.defaultRouteParams[moduleName], params[moduleName]);
+    params[moduleName] = assignDeep({}, defaultRouteParams[moduleName], params[moduleName]);
   });
   return {views, paths, params};
 }
@@ -351,7 +242,7 @@ function pathsToPathname(
   let pathname = '';
   const views: DisplayViews = {};
   paths.reduce((parentAbsoluteViewName, viewName, index) => {
-    const [moduleName, view] = viewName.split(coreConfig.VSP);
+    const [moduleName, view] = viewName.split(config.VSP);
     const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
     const rule = viewToRule[absoluteViewName];
     const keys = ruleToKeys[rule] || [];
@@ -380,8 +271,8 @@ function pathsToPathname(
   return {pathname, views, params: paramsFilter};
 }
 
-export type LocationListener<P extends RouteParams> = (routeState: RouteState<Location, P>) => void;
-export type LocationBlocker<P extends RouteParams> = (location: Location, curLocation: Location | undefined, routeData: RouteData<P>, curRouteData: RouteData<P> | undefined) => void | Promise<void>;
+// export type LocationListener<P extends RouteParams> = (routeState: RouteState<Location, P>) => void;
+// export type LocationBlocker<P extends RouteParams> = (location: Location, curLocation: Location | undefined, routeData: RouteData<P>, curRouteData: RouteData<P> | undefined) => void | Promise<void>;
 
 export type LocationToLocation = (location: PaLocation) => PaLocation;
 export type LocationMap = {in: LocationToLocation; out: LocationToLocation};
@@ -392,28 +283,26 @@ export interface NativeHistory {
   pop(location: Location, n: number): void;
 }
 
-export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> implements HistoryProxy {
+export interface Store {
+  dispatch(action: {type: string}): any;
+}
+
+export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
   private _tid = 0;
 
-  private _uid = 0;
+  // private _uid = 0;
 
-  private _RSP = '|';
+  // private _listenList: {[key: string]: LocationListener<P>} = {};
 
-  private _listenList: {[key: string]: LocationListener<P>} = {};
+  // private _blockerList: {[key: string]: LocationBlocker<P>} = {};
 
-  private _blockerList: {[key: string]: LocationBlocker<P>} = {};
+  // private _location: Location | undefined;
 
-  private _location: Location | undefined;
+  private _routeState: RouteState<P>;
 
-  private _routeData: RouteData<P> | undefined;
+  private _startupRouteState: RouteState<P>;
 
-  private _startupLocation: Location | undefined;
-
-  private _startupRouteData: RouteData<P> | undefined;
-
-  private _history: string[] = [];
-
-  private _stack: string[] = [];
+  protected store: Store | undefined;
 
   private _viewToRule: {
     [viewName: string]: string;
@@ -423,30 +312,52 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     [rule: string]: (string | number)[];
   };
 
-  constructor(protected nativeHistory: NativeHistory, public homeUrl: string, protected routeConfig: RouteConfig, protected maxLength: number, protected locationMap?: LocationMap) {
-    const {viewToRule, ruleToKeys} = compileConfig(routeConfig);
+  constructor(
+    protected nativeHistory: NativeHistory,
+    protected defaultRouteParams: {[moduleName: string]: any},
+    protected initUrl: string,
+    protected routeRule: RouteRule,
+    protected locationMap?: LocationMap
+  ) {
+    const {viewToRule, ruleToKeys} = compileRule(routeRule);
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
+    const safeLocation = urlToLocation(initUrl);
+    const routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
+    this._routeState = routeState;
+    this._startupRouteState = routeState;
+  }
+
+  setStore(_store: Store) {
+    this.store = _store;
+  }
+
+  mergeInitState<T extends CoreRootState>(initState: T): RouteRootState {
+    const routeState = this.getRouteState();
+    const data: RouteRootState = {...initState, route: routeState};
+    Object.keys(routeState.views).forEach((moduleName) => {
+      if (!data[moduleName]) {
+        data[moduleName] = {};
+      }
+      data[moduleName] = {...data[moduleName], routeParams: routeState.params[moduleName]};
+    });
+    return data;
   }
 
   protected getCurKey(): string {
-    return this.getLocation()?.key || '';
+    return this._routeState.key;
   }
 
-  getLocation(startup?: boolean): Location | undefined {
-    return startup ? this._startupLocation : this._location;
+  getRouteState(): RouteState<P> {
+    return this._routeState;
   }
+  // getLocation(startup?: boolean): Location | undefined {
+  //   return startup ? this._startupLocation : this._location;
+  // }
 
-  getRouteData(startup?: boolean): RouteData<P> | undefined {
-    return startup ? this._startupRouteData : this._routeData;
-  }
-
-  getRouteState(): RouteState<Location, P> | undefined {
-    if (this._location) {
-      return {history: this._history, stack: this._stack, location: this._location, data: this._routeData!};
-    }
-    return undefined;
-  }
+  // getRouteData(startup?: boolean): RouteData<P> | undefined {
+  //   return startup ? this._startupRouteData : this._routeData;
+  // }
 
   protected locationToRoute(safeLocation: PaLocation): PaRouteData<P> {
     // const safeLocation = checkLocation(location, this._getCurPathname());
@@ -460,11 +371,11 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     const pathname = safeLocation.pathname;
     const paths: string[] = [];
     const pathsArgs: {[moduleName: string]: {[key: string]: any}} = {};
-    pathnameParse(pathname, this.routeConfig, paths, pathsArgs);
+    pathnameParse(pathname, this.routeRule, paths, pathsArgs);
     const params = splitSearch(safeLocation.search);
     const hashParams = splitSearch(safeLocation.hash);
     assignDeep(params, hashParams);
-    const routeData = assignRouteData(paths, assignDeep(pathsArgs, params));
+    const routeData = assignRouteData(paths, assignDeep(pathsArgs, params), this.defaultRouteParams);
     cacheData.unshift({url, routeData});
     cacheData.length = 100;
     return routeData as PaRouteData<P>;
@@ -482,12 +393,12 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
       params = data.params;
       views = data.views;
     }
-    const paramsFilter = excludeDefaultData(params as any, config.defaultRouteParams, false, views);
+    const paramsFilter = excludeDefaultData(params as any, this.defaultRouteParams, false, views);
     const {search, hash} = extractHashData(paramsFilter);
     return {
       pathname,
-      search: search ? `?${config.splitKey}=${search}` : '',
-      hash: hash ? `#${config.splitKey}=${hash}` : '',
+      search: search ? `?${routeConfig.splitKey}=${search}` : '',
+      hash: hash ? `#${routeConfig.splitKey}=${hash}` : '',
     };
   }
 
@@ -498,15 +409,15 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     if (dataIsLocation(data)) {
       return this.locationToRoute(checkLocation(data));
     }
-    const params: RouteParams | undefined = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
+    const params: RouteParams | undefined = data.extendParams ? assignDeep({}, data.extendParams, data.params) : data.params;
     let paths: string[] = [];
     if (typeof data.paths === 'string') {
       const pathname = data.paths;
-      pathnameParse(pathname, this.routeConfig, paths, {});
+      pathnameParse(pathname, this.routeRule, paths, {});
     } else {
       paths = data.paths;
     }
-    return assignRouteData(paths, params || {}) as PaRouteData<P>;
+    return assignRouteData(paths, params || {}, this.defaultRouteParams) as PaRouteData<P>;
   }
 
   payloadToLocation(data: RoutePayload<P> | LocationPayload | string): PaLocation {
@@ -516,7 +427,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     if (dataIsLocation(data)) {
       return checkLocation(data);
     }
-    const params: RouteParams | undefined = data.extend ? assignDeep({}, data.extend.params, data.params) : data.params;
+    const params: RouteParams | undefined = data.extendParams ? assignDeep({}, data.extendParams, data.params) : data.params;
     return this.routeToLocation(data.paths, params);
   }
 
@@ -536,11 +447,12 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
   }
 
   private _buildHistory(location: Location) {
-    const maxLength = this.maxLength;
+    const maxLength = routeConfig.historyMax;
     const {action, url, pathname, key} = location;
+    const {history, stack} = this._routeState || {history: [], stack: []};
     const uri = this._urlToUri(url, key);
-    let historyList: string[] = [...this._history];
-    let stackList: string[] = [...this._stack];
+    let historyList: string[] = [...history];
+    let stackList: string[] = [...stack];
     if (action === 'RELAUNCH') {
       historyList = [uri];
       stackList = [pathname];
@@ -589,30 +501,30 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     return {history: historyList, stack: stackList};
   }
 
-  subscribe(listener: LocationListener<P>): () => void {
-    this._uid++;
-    const uid = this._uid;
-    this._listenList[uid] = listener;
-    return () => {
-      delete this._listenList[uid];
-    };
-  }
+  // subscribe(listener: LocationListener<P>): () => void {
+  //   this._uid++;
+  //   const uid = this._uid;
+  //   this._listenList[uid] = listener;
+  //   return () => {
+  //     delete this._listenList[uid];
+  //   };
+  // }
 
-  block(listener: LocationBlocker<P>): () => void {
-    this._uid++;
-    const uid = this._uid;
-    this._blockerList[uid] = listener;
-    return () => {
-      delete this._blockerList[uid];
-    };
-  }
+  // block(listener: LocationBlocker<P>): () => void {
+  //   this._uid++;
+  //   const uid = this._uid;
+  //   this._blockerList[uid] = listener;
+  //   return () => {
+  //     delete this._blockerList[uid];
+  //   };
+  // }
 
   private _urlToUri(url: string, key: string) {
-    return `${key}${this._RSP}${url}`;
+    return `${key}${routeConfig.RSP}${url}`;
   }
 
   private _uriToUrl(uri = '') {
-    return uri.substr(uri.indexOf(this._RSP) + 1);
+    return uri.substr(uri.indexOf(routeConfig.RSP) + 1);
   }
 
   private _uriToPathname(uri = '') {
@@ -621,12 +533,13 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
   }
 
   private _uriToKey(uri = '') {
-    return uri.substr(0, uri.indexOf(this._RSP));
+    return uri.substr(0, uri.indexOf(routeConfig.RSP));
   }
 
   protected findHistoryByKey(key: string): {index: number; url: string} {
-    const index = this._history.findIndex((uri) => uri.startsWith(`${key}${this._RSP}`));
-    return {index, url: index > -1 ? this._uriToUrl(this._history[index]) : ''};
+    const {history} = this._routeState;
+    const index = history.findIndex((uri) => uri.startsWith(`${key}${routeConfig.RSP}`));
+    return {index, url: index > -1 ? this._uriToUrl(history[index]) : ''};
   }
 
   private _toNativeLocation(location: Location): Location {
@@ -637,33 +550,49 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     return location;
   }
 
-  protected dispatch(safeLocation: PaLocation, action: HistoryAction, key: string = '', callNative?: string | number): Promise<Location> {
+  private _createRouteState(safeLocation: PaLocation, action: HistoryAction, key: string): RouteState<P> {
     key = key || this._createKey();
     const data = this._getEfficientLocation(safeLocation);
     const location: Location = {...data.location, action, url: locationToUrl(data.location), key};
-    const routeData: RouteData = {...data.routeData, action, key};
+    const {history, stack} = this._buildHistory(location);
+    const routeState: RouteState<P> = {...location, ...data.routeData, history, stack};
+    return routeState;
+  }
 
-    return Promise.all(Object.values(this._blockerList).map((fn) => fn(location, this.getLocation(), routeData, this.getRouteData()))).then(() => {
-      this._location = location;
-      this._routeData = routeData;
-      if (!this._startupLocation) {
-        this._startupLocation = location;
-        this._startupRouteData = routeData;
+  protected async dispatch(safeLocation: PaLocation, action: HistoryAction, key: string = '', callNative?: string | number): Promise<RouteState<P>> {
+    const routeState = this._createRouteState(safeLocation, action, key);
+    await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    this._routeState = routeState;
+    await this.store!.dispatch(routeChangeAction(routeState));
+    if (callNative) {
+      const nativeLocation = this._toNativeLocation(routeState);
+      if (typeof callNative === 'number') {
+        this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
+      } else {
+        this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
       }
-      const {history, stack} = this._buildHistory(location);
-      this._history = history;
-      this._stack = stack;
-      Object.values(this._listenList).forEach((listener) => listener({location, data: routeData, history: this._history, stack: this._stack}));
-      if (callNative) {
-        const nativeLocation = this._toNativeLocation(location);
-        if (typeof callNative === 'number') {
-          this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
-        } else {
-          this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
-        }
-      }
-      return location;
-    });
+    }
+    return routeState;
+    // return Promise.all(Object.values(this._blockerList).map((fn) => fn(location, this.getLocation(), routeData, this.getRouteData()))).then(() => {
+    //   this._location = location;
+    //   this._routeData = routeData;
+    //   if (!this._startupLocation) {
+    //     this._startupLocation = location;
+    //     this._startupRouteData = routeData;
+    //   }
+    //   this._history = history;
+    //   this._stack = stack;
+    //   Object.values(this._listenList).forEach((listener) => listener({location, data: routeData, history: this._history, stack: this._stack}));
+    //   if (callNative) {
+    //     const nativeLocation = this._toNativeLocation(location);
+    //     if (typeof callNative === 'number') {
+    //       this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
+    //     } else {
+    //       this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
+    //     }
+    //   }
+    //   return location;
+    // });
   }
 
   // protected passive(nativeLocation: NativeLocation, action: HistoryAction) {
@@ -700,7 +629,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
 
   pop(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean): Promise<Location> {
     n = n || 1;
-    const uri = this._history[n];
+    const uri = this._routeState.history[n];
     if (uri) {
       const url = this._uriToUrl(uri);
       const key = this._uriToKey(uri);
@@ -709,9 +638,9 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
     }
     let url: string = root;
     if (root === 'HOME') {
-      url = this.homeUrl;
+      url = routeConfig.homeUrl;
     } else if (root === 'FIRST') {
-      url = this._startupLocation!.url;
+      url = this._startupRouteState.url;
     }
     if (!url) {
       return Promise.reject(1);
@@ -720,7 +649,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
   }
 
   home(root: 'HOME' | 'FIRST' = 'FIRST', disableNative?: boolean): Promise<Location> {
-    return this.relaunch(root === 'HOME' ? this.homeUrl : this._startupLocation!.url, disableNative);
+    return this.relaunch(root === 'HOME' ? routeConfig.homeUrl : this._startupRouteState.url, disableNative);
   }
   // locationToRouteData(location: Location): RouteData<P> {
   //   const data = this._transformRoute.locationToRoute(location);
@@ -738,4 +667,67 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> im
   // }
 
   abstract destroy(): void;
+}
+export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (action) => {
+  if (action.type === RouteActionTypes.RouteChange) {
+    const result = next(action);
+    const routeState: RouteState = action.payload[0];
+    const rootRouteParams = routeState.params;
+    const rootState: CoreRootState = getState();
+    Object.keys(rootRouteParams).forEach((moduleName) => {
+      const routeParams = rootRouteParams[moduleName];
+      if (routeParams) {
+        if (rootState[moduleName]?.initialized) {
+          dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
+        } else {
+          dispatch(moduleInitAction(moduleName, undefined));
+        }
+      }
+    });
+    return result;
+  }
+  return next(action);
+};
+export const routeReducer: Reducer = (state: RouteState, action) => {
+  if (action.type === RouteActionTypes.RouteChange) {
+    return action.payload[0];
+  }
+  return state;
+};
+
+// if (action.type === ActionTypes.RouteChange) {
+//   const routeData = meta.prevState.route.data;
+//   const rootRouteParams = routeData.params;
+//   Object.keys(rootRouteParams).forEach((moduleName) => {
+//     const routeParams = rootRouteParams[moduleName];
+//     if (routeParams && Object.keys(routeParams).length > 0 && meta.injectedModules[moduleName]) {
+//       dispatch(routeParamsAction(moduleName, routeParams, routeData.action));
+//     }
+//   });
+// }
+
+export interface RouteModuleState<P extends RouteParams = RouteParams> extends CoreModuleState {
+  routeParams?: P;
+}
+export type RouteRootState<P extends RouteParams = RouteParams> = {
+  [moduleName: string]: RouteModuleState;
+} & {
+  route: RouteState<P>;
+};
+export class RouteModelHandlers<S extends RouteModuleState, R extends RouteRootState> extends CoreModelHandlers<S, R> {
+  @reducer
+  protected Init(initState: S): S {
+    const rootState = this.getRootState();
+    const routeParams = rootState.route.params[this.moduleName];
+    return {...initState, routeParams};
+  }
+
+  @reducer
+  public RouteParams(payload: {[key: string]: any}): S {
+    const state = this.getState();
+    return {
+      ...state,
+      routeParams: payload,
+    };
+  }
 }

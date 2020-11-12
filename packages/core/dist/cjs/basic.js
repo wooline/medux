@@ -1,42 +1,25 @@
 "use strict";
 
 exports.__esModule = true;
-exports.isServer = isServer;
-exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setConfig = setConfig;
+exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
-exports.cacheModule = cacheModule;
-exports.isPromise = isPromise;
-exports.getClientStore = getClientStore;
 exports.reducer = reducer;
 exports.effect = effect;
 exports.logger = logger;
 exports.delayPromise = delayPromise;
-exports.isProcessedError = isProcessedError;
-exports.setProcessedError = setProcessedError;
-exports.injectActions = injectActions;
-exports.ActionTypes = exports.MetaData = exports.config = void 0;
+exports.isPromise = isPromise;
+exports.isServer = isServer;
+exports.MetaData = exports.ActionTypes = exports.config = void 0;
 
 var _sprite = require("./sprite");
 
 var _env = require("./env");
 
-function isServer() {
-  return _env.isServerEnv;
-}
-
-var loadings = {};
-var depthTime = 2;
-
-function setLoadingDepthTime(second) {
-  depthTime = second;
-}
-
 var config = {
   NSP: '.',
   VSP: '.',
-  MSP: ',',
-  RSP: '|'
+  MSP: ','
 };
 exports.config = config;
 
@@ -44,9 +27,14 @@ function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
-  _config.RSP && (config.RSP = _config.RSP);
 }
 
+var ActionTypes = {
+  MLoading: 'Loading',
+  MInit: 'Init',
+  Error: "medux" + config.NSP + "Error"
+};
+exports.ActionTypes = ActionTypes;
 var MetaData = {
   appViewName: null,
   actionCreatorMap: null,
@@ -55,14 +43,12 @@ var MetaData = {
   moduleGetter: null
 };
 exports.MetaData = MetaData;
-var ActionTypes = {
-  MLoading: 'Loading',
-  MInit: 'Init',
-  MRouteParams: 'RouteParams',
-  Error: "medux" + config.NSP + "Error",
-  RouteChange: "medux" + config.NSP + "RouteChange"
-};
-exports.ActionTypes = ActionTypes;
+var loadings = {};
+var depthTime = 2;
+
+function setLoadingDepthTime(second) {
+  depthTime = second;
+}
 
 function setLoading(item, moduleName, groupName) {
   if (moduleName === void 0) {
@@ -98,32 +84,6 @@ function setLoading(item, moduleName, groupName) {
 
   loadings[key].addItem(item);
   return item;
-}
-
-function cacheModule(module) {
-  var moduleName = module.default.moduleName;
-  var moduleGetter = MetaData.moduleGetter;
-  var fn = moduleGetter[moduleName];
-
-  if (fn.__module__ === module) {
-    return fn;
-  }
-
-  fn = function fn() {
-    return module;
-  };
-
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
-}
-
-function isPromise(data) {
-  return typeof data === 'object' && typeof data.then === 'function';
-}
-
-function getClientStore() {
-  return MetaData.clientStore;
 }
 
 function reducer(target, key, descriptor) {
@@ -224,88 +184,10 @@ function delayPromise(second) {
   };
 }
 
-function isProcessedError(error) {
-  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
-    return undefined;
-  }
-
-  return !!error.meduxProcessed;
+function isPromise(data) {
+  return typeof data === 'object' && typeof data.then === 'function';
 }
 
-function setProcessedError(error, meduxProcessed) {
-  if (typeof error === 'object') {
-    error.meduxProcessed = meduxProcessed;
-    return error;
-  }
-
-  return {
-    meduxProcessed: meduxProcessed,
-    error: error
-  };
-}
-
-function bindThis(fun, thisObj) {
-  var newFun = fun.bind(thisObj);
-  Object.keys(fun).forEach(function (key) {
-    newFun[key] = fun[key];
-  });
-  return newFun;
-}
-
-function transformAction(actionName, action, listenerModule, actionHandlerMap) {
-  if (!actionHandlerMap[actionName]) {
-    actionHandlerMap[actionName] = {};
-  }
-
-  if (actionHandlerMap[actionName][listenerModule]) {
-    throw new Error("Action duplicate or conflict : " + actionName + ".");
-  }
-
-  actionHandlerMap[actionName][listenerModule] = action;
-}
-
-function addModuleActionCreatorList(moduleName, actionName) {
-  var actions = MetaData.actionCreatorMap[moduleName];
-
-  if (!actions[actionName]) {
-    actions[actionName] = function () {
-      for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        payload[_key2] = arguments[_key2];
-      }
-
-      return {
-        type: moduleName + config.NSP + actionName,
-        payload: payload
-      };
-    };
-  }
-}
-
-function injectActions(store, moduleName, handlers) {
-  for (var actionNames in handlers) {
-    if (typeof handlers[actionNames] === 'function') {
-      (function () {
-        var handler = handlers[actionNames];
-
-        if (handler.__isReducer__ || handler.__isEffect__) {
-          handler = bindThis(handler, handlers);
-          actionNames.split(config.MSP).forEach(function (actionName) {
-            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
-            var arr = actionName.split(config.NSP);
-
-            if (arr[1]) {
-              handler.__isHandler__ = true;
-              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            } else {
-              handler.__isHandler__ = false;
-              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-              addModuleActionCreatorList(moduleName, actionName);
-            }
-          });
-        }
-      })();
-    }
-  }
-
-  return MetaData.actionCreatorMap[moduleName];
+function isServer() {
+  return _env.isServerEnv;
 }

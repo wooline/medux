@@ -1,24 +1,22 @@
 /// <reference path="../env/global.d.ts" />
-import { Location } from '@medux/route-plan-a';
-import { RootState as BaseRootState, ModuleGetter, StoreOptions, StoreState } from '@medux/core';
+import { ModuleGetter, StoreOptions } from '@medux/core';
 import { Store } from 'redux';
 import React, { ReactElement } from 'react';
-import type { LocationMap, RouteConfig } from '@medux/route-plan-a';
-import type { HistoryActions } from '@medux/web';
+import { HistoryActions } from '@medux/web';
+import type { LocationMap, RouteRule } from '@medux/route-plan-a';
 export { loadView, exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, exportActions, BaseModelHandlers, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, } from '@medux/core';
-export { setRouteConfig } from '@medux/route-plan-a';
-export type { Actions, RouteData, RouteViews, BaseModelState } from '@medux/core';
+export { ActionTypes, delayPromise, LoadingState, exportActions, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, } from '@medux/core';
+export { setRouteConfig, RouteModelHandlers as BaseModelHandlers } from '@medux/route-plan-a';
+export type { Actions } from '@medux/core';
 export type { LoadView } from '@medux/react';
-export type { RouteConfig, LocationMap } from '@medux/route-plan-a';
+export type { RootState, RouteRule, LocationMap } from '@medux/route-plan-a';
 export type { HistoryActions } from '@medux/web';
-export declare function buildApp({ moduleGetter, appModuleName, appViewName, historyType, homeUrl, routeConfig, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
+export declare function buildApp({ moduleGetter, appModuleName, appViewName, historyType, routeRule, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName?: string;
     appViewName?: string;
     historyType?: 'Browser' | 'Hash' | 'Memory';
-    homeUrl?: string;
-    routeConfig?: RouteConfig;
+    routeRule?: RouteRule;
     locationMap?: LocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
@@ -26,16 +24,16 @@ export declare function buildApp({ moduleGetter, appModuleName, appViewName, his
     storeOptions?: StoreOptions;
     container?: string | Element | ((component: ReactElement<any>) => void);
     beforeRender?: (data: {
-        store: Store<StoreState>;
+        store: Store;
         historyActions: HistoryActions;
-    }) => Store<StoreState>;
+    }) => Store;
 }): Promise<void>;
-export declare function buildSSR({ moduleGetter, appModuleName, appViewName, location, routeConfig, locationMap, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
+export declare function buildSSR({ moduleGetter, appModuleName, appViewName, location, routeRule, locationMap, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
     moduleGetter: ModuleGetter;
     appModuleName?: string;
     appViewName?: string;
     location: string;
-    routeConfig?: RouteConfig;
+    routeRule?: RouteRule;
     locationMap?: LocationMap;
     defaultRouteParams?: {
         [moduleName: string]: any;
@@ -43,15 +41,14 @@ export declare function buildSSR({ moduleGetter, appModuleName, appViewName, loc
     storeOptions?: StoreOptions;
     renderToStream?: boolean;
     beforeRender?: (data: {
-        store: Store<StoreState>;
+        store: Store;
         historyActions: HistoryActions;
-    }) => Store<StoreState>;
+    }) => Store;
 }): Promise<{
     html: string | meduxCore.ReadableStream;
     data: any;
     ssrInitStoreKey: string;
 }>;
-export declare type RootState<G extends ModuleGetter> = BaseRootState<G, Location>;
 interface SwitchProps {
     elseView?: React.ReactNode;
     children: React.ReactNode;
