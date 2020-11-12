@@ -39,7 +39,7 @@
     "react-redux": "^7.0.0"
   },
   "dependencies": {
-    "@babel/runtime": "~7.9.0",
+    "@babel/runtime": "~7.12.5",
     "@medux/core": "^1.1.1-alpha.5",
     "@medux/mini-program": "^1.1.1-alpha.5"
   },

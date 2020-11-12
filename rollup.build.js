@@ -1,4 +1,4 @@
-import babel from 'rollup-plugin-babel';
+import babel from '@rollup/plugin-babel';
 import chalk from 'chalk';
 import commonjs from '@rollup/plugin-commonjs';
 import path from 'path';

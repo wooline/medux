@@ -49,7 +49,7 @@
     "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.ts --hideSources --theme markdown && node fixDocs"
   },
   "dependencies": {
-    "@babel/runtime": "7.9.6",
+    "@babel/runtime": "~7.12.5",
     "redux": "~4.0.5"
   }
 }
