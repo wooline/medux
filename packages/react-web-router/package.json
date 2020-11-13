@@ -11,9 +11,10 @@
   "engines": {
     "node": ">=9.0.0"
   },
-  "main": "main.js",
-  "module": "dist/esm/index.js",
+  "main": "index.js",
+  "module": "main.js",
   "jsnext:main": "dist/next/index.js",
+  "unpkg":  "dist/umd/index.js",
   "types": "types/",
   "files": [
     "env/",
@@ -30,16 +31,14 @@
     "prebuild": "node ../../preBuild && yarn type & yarn typeSrc & yarn eslint & yarn eslintSrc && rimraf ./dist ./types && yarn buildTypes",
     "build:pkg": "cross-env NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c",
     "build:next": "cross-env NODE_TAG=next rollup -c",
-    "build:esm": "cross-env NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
-    "build:cjs": "cross-env NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
-    "build": "yarn build:next",
+    "build:esm": "cross-env NODE_TAG=esm rollup -c",
+    "build:cjs": "cross-env NODE_TAG=esm NODE_ENV=production rollup -c",
+    "build": "yarn build:next & yarn build:esm & yarn build:cjs",
     "docs-md": "typedoc --plugin typedoc-plugin-markdown  --out api src/index.tsx --hideSources --theme markdown && node fixDocs"
   },
   "externals": {
     "react": true,
-    "react-dom": true,
-    "react-redux": true,
-    "history": true
+    "react-dom": true
   },
   "peerDependencies": {
     "@types/react": "^16.8.0",

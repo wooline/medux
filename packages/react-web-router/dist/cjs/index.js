@@ -1,6 +1,15 @@
-import React, { useMemo, useEffect, useState } from 'react';
-import { renderToNodeStream, renderToString } from 'react-dom/server';
-import ReactDOM, { unstable_batchedUpdates } from 'react-dom';
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var React = require('react');
+var server = require('react-dom/server');
+var ReactDOM = require('react-dom');
+
+function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+
+var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
+var ReactDOM__default = /*#__PURE__*/_interopDefaultLegacy(ReactDOM);
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -33,6 +42,20 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   }
 
   return target;
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _inheritsLoose(subClass, superClass) {
+  subClass.prototype = Object.create(superClass.prototype);
+  subClass.prototype.constructor = subClass;
+  subClass.__proto__ = superClass;
 }
 
 function _arrayWithHoles(arr) {
@@ -499,6 +522,782 @@ function _optionalCallableProperty(obj, name) {
   return value;
 }
 
+function createCommonjsModule(fn, basedir, module) {
+	return module = {
+		path: basedir,
+		exports: {},
+		require: function (path, base) {
+			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
+		}
+	}, fn(module, module.exports), module.exports;
+}
+
+function commonjsRequire () {
+	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+}
+
+var runtime_1 = createCommonjsModule(function (module) {
+/**
+ * Copyright (c) 2014-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+var runtime = function (exports) {
+
+  var Op = Object.prototype;
+  var hasOwn = Op.hasOwnProperty;
+  var undefined$1; // More compressible than void 0.
+
+  var $Symbol = typeof Symbol === "function" ? Symbol : {};
+  var iteratorSymbol = $Symbol.iterator || "@@iterator";
+  var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
+  var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+  function define(obj, key, value) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+    return obj[key];
+  }
+
+  try {
+    // IE 8 has a broken Object.defineProperty that only works on DOM objects.
+    define({}, "");
+  } catch (err) {
+    define = function (obj, key, value) {
+      return obj[key] = value;
+    };
+  }
+
+  function wrap(innerFn, outerFn, self, tryLocsList) {
+    // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+    var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+    var generator = Object.create(protoGenerator.prototype);
+    var context = new Context(tryLocsList || []); // The ._invoke method unifies the implementations of the .next,
+    // .throw, and .return methods.
+
+    generator._invoke = makeInvokeMethod(innerFn, self, context);
+    return generator;
+  }
+
+  exports.wrap = wrap; // Try/catch helper to minimize deoptimizations. Returns a completion
+  // record like context.tryEntries[i].completion. This interface could
+  // have been (and was previously) designed to take a closure to be
+  // invoked without arguments, but in all the cases we care about we
+  // already have an existing method we want to call, so there's no need
+  // to create a new function object. We can even get away with assuming
+  // the method takes exactly one argument, since that happens to be true
+  // in every case, so we don't have to touch the arguments object. The
+  // only additional allocation required is the completion record, which
+  // has a stable shape and so hopefully should be cheap to allocate.
+
+  function tryCatch(fn, obj, arg) {
+    try {
+      return {
+        type: "normal",
+        arg: fn.call(obj, arg)
+      };
+    } catch (err) {
+      return {
+        type: "throw",
+        arg: err
+      };
+    }
+  }
+
+  var GenStateSuspendedStart = "suspendedStart";
+  var GenStateSuspendedYield = "suspendedYield";
+  var GenStateExecuting = "executing";
+  var GenStateCompleted = "completed"; // Returning this object from the innerFn has the same effect as
+  // breaking out of the dispatch switch statement.
+
+  var ContinueSentinel = {}; // Dummy constructor functions that we use as the .constructor and
+  // .constructor.prototype properties for functions that return Generator
+  // objects. For full spec compliance, you may wish to configure your
+  // minifier not to mangle the names of these two functions.
+
+  function Generator() {}
+
+  function GeneratorFunction() {}
+
+  function GeneratorFunctionPrototype() {} // This is a polyfill for %IteratorPrototype% for environments that
+  // don't natively support it.
+
+
+  var IteratorPrototype = {};
+
+  IteratorPrototype[iteratorSymbol] = function () {
+    return this;
+  };
+
+  var getProto = Object.getPrototypeOf;
+  var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+
+  if (NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+    // This environment has a native %IteratorPrototype%; use it instead
+    // of the polyfill.
+    IteratorPrototype = NativeIteratorPrototype;
+  }
+
+  var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
+  GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
+  GeneratorFunctionPrototype.constructor = GeneratorFunction;
+  GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"); // Helper for defining the .next, .throw, and .return methods of the
+  // Iterator interface in terms of a single ._invoke method.
+
+  function defineIteratorMethods(prototype) {
+    ["next", "throw", "return"].forEach(function (method) {
+      define(prototype, method, function (arg) {
+        return this._invoke(method, arg);
+      });
+    });
+  }
+
+  exports.isGeneratorFunction = function (genFun) {
+    var ctor = typeof genFun === "function" && genFun.constructor;
+    return ctor ? ctor === GeneratorFunction || // For the native GeneratorFunction constructor, the best we can
+    // do is to check its .name property.
+    (ctor.displayName || ctor.name) === "GeneratorFunction" : false;
+  };
+
+  exports.mark = function (genFun) {
+    if (Object.setPrototypeOf) {
+      Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+    } else {
+      genFun.__proto__ = GeneratorFunctionPrototype;
+      define(genFun, toStringTagSymbol, "GeneratorFunction");
+    }
+
+    genFun.prototype = Object.create(Gp);
+    return genFun;
+  }; // Within the body of any async function, `await x` is transformed to
+  // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+  // `hasOwn.call(value, "__await")` to determine if the yielded value is
+  // meant to be awaited.
+
+
+  exports.awrap = function (arg) {
+    return {
+      __await: arg
+    };
+  };
+
+  function AsyncIterator(generator, PromiseImpl) {
+    function invoke(method, arg, resolve, reject) {
+      var record = tryCatch(generator[method], generator, arg);
+
+      if (record.type === "throw") {
+        reject(record.arg);
+      } else {
+        var result = record.arg;
+        var value = result.value;
+
+        if (value && typeof value === "object" && hasOwn.call(value, "__await")) {
+          return PromiseImpl.resolve(value.__await).then(function (value) {
+            invoke("next", value, resolve, reject);
+          }, function (err) {
+            invoke("throw", err, resolve, reject);
+          });
+        }
+
+        return PromiseImpl.resolve(value).then(function (unwrapped) {
+          // When a yielded Promise is resolved, its final value becomes
+          // the .value of the Promise<{value,done}> result for the
+          // current iteration.
+          result.value = unwrapped;
+          resolve(result);
+        }, function (error) {
+          // If a rejected Promise was yielded, throw the rejection back
+          // into the async generator function so it can be handled there.
+          return invoke("throw", error, resolve, reject);
+        });
+      }
+    }
+
+    var previousPromise;
+
+    function enqueue(method, arg) {
+      function callInvokeWithMethodAndArg() {
+        return new PromiseImpl(function (resolve, reject) {
+          invoke(method, arg, resolve, reject);
+        });
+      }
+
+      return previousPromise = // If enqueue has been called before, then we want to wait until
+      // all previous Promises have been resolved before calling invoke,
+      // so that results are always delivered in the correct order. If
+      // enqueue has not been called before, then it is important to
+      // call invoke immediately, without waiting on a callback to fire,
+      // so that the async generator function has the opportunity to do
+      // any necessary setup in a predictable way. This predictability
+      // is why the Promise constructor synchronously invokes its
+      // executor callback, and why async functions synchronously
+      // execute code before the first await. Since we implement simple
+      // async functions in terms of async generators, it is especially
+      // important to get this right, even though it requires care.
+      previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, // Avoid propagating failures to Promises returned by later
+      // invocations of the iterator.
+      callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
+    } // Define the unified helper method that is used to implement .next,
+    // .throw, and .return (see defineIteratorMethods).
+
+
+    this._invoke = enqueue;
+  }
+
+  defineIteratorMethods(AsyncIterator.prototype);
+
+  AsyncIterator.prototype[asyncIteratorSymbol] = function () {
+    return this;
+  };
+
+  exports.AsyncIterator = AsyncIterator; // Note that simple async functions are implemented on top of
+  // AsyncIterator objects; they just return a Promise for the value of
+  // the final result produced by the iterator.
+
+  exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) {
+    if (PromiseImpl === void 0) PromiseImpl = Promise;
+    var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl);
+    return exports.isGeneratorFunction(outerFn) ? iter // If outerFn is a generator, return the full iterator.
+    : iter.next().then(function (result) {
+      return result.done ? result.value : iter.next();
+    });
+  };
+
+  function makeInvokeMethod(innerFn, self, context) {
+    var state = GenStateSuspendedStart;
+    return function invoke(method, arg) {
+      if (state === GenStateExecuting) {
+        throw new Error("Generator is already running");
+      }
+
+      if (state === GenStateCompleted) {
+        if (method === "throw") {
+          throw arg;
+        } // Be forgiving, per 25.3.3.3.3 of the spec:
+        // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+
+
+        return doneResult();
+      }
+
+      context.method = method;
+      context.arg = arg;
+
+      while (true) {
+        var delegate = context.delegate;
+
+        if (delegate) {
+          var delegateResult = maybeInvokeDelegate(delegate, context);
+
+          if (delegateResult) {
+            if (delegateResult === ContinueSentinel) continue;
+            return delegateResult;
+          }
+        }
+
+        if (context.method === "next") {
+          // Setting context._sent for legacy support of Babel's
+          // function.sent implementation.
+          context.sent = context._sent = context.arg;
+        } else if (context.method === "throw") {
+          if (state === GenStateSuspendedStart) {
+            state = GenStateCompleted;
+            throw context.arg;
+          }
+
+          context.dispatchException(context.arg);
+        } else if (context.method === "return") {
+          context.abrupt("return", context.arg);
+        }
+
+        state = GenStateExecuting;
+        var record = tryCatch(innerFn, self, context);
+
+        if (record.type === "normal") {
+          // If an exception is thrown from innerFn, we leave state ===
+          // GenStateExecuting and loop back for another invocation.
+          state = context.done ? GenStateCompleted : GenStateSuspendedYield;
+
+          if (record.arg === ContinueSentinel) {
+            continue;
+          }
+
+          return {
+            value: record.arg,
+            done: context.done
+          };
+        } else if (record.type === "throw") {
+          state = GenStateCompleted; // Dispatch the exception by looping back around to the
+          // context.dispatchException(context.arg) call above.
+
+          context.method = "throw";
+          context.arg = record.arg;
+        }
+      }
+    };
+  } // Call delegate.iterator[context.method](context.arg) and handle the
+  // result, either by returning a { value, done } result from the
+  // delegate iterator, or by modifying context.method and context.arg,
+  // setting context.delegate to null, and returning the ContinueSentinel.
+
+
+  function maybeInvokeDelegate(delegate, context) {
+    var method = delegate.iterator[context.method];
+
+    if (method === undefined$1) {
+      // A .throw or .return when the delegate iterator has no .throw
+      // method always terminates the yield* loop.
+      context.delegate = null;
+
+      if (context.method === "throw") {
+        // Note: ["return"] must be used for ES3 parsing compatibility.
+        if (delegate.iterator["return"]) {
+          // If the delegate iterator has a return method, give it a
+          // chance to clean up.
+          context.method = "return";
+          context.arg = undefined$1;
+          maybeInvokeDelegate(delegate, context);
+
+          if (context.method === "throw") {
+            // If maybeInvokeDelegate(context) changed context.method from
+            // "return" to "throw", let that override the TypeError below.
+            return ContinueSentinel;
+          }
+        }
+
+        context.method = "throw";
+        context.arg = new TypeError("The iterator does not provide a 'throw' method");
+      }
+
+      return ContinueSentinel;
+    }
+
+    var record = tryCatch(method, delegate.iterator, context.arg);
+
+    if (record.type === "throw") {
+      context.method = "throw";
+      context.arg = record.arg;
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    var info = record.arg;
+
+    if (!info) {
+      context.method = "throw";
+      context.arg = new TypeError("iterator result is not an object");
+      context.delegate = null;
+      return ContinueSentinel;
+    }
+
+    if (info.done) {
+      // Assign the result of the finished delegate to the temporary
+      // variable specified by delegate.resultName (see delegateYield).
+      context[delegate.resultName] = info.value; // Resume execution at the desired location (see delegateYield).
+
+      context.next = delegate.nextLoc; // If context.method was "throw" but the delegate handled the
+      // exception, let the outer generator proceed normally. If
+      // context.method was "next", forget context.arg since it has been
+      // "consumed" by the delegate iterator. If context.method was
+      // "return", allow the original .return call to continue in the
+      // outer generator.
+
+      if (context.method !== "return") {
+        context.method = "next";
+        context.arg = undefined$1;
+      }
+    } else {
+      // Re-yield the result returned by the delegate method.
+      return info;
+    } // The delegate iterator is finished, so forget it and continue with
+    // the outer generator.
+
+
+    context.delegate = null;
+    return ContinueSentinel;
+  } // Define Generator.prototype.{next,throw,return} in terms of the
+  // unified ._invoke helper method.
+
+
+  defineIteratorMethods(Gp);
+  define(Gp, toStringTagSymbol, "Generator"); // A Generator should always return itself as the iterator object when the
+  // @@iterator function is called on it. Some browsers' implementations of the
+  // iterator prototype chain incorrectly implement this, causing the Generator
+  // object to not be returned from this call. This ensures that doesn't happen.
+  // See https://github.com/facebook/regenerator/issues/274 for more details.
+
+  Gp[iteratorSymbol] = function () {
+    return this;
+  };
+
+  Gp.toString = function () {
+    return "[object Generator]";
+  };
+
+  function pushTryEntry(locs) {
+    var entry = {
+      tryLoc: locs[0]
+    };
+
+    if (1 in locs) {
+      entry.catchLoc = locs[1];
+    }
+
+    if (2 in locs) {
+      entry.finallyLoc = locs[2];
+      entry.afterLoc = locs[3];
+    }
+
+    this.tryEntries.push(entry);
+  }
+
+  function resetTryEntry(entry) {
+    var record = entry.completion || {};
+    record.type = "normal";
+    delete record.arg;
+    entry.completion = record;
+  }
+
+  function Context(tryLocsList) {
+    // The root entry object (effectively a try statement without a catch
+    // or a finally block) gives us a place to store values thrown from
+    // locations where there is no enclosing try statement.
+    this.tryEntries = [{
+      tryLoc: "root"
+    }];
+    tryLocsList.forEach(pushTryEntry, this);
+    this.reset(true);
+  }
+
+  exports.keys = function (object) {
+    var keys = [];
+
+    for (var key in object) {
+      keys.push(key);
+    }
+
+    keys.reverse(); // Rather than returning an object with a next method, we keep
+    // things simple and return the next function itself.
+
+    return function next() {
+      while (keys.length) {
+        var key = keys.pop();
+
+        if (key in object) {
+          next.value = key;
+          next.done = false;
+          return next;
+        }
+      } // To avoid creating an additional object, we just hang the .value
+      // and .done properties off the next function object itself. This
+      // also ensures that the minifier will not anonymize the function.
+
+
+      next.done = true;
+      return next;
+    };
+  };
+
+  function values(iterable) {
+    if (iterable) {
+      var iteratorMethod = iterable[iteratorSymbol];
+
+      if (iteratorMethod) {
+        return iteratorMethod.call(iterable);
+      }
+
+      if (typeof iterable.next === "function") {
+        return iterable;
+      }
+
+      if (!isNaN(iterable.length)) {
+        var i = -1,
+            next = function next() {
+          while (++i < iterable.length) {
+            if (hasOwn.call(iterable, i)) {
+              next.value = iterable[i];
+              next.done = false;
+              return next;
+            }
+          }
+
+          next.value = undefined$1;
+          next.done = true;
+          return next;
+        };
+
+        return next.next = next;
+      }
+    } // Return an iterator with no values.
+
+
+    return {
+      next: doneResult
+    };
+  }
+
+  exports.values = values;
+
+  function doneResult() {
+    return {
+      value: undefined$1,
+      done: true
+    };
+  }
+
+  Context.prototype = {
+    constructor: Context,
+    reset: function (skipTempReset) {
+      this.prev = 0;
+      this.next = 0; // Resetting context._sent for legacy support of Babel's
+      // function.sent implementation.
+
+      this.sent = this._sent = undefined$1;
+      this.done = false;
+      this.delegate = null;
+      this.method = "next";
+      this.arg = undefined$1;
+      this.tryEntries.forEach(resetTryEntry);
+
+      if (!skipTempReset) {
+        for (var name in this) {
+          // Not sure about the optimal order of these conditions:
+          if (name.charAt(0) === "t" && hasOwn.call(this, name) && !isNaN(+name.slice(1))) {
+            this[name] = undefined$1;
+          }
+        }
+      }
+    },
+    stop: function () {
+      this.done = true;
+      var rootEntry = this.tryEntries[0];
+      var rootRecord = rootEntry.completion;
+
+      if (rootRecord.type === "throw") {
+        throw rootRecord.arg;
+      }
+
+      return this.rval;
+    },
+    dispatchException: function (exception) {
+      if (this.done) {
+        throw exception;
+      }
+
+      var context = this;
+
+      function handle(loc, caught) {
+        record.type = "throw";
+        record.arg = exception;
+        context.next = loc;
+
+        if (caught) {
+          // If the dispatched exception was caught by a catch block,
+          // then let that catch block handle the exception normally.
+          context.method = "next";
+          context.arg = undefined$1;
+        }
+
+        return !!caught;
+      }
+
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+        var record = entry.completion;
+
+        if (entry.tryLoc === "root") {
+          // Exception thrown outside of any try block that could handle
+          // it, so set the completion value of the entire function to
+          // throw the exception.
+          return handle("end");
+        }
+
+        if (entry.tryLoc <= this.prev) {
+          var hasCatch = hasOwn.call(entry, "catchLoc");
+          var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+          if (hasCatch && hasFinally) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            } else if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+          } else if (hasCatch) {
+            if (this.prev < entry.catchLoc) {
+              return handle(entry.catchLoc, true);
+            }
+          } else if (hasFinally) {
+            if (this.prev < entry.finallyLoc) {
+              return handle(entry.finallyLoc);
+            }
+          } else {
+            throw new Error("try statement without catch or finally");
+          }
+        }
+      }
+    },
+    abrupt: function (type, arg) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+
+        if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
+          var finallyEntry = entry;
+          break;
+        }
+      }
+
+      if (finallyEntry && (type === "break" || type === "continue") && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc) {
+        // Ignore the finally entry if control is not jumping to a
+        // location outside the try/catch block.
+        finallyEntry = null;
+      }
+
+      var record = finallyEntry ? finallyEntry.completion : {};
+      record.type = type;
+      record.arg = arg;
+
+      if (finallyEntry) {
+        this.method = "next";
+        this.next = finallyEntry.finallyLoc;
+        return ContinueSentinel;
+      }
+
+      return this.complete(record);
+    },
+    complete: function (record, afterLoc) {
+      if (record.type === "throw") {
+        throw record.arg;
+      }
+
+      if (record.type === "break" || record.type === "continue") {
+        this.next = record.arg;
+      } else if (record.type === "return") {
+        this.rval = this.arg = record.arg;
+        this.method = "return";
+        this.next = "end";
+      } else if (record.type === "normal" && afterLoc) {
+        this.next = afterLoc;
+      }
+
+      return ContinueSentinel;
+    },
+    finish: function (finallyLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+
+        if (entry.finallyLoc === finallyLoc) {
+          this.complete(entry.completion, entry.afterLoc);
+          resetTryEntry(entry);
+          return ContinueSentinel;
+        }
+      }
+    },
+    "catch": function (tryLoc) {
+      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+        var entry = this.tryEntries[i];
+
+        if (entry.tryLoc === tryLoc) {
+          var record = entry.completion;
+
+          if (record.type === "throw") {
+            var thrown = record.arg;
+            resetTryEntry(entry);
+          }
+
+          return thrown;
+        }
+      } // The context.catch method must only be called with a location
+      // argument that corresponds to a known catch block.
+
+
+      throw new Error("illegal catch attempt");
+    },
+    delegateYield: function (iterable, resultName, nextLoc) {
+      this.delegate = {
+        iterator: values(iterable),
+        resultName: resultName,
+        nextLoc: nextLoc
+      };
+
+      if (this.method === "next") {
+        // Deliberately forget the last sent value so that we don't
+        // accidentally pass it on to the delegate.
+        this.arg = undefined$1;
+      }
+
+      return ContinueSentinel;
+    }
+  }; // Regardless of whether this script is executing as a CommonJS module
+  // or not, return the runtime object so that we can declare the variable
+  // regeneratorRuntime in the outer scope, which allows this module to be
+  // injected easily by `bin/regenerator --include-runtime script.js`.
+
+  return exports;
+}( // If this script is executing as a CommonJS module, use module.exports
+// as the regeneratorRuntime namespace. Otherwise create a new empty
+// object. Either way, the resulting object will be used to initialize
+// the regeneratorRuntime variable at the top of this file.
+ module.exports );
+
+try {
+  regeneratorRuntime = runtime;
+} catch (accidentalStrictMode) {
+  // This module should not be running in strict mode, so the above
+  // assignment should always work unless something is misconfigured. Just
+  // in case runtime.js accidentally runs in strict mode, we can escape
+  // strict mode using a global Function call. This could conceivably fail
+  // if a Content Security Policy forbids using Function, but in that case
+  // the proper solution is to fix the accidental strict mode problem. If
+  // you've misconfigured your bundler to force strict mode and applied a
+  // CSP to forbid Function, and you're not willing to fix either of those
+  // problems, please detail your unique predicament in a GitHub issue.
+  Function("r", "regeneratorRuntime = r")(runtime);
+}
+});
+
+var regenerator = runtime_1;
+
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+  try {
+    var info = gen[key](arg);
+    var value = info.value;
+  } catch (error) {
+    reject(error);
+    return;
+  }
+
+  if (info.done) {
+    resolve(value);
+  } else {
+    Promise.resolve(value).then(_next, _throw);
+  }
+}
+
+function _asyncToGenerator(fn) {
+  return function () {
+    var self = this,
+        args = arguments;
+    return new Promise(function (resolve, reject) {
+      var gen = fn.apply(self, args);
+
+      function _next(value) {
+        asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
+      }
+
+      function _throw(err) {
+        asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
+      }
+
+      _next(undefined);
+    });
+  };
+}
+
 function _defineProperty(obj, key, value) {
   if (key in obj) {
     Object.defineProperty(obj, key, {
@@ -514,22 +1313,25 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-const env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
-const isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
-const isDevelopmentEnv = process.env.NODE_ENV !== 'production';
-const client = isServerEnv ? undefined : env;
+var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
+var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
+var isDevelopmentEnv = process.env.NODE_ENV !== 'production';
+var client = isServerEnv ? undefined : env;
 
-const TaskCountEvent = 'TaskCountEvent';
-let LoadingState;
+var TaskCountEvent = 'TaskCountEvent';
 
 (function (LoadingState) {
   LoadingState["Start"] = "Start";
   LoadingState["Stop"] = "Stop";
   LoadingState["Depth"] = "Depth";
-})(LoadingState || (LoadingState = {}));
+})(exports.LoadingState || (exports.LoadingState = {}));
 
-class PEvent {
-  constructor(name, data, bubbling = false) {
+var PEvent = function () {
+  function PEvent(name, data, bubbling) {
+    if (bubbling === void 0) {
+      bubbling = false;
+    }
+
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
@@ -539,24 +1341,29 @@ class PEvent {
     _defineProperty(this, "currentTarget", null);
   }
 
-  setTarget(target) {
+  var _proto = PEvent.prototype;
+
+  _proto.setTarget = function setTarget(target) {
     this.target = target;
-  }
+  };
 
-  setCurrentTarget(target) {
+  _proto.setCurrentTarget = function setCurrentTarget(target) {
     this.currentTarget = target;
-  }
+  };
 
-}
-class PDispatcher {
-  constructor(parent) {
+  return PEvent;
+}();
+var PDispatcher = function () {
+  function PDispatcher(parent) {
     this.parent = parent;
 
     _defineProperty(this, "storeHandlers", {});
   }
 
-  addListener(ename, handler) {
-    let dictionary = this.storeHandlers[ename];
+  var _proto2 = PDispatcher.prototype;
+
+  _proto2.addListener = function addListener(ename, handler) {
+    var dictionary = this.storeHandlers[ename];
 
     if (!dictionary) {
       this.storeHandlers[ename] = dictionary = [];
@@ -564,23 +1371,25 @@ class PDispatcher {
 
     dictionary.push(handler);
     return this;
-  }
+  };
 
-  removeListener(ename, handler) {
+  _proto2.removeListener = function removeListener(ename, handler) {
+    var _this = this;
+
     if (!ename) {
-      Object.keys(this.storeHandlers).forEach(key => {
-        delete this.storeHandlers[key];
+      Object.keys(this.storeHandlers).forEach(function (key) {
+        delete _this.storeHandlers[key];
       });
     } else {
-      const handlers = this.storeHandlers;
+      var handlers = this.storeHandlers;
 
       if (handlers.propertyIsEnumerable(ename)) {
-        const dictionary = handlers[ename];
+        var dictionary = handlers[ename];
 
         if (!handler) {
           delete handlers[ename];
         } else {
-          const n = dictionary.indexOf(handler);
+          var n = dictionary.indexOf(handler);
 
           if (n > -1) {
             dictionary.splice(n, 1);
@@ -594,18 +1403,18 @@ class PDispatcher {
     }
 
     return this;
-  }
+  };
 
-  dispatch(evt) {
+  _proto2.dispatch = function dispatch(evt) {
     if (!evt.target) {
       evt.setTarget(this);
     }
 
     evt.setCurrentTarget(this);
-    const dictionary = this.storeHandlers[evt.name];
+    var dictionary = this.storeHandlers[evt.name];
 
     if (dictionary) {
-      for (let i = 0, k = dictionary.length; i < k; i++) {
+      for (var i = 0, k = dictionary.length; i < k; i++) {
         dictionary[i](evt);
       }
     }
@@ -615,49 +1424,72 @@ class PDispatcher {
     }
 
     return this;
-  }
+  };
 
-  setParent(parent) {
+  _proto2.setParent = function setParent(parent) {
     this.parent = parent;
     return this;
+  };
+
+  return PDispatcher;
+}();
+var TaskCounter = function (_PDispatcher) {
+  _inheritsLoose(TaskCounter, _PDispatcher);
+
+  function TaskCounter(deferSecond) {
+    var _this2;
+
+    _this2 = _PDispatcher.call(this) || this;
+    _this2.deferSecond = deferSecond;
+
+    _defineProperty(_assertThisInitialized(_this2), "list", []);
+
+    _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
+
+    return _this2;
   }
 
-}
-class TaskCounter extends PDispatcher {
-  constructor(deferSecond) {
-    super();
-    this.deferSecond = deferSecond;
+  var _proto3 = TaskCounter.prototype;
 
-    _defineProperty(this, "list", []);
+  _proto3.addItem = function addItem(promise, note) {
+    var _this3 = this;
 
-    _defineProperty(this, "ctimer", null);
-  }
+    if (note === void 0) {
+      note = '';
+    }
 
-  addItem(promise, note = '') {
-    if (!this.list.some(item => item.promise === promise)) {
+    if (!this.list.some(function (item) {
+      return item.promise === promise;
+    })) {
       this.list.push({
-        promise,
-        note
+        promise: promise,
+        note: note
       });
-      promise.then(() => this.completeItem(promise), () => this.completeItem(promise));
+      promise.then(function () {
+        return _this3.completeItem(promise);
+      }, function () {
+        return _this3.completeItem(promise);
+      });
 
       if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
-        this.ctimer = env.setTimeout(() => {
-          this.ctimer = null;
+        this.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Start));
+        this.ctimer = env.setTimeout(function () {
+          _this3.ctimer = null;
 
-          if (this.list.length > 0) {
-            this.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
+          if (_this3.list.length > 0) {
+            _this3.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Depth));
           }
         }, this.deferSecond * 1000);
       }
     }
 
     return promise;
-  }
+  };
 
-  completeItem(promise) {
-    const i = this.list.findIndex(item => item.promise === promise);
+  _proto3.completeItem = function completeItem(promise) {
+    var i = this.list.findIndex(function (item) {
+      return item.promise === promise;
+    });
 
     if (i > -1) {
       this.list.splice(i, 1);
@@ -668,16 +1500,17 @@ class TaskCounter extends PDispatcher {
           this.ctimer = null;
         }
 
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
+        this.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Stop));
       }
     }
 
     return this;
-  }
+  };
 
-}
+  return TaskCounter;
+}(PDispatcher);
 
-const config = {
+var config = {
   NSP: '.',
   VSP: '.',
   MSP: ','
@@ -687,41 +1520,51 @@ function setConfig(_config) {
   _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
-const ActionTypes = {
+var ActionTypes = {
   MLoading: 'Loading',
   MInit: 'Init',
-  Error: `medux${config.NSP}Error`
+  Error: "medux" + config.NSP + "Error"
 };
-const MetaData = {
+var MetaData = {
   appViewName: null,
   actionCreatorMap: null,
   clientStore: null,
   appModuleName: null,
   moduleGetter: null
 };
-const loadings = {};
-let depthTime = 2;
+var loadings = {};
+var depthTime = 2;
 function setLoadingDepthTime(second) {
   depthTime = second;
 }
-function setLoading(item, moduleName = MetaData.appModuleName, groupName = 'global') {
+function setLoading(item, moduleName, groupName) {
+  if (moduleName === void 0) {
+    moduleName = MetaData.appModuleName;
+  }
+
+  if (groupName === void 0) {
+    groupName = 'global';
+  }
+
   if (isServerEnv) {
     return item;
   }
 
-  const key = moduleName + config.NSP + groupName;
+  var key = moduleName + config.NSP + groupName;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, e => {
-      const store = MetaData.clientStore;
+    loadings[key].addListener(TaskCountEvent, function (e) {
+      var store = MetaData.clientStore;
 
       if (store) {
-        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
-        const action = actions({
-          [groupName]: e.data
-        });
-        store.dispatch(action);
+        var _actions;
+
+        var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+
+        var _action = actions((_actions = {}, _actions[groupName] = e.data, _actions));
+
+        store.dispatch(_action);
       }
     });
   }
@@ -735,7 +1578,7 @@ function reducer(target, key, descriptor) {
     descriptor = target.descriptor;
   }
 
-  const fun = descriptor.value;
+  var fun = descriptor.value;
   fun.__actionName__ = key;
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
@@ -747,19 +1590,19 @@ function effect(loadingForGroupName, loadingForModuleName) {
     loadingForModuleName = MetaData.appModuleName || '';
   }
 
-  return (target, key, descriptor) => {
+  return function (target, key, descriptor) {
     if (!key && !descriptor) {
       key = target.key;
       descriptor = target.descriptor;
     }
 
-    const fun = descriptor.value;
+    var fun = descriptor.value;
     fun.__actionName__ = key;
     fun.__isEffect__ = true;
     descriptor.enumerable = true;
 
     if (loadingForGroupName) {
-      const before = (curAction, moduleName, promiseResult) => {
+      var before = function before(curAction, moduleName, promiseResult) {
         if (!isServerEnv) {
           if (loadingForModuleName === '') {
             loadingForModuleName = MetaData.appModuleName;
@@ -782,13 +1625,13 @@ function effect(loadingForGroupName, loadingForModuleName) {
   };
 }
 function logger(before, after) {
-  return (target, key, descriptor) => {
+  return function (target, key, descriptor) {
     if (!key && !descriptor) {
       key = target.key;
       descriptor = target.descriptor;
     }
 
-    const fun = descriptor.value;
+    var fun = descriptor.value;
 
     if (!fun.__decorators__) {
       fun.__decorators__ = [];
@@ -798,21 +1641,26 @@ function logger(before, after) {
   };
 }
 function delayPromise(second) {
-  return (target, key, descriptor) => {
+  return function (target, key, descriptor) {
     if (!key && !descriptor) {
       key = target.key;
       descriptor = target.descriptor;
     }
 
-    const fun = descriptor.value;
+    var fun = descriptor.value;
 
-    descriptor.value = (...args) => {
-      const delay = new Promise(resolve => {
-        env.setTimeout(() => {
+    descriptor.value = function () {
+      var delay = new Promise(function (resolve) {
+        env.setTimeout(function () {
           resolve(true);
         }, second * 1000);
       });
-      return Promise.all([delay, fun.apply(target, args)]).then(items => {
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
         return items[1];
       });
     };
@@ -830,7 +1678,7 @@ function errorAction(error) {
 }
 function moduleInitAction(moduleName, initState) {
   return {
-    type: `${moduleName}${config.NSP}${ActionTypes.MInit}`,
+    type: "" + moduleName + config.NSP + ActionTypes.MInit,
     payload: [initState]
   };
 }
@@ -1342,15 +2190,17 @@ if (process.env.NODE_ENV !== 'production' && typeof isCrushed.name === 'string' 
 }
 
 function cacheModule(module) {
-  const moduleName = module.default.moduleName;
-  const moduleGetter = MetaData.moduleGetter;
-  let fn = moduleGetter[moduleName];
+  var moduleName = module.default.moduleName;
+  var moduleGetter = MetaData.moduleGetter;
+  var fn = moduleGetter[moduleName];
 
   if (fn.__module__ === module) {
     return fn;
   }
 
-  fn = () => module;
+  fn = function fn() {
+    return module;
+  };
 
   fn.__module__ = module;
   moduleGetter[moduleName] = fn;
@@ -1358,8 +2208,8 @@ function cacheModule(module) {
 }
 
 function bindThis(fun, thisObj) {
-  const newFun = fun.bind(thisObj);
-  Object.keys(fun).forEach(key => {
+  var newFun = fun.bind(thisObj);
+  Object.keys(fun).forEach(function (key) {
     newFun[key] = fun[key];
   });
   return newFun;
@@ -1371,44 +2221,52 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
   }
 
   if (actionHandlerMap[actionName][listenerModule]) {
-    throw new Error(`Action duplicate or conflict : ${actionName}.`);
+    throw new Error("Action duplicate or conflict : " + actionName + ".");
   }
 
   actionHandlerMap[actionName][listenerModule] = action;
 }
 
 function addModuleActionCreatorList(moduleName, actionName) {
-  const actions = MetaData.actionCreatorMap[moduleName];
+  var actions = MetaData.actionCreatorMap[moduleName];
 
   if (!actions[actionName]) {
-    actions[actionName] = (...payload) => ({
-      type: moduleName + config.NSP + actionName,
-      payload
-    });
+    actions[actionName] = function () {
+      for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+        payload[_key] = arguments[_key];
+      }
+
+      return {
+        type: moduleName + config.NSP + actionName,
+        payload: payload
+      };
+    };
   }
 }
 
 function injectActions(store, moduleName, handlers) {
-  for (const actionNames in handlers) {
+  for (var actionNames in handlers) {
     if (typeof handlers[actionNames] === 'function') {
-      let handler = handlers[actionNames];
+      (function () {
+        var handler = handlers[actionNames];
 
-      if (handler.__isReducer__ || handler.__isEffect__) {
-        handler = bindThis(handler, handlers);
-        actionNames.split(config.MSP).forEach(actionName => {
-          actionName = actionName.trim().replace(new RegExp(`^this\[${config.NSP}]`), `${moduleName}${config.NSP}`);
-          const arr = actionName.split(config.NSP);
+        if (handler.__isReducer__ || handler.__isEffect__) {
+          handler = bindThis(handler, handlers);
+          actionNames.split(config.MSP).forEach(function (actionName) {
+            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
+            var arr = actionName.split(config.NSP);
 
-          if (arr[1]) {
-            handler.__isHandler__ = true;
-            transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-          } else {
-            handler.__isHandler__ = false;
-            transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            addModuleActionCreatorList(moduleName, actionName);
-          }
-        });
-      }
+            if (arr[1]) {
+              handler.__isHandler__ = true;
+              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            } else {
+              handler.__isHandler__ = false;
+              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+              addModuleActionCreatorList(moduleName, actionName);
+            }
+          });
+        }
+      })();
     }
   }
 
@@ -1416,14 +2274,14 @@ function injectActions(store, moduleName, handlers) {
 }
 
 function _loadModel(moduleName, store) {
-  const hasInjected = !!store._medux_.injectedModules[moduleName];
+  var hasInjected = !!store._medux_.injectedModules[moduleName];
 
   if (!hasInjected) {
-    const moduleGetter = MetaData.moduleGetter;
-    const result = moduleGetter[moduleName]();
+    var moduleGetter = MetaData.moduleGetter;
+    var result = moduleGetter[moduleName]();
 
     if (isPromise(result)) {
-      return result.then(module => {
+      return result.then(function (module) {
         cacheModule(module);
         return module.default.model(store);
       });
@@ -1435,18 +2293,15 @@ function _loadModel(moduleName, store) {
 
   return undefined;
 }
-let CoreModelHandlers = _decorate(null, function (_initialize) {
-  class CoreModelHandlers {
-    constructor(moduleName, store) {
-      this.moduleName = moduleName;
-      this.store = store;
+var CoreModelHandlers = _decorate(null, function (_initialize) {
+  var CoreModelHandlers = function CoreModelHandlers(moduleName, store) {
+    this.moduleName = moduleName;
+    this.store = store;
 
-      _initialize(this);
+    _initialize(this);
 
-      this.actions = null;
-    }
-
-  }
+    this.actions = null;
+  };
 
   return {
     F: CoreModelHandlers,
@@ -1535,9 +2390,14 @@ let CoreModelHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       key: "callThisAction",
-      value: function callThisAction(handler, ...rest) {
-        const actions = MetaData.actionCreatorMap[this.moduleName];
-        return actions[handler.__actionName__](...rest);
+      value: function callThisAction(handler) {
+        var actions = MetaData.actionCreatorMap[this.moduleName];
+
+        for (var _len2 = arguments.length, rest = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+          rest[_key2 - 1] = arguments[_key2];
+        }
+
+        return actions[handler.__actionName__].apply(actions, rest);
       }
     }, {
       kind: "method",
@@ -1570,7 +2430,7 @@ let CoreModelHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
-        const state = this.getState();
+        var state = this.getState();
         return Object.assign({}, state, {
           loading: Object.assign({}, state.loading, payload)
         });
@@ -1578,17 +2438,19 @@ let CoreModelHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-const exportModule = (moduleName, initState, ActionHandles, views) => {
-  const model = store => {
-    const hasInjected = !!store._medux_.injectedModules[moduleName];
+var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
+  var model = function model(store) {
+    var hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = initState;
-      const handlers = new ActionHandles(moduleName, store);
-      const actions = injectActions(store, moduleName, handlers);
-      handlers.actions = actions;
-      const preModuleState = store.getState()[moduleName] || {};
-      const moduleState = Object.assign({}, initState, preModuleState);
+      var handlers = new ActionHandles(moduleName, store);
+
+      var _actions = injectActions(store, moduleName, handlers);
+
+      handlers.actions = _actions;
+      var preModuleState = store.getState()[moduleName] || {};
+      var moduleState = Object.assign({}, initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;
@@ -1601,31 +2463,33 @@ const exportModule = (moduleName, initState, ActionHandles, views) => {
 
   model.moduleName = moduleName;
   model.initState = initState;
-  const actions = {};
+  var actions = {};
   return {
-    moduleName,
-    model,
-    views,
-    actions
+    moduleName: moduleName,
+    model: model,
+    views: views,
+    actions: actions
   };
 };
 function getView(moduleName, viewName) {
-  const moduleGetter = MetaData.moduleGetter;
-  const result = moduleGetter[moduleName]();
+  var moduleGetter = MetaData.moduleGetter;
+  var result = moduleGetter[moduleName]();
 
   if (isPromise(result)) {
-    return result.then(module => {
+    return result.then(function (module) {
       cacheModule(module);
-      const view = module.default.views[viewName];
+      var view = module.default.views[viewName];
 
       if (isServerEnv) {
         return view;
       }
 
-      const initModel = module.default.model(MetaData.clientStore);
+      var initModel = module.default.model(MetaData.clientStore);
 
       if (isPromise(initModel)) {
-        return initModel.then(() => view);
+        return initModel.then(function () {
+          return view;
+        });
       }
 
       return view;
@@ -1633,25 +2497,27 @@ function getView(moduleName, viewName) {
   }
 
   cacheModule(result);
-  const view = result.default.views[viewName];
+  var view = result.default.views[viewName];
 
   if (isServerEnv) {
     return view;
   }
 
-  const initModel = result.default.model(MetaData.clientStore);
+  var initModel = result.default.model(MetaData.clientStore);
 
   if (isPromise(initModel)) {
-    return initModel.then(() => view);
+    return initModel.then(function () {
+      return view;
+    });
   }
 
   return view;
 }
 function getModuleByName(moduleName, moduleGetter) {
-  const result = moduleGetter[moduleName]();
+  var result = moduleGetter[moduleName]();
 
   if (isPromise(result)) {
-    return result.then(module => {
+    return result.then(function (module) {
       cacheModule(module);
       return module;
     });
@@ -1680,43 +2546,59 @@ function setProcessedError(error, meduxProcessed) {
   }
 
   return {
-    meduxProcessed,
-    error
+    meduxProcessed: meduxProcessed,
+    error: error
   };
 }
 
-function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = [], storeEnhancers = []) {
+function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
+  if (preloadedState === void 0) {
+    preloadedState = {};
+  }
+
+  if (storeReducers === void 0) {
+    storeReducers = {};
+  }
+
+  if (storeMiddlewares === void 0) {
+    storeMiddlewares = [];
+  }
+
+  if (storeEnhancers === void 0) {
+    storeEnhancers = [];
+  }
+
   if (MetaData.clientStore) {
     MetaData.clientStore.destroy();
   }
 
-  const combineReducers = (rootState, action) => {
+  var combineReducers = function combineReducers(rootState, action) {
     if (!store) {
       return rootState;
     }
 
-    const meta = store._medux_;
+    var meta = store._medux_;
     meta.prevState = rootState;
     meta.currentState = rootState;
-    Object.keys(storeReducers).forEach(moduleName => {
-      const result = storeReducers[moduleName](rootState[moduleName], action);
+    Object.keys(storeReducers).forEach(function (moduleName) {
+      var result = storeReducers[moduleName](rootState[moduleName], action);
 
       if (result !== rootState[moduleName]) {
-        meta.currentState = Object.assign({}, meta.currentState, {
-          [moduleName]: result
-        });
+        var _Object$assign;
+
+        meta.currentState = Object.assign({}, meta.currentState, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
       }
     });
-    const handlersCommon = meta.reducerMap[action.type] || {};
-    const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, handlersEvery);
-    const handlerModules = Object.keys(handlers);
+    var handlersCommon = meta.reducerMap[action.type] || {};
+    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+    var handlers = Object.assign({}, handlersCommon, handlersEvery);
+    var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
-      const orderList = [];
-      const priority = action.priority ? [...action.priority] : [];
-      handlerModules.forEach(moduleName => {
-        const fun = handlers[moduleName];
+      var orderList = [];
+      var priority = action.priority ? [].concat(action.priority) : [];
+      handlerModules.forEach(function (moduleName) {
+        var fun = handlers[moduleName];
 
         if (moduleName === MetaData.appModuleName) {
           orderList.unshift(moduleName);
@@ -1728,154 +2610,169 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
           priority.unshift(moduleName);
         }
       });
-      orderList.unshift(...priority);
-      const moduleNameMap = {};
-      orderList.forEach(moduleName => {
+      orderList.unshift.apply(orderList, priority);
+      var moduleNameMap = {};
+      orderList.forEach(function (moduleName) {
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
-          const fun = handlers[moduleName];
-          const result = fun(...getActionData(action));
+          var fun = handlers[moduleName];
+          var result = fun.apply(void 0, getActionData(action));
 
           if (result !== rootState[moduleName]) {
-            meta.currentState = Object.assign({}, meta.currentState, {
-              [moduleName]: result
-            });
+            var _Object$assign2;
+
+            meta.currentState = Object.assign({}, meta.currentState, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
           }
         }
       });
     }
 
-    const changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== meta.currentState[moduleName]);
+    var changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(function (moduleName) {
+      return rootState[moduleName] !== meta.currentState[moduleName];
+    });
     meta.prevState = changed ? meta.currentState : rootState;
     return meta.prevState;
   };
 
-  const middleware = ({
-    dispatch
-  }) => next => originalAction => {
-    if (isServerEnv) {
-      if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
-        return originalAction;
-      }
-    }
-
-    const meta = store._medux_;
-    meta.beforeState = meta.prevState;
-    const action = next(originalAction);
-    const handlersCommon = meta.effectMap[action.type] || {};
-    const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, handlersEvery);
-    const handlerModules = Object.keys(handlers);
-
-    if (handlerModules.length > 0) {
-      const orderList = [];
-      const priority = action.priority ? [...action.priority] : [];
-      handlerModules.forEach(moduleName => {
-        const fun = handlers[moduleName];
-
-        if (moduleName === MetaData.appModuleName) {
-          orderList.unshift(moduleName);
-        } else {
-          orderList.push(moduleName);
-        }
-
-        if (!fun.__isHandler__) {
-          priority.unshift(moduleName);
-        }
-      });
-      orderList.unshift(...priority);
-      const moduleNameMap = {};
-      const promiseResults = [];
-      orderList.forEach(moduleName => {
-        if (!moduleNameMap[moduleName]) {
-          moduleNameMap[moduleName] = true;
-          const fun = handlers[moduleName];
-          const effectResult = fun(...getActionData(action));
-          const decorators = fun.__decorators__;
-
-          if (decorators) {
-            const results = [];
-            decorators.forEach((decorator, index) => {
-              results[index] = decorator[0](action, moduleName, effectResult);
-            });
-            fun.__decoratorResults__ = results;
+  var middleware = function middleware(_ref) {
+    var dispatch = _ref.dispatch;
+    return function (next) {
+      return function (originalAction) {
+        if (isServerEnv) {
+          if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
+            return originalAction;
           }
+        }
 
-          const errorHandler = effectResult.then(reslove => {
-            if (decorators) {
-              const results = fun.__decoratorResults__ || [];
-              decorators.forEach((decorator, index) => {
-                if (decorator[1]) {
-                  decorator[1]('Resolved', results[index], reslove);
-                }
-              });
-              fun.__decoratorResults__ = undefined;
-            }
+        var meta = store._medux_;
+        meta.beforeState = meta.prevState;
+        var action = next(originalAction);
+        var handlersCommon = meta.effectMap[action.type] || {};
+        var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+        var handlers = Object.assign({}, handlersCommon, handlersEvery);
+        var handlerModules = Object.keys(handlers);
 
-            return reslove;
-          }, error => {
-            if (decorators) {
-              const results = fun.__decoratorResults__ || [];
-              decorators.forEach((decorator, index) => {
-                if (decorator[1]) {
-                  decorator[1]('Rejected', results[index], error);
-                }
-              });
-              fun.__decoratorResults__ = undefined;
-            }
+        if (handlerModules.length > 0) {
+          var orderList = [];
+          var priority = action.priority ? [].concat(action.priority) : [];
+          handlerModules.forEach(function (moduleName) {
+            var fun = handlers[moduleName];
 
-            if (action.type === ActionTypes.Error) {
-              if (isProcessedError(error) === undefined) {
-                error = setProcessedError(error, true);
-              }
-
-              throw error;
-            } else if (isProcessedError(error)) {
-              throw error;
+            if (moduleName === MetaData.appModuleName) {
+              orderList.unshift(moduleName);
             } else {
-              return dispatch(errorAction(error));
+              orderList.push(moduleName);
+            }
+
+            if (!fun.__isHandler__) {
+              priority.unshift(moduleName);
             }
           });
-          promiseResults.push(errorHandler);
+          orderList.unshift.apply(orderList, priority);
+          var moduleNameMap = {};
+          var promiseResults = [];
+          orderList.forEach(function (moduleName) {
+            if (!moduleNameMap[moduleName]) {
+              moduleNameMap[moduleName] = true;
+              var fun = handlers[moduleName];
+              var effectResult = fun.apply(void 0, getActionData(action));
+              var decorators = fun.__decorators__;
+
+              if (decorators) {
+                var results = [];
+                decorators.forEach(function (decorator, index) {
+                  results[index] = decorator[0](action, moduleName, effectResult);
+                });
+                fun.__decoratorResults__ = results;
+              }
+
+              var errorHandler = effectResult.then(function (reslove) {
+                if (decorators) {
+                  var _results = fun.__decoratorResults__ || [];
+
+                  decorators.forEach(function (decorator, index) {
+                    if (decorator[1]) {
+                      decorator[1]('Resolved', _results[index], reslove);
+                    }
+                  });
+                  fun.__decoratorResults__ = undefined;
+                }
+
+                return reslove;
+              }, function (error) {
+                if (decorators) {
+                  var _results2 = fun.__decoratorResults__ || [];
+
+                  decorators.forEach(function (decorator, index) {
+                    if (decorator[1]) {
+                      decorator[1]('Rejected', _results2[index], error);
+                    }
+                  });
+                  fun.__decoratorResults__ = undefined;
+                }
+
+                if (action.type === ActionTypes.Error) {
+                  if (isProcessedError(error) === undefined) {
+                    error = setProcessedError(error, true);
+                  }
+
+                  throw error;
+                } else if (isProcessedError(error)) {
+                  throw error;
+                } else {
+                  return dispatch(errorAction(error));
+                }
+              });
+              promiseResults.push(errorHandler);
+            }
+          });
+
+          if (promiseResults.length) {
+            return Promise.all(promiseResults);
+          }
         }
-      });
 
-      if (promiseResults.length) {
-        return Promise.all(promiseResults);
-      }
-    }
-
-    return action;
+        return action;
+      };
+    };
   };
 
-  const preLoadMiddleware = () => next => action => {
-    const [moduleName, actionName] = action.type.split(config.NSP);
+  var preLoadMiddleware = function preLoadMiddleware() {
+    return function (next) {
+      return function (action) {
+        var _action$type$split = action.type.split(config.NSP),
+            moduleName = _action$type$split[0],
+            actionName = _action$type$split[1];
 
-    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const hasInjected = !!store._medux_.injectedModules[moduleName];
+        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+          var hasInjected = !!store._medux_.injectedModules[moduleName];
 
-      if (!hasInjected) {
-        if (actionName === ActionTypes.MInit) {
-          return _loadModel(moduleName, store);
+          if (!hasInjected) {
+            if (actionName === ActionTypes.MInit) {
+              return _loadModel(moduleName, store);
+            }
+
+            var initModel = _loadModel(moduleName, store);
+
+            if (isPromise(initModel)) {
+              return initModel.then(function () {
+                return next(action);
+              });
+            }
+          }
         }
 
-        const initModel = _loadModel(moduleName, store);
-
-        if (isPromise(initModel)) {
-          return initModel.then(() => next(action));
-        }
-      }
-    }
-
-    return next(action);
+        return next(action);
+      };
+    };
   };
 
-  const middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
+  var middlewareEnhancer = applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
 
-  const enhancer = newCreateStore => {
-    return (...args) => {
-      const newStore = newCreateStore(...args);
-      const modelStore = newStore;
+  var enhancer = function enhancer(newCreateStore) {
+    return function () {
+      var newStore = newCreateStore.apply(void 0, arguments);
+      var modelStore = newStore;
       modelStore._medux_ = {
         beforeState: {},
         prevState: {},
@@ -1888,15 +2785,17 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
     };
   };
 
-  const enhancers = [middlewareEnhancer, enhancer, ...storeEnhancers];
+  var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
 
   if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  const store = createStore(combineReducers, preloadedState, compose(...enhancers));
+  var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
 
-  store.destroy = () => undefined;
+  store.destroy = function () {
+    return undefined;
+  };
 
   if (!isServerEnv) {
     MetaData.clientStore = store;
@@ -1906,49 +2805,51 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
 }
 
 function clearHandlers(key, actionHandlerMap) {
-  for (const actionName in actionHandlerMap) {
+  for (var actionName in actionHandlerMap) {
     if (actionHandlerMap.hasOwnProperty(actionName)) {
-      const maps = actionHandlerMap[actionName];
+      var maps = actionHandlerMap[actionName];
       delete maps[key];
     }
   }
 }
 
 function modelHotReplacement(moduleName, initState, ActionHandles) {
-  const store = MetaData.clientStore;
-  const prevInitState = store._medux_.injectedModules[moduleName];
+  var store = MetaData.clientStore;
+  var prevInitState = store._medux_.injectedModules[moduleName];
 
   if (prevInitState) {
     if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
+      env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
     }
 
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
-    const handlers = new ActionHandles(moduleName, store);
-    const actions = injectActions(store, moduleName, handlers);
+    var handlers = new ActionHandles(moduleName, store);
+    var actions = injectActions(store, moduleName, handlers);
     handlers.actions = actions;
-    env.console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
+    env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
   }
 }
 
-let reRender = () => undefined;
+var reRender = function reRender() {
+  return undefined;
+};
 
-let reRenderTimer = 0;
-let appView = null;
+var reRenderTimer = 0;
+var appView = null;
 function viewHotReplacement(moduleName, views) {
-  const module = MetaData.moduleGetter[moduleName]();
+  var module = MetaData.moduleGetter[moduleName]();
 
   if (module) {
     module.default.views = views;
-    env.console.warn(`[HMR] @medux Updated views: ${moduleName}`);
+    env.console.warn("[HMR] @medux Updated views: " + moduleName);
     appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views[MetaData.appViewName];
 
     if (!reRenderTimer) {
-      reRenderTimer = env.setTimeout(() => {
+      reRenderTimer = env.setTimeout(function () {
         reRenderTimer = 0;
         reRender(appView);
-        env.console.warn(`[HMR] @medux view re rendering`);
+        env.console.warn("[HMR] @medux view re rendering");
       }, 0);
     }
   } else {
@@ -1957,15 +2858,21 @@ function viewHotReplacement(moduleName, views) {
 }
 function exportActions(moduleGetter) {
   MetaData.moduleGetter = moduleGetter;
-  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
+  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
     maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-      get: (target, key) => {
-        return (...payload) => ({
-          type: moduleName + config.NSP + key,
-          payload
-        });
+      get: function get(target, key) {
+        return function () {
+          for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+            payload[_key] = arguments[_key];
+          }
+
+          return {
+            type: moduleName + config.NSP + key,
+            payload: payload
+          };
+        };
       },
-      set: () => {
+      set: function set() {
         return true;
       }
     });
@@ -1973,76 +2880,182 @@ function exportActions(moduleGetter) {
   }, {});
   return MetaData.actionCreatorMap;
 }
-async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, beforeRender) {
-  if (reRenderTimer) {
-    env.clearTimeout.call(null, reRenderTimer);
-    reRenderTimer = 0;
-  }
-
-  const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
-  MetaData.appModuleName = appModuleName;
-  MetaData.appViewName = appViewName;
-
-  if (typeof appModuleOrName !== 'string') {
-    cacheModule(appModuleOrName);
-  }
-
-  const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  let initData = storeOptions.initData || {};
-
-  if (client[ssrInitStoreKey]) {
-    initData = Object.assign({}, initData, client[ssrInitStoreKey]);
-  }
-
-  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const reduxStore = beforeRender ? beforeRender(store) : store;
-  const storeState = reduxStore.getState();
-  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
-  let appModule;
-
-  for (let i = 0, k = preModuleNames.length; i < k; i++) {
-    const moduleName = preModuleNames[i];
-    const module = await getModuleByName(moduleName, moduleGetter);
-    await module.default.model(reduxStore);
-
-    if (i === 0) {
-      appModule = module;
-    }
-  }
-
-  reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
+  return _renderApp.apply(this, arguments);
 }
-async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
-  MetaData.appModuleName = appModuleName;
-  MetaData.appViewName = appViewName;
-  const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const reduxStore = beforeRender ? beforeRender(store) : store;
-  const storeState = reduxStore.getState();
-  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
-  let appModule;
 
-  for (let i = 0, k = preModuleNames.length; i < k; i++) {
-    const moduleName = preModuleNames[i];
-    const module = moduleGetter[moduleName]();
-    await module.default.model(reduxStore);
+function _renderApp() {
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
+    var appModuleName, ssrInitStoreKey, initData, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName, module;
 
-    if (i === 0) {
-      appModule = module;
+    return regenerator.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (storeOptions === void 0) {
+              storeOptions = {};
+            }
+
+            if (reRenderTimer) {
+              env.clearTimeout.call(null, reRenderTimer);
+              reRenderTimer = 0;
+            }
+
+            appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
+            MetaData.appModuleName = appModuleName;
+            MetaData.appViewName = appViewName;
+
+            if (typeof appModuleOrName !== 'string') {
+              cacheModule(appModuleOrName);
+            }
+
+            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            initData = storeOptions.initData || {};
+
+            if (client[ssrInitStoreKey]) {
+              initData = Object.assign({}, initData, client[ssrInitStoreKey]);
+            }
+
+            store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            reduxStore = beforeRender ? beforeRender(store) : store;
+            storeState = reduxStore.getState();
+            preModuleNames = Object.keys(storeState).filter(function (key) {
+              return key !== appModuleName && moduleGetter[key];
+            });
+            preModuleNames.unshift(appModuleName);
+            i = 0, k = preModuleNames.length;
+
+          case 15:
+            if (!(i < k)) {
+              _context.next = 26;
+              break;
+            }
+
+            _moduleName = preModuleNames[i];
+            _context.next = 19;
+            return getModuleByName(_moduleName, moduleGetter);
+
+          case 19:
+            module = _context.sent;
+            _context.next = 22;
+            return module.default.model(reduxStore);
+
+          case 22:
+            if (i === 0) {
+              appModule = module;
+            }
+
+          case 23:
+            i++;
+            _context.next = 15;
+            break;
+
+          case 26:
+            reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+
+          case 27:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _renderApp.apply(this, arguments);
+}
+
+function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
+  return _renderSSR.apply(this, arguments);
+}
+
+function _renderSSR() {
+  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
+    var ssrInitStoreKey, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName2, module;
+
+    return regenerator.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            if (storeOptions === void 0) {
+              storeOptions = {};
+            }
+
+            MetaData.appModuleName = appModuleName;
+            MetaData.appViewName = appViewName;
+            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            reduxStore = beforeRender ? beforeRender(store) : store;
+            storeState = reduxStore.getState();
+            preModuleNames = Object.keys(storeState).filter(function (key) {
+              return key !== appModuleName && moduleGetter[key];
+            });
+            preModuleNames.unshift(appModuleName);
+            i = 0, k = preModuleNames.length;
+
+          case 10:
+            if (!(i < k)) {
+              _context2.next = 19;
+              break;
+            }
+
+            _moduleName2 = preModuleNames[i];
+            module = moduleGetter[_moduleName2]();
+            _context2.next = 15;
+            return module.default.model(reduxStore);
+
+          case 15:
+            if (i === 0) {
+              appModule = module;
+            }
+
+          case 16:
+            i++;
+            _context2.next = 10;
+            break;
+
+          case 19:
+            return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
+
+          case 20:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2);
+  }));
+  return _renderSSR.apply(this, arguments);
+}
+
+function _createForOfIteratorHelperLoose(o, allowArrayLike) {
+  var it;
+
+  if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
+      if (it) o = it;
+      var i = 0;
+      return function () {
+        if (i >= o.length) return {
+          done: true
+        };
+        return {
+          done: false,
+          value: o[i++]
+        };
+      };
     }
+
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
-  return render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  it = o[Symbol.iterator]();
+  return it.next.bind(it);
 }
 
 function lexer(str) {
-  const tokens = [];
-  let i = 0;
+  var tokens = [];
+  var i = 0;
 
   while (i < str.length) {
-    const char = str[i];
+    var char = str[i];
 
     if (char === '*' || char === '+' || char === '?') {
       tokens.push({
@@ -2081,11 +3094,11 @@ function lexer(str) {
     }
 
     if (char === ':') {
-      let name = '';
-      let j = i + 1;
+      var name = '';
+      var j = i + 1;
 
       while (j < str.length) {
-        const code = str.charCodeAt(j);
+        var code = str.charCodeAt(j);
 
         if (code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code === 95 || code === 46) {
           name += str[j++];
@@ -2095,7 +3108,7 @@ function lexer(str) {
         break;
       }
 
-      if (!name) throw new TypeError(`Missing parameter name at ${i}`);
+      if (!name) throw new TypeError("Missing parameter name at " + i);
       tokens.push({
         type: 'NAME',
         index: i,
@@ -2106,46 +3119,47 @@ function lexer(str) {
     }
 
     if (char === '(') {
-      let count = 1;
-      let pattern = '';
-      let j = i + 1;
+      var count = 1;
+      var pattern = '';
 
-      if (str[j] === '?') {
-        throw new TypeError(`Pattern cannot start with "?" at ${j}`);
+      var _j = i + 1;
+
+      if (str[_j] === '?') {
+        throw new TypeError("Pattern cannot start with \"?\" at " + _j);
       }
 
-      while (j < str.length) {
-        if (str[j] === '\\') {
-          pattern += str[j++] + str[j++];
+      while (_j < str.length) {
+        if (str[_j] === '\\') {
+          pattern += str[_j++] + str[_j++];
           continue;
         }
 
-        if (str[j] === ')') {
+        if (str[_j] === ')') {
           count--;
 
           if (count === 0) {
-            j++;
+            _j++;
             break;
           }
-        } else if (str[j] === '(') {
+        } else if (str[_j] === '(') {
           count++;
 
-          if (str[j + 1] !== '?') {
-            throw new TypeError(`Capturing groups are not allowed at ${j}`);
+          if (str[_j + 1] !== '?') {
+            throw new TypeError("Capturing groups are not allowed at " + _j);
           }
         }
 
-        pattern += str[j++];
+        pattern += str[_j++];
       }
 
-      if (count) throw new TypeError(`Unbalanced pattern at ${i}`);
-      if (!pattern) throw new TypeError(`Missing pattern at ${i}`);
+      if (count) throw new TypeError("Unbalanced pattern at " + i);
+      if (!pattern) throw new TypeError("Missing pattern at " + i);
       tokens.push({
         type: 'PATTERN',
         index: i,
         value: pattern
       });
-      i = j;
+      i = _j;
       continue;
     }
 
@@ -2164,35 +3178,38 @@ function lexer(str) {
   return tokens;
 }
 
-function parse(str, options = {}) {
-  const tokens = lexer(str);
-  const {
-    prefixes = './'
-  } = options;
-  const defaultPattern = `[^${escapeString(options.delimiter || '/#?')}]+?`;
-  const result = [];
-  let key = 0;
-  let i = 0;
-  let path = '';
+function parse(str, options) {
+  if (options === void 0) {
+    options = {};
+  }
 
-  const tryConsume = type => {
+  var tokens = lexer(str);
+  var _options = options,
+      _options$prefixes = _options.prefixes,
+      prefixes = _options$prefixes === void 0 ? './' : _options$prefixes;
+  var defaultPattern = "[^" + escapeString(options.delimiter || '/#?') + "]+?";
+  var result = [];
+  var key = 0;
+  var i = 0;
+  var path = '';
+
+  var tryConsume = function tryConsume(type) {
     if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
     return undefined;
   };
 
-  const mustConsume = type => {
-    const value = tryConsume(type);
+  var mustConsume = function mustConsume(type) {
+    var value = tryConsume(type);
     if (value !== undefined) return value;
-    const {
-      type: nextType,
-      index
-    } = tokens[i];
-    throw new TypeError(`Unexpected ${nextType} at ${index}, expected ${type}`);
+    var _tokens$i = tokens[i],
+        nextType = _tokens$i.type,
+        index = _tokens$i.index;
+    throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
   };
 
-  const consumeText = () => {
-    let result = '';
-    let value;
+  var consumeText = function consumeText() {
+    var result = '';
+    var value;
 
     while (value = tryConsume('CHAR') || tryConsume('ESCAPED_CHAR')) {
       result += value;
@@ -2202,12 +3219,12 @@ function parse(str, options = {}) {
   };
 
   while (i < tokens.length) {
-    const char = tryConsume('CHAR');
-    const name = tryConsume('NAME');
-    const pattern = tryConsume('PATTERN');
+    var char = tryConsume('CHAR');
+    var name = tryConsume('NAME');
+    var pattern = tryConsume('PATTERN');
 
     if (name || pattern) {
-      let prefix = char || '';
+      var prefix = char || '';
 
       if (prefixes.indexOf(prefix) === -1) {
         path += prefix;
@@ -2221,7 +3238,7 @@ function parse(str, options = {}) {
 
       result.push({
         name: name || key++,
-        prefix,
+        prefix: prefix,
         suffix: '',
         pattern: pattern || defaultPattern,
         modifier: tryConsume('MODIFIER') || ''
@@ -2229,10 +3246,10 @@ function parse(str, options = {}) {
       continue;
     }
 
-    const value = char || tryConsume('ESCAPED_CHAR');
+    var _value = char || tryConsume('ESCAPED_CHAR');
 
-    if (value) {
-      path += value;
+    if (_value) {
+      path += _value;
       continue;
     }
 
@@ -2241,19 +3258,22 @@ function parse(str, options = {}) {
       path = '';
     }
 
-    const open = tryConsume('OPEN');
+    var open = tryConsume('OPEN');
 
     if (open) {
-      const prefix = consumeText();
-      const name = tryConsume('NAME') || '';
-      const pattern = tryConsume('PATTERN') || '';
-      const suffix = consumeText();
+      var _prefix = consumeText();
+
+      var _name = tryConsume('NAME') || '';
+
+      var _pattern = tryConsume('PATTERN') || '';
+
+      var suffix = consumeText();
       mustConsume('CLOSE');
       result.push({
-        name: name || (pattern ? key++ : ''),
-        pattern: name && !pattern ? defaultPattern : pattern,
-        prefix,
-        suffix,
+        name: _name || (_pattern ? key++ : ''),
+        pattern: _name && !_pattern ? defaultPattern : _pattern,
+        prefix: _prefix,
+        suffix: suffix,
         modifier: tryConsume('MODIFIER') || ''
       });
       continue;
@@ -2267,71 +3287,79 @@ function parse(str, options = {}) {
 function compile(str, options) {
   return tokensToFunction(parse(str, options), options);
 }
-function tokensToFunction(tokens, options = {}) {
-  const reFlags = flags(options);
-  const {
-    encode = x => x,
-    validate = true
-  } = options;
-  const matches = tokens.map(token => {
+function tokensToFunction(tokens, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  var reFlags = flags(options);
+  var _options2 = options,
+      _options2$encode = _options2.encode,
+      encode = _options2$encode === void 0 ? function (x) {
+    return x;
+  } : _options2$encode,
+      _options2$validate = _options2.validate,
+      validate = _options2$validate === void 0 ? true : _options2$validate;
+  var matches = tokens.map(function (token) {
     if (typeof token === 'object') {
-      return new RegExp(`^(?:${token.pattern})$`, reFlags);
+      return new RegExp("^(?:" + token.pattern + ")$", reFlags);
     }
 
     return undefined;
   });
-  return data => {
-    let path = '';
+  return function (data) {
+    var path = '';
 
-    for (let i = 0; i < tokens.length; i++) {
-      const token = tokens[i];
+    for (var i = 0; i < tokens.length; i++) {
+      var _token = tokens[i];
 
-      if (typeof token === 'string') {
-        path += token;
+      if (typeof _token === 'string') {
+        path += _token;
         continue;
       }
 
-      const value = data ? data[token.name] : undefined;
-      const optional = token.modifier === '?' || token.modifier === '*';
-      const repeat = token.modifier === '*' || token.modifier === '+';
+      var _value2 = data ? data[_token.name] : undefined;
 
-      if (Array.isArray(value)) {
+      var optional = _token.modifier === '?' || _token.modifier === '*';
+      var repeat = _token.modifier === '*' || _token.modifier === '+';
+
+      if (Array.isArray(_value2)) {
         if (!repeat) {
-          throw new TypeError(`Expected "${token.name}" to not repeat, but got an array`);
+          throw new TypeError("Expected \"" + _token.name + "\" to not repeat, but got an array");
         }
 
-        if (value.length === 0) {
+        if (_value2.length === 0) {
           if (optional) continue;
-          throw new TypeError(`Expected "${token.name}" to not be empty`);
+          throw new TypeError("Expected \"" + _token.name + "\" to not be empty");
         }
 
-        for (let j = 0; j < value.length; j++) {
-          const segment = encode(value[j], token);
+        for (var j = 0; j < _value2.length; j++) {
+          var segment = encode(_value2[j], _token);
 
           if (validate && !matches[i].test(segment)) {
-            throw new TypeError(`Expected all "${token.name}" to match "${token.pattern}", but got "${segment}"`);
+            throw new TypeError("Expected all \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + segment + "\"");
           }
 
-          path += token.prefix + segment + token.suffix;
+          path += _token.prefix + segment + _token.suffix;
         }
 
         continue;
       }
 
-      if (typeof value === 'string' || typeof value === 'number') {
-        const segment = encode(String(value), token);
+      if (typeof _value2 === 'string' || typeof _value2 === 'number') {
+        var _segment = encode(String(_value2), _token);
 
-        if (validate && !matches[i].test(segment)) {
-          throw new TypeError(`Expected "${token.name}" to match "${token.pattern}", but got "${segment}"`);
+        if (validate && !matches[i].test(_segment)) {
+          throw new TypeError("Expected \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + _segment + "\"");
         }
 
-        path += token.prefix + segment + token.suffix;
+        path += _token.prefix + _segment + _token.suffix;
         continue;
       }
 
       if (optional) continue;
-      const typeOfMessage = repeat ? 'an array' : 'a string';
-      throw new TypeError(`Expected "${token.name}" to be ${typeOfMessage}`);
+      var typeOfMessage = repeat ? 'an array' : 'a string';
+      throw new TypeError("Expected \"" + _token.name + "\" to be " + typeOfMessage);
     }
 
     return path;
@@ -2348,10 +3376,10 @@ function flags(options) {
 
 function regexpToRegexp(path, keys) {
   if (!keys) return path;
-  const groups = path.source.match(/\((?!\?)/g);
+  var groups = path.source.match(/\((?!\?)/g);
 
   if (groups) {
-    for (let i = 0; i < groups.length; i++) {
+    for (var i = 0; i < groups.length; i++) {
       keys.push({
         name: i,
         prefix: '',
@@ -2366,64 +3394,77 @@ function regexpToRegexp(path, keys) {
 }
 
 function arrayToRegexp(paths, keys, options) {
-  const parts = paths.map(path => pathToRegexp(path, keys, options).source);
-  return new RegExp(`(?:${parts.join('|')})`, flags(options));
+  var parts = paths.map(function (path) {
+    return pathToRegexp(path, keys, options).source;
+  });
+  return new RegExp("(?:" + parts.join('|') + ")", flags(options));
 }
 
 function stringToRegexp(path, keys, options) {
   return tokensToRegexp(parse(path, options), keys, options);
 }
 
-function tokensToRegexp(tokens, keys, options = {}) {
-  const {
-    strict = false,
-    start = true,
-    end = true,
-    encode = x => x
-  } = options;
-  const endsWith = `[${escapeString(options.endsWith || '')}]|$`;
-  const delimiter = `[${escapeString(options.delimiter || '/#?')}]`;
-  let route = start ? '^' : '';
+function tokensToRegexp(tokens, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
 
-  for (const token of tokens) {
-    if (typeof token === 'string') {
-      route += escapeString(encode(token));
+  var _options4 = options,
+      _options4$strict = _options4.strict,
+      strict = _options4$strict === void 0 ? false : _options4$strict,
+      _options4$start = _options4.start,
+      start = _options4$start === void 0 ? true : _options4$start,
+      _options4$end = _options4.end,
+      end = _options4$end === void 0 ? true : _options4$end,
+      _options4$encode = _options4.encode,
+      encode = _options4$encode === void 0 ? function (x) {
+    return x;
+  } : _options4$encode;
+  var endsWith = "[" + escapeString(options.endsWith || '') + "]|$";
+  var delimiter = "[" + escapeString(options.delimiter || '/#?') + "]";
+  var route = start ? '^' : '';
+
+  for (var _iterator = _createForOfIteratorHelperLoose(tokens), _step; !(_step = _iterator()).done;) {
+    var _token2 = _step.value;
+
+    if (typeof _token2 === 'string') {
+      route += escapeString(encode(_token2));
     } else {
-      const prefix = escapeString(encode(token.prefix));
-      const suffix = escapeString(encode(token.suffix));
+      var prefix = escapeString(encode(_token2.prefix));
+      var suffix = escapeString(encode(_token2.suffix));
 
-      if (token.pattern) {
-        if (keys) keys.push(token);
+      if (_token2.pattern) {
+        if (keys) keys.push(_token2);
 
         if (prefix || suffix) {
-          if (token.modifier === '+' || token.modifier === '*') {
-            const mod = token.modifier === '*' ? '?' : '';
-            route += `(?:${prefix}((?:${token.pattern})(?:${suffix}${prefix}(?:${token.pattern}))*)${suffix})${mod}`;
+          if (_token2.modifier === '+' || _token2.modifier === '*') {
+            var mod = _token2.modifier === '*' ? '?' : '';
+            route += "(?:" + prefix + "((?:" + _token2.pattern + ")(?:" + suffix + prefix + "(?:" + _token2.pattern + "))*)" + suffix + ")" + mod;
           } else {
-            route += `(?:${prefix}(${token.pattern})${suffix})${token.modifier}`;
+            route += "(?:" + prefix + "(" + _token2.pattern + ")" + suffix + ")" + _token2.modifier;
           }
         } else {
-          route += `(${token.pattern})${token.modifier}`;
+          route += "(" + _token2.pattern + ")" + _token2.modifier;
         }
       } else {
-        route += `(?:${prefix}${suffix})${token.modifier}`;
+        route += "(?:" + prefix + suffix + ")" + _token2.modifier;
       }
     }
   }
 
   if (end) {
-    if (!strict) route += `${delimiter}?`;
-    route += !options.endsWith ? '$' : `(?=${endsWith})`;
+    if (!strict) route += delimiter + "?";
+    route += !options.endsWith ? '$' : "(?=" + endsWith + ")";
   } else {
-    const endToken = tokens[tokens.length - 1];
-    const isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
+    var endToken = tokens[tokens.length - 1];
+    var isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
 
     if (!strict) {
-      route += `(?:${delimiter}(?=${endsWith}))?`;
+      route += "(?:" + delimiter + "(?=" + endsWith + "))?";
     }
 
     if (!isEndDelimited) {
-      route += `(?=${delimiter}|${endsWith})`;
+      route += "(?=" + delimiter + "|" + endsWith + ")";
     }
   }
 
@@ -2435,15 +3476,15 @@ function pathToRegexp(path, keys, options) {
   return stringToRegexp(path, keys, options);
 }
 
-const cache = {};
-const cacheLimit = 10000;
-let cacheCount = 0;
+var cache = {};
+var cacheLimit = 10000;
+var cacheCount = 0;
 function compileToPath(rule) {
   if (cache[rule]) {
     return cache[rule];
   }
 
-  const result = compile(rule);
+  var result = compile(rule);
 
   if (cacheCount < cacheLimit) {
     cache[rule] = result;
@@ -2452,23 +3493,27 @@ function compileToPath(rule) {
 
   return result;
 }
-function compilePath(path, options = {
-  end: false,
-  strict: false,
-  sensitive: false
-}) {
-  const cacheKey = `${options.end}${options.strict}${options.sensitive}`;
-  const pathCache = cache[cacheKey] || (cache[cacheKey] = {});
+function compilePath(path, options) {
+  if (options === void 0) {
+    options = {
+      end: false,
+      strict: false,
+      sensitive: false
+    };
+  }
+
+  var cacheKey = "" + options.end + options.strict + options.sensitive;
+  var pathCache = cache[cacheKey] || (cache[cacheKey] = {});
 
   if (pathCache[path]) {
     return pathCache[path];
   }
 
-  const keys = [];
-  const regexp = pathToRegexp(path, keys, options);
-  const result = {
-    regexp,
-    keys
+  var keys = [];
+  var regexp = pathToRegexp(path, keys, options);
+  var result = {
+    regexp: regexp,
+    keys: keys
   };
 
   if (cacheCount < cacheLimit) {
@@ -2478,51 +3523,58 @@ function compilePath(path, options = {
 
   return result;
 }
-function matchPath(pathname, options = {}) {
+function matchPath(pathname, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
   if (typeof options === 'string' || Array.isArray(options)) {
     options = {
       path: options
     };
   }
 
-  const {
-    path: pathStr,
-    exact = false,
-    strict = false,
-    sensitive = false
-  } = options;
-  const paths = [].concat(pathStr);
-  return paths.reduce((matched, path) => {
+  var _options = options,
+      pathStr = _options.path,
+      _options$exact = _options.exact,
+      exact = _options$exact === void 0 ? false : _options$exact,
+      _options$strict = _options.strict,
+      strict = _options$strict === void 0 ? false : _options$strict,
+      _options$sensitive = _options.sensitive,
+      sensitive = _options$sensitive === void 0 ? false : _options$sensitive;
+  var paths = [].concat(pathStr);
+  return paths.reduce(function (matched, path) {
     if (!path) return null;
     if (matched) return matched;
 
     if (path === '*') {
       return {
-        path,
+        path: path,
         url: pathname,
         isExact: true,
         params: {}
       };
     }
 
-    const {
-      regexp,
-      keys
-    } = compilePath(path, {
+    var _compilePath = compilePath(path, {
       end: exact,
-      strict,
-      sensitive
-    });
-    const match = regexp.exec(pathname);
+      strict: strict,
+      sensitive: sensitive
+    }),
+        regexp = _compilePath.regexp,
+        keys = _compilePath.keys;
+
+    var match = regexp.exec(pathname);
     if (!match) return null;
-    const [url, ...values] = match;
-    const isExact = pathname === url;
+    var url = match[0],
+        values = match.slice(1);
+    var isExact = pathname === url;
     if (exact && !isExact) return null;
     return {
-      path,
+      path: path,
       url: path === '/' && url === '' ? '/' : url,
-      isExact,
-      params: keys.reduce((memo, key, index) => {
+      isExact: isExact,
+      params: keys.reduce(function (memo, key, index) {
         memo[key.name] = values[index];
         return memo;
       }, {})
@@ -2530,7 +3582,7 @@ function matchPath(pathname, options = {}) {
   }, null);
 }
 
-const routeConfig = {
+var routeConfig = {
   RSP: '|',
   escape: true,
   dateParse: false,
@@ -2546,10 +3598,10 @@ function setRouteConfig(conf) {
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
   conf.homeUrl && (routeConfig.homeUrl = conf.homeUrl);
 }
-const RouteActionTypes = {
+var RouteActionTypes = {
   MRouteParams: 'RouteParams',
-  RouteChange: `medux${config.NSP}RouteChange`,
-  BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`
+  RouteChange: "medux" + config.NSP + "RouteChange",
+  BeforeRouteChange: "medux" + config.NSP + "BeforeRouteChange"
 };
 function beforeRouteChangeAction(routeState) {
   return {
@@ -2565,7 +3617,7 @@ function routeChangeAction(routeState) {
 }
 function routeParamsAction(moduleName, params, action) {
   return {
-    type: `${moduleName}${config.NSP}${RouteActionTypes.MRouteParams}`,
+    type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
     payload: [params, action]
   };
 }
@@ -2573,15 +3625,15 @@ function dataIsLocation(data) {
   return !!data['pathname'];
 }
 function checkLocation(location) {
-  const data = Object.assign({}, location);
-  data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
+  var data = Object.assign({}, location);
+  data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
 
   if (data.pathname !== '/') {
     data.pathname = data.pathname.replace(/\/$/, '');
   }
 
-  data.search = `?${location.search || ''}`.replace('??', '?');
-  data.hash = `#${location.hash || ''}`.replace('##', '#');
+  data.search = ("?" + (location.search || '')).replace('??', '?');
+  data.hash = ("#" + (location.hash || '')).replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';
@@ -2594,7 +3646,7 @@ function checkLocation(location) {
   return data;
 }
 function urlToLocation(url) {
-  url = `/${url}`.replace(/\/+/g, '/');
+  url = ("/" + url).replace(/\/+/g, '/');
 
   if (!url) {
     return {
@@ -2604,44 +3656,63 @@ function urlToLocation(url) {
     };
   }
 
-  const arr = url.split(/[?#]/);
+  var arr = url.split(/[?#]/);
 
   if (arr.length === 2 && url.indexOf('?') < 0) {
     arr.splice(1, 0, '');
   }
 
-  const [pathname, search = '', hash = ''] = arr;
+  var pathname = arr[0],
+      _arr$ = arr[1],
+      search = _arr$ === void 0 ? '' : _arr$,
+      _arr$2 = arr[2],
+      hash = _arr$2 === void 0 ? '' : _arr$2;
   return {
-    pathname,
-    search: search && `?${search}`,
-    hash: hash && `#${hash}`
+    pathname: pathname,
+    search: search && "?" + search,
+    hash: hash && "#" + hash
   };
 }
 function locationToUrl(safeLocation) {
   return safeLocation.pathname + safeLocation.search + safeLocation.hash;
 }
-function compileRule(routeRule, parentAbsoluteViewName = '', viewToRule = {}, ruleToKeys = {}) {
-  for (const rule in routeRule) {
-    if (routeRule.hasOwnProperty(rule)) {
-      const item = routeRule[rule];
-      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
+function compileRule(routeRule, parentAbsoluteViewName, viewToRule, ruleToKeys) {
+  if (parentAbsoluteViewName === void 0) {
+    parentAbsoluteViewName = '';
+  }
 
-      if (!ruleToKeys[rule]) {
-        const {
-          keys
-        } = compilePath(rule, {
+  if (viewToRule === void 0) {
+    viewToRule = {};
+  }
+
+  if (ruleToKeys === void 0) {
+    ruleToKeys = {};
+  }
+
+  for (var _rule in routeRule) {
+    if (routeRule.hasOwnProperty(_rule)) {
+      var item = routeRule[_rule];
+
+      var _ref = typeof item === 'string' ? [item, null] : item,
+          _viewName = _ref[0],
+          pathConfig = _ref[1];
+
+      if (!ruleToKeys[_rule]) {
+        var _compilePath = compilePath(_rule, {
           end: true,
           strict: false,
           sensitive: false
-        });
-        ruleToKeys[rule] = keys.reduce((prev, cur) => {
+        }),
+            keys = _compilePath.keys;
+
+        ruleToKeys[_rule] = keys.reduce(function (prev, cur) {
           prev.push(cur.name);
           return prev;
         }, []);
       }
 
-      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
-      viewToRule[absoluteViewName] = rule;
+      var absoluteViewName = parentAbsoluteViewName + "/" + _viewName;
+      viewToRule[absoluteViewName] = _rule;
 
       if (pathConfig) {
         compileRule(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
@@ -2650,8 +3721,8 @@ function compileRule(routeRule, parentAbsoluteViewName = '', viewToRule = {}, ru
   }
 
   return {
-    viewToRule,
-    ruleToKeys
+    viewToRule: viewToRule,
+    ruleToKeys: ruleToKeys
   };
 }
 
@@ -2672,7 +3743,7 @@ function cloneSpecificValue(val) {
 }
 
 function deepCloneArray(arr) {
-  const clone = [];
+  var clone = [];
   arr.forEach(function (item, index) {
     if (typeof item === 'object' && item !== null) {
       if (Array.isArray(item)) {
@@ -2693,7 +3764,11 @@ function safeGetProperty(object, property) {
   return property === '__proto__' ? undefined : object[property];
 }
 
-function deepExtend(...datas) {
+function deepExtend() {
+  for (var _len = arguments.length, datas = new Array(_len), _key = 0; _key < _len; _key++) {
+    datas[_key] = arguments[_key];
+  }
+
   if (arguments.length < 1 || typeof arguments[0] !== 'object') {
     return false;
   }
@@ -2702,10 +3777,10 @@ function deepExtend(...datas) {
     return arguments[0];
   }
 
-  const target = arguments[0];
-  const args = Array.prototype.slice.call(arguments, 1);
-  let val;
-  let src;
+  var target = arguments[0];
+  var args = Array.prototype.slice.call(arguments, 1);
+  var val;
+  var src;
   args.forEach(function (obj) {
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
@@ -2732,10 +3807,10 @@ function deepExtend(...datas) {
 }
 
 function excludeDefaultData(data, def, holde, views) {
-  const result = {};
-  Object.keys(data).forEach(moduleName => {
-    let value = data[moduleName];
-    const defaultValue = def[moduleName];
+  var result = {};
+  Object.keys(data).forEach(function (moduleName) {
+    var value = data[moduleName];
+    var defaultValue = def[moduleName];
 
     if (value !== defaultValue) {
       if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
@@ -2755,7 +3830,7 @@ function excludeDefaultData(data, def, holde, views) {
   return result;
 }
 
-const ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
+var ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
 
 function dateParse(prop, value) {
   if (typeof value === 'string' && ISO_DATE_FORMAT.test(value)) {
@@ -2786,7 +3861,7 @@ function searchStringify(searchData) {
     return '';
   }
 
-  const str = JSON.stringify(searchData);
+  var str = JSON.stringify(searchData);
 
   if (str === '{}') {
     return '';
@@ -2800,8 +3875,8 @@ function searchStringify(searchData) {
 }
 
 function splitSearch(search) {
-  const reg = new RegExp(`[?&#]${routeConfig.splitKey}=([^&]+)`);
-  const arr = search.match(reg);
+  var reg = new RegExp("[?&#]" + routeConfig.splitKey + "=([^&]+)");
+  var arr = search.match(reg);
 
   if (arr) {
     return searchParse(arr[1]);
@@ -2811,26 +3886,29 @@ function splitSearch(search) {
 }
 
 function checkPathArgs(params) {
-  const obj = {};
+  var obj = {};
 
-  for (const key in params) {
-    if (params.hasOwnProperty(key)) {
-      const val = params[key];
-      const props = key.split('.');
+  for (var _key in params) {
+    if (params.hasOwnProperty(_key)) {
+      (function () {
+        var val = params[_key];
 
-      if (props.length > 1) {
-        props.reduce((prev, cur, index, arr) => {
-          if (index === arr.length - 1) {
-            prev[cur] = val;
-          } else {
-            prev[cur] = {};
-          }
+        var props = _key.split('.');
 
-          return prev[cur];
-        }, obj);
-      } else {
-        obj[key] = val;
-      }
+        if (props.length > 1) {
+          props.reduce(function (prev, cur, index, arr) {
+            if (index === arr.length - 1) {
+              prev[cur] = val;
+            } else {
+              prev[cur] = {};
+            }
+
+            return prev[cur];
+          }, obj);
+        } else {
+          obj[_key] = val;
+        }
+      })();
     }
   }
 
@@ -2838,24 +3916,28 @@ function checkPathArgs(params) {
 }
 
 function pathnameParse(pathname, routeRule, paths, args) {
-  for (const rule in routeRule) {
-    if (routeRule.hasOwnProperty(rule)) {
-      const item = routeRule[rule];
-      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-      const match = matchPath(pathname, {
-        path: rule.replace(/\$$/, ''),
+  for (var _rule in routeRule) {
+    if (routeRule.hasOwnProperty(_rule)) {
+      var item = routeRule[_rule];
+
+      var _ref = typeof item === 'string' ? [item, null] : item,
+          _viewName = _ref[0],
+          pathConfig = _ref[1];
+
+      var match = matchPath(pathname, {
+        path: _rule.replace(/\$$/, ''),
         exact: !pathConfig
       });
 
       if (match) {
-        paths.push(viewName);
-        const moduleName = viewName.split(config.VSP)[0];
-        const {
-          params
-        } = match;
+        paths.push(_viewName);
+
+        var _moduleName = _viewName.split(config.VSP)[0];
+
+        var params = match.params;
 
         if (params && Object.keys(params).length > 0) {
-          args[moduleName] = Object.assign(args[moduleName] || {}, checkPathArgs(params));
+          args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(params));
         }
 
         if (pathConfig) {
@@ -2869,8 +3951,10 @@ function pathnameParse(pathname, routeRule, paths, args) {
 }
 
 function assignRouteData(paths, params, defaultRouteParams) {
-  const views = paths.reduce((prev, cur) => {
-    const [moduleName, viewName] = cur.split(config.VSP);
+  var views = paths.reduce(function (prev, cur) {
+    var _cur$split = cur.split(config.VSP),
+        moduleName = _cur$split[0],
+        viewName = _cur$split[1];
 
     if (moduleName && viewName) {
       if (!prev[moduleName]) {
@@ -2886,45 +3970,49 @@ function assignRouteData(paths, params, defaultRouteParams) {
 
     return prev;
   }, {});
-  Object.keys(params).forEach(moduleName => {
+  Object.keys(params).forEach(function (moduleName) {
     params[moduleName] = deepExtend({}, defaultRouteParams[moduleName], params[moduleName]);
   });
   return {
-    views,
-    paths,
-    params
+    views: views,
+    paths: paths,
+    params: params
   };
 }
 
 function extractHashData(params) {
-  const searchParams = {};
-  const hashParams = {};
+  var searchParams = {};
+  var hashParams = {};
 
-  for (const moduleName in params) {
-    if (params[moduleName] && params.hasOwnProperty(moduleName)) {
-      const data = params[moduleName];
-      const keys = Object.keys(data);
+  var _loop = function _loop(_moduleName2) {
+    if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
+      var data = params[_moduleName2];
+      var keys = Object.keys(data);
 
       if (keys.length > 0) {
-        keys.forEach(key => {
+        keys.forEach(function (key) {
           if (key.startsWith('_')) {
-            if (!hashParams[moduleName]) {
-              hashParams[moduleName] = {};
+            if (!hashParams[_moduleName2]) {
+              hashParams[_moduleName2] = {};
             }
 
-            hashParams[moduleName][key] = data[key];
+            hashParams[_moduleName2][key] = data[key];
           } else {
-            if (!searchParams[moduleName]) {
-              searchParams[moduleName] = {};
+            if (!searchParams[_moduleName2]) {
+              searchParams[_moduleName2] = {};
             }
 
-            searchParams[moduleName][key] = data[key];
+            searchParams[_moduleName2][key] = data[key];
           }
         });
       } else {
-        searchParams[moduleName] = {};
+        searchParams[_moduleName2] = {};
       }
     }
+  };
+
+  for (var _moduleName2 in params) {
+    _loop(_moduleName2);
   }
 
   return {
@@ -2933,15 +4021,19 @@ function extractHashData(params) {
   };
 }
 
-const cacheData = [];
+var cacheData = [];
 
-function getPathProps(pathprops, moduleParas = {}, deleteIt) {
-  let val;
+function getPathProps(pathprops, moduleParas, deleteIt) {
+  if (moduleParas === void 0) {
+    moduleParas = {};
+  }
+
+  var val;
 
   if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
-    const props = pathprops.split('.');
-    const len = props.length - 1;
-    props.reduce((p, c, i) => {
+    var props = pathprops.split('.');
+    var len = props.length - 1;
+    props.reduce(function (p, c, i) {
       if (i === len) {
         val = p[c];
         deleteIt && delete p[c];
@@ -2957,16 +4049,23 @@ function getPathProps(pathprops, moduleParas = {}, deleteIt) {
   return val;
 }
 
-function pathsToPathname(paths, params = {}, viewToRule, ruleToKeys) {
-  const len = paths.length - 1;
-  const paramsFilter = deepExtend({}, params);
-  let pathname = '';
-  const views = {};
-  paths.reduce((parentAbsoluteViewName, viewName, index) => {
-    const [moduleName, view] = viewName.split(config.VSP);
-    const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
-    const rule = viewToRule[absoluteViewName];
-    const keys = ruleToKeys[rule] || [];
+function pathsToPathname(paths, params, viewToRule, ruleToKeys) {
+  if (params === void 0) {
+    params = {};
+  }
+
+  var len = paths.length - 1;
+  var paramsFilter = deepExtend({}, params);
+  var pathname = '';
+  var views = {};
+  paths.reduce(function (parentAbsoluteViewName, viewName, index) {
+    var _viewName$split = viewName.split(config.VSP),
+        moduleName = _viewName$split[0],
+        view = _viewName$split[1];
+
+    var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
+    var rule = viewToRule[absoluteViewName];
+    var keys = ruleToKeys[rule] || [];
 
     if (moduleName && view) {
       if (!views[moduleName]) {
@@ -2977,28 +4076,28 @@ function pathsToPathname(paths, params = {}, viewToRule, ruleToKeys) {
     }
 
     if (index === len) {
-      const toPath = compileToPath(rule);
-      const args = keys.reduce((prev, cur) => {
+      var toPath = compileToPath(rule);
+      var args = keys.reduce(function (prev, cur) {
         prev[cur] = getPathProps(cur, params[moduleName]);
         return prev;
       }, {});
       pathname = toPath(args);
     }
 
-    keys.forEach(key => {
+    keys.forEach(function (key) {
       getPathProps(key, paramsFilter[moduleName], true);
     });
     return absoluteViewName;
   }, '');
   return {
-    pathname,
-    views,
+    pathname: pathname,
+    views: views,
     params: paramsFilter
   };
 }
 
-class BaseHistoryActions {
-  constructor(nativeHistory, defaultRouteParams, initUrl, routeRule, locationMap) {
+var BaseHistoryActions = function () {
+  function BaseHistoryActions(nativeHistory, defaultRouteParams, initUrl, routeRule, locationMap) {
     this.nativeHistory = nativeHistory;
     this.defaultRouteParams = defaultRouteParams;
     this.initUrl = initUrl;
@@ -3017,30 +4116,32 @@ class BaseHistoryActions {
 
     _defineProperty(this, "_ruleToKeys", void 0);
 
-    const {
-      viewToRule,
-      ruleToKeys
-    } = compileRule(routeRule);
+    var _compileRule = compileRule(routeRule),
+        viewToRule = _compileRule.viewToRule,
+        ruleToKeys = _compileRule.ruleToKeys;
+
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
-    const safeLocation = urlToLocation(initUrl);
+    var safeLocation = urlToLocation(initUrl);
 
-    const routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
+    var routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
 
     this._routeState = routeState;
     this._startupRouteState = routeState;
   }
 
-  setStore(_store) {
-    this.store = _store;
-  }
+  var _proto = BaseHistoryActions.prototype;
 
-  mergeInitState(initState) {
-    const routeState = this.getRouteState();
-    const data = Object.assign({}, initState, {
+  _proto.setStore = function setStore(_store) {
+    this.store = _store;
+  };
+
+  _proto.mergeInitState = function mergeInitState(initState) {
+    var routeState = this.getRouteState();
+    var data = Object.assign({}, initState, {
       route: routeState
     });
-    Object.keys(routeState.views).forEach(moduleName => {
+    Object.keys(routeState.views).forEach(function (moduleName) {
       if (!data[moduleName]) {
         data[moduleName] = {};
       }
@@ -3050,19 +4151,19 @@ class BaseHistoryActions {
       });
     });
     return data;
-  }
+  };
 
-  getCurKey() {
+  _proto.getCurKey = function getCurKey() {
     return this._routeState.key;
-  }
+  };
 
-  getRouteState() {
+  _proto.getRouteState = function getRouteState() {
     return this._routeState;
-  }
+  };
 
-  locationToRoute(safeLocation) {
-    const url = locationToUrl(safeLocation);
-    const item = cacheData.find(val => {
+  _proto.locationToRoute = function locationToRoute(safeLocation) {
+    var url = locationToUrl(safeLocation);
+    var item = cacheData.find(function (val) {
       return val && val.url === url;
     });
 
@@ -3070,49 +4171,50 @@ class BaseHistoryActions {
       return item.routeData;
     }
 
-    const pathname = safeLocation.pathname;
-    const paths = [];
-    const pathsArgs = {};
+    var pathname = safeLocation.pathname;
+    var paths = [];
+    var pathsArgs = {};
     pathnameParse(pathname, this.routeRule, paths, pathsArgs);
-    const params = splitSearch(safeLocation.search);
-    const hashParams = splitSearch(safeLocation.hash);
+    var params = splitSearch(safeLocation.search);
+    var hashParams = splitSearch(safeLocation.hash);
     deepExtend(params, hashParams);
-    const routeData = assignRouteData(paths, deepExtend(pathsArgs, params), this.defaultRouteParams);
+    var routeData = assignRouteData(paths, deepExtend(pathsArgs, params), this.defaultRouteParams);
     cacheData.unshift({
-      url,
-      routeData
+      url: url,
+      routeData: routeData
     });
     cacheData.length = 100;
     return routeData;
-  }
+  };
 
-  routeToLocation(paths, params) {
+  _proto.routeToLocation = function routeToLocation(paths, params) {
     params = params || {};
-    let pathname;
-    let views = {};
+    var pathname;
+    var views = {};
 
     if (typeof paths === 'string') {
       pathname = paths;
     } else {
-      const data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+      var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
       pathname = data.pathname;
       params = data.params;
       views = data.views;
     }
 
-    const paramsFilter = excludeDefaultData(params, this.defaultRouteParams, false, views);
-    const {
-      search,
-      hash
-    } = extractHashData(paramsFilter);
-    return {
-      pathname,
-      search: search ? `?${routeConfig.splitKey}=${search}` : '',
-      hash: hash ? `#${routeConfig.splitKey}=${hash}` : ''
-    };
-  }
+    var paramsFilter = excludeDefaultData(params, this.defaultRouteParams, false, views);
 
-  payloadToRoute(data) {
+    var _extractHashData = extractHashData(paramsFilter),
+        search = _extractHashData.search,
+        hash = _extractHashData.hash;
+
+    return {
+      pathname: pathname,
+      search: search ? "?" + routeConfig.splitKey + "=" + search : '',
+      hash: hash ? "#" + routeConfig.splitKey + "=" + hash : ''
+    };
+  };
+
+  _proto.payloadToRoute = function payloadToRoute(data) {
     if (typeof data === 'string') {
       return this.locationToRoute(urlToLocation(data));
     }
@@ -3121,20 +4223,20 @@ class BaseHistoryActions {
       return this.locationToRoute(checkLocation(data));
     }
 
-    const params = data.extendParams ? deepExtend({}, data.extendParams, data.params) : data.params;
-    let paths = [];
+    var params = data.extendParams ? deepExtend({}, data.extendParams, data.params) : data.params;
+    var paths = [];
 
     if (typeof data.paths === 'string') {
-      const pathname = data.paths;
+      var pathname = data.paths;
       pathnameParse(pathname, this.routeRule, paths, {});
     } else {
       paths = data.paths;
     }
 
     return assignRouteData(paths, params || {}, this.defaultRouteParams);
-  }
+  };
 
-  payloadToLocation(data) {
+  _proto.payloadToLocation = function payloadToLocation(data) {
     if (typeof data === 'string') {
       return urlToLocation(data);
     }
@@ -3143,50 +4245,50 @@ class BaseHistoryActions {
       return checkLocation(data);
     }
 
-    const params = data.extendParams ? deepExtend({}, data.extendParams, data.params) : data.params;
+    var params = data.extendParams ? deepExtend({}, data.extendParams, data.params) : data.params;
     return this.routeToLocation(data.paths, params);
-  }
+  };
 
-  _createKey() {
+  _proto._createKey = function _createKey() {
     this._tid++;
-    return `${this._tid}`;
-  }
+    return "" + this._tid;
+  };
 
-  _getEfficientLocation(safeLocation) {
-    const routeData = this.locationToRoute(safeLocation);
+  _proto._getEfficientLocation = function _getEfficientLocation(safeLocation) {
+    var routeData = this.locationToRoute(safeLocation);
 
     if (routeData.views['@']) {
-      const url = Object.keys(routeData.views['@'])[0];
-      const reLocation = urlToLocation(url);
+      var url = Object.keys(routeData.views['@'])[0];
+      var reLocation = urlToLocation(url);
       return this._getEfficientLocation(reLocation);
     }
 
     return {
       location: safeLocation,
-      routeData
+      routeData: routeData
     };
-  }
+  };
 
-  _buildHistory(location) {
-    const maxLength = routeConfig.historyMax;
-    const {
-      action,
-      url,
-      pathname,
-      key
-    } = location;
-    const {
-      history,
-      stack
-    } = this._routeState || {
+  _proto._buildHistory = function _buildHistory(location) {
+    var _this = this;
+
+    var maxLength = routeConfig.historyMax;
+    var action = location.action,
+        url = location.url,
+        pathname = location.pathname,
+        key = location.key;
+
+    var _ref2 = this._routeState || {
       history: [],
       stack: []
-    };
+    },
+        history = _ref2.history,
+        stack = _ref2.stack;
 
-    const uri = this._urlToUri(url, key);
+    var uri = this._urlToUri(url, key);
 
-    let historyList = [...history];
-    let stackList = [...stack];
+    var historyList = [].concat(history);
+    var stackList = [].concat(stack);
 
     if (action === 'RELAUNCH') {
       historyList = [uri];
@@ -3209,7 +4311,7 @@ class BaseHistoryActions {
       historyList[0] = uri;
 
       if (stackList[0] !== pathname) {
-        const cpathname = this._uriToPathname(historyList[1]);
+        var cpathname = this._uriToPathname(historyList[1]);
 
         if (cpathname !== stackList[0]) {
           stackList.shift();
@@ -3224,9 +4326,10 @@ class BaseHistoryActions {
         }
       }
     } else if (action.startsWith('POP')) {
-      const n = parseInt(action.replace('POP', ''), 10) || 1;
-      const arr = historyList.splice(0, n + 1, uri).reduce((pre, curUri) => {
-        const cpathname = this._uriToPathname(curUri);
+      var _n = parseInt(action.replace('POP', ''), 10) || 1;
+
+      var arr = historyList.splice(0, _n + 1, uri).reduce(function (pre, curUri) {
+        var cpathname = _this._uriToPathname(curUri);
 
         if (pre[pre.length - 1] !== cpathname) {
           pre.push(cpathname);
@@ -3250,40 +4353,52 @@ class BaseHistoryActions {
       history: historyList,
       stack: stackList
     };
-  }
+  };
 
-  _urlToUri(url, key) {
-    return `${key}${routeConfig.RSP}${url}`;
-  }
+  _proto._urlToUri = function _urlToUri(url, key) {
+    return "" + key + routeConfig.RSP + url;
+  };
 
-  _uriToUrl(uri = '') {
+  _proto._uriToUrl = function _uriToUrl(uri) {
+    if (uri === void 0) {
+      uri = '';
+    }
+
     return uri.substr(uri.indexOf(routeConfig.RSP) + 1);
-  }
+  };
 
-  _uriToPathname(uri = '') {
-    const url = this._uriToUrl(uri);
+  _proto._uriToPathname = function _uriToPathname(uri) {
+    if (uri === void 0) {
+      uri = '';
+    }
+
+    var url = this._uriToUrl(uri);
 
     return url.split(/[?#]/)[0];
-  }
+  };
 
-  _uriToKey(uri = '') {
+  _proto._uriToKey = function _uriToKey(uri) {
+    if (uri === void 0) {
+      uri = '';
+    }
+
     return uri.substr(0, uri.indexOf(routeConfig.RSP));
-  }
+  };
 
-  findHistoryByKey(key) {
-    const {
-      history
-    } = this._routeState;
-    const index = history.findIndex(uri => uri.startsWith(`${key}${routeConfig.RSP}`));
+  _proto.findHistoryByKey = function findHistoryByKey(key) {
+    var history = this._routeState.history;
+    var index = history.findIndex(function (uri) {
+      return uri.startsWith("" + key + routeConfig.RSP);
+    });
     return {
-      index,
+      index: index,
       url: index > -1 ? this._uriToUrl(history[index]) : ''
     };
-  }
+  };
 
-  _toNativeLocation(location) {
+  _proto._toNativeLocation = function _toNativeLocation(location) {
     if (this.locationMap) {
-      const nLocation = checkLocation(this.locationMap.out(location));
+      var nLocation = checkLocation(this.locationMap.out(location));
       return Object.assign({}, nLocation, {
         action: location.action,
         url: locationToUrl(nLocation),
@@ -3292,80 +4407,115 @@ class BaseHistoryActions {
     }
 
     return location;
-  }
+  };
 
-  _createRouteState(safeLocation, action, key) {
+  _proto._createRouteState = function _createRouteState(safeLocation, action, key) {
     key = key || this._createKey();
 
-    const data = this._getEfficientLocation(safeLocation);
+    var data = this._getEfficientLocation(safeLocation);
 
-    const location = Object.assign({}, data.location, {
-      action,
+    var location = Object.assign({}, data.location, {
+      action: action,
       url: locationToUrl(data.location),
-      key
+      key: key
     });
 
-    const {
-      history,
-      stack
-    } = this._buildHistory(location);
+    var _this$_buildHistory = this._buildHistory(location),
+        history = _this$_buildHistory.history,
+        stack = _this$_buildHistory.stack;
 
-    const routeState = Object.assign({}, location, data.routeData, {
-      history,
-      stack
+    var routeState = Object.assign({}, location, data.routeData, {
+      history: history,
+      stack: stack
     });
     return routeState;
-  }
+  };
 
-  async dispatch(safeLocation, action, key = '', callNative) {
-    const routeState = this._createRouteState(safeLocation, action, key);
+  _proto.dispatch = function () {
+    var _dispatch = _asyncToGenerator(regenerator.mark(function _callee(safeLocation, action, key, callNative) {
+      var routeState, nativeLocation;
+      return regenerator.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              if (key === void 0) {
+                key = '';
+              }
 
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
-    this._routeState = routeState;
-    await this.store.dispatch(routeChangeAction(routeState));
+              routeState = this._createRouteState(safeLocation, action, key);
+              _context.next = 4;
+              return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-    if (callNative) {
-      const nativeLocation = this._toNativeLocation(routeState);
+            case 4:
+              this._routeState = routeState;
+              _context.next = 7;
+              return this.store.dispatch(routeChangeAction(routeState));
 
-      if (typeof callNative === 'number') {
-        this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
-      } else {
-        this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
-      }
+            case 7:
+              if (callNative) {
+                nativeLocation = this._toNativeLocation(routeState);
+
+                if (typeof callNative === 'number') {
+                  this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
+                } else {
+                  this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
+                }
+              }
+
+              return _context.abrupt("return", routeState);
+
+            case 9:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee, this);
+    }));
+
+    function dispatch(_x, _x2, _x3, _x4) {
+      return _dispatch.apply(this, arguments);
     }
 
-    return routeState;
-  }
+    return dispatch;
+  }();
 
-  relaunch(data, disableNative) {
-    const paLocation = this.payloadToLocation(data);
+  _proto.relaunch = function relaunch(data, disableNative) {
+    var paLocation = this.payloadToLocation(data);
     return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
-  }
+  };
 
-  push(data, disableNative) {
-    const paLocation = this.payloadToLocation(data);
+  _proto.push = function push(data, disableNative) {
+    var paLocation = this.payloadToLocation(data);
     return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
-  }
+  };
 
-  replace(data, disableNative) {
-    const paLocation = this.payloadToLocation(data);
+  _proto.replace = function replace(data, disableNative) {
+    var paLocation = this.payloadToLocation(data);
     return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
-  }
+  };
 
-  pop(n = 1, root = 'FIRST', disableNative) {
+  _proto.pop = function pop(n, root, disableNative) {
+    if (n === void 0) {
+      n = 1;
+    }
+
+    if (root === void 0) {
+      root = 'FIRST';
+    }
+
     n = n || 1;
-    const uri = this._routeState.history[n];
+    var uri = this._routeState.history[n];
 
     if (uri) {
-      const url = this._uriToUrl(uri);
+      var _url = this._uriToUrl(uri);
 
-      const key = this._uriToKey(uri);
+      var _key2 = this._uriToKey(uri);
 
-      const paLocation = urlToLocation(url);
-      return this.dispatch(paLocation, `POP${n}`, key, disableNative ? '' : n);
+      var paLocation = urlToLocation(_url);
+      return this.dispatch(paLocation, "POP" + n, _key2, disableNative ? '' : n);
     }
 
-    let url = root;
+    var url = root;
 
     if (root === 'HOME') {
       url = routeConfig.homeUrl;
@@ -3378,56 +4528,75 @@ class BaseHistoryActions {
     }
 
     return this.relaunch(url, disableNative);
-  }
+  };
 
-  home(root = 'FIRST', disableNative) {
+  _proto.home = function home(root, disableNative) {
+    if (root === void 0) {
+      root = 'FIRST';
+    }
+
     return this.relaunch(root === 'HOME' ? routeConfig.homeUrl : this._startupRouteState.url, disableNative);
-  }
+  };
 
-}
-const routeMiddleware = ({
-  dispatch,
-  getState
-}) => next => action => {
-  if (action.type === RouteActionTypes.RouteChange) {
-    const result = next(action);
-    const routeState = action.payload[0];
-    const rootRouteParams = routeState.params;
-    const rootState = getState();
-    Object.keys(rootRouteParams).forEach(moduleName => {
-      const routeParams = rootRouteParams[moduleName];
+  return BaseHistoryActions;
+}();
+var routeMiddleware = function routeMiddleware(_ref3) {
+  var dispatch = _ref3.dispatch,
+      getState = _ref3.getState;
+  return function (next) {
+    return function (action) {
+      if (action.type === RouteActionTypes.RouteChange) {
+        var result = next(action);
+        var routeState = action.payload[0];
+        var rootRouteParams = routeState.params;
+        var rootState = getState();
+        Object.keys(rootRouteParams).forEach(function (moduleName) {
+          var routeParams = rootRouteParams[moduleName];
 
-      if (routeParams) {
-        var _rootState$moduleName;
+          if (routeParams) {
+            var _rootState$moduleName;
 
-        if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
-          dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-        } else {
-          dispatch(moduleInitAction(moduleName, undefined));
-        }
+            if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
+              dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
+            } else {
+              dispatch(moduleInitAction(moduleName, undefined));
+            }
+          }
+        });
+        return result;
       }
-    });
-    return result;
-  }
 
-  return next(action);
+      return next(action);
+    };
+  };
 };
-const routeReducer = (state, action) => {
+var routeReducer = function routeReducer(state, action) {
   if (action.type === RouteActionTypes.RouteChange) {
     return action.payload[0];
   }
 
   return state;
 };
-let RouteModelHandlers = _decorate(null, function (_initialize, _CoreModelHandlers) {
-  class RouteModelHandlers extends _CoreModelHandlers {
-    constructor(...args) {
-      super(...args);
+var RouteModelHandlers = _decorate(null, function (_initialize, _CoreModelHandlers) {
+  var RouteModelHandlers = function (_CoreModelHandlers2) {
+    _inheritsLoose(RouteModelHandlers, _CoreModelHandlers2);
 
-      _initialize(this);
+    function RouteModelHandlers() {
+      var _this2;
+
+      for (var _len = arguments.length, args = new Array(_len), _key3 = 0; _key3 < _len; _key3++) {
+        args[_key3] = arguments[_key3];
+      }
+
+      _this2 = _CoreModelHandlers2.call.apply(_CoreModelHandlers2, [this].concat(args)) || this;
+
+      _initialize(_assertThisInitialized(_this2));
+
+      return _this2;
     }
 
-  }
+    return RouteModelHandlers;
+  }(_CoreModelHandlers);
 
   return {
     F: RouteModelHandlers,
@@ -3436,10 +4605,10 @@ let RouteModelHandlers = _decorate(null, function (_initialize, _CoreModelHandle
       decorators: [reducer],
       key: "Init",
       value: function Init(initState) {
-        const rootState = this.getRootState();
-        const routeParams = rootState.route.params[this.moduleName];
+        var rootState = this.getRootState();
+        var routeParams = rootState.route.params[this.moduleName];
         return Object.assign({}, initState, {
-          routeParams
+          routeParams: routeParams
         });
       }
     }, {
@@ -3447,7 +4616,7 @@ let RouteModelHandlers = _decorate(null, function (_initialize, _CoreModelHandle
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        const state = this.getState();
+        var state = this.getState();
         return Object.assign({}, state, {
           routeParams: payload
         });
@@ -3455,20 +4624,6 @@ let RouteModelHandlers = _decorate(null, function (_initialize, _CoreModelHandle
     }]
   };
 }, CoreModelHandlers);
-
-function createCommonjsModule(fn, basedir, module) {
-	return module = {
-		path: basedir,
-		exports: {},
-		require: function (path, base) {
-			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
-		}
-	}, fn(module, module.exports), module.exports;
-}
-
-function commonjsRequire () {
-	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
-}
 
 /** @license React v16.13.1
  * react-is.production.min.js
@@ -4723,7 +5878,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 });
 
-var ReactReduxContext = /*#__PURE__*/React.createContext(null);
+var ReactReduxContext = /*#__PURE__*/React__default['default'].createContext(null);
 
 if (process.env.NODE_ENV !== 'production') {
   ReactReduxContext.displayName = 'ReactRedux';
@@ -4868,7 +6023,7 @@ function Provider(_ref) {
   var store = _ref.store,
       context = _ref.context,
       children = _ref.children;
-  var contextValue = useMemo(function () {
+  var contextValue = React.useMemo(function () {
     var subscription = new Subscription(store);
     subscription.onStateChange = subscription.notifyNestedSubs;
     return {
@@ -4876,10 +6031,10 @@ function Provider(_ref) {
       subscription: subscription
     };
   }, [store]);
-  var previousState = useMemo(function () {
+  var previousState = React.useMemo(function () {
     return store.getState();
   }, [store]);
-  useEffect(function () {
+  React.useEffect(function () {
     var subscription = contextValue.subscription;
     subscription.trySubscribe();
 
@@ -4893,7 +6048,7 @@ function Provider(_ref) {
     };
   }, [contextValue, previousState]);
   var Context = context || ReactReduxContext;
-  return /*#__PURE__*/React.createElement(Context.Provider, {
+  return /*#__PURE__*/React__default['default'].createElement(Context.Provider, {
     value: contextValue
   }, children);
 }
@@ -4929,21 +6084,25 @@ var TYPE_STATICS = {};
 TYPE_STATICS[reactIs.ForwardRef] = FORWARD_REF_STATICS;
 TYPE_STATICS[reactIs.Memo] = MEMO_STATICS;
 
-setBatch(unstable_batchedUpdates);
+setBatch(ReactDOM.unstable_batchedUpdates);
 
-function renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container = 'root', beforeRender) {
-  return renderApp((store, appModel, AppView, ssrInitStoreKey) => {
-    const reRender = View => {
-      const reduxProvider = React.createElement(Provider, {
+function renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, beforeRender) {
+  if (container === void 0) {
+    container = 'root';
+  }
+
+  return renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
+    var reRender = function reRender(View) {
+      var reduxProvider = React__default['default'].createElement(Provider, {
         store: store
-      }, React.createElement(View, null));
+      }, React__default['default'].createElement(View, null));
 
       if (typeof container === 'function') {
         container(reduxProvider);
       } else {
-        const panel = typeof container === 'string' ? env.document.getElementById(container) : container;
-        ReactDOM.unmountComponentAtNode(panel);
-        const render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+        var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
+        ReactDOM__default['default'].unmountComponentAtNode(panel);
+        var render = env[ssrInitStoreKey] ? ReactDOM__default['default'].hydrate : ReactDOM__default['default'].render;
         render(reduxProvider, panel);
       }
     };
@@ -4952,47 +6111,56 @@ function renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, con
     return reRender;
   }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
-function renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions = {}, renderToStream = false, beforeRender) {
-  return renderSSR((store, appModel, AppView, ssrInitStoreKey) => {
-    const data = store.getState();
-    const reduxProvider = React.createElement(Provider, {
+function renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, beforeRender) {
+  if (storeOptions === void 0) {
+    storeOptions = {};
+  }
+
+  if (renderToStream === void 0) {
+    renderToStream = false;
+  }
+
+  return renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
+    var data = store.getState();
+    var reduxProvider = React__default['default'].createElement(Provider, {
       store: store
-    }, React.createElement(AppView, null));
-    const render = renderToStream ? renderToNodeStream : renderToString;
+    }, React__default['default'].createElement(AppView, null));
+    var render = renderToStream ? server.renderToNodeStream : server.renderToString;
     return {
-      store,
-      ssrInitStoreKey,
-      data,
+      store: store,
+      ssrInitStoreKey: ssrInitStoreKey,
+      data: data,
       html: render(reduxProvider)
     };
   }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
 
-const LoadViewOnError = () => {
-  return React.createElement("div", null, "error");
+var LoadViewOnError = function LoadViewOnError() {
+  return React__default['default'].createElement("div", null, "error");
 };
 
-const loadView = (moduleName, viewName, options, Loading, Error) => {
-  const {
-    forwardRef
-  } = options || {};
-  let active = true;
+var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
+  var _ref = options || {},
+      forwardRef = _ref.forwardRef;
 
-  const Loader = function ViewLoader(props) {
-    useEffect(() => {
-      return () => {
+  var active = true;
+
+  var Loader = function ViewLoader(props) {
+    React.useEffect(function () {
+      return function () {
         active = false;
       };
     }, []);
-    const [view, setView] = useState(() => {
-      const moduleViewResult = getView(moduleName, viewName);
+
+    var _useState = React.useState(function () {
+      var moduleViewResult = getView(moduleName, viewName);
 
       if (isPromise(moduleViewResult)) {
-        moduleViewResult.then(Component => {
+        moduleViewResult.then(function (Component) {
           active && setView({
-            Component
+            Component: Component
           });
-        }).catch(() => {
+        }).catch(function () {
           active && setView({
             Component: Error || LoadViewOnError
           });
@@ -5003,25 +6171,27 @@ const loadView = (moduleName, viewName, options, Loading, Error) => {
       return {
         Component: moduleViewResult
       };
-    });
+    }),
+        view = _useState[0],
+        setView = _useState[1];
 
-    const {
-      forwardRef2
-    } = props,
-          other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
+    var forwardRef2 = props.forwardRef2,
+        other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
 
-    const ref = forwardRef ? {
+    var ref = forwardRef ? {
       ref: forwardRef2
     } : {};
-    return view ? React.createElement(view.Component, _extends({}, other, ref)) : Loading ? React.createElement(Loading, props) : null;
+    return view ? React__default['default'].createElement(view.Component, _extends({}, other, ref)) : Loading ? React__default['default'].createElement(Loading, props) : null;
   };
 
-  const Component = forwardRef ? React.forwardRef((props, ref) => React.createElement(Loader, _extends({}, props, {
-    forwardRef: ref
-  }))) : Loader;
+  var Component = forwardRef ? React__default['default'].forwardRef(function (props, ref) {
+    return React__default['default'].createElement(Loader, _extends({}, props, {
+      forwardRef: ref
+    }));
+  }) : Loader;
   return Component;
 };
-const exportModule$1 = exportModule;
+var exportModule$1 = exportModule;
 
 function isAbsolute(pathname) {
   return pathname.charAt(0) === '/';
@@ -6046,8 +7216,8 @@ function locationToUrl$1(loaction) {
   return loaction.pathname + loaction.search + loaction.hash;
 }
 
-class WebNativeHistory {
-  constructor(createHistory, locationMap) {
+var WebNativeHistory = function () {
+  function WebNativeHistory(createHistory, locationMap) {
     this.locationMap = locationMap;
 
     _defineProperty(this, "history", void 0);
@@ -6059,127 +7229,139 @@ class WebNativeHistory {
     } else if (createHistory === 'Browser') {
       this.history = createBrowserHistory();
     } else {
-      const [pathname, search = ''] = createHistory.split('?');
+      var _createHistory$split = createHistory.split('?'),
+          pathname = _createHistory$split[0],
+          _createHistory$split$ = _createHistory$split[1],
+          search = _createHistory$split$ === void 0 ? '' : _createHistory$split$;
+
       this.history = {
         action: 'PUSH',
         length: 0,
-
-        listen() {
-          return () => undefined;
+        listen: function listen() {
+          return function () {
+            return undefined;
+          };
         },
-
-        createHref() {
+        createHref: function createHref() {
           return '';
         },
-
-        push() {},
-
-        replace() {},
-
-        go() {},
-
-        goBack() {},
-
-        goForward() {},
-
-        block() {
-          return () => undefined;
+        push: function push() {},
+        replace: function replace() {},
+        go: function go() {},
+        goBack: function goBack() {},
+        goForward: function goForward() {},
+        block: function block() {
+          return function () {
+            return undefined;
+          };
         },
-
         location: {
-          pathname,
-          search: search && `?${search}`,
+          pathname: pathname,
+          search: search && "?" + search,
           hash: ''
         }
       };
     }
   }
 
-  block(blocker) {
-    return this.history.block((location, action) => {
+  var _proto = WebNativeHistory.prototype;
+
+  _proto.block = function block(blocker) {
+    var _this = this;
+
+    return this.history.block(function (location, action) {
       return blocker({
         pathname: location.pathname,
         search: location.search,
         hash: location.hash
-      }, this.getKey(location), action);
+      }, _this.getKey(location), action);
     });
-  }
+  };
 
-  getUrl() {
-    const location = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
+  _proto.getUrl = function getUrl() {
+    var location = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
     return locationToUrl$1(location);
-  }
+  };
 
-  getKey(location) {
+  _proto.getKey = function getKey(location) {
     return location.state || '';
-  }
+  };
 
-  push(location) {
+  _proto.push = function push(location) {
     this.history.push(locationToUrl$1(location), location.key);
-  }
+  };
 
-  replace(location) {
+  _proto.replace = function replace(location) {
     this.history.replace(locationToUrl$1(location), location.key);
-  }
+  };
 
-  relaunch(location) {
+  _proto.relaunch = function relaunch(location) {
     this.history.push(locationToUrl$1(location), location.key);
-  }
+  };
 
-  pop(location, n) {
+  _proto.pop = function pop(location, n) {
     this.history.go(-n);
-  }
+  };
 
-}
-class HistoryActions extends BaseHistoryActions {
-  constructor(nativeHistory, defaultRouteParams, routeRule, locationMap) {
-    super(nativeHistory, defaultRouteParams, nativeHistory.getUrl(), routeRule, locationMap);
-    this.nativeHistory = nativeHistory;
-    this.defaultRouteParams = defaultRouteParams;
-    this.routeRule = routeRule;
-    this.locationMap = locationMap;
+  return WebNativeHistory;
+}();
+var HistoryActions = function (_BaseHistoryActions) {
+  _inheritsLoose(HistoryActions, _BaseHistoryActions);
 
-    _defineProperty(this, "_unlistenHistory", void 0);
+  function HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap) {
+    var _this2;
 
-    _defineProperty(this, "_timer", 0);
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, defaultRouteParams, nativeHistory.getUrl(), routeRule, locationMap) || this;
+    _this2.nativeHistory = nativeHistory;
+    _this2.defaultRouteParams = defaultRouteParams;
+    _this2.routeRule = routeRule;
+    _this2.locationMap = locationMap;
 
-    this._unlistenHistory = this.nativeHistory.block((location, key, action) => {
-      if (key !== this.getCurKey()) {
-        let callback;
-        let index = 0;
+    _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);
+
+    _defineProperty(_assertThisInitialized(_this2), "_timer", 0);
+
+    _this2._unlistenHistory = _this2.nativeHistory.block(function (location, key, action) {
+      if (key !== _this2.getCurKey()) {
+        var callback;
+        var index = 0;
 
         if (action === 'POP') {
-          index = this.findHistoryByKey(key).index;
+          index = _this2.findHistoryByKey(key).index;
         }
 
         if (index > 0) {
-          callback = () => {
-            this._timer = 0;
-            this.pop(index);
+          callback = function callback() {
+            _this2._timer = 0;
+
+            _this2.pop(index);
           };
         } else {
-          const paLocation = this.locationMap ? this.locationMap.in(location) : location;
+          var paLocation = _this2.locationMap ? _this2.locationMap.in(location) : location;
 
           if (action === 'REPLACE') {
-            callback = () => {
-              this._timer = 0;
-              this.replace(paLocation);
+            callback = function callback() {
+              _this2._timer = 0;
+
+              _this2.replace(paLocation);
             };
           } else if (action === 'PUSH') {
-            callback = () => {
-              this._timer = 0;
-              this.push(paLocation);
+            callback = function callback() {
+              _this2._timer = 0;
+
+              _this2.push(paLocation);
             };
           } else {
-            callback = () => {
-              this._timer = 0;
-              this.relaunch(paLocation);
+            callback = function callback() {
+              _this2._timer = 0;
+
+              _this2.relaunch(paLocation);
             };
           }
         }
 
-        if (callback && !this._timer) {
-          this._timer = env.setTimeout(callback, 50);
+        if (callback && !_this2._timer) {
+          _this2._timer = env.setTimeout(callback, 50);
         }
 
         return false;
@@ -6187,36 +7369,46 @@ class HistoryActions extends BaseHistoryActions {
 
       return undefined;
     });
+    return _this2;
   }
 
-  getNativeHistory() {
+  var _proto2 = HistoryActions.prototype;
+
+  _proto2.getNativeHistory = function getNativeHistory() {
     return this.nativeHistory.history;
-  }
+  };
 
-  destroy() {
+  _proto2.destroy = function destroy() {
     this._unlistenHistory();
-  }
+  };
 
-}
+  return HistoryActions;
+}(BaseHistoryActions);
 function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {
-  const nativeHistory = new WebNativeHistory(createHistory);
-  const historyActions = new HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap);
+  var nativeHistory = new WebNativeHistory(createHistory);
+  var historyActions = new HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap);
   return historyActions;
 }
 
-let historyActions;
-function buildApp({
-  moduleGetter,
-  appModuleName = 'app',
-  appViewName = 'main',
-  historyType = 'Browser',
-  routeRule = {},
-  locationMap,
-  defaultRouteParams = {},
-  storeOptions = {},
-  container = 'root',
-  beforeRender
-}) {
+var historyActions;
+function buildApp(_ref) {
+  var moduleGetter = _ref.moduleGetter,
+      _ref$appModuleName = _ref.appModuleName,
+      appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
+      _ref$appViewName = _ref.appViewName,
+      appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
+      _ref$historyType = _ref.historyType,
+      historyType = _ref$historyType === void 0 ? 'Browser' : _ref$historyType,
+      _ref$routeRule = _ref.routeRule,
+      routeRule = _ref$routeRule === void 0 ? {} : _ref$routeRule,
+      locationMap = _ref.locationMap,
+      _ref$defaultRoutePara = _ref.defaultRouteParams,
+      defaultRouteParams = _ref$defaultRoutePara === void 0 ? {} : _ref$defaultRoutePara,
+      _ref$storeOptions = _ref.storeOptions,
+      storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
+      _ref$container = _ref.container,
+      container = _ref$container === void 0 ? 'root' : _ref$container,
+      beforeRender = _ref.beforeRender;
   historyActions = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
 
   if (!storeOptions.middlewares) {
@@ -6236,29 +7428,34 @@ function buildApp({
   }
 
   storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
-  return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, store => {
+  return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, function (store) {
     var _historyActions;
 
-    const newStore = beforeRender ? beforeRender({
-      store,
+    var newStore = beforeRender ? beforeRender({
+      store: store,
       historyActions: historyActions
     }) : store;
     (_historyActions = historyActions) === null || _historyActions === void 0 ? void 0 : _historyActions.setStore(newStore);
     return newStore;
   });
 }
-function buildSSR({
-  moduleGetter,
-  appModuleName = 'app',
-  appViewName = 'main',
-  location,
-  routeRule = {},
-  locationMap,
-  defaultRouteParams = {},
-  storeOptions = {},
-  renderToStream = false,
-  beforeRender
-}) {
+function buildSSR(_ref2) {
+  var moduleGetter = _ref2.moduleGetter,
+      _ref2$appModuleName = _ref2.appModuleName,
+      appModuleName = _ref2$appModuleName === void 0 ? 'app' : _ref2$appModuleName,
+      _ref2$appViewName = _ref2.appViewName,
+      appViewName = _ref2$appViewName === void 0 ? 'main' : _ref2$appViewName,
+      location = _ref2.location,
+      _ref2$routeRule = _ref2.routeRule,
+      routeRule = _ref2$routeRule === void 0 ? {} : _ref2$routeRule,
+      locationMap = _ref2.locationMap,
+      _ref2$defaultRoutePar = _ref2.defaultRouteParams,
+      defaultRouteParams = _ref2$defaultRoutePar === void 0 ? {} : _ref2$defaultRoutePar,
+      _ref2$storeOptions = _ref2.storeOptions,
+      storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
+      _ref2$renderToStream = _ref2.renderToStream,
+      renderToStream = _ref2$renderToStream === void 0 ? false : _ref2$renderToStream,
+      beforeRender = _ref2.beforeRender;
   historyActions = createRouter(location, defaultRouteParams, routeRule, locationMap);
 
   if (!storeOptions.initData) {
@@ -6266,46 +7463,44 @@ function buildSSR({
   }
 
   storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
-  return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, store => {
+  return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, function (store) {
     var _historyActions2;
 
-    const newStore = beforeRender ? beforeRender({
-      store,
+    var newStore = beforeRender ? beforeRender({
+      store: store,
       historyActions: historyActions
     }) : store;
     (_historyActions2 = historyActions) === null || _historyActions2 === void 0 ? void 0 : _historyActions2.setStore(newStore);
     return newStore;
   });
 }
-const Switch = ({
-  children,
-  elseView
-}) => {
-  if (!children || Array.isArray(children) && children.every(item => !item)) {
-    return React.createElement(React.Fragment, null, elseView);
+var Switch = function Switch(_ref3) {
+  var children = _ref3.children,
+      elseView = _ref3.elseView;
+
+  if (!children || Array.isArray(children) && children.every(function (item) {
+    return !item;
+  })) {
+    return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
   }
 
-  return React.createElement(React.Fragment, null, children);
+  return React__default['default'].createElement(React__default['default'].Fragment, null, children);
 };
 
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-const Link = React.forwardRef((_ref, ref) => {
-  let {
-    onClick,
-    replace
-  } = _ref,
-      rest = _objectWithoutPropertiesLoose(_ref, ["onClick", "replace"]);
+var Link = React__default['default'].forwardRef(function (_ref4, ref) {
+  var _onClick = _ref4.onClick,
+      replace = _ref4.replace,
+      rest = _objectWithoutPropertiesLoose(_ref4, ["onClick", "replace"]);
 
-  const {
-    target
-  } = rest;
-  const props = Object.assign({}, rest, {
-    onClick: event => {
+  var target = rest.target;
+  var props = Object.assign({}, rest, {
+    onClick: function onClick(event) {
       try {
-        onClick && onClick(event);
+        _onClick && _onClick(event);
       } catch (ex) {
         event.preventDefault();
         throw ex;
@@ -6317,9 +7512,28 @@ const Link = React.forwardRef((_ref, ref) => {
         }
     }
   });
-  return React.createElement("a", _extends({}, props, {
+  return React__default['default'].createElement("a", _extends({}, props, {
     ref: ref
   }));
 });
 
-export { ActionTypes, RouteModelHandlers as BaseModelHandlers, Link, LoadingState, Switch, buildApp, buildSSR, delayPromise, effect, errorAction, exportActions, exportModule$1 as exportModule, loadView, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+exports.ActionTypes = ActionTypes;
+exports.BaseModelHandlers = RouteModelHandlers;
+exports.Link = Link;
+exports.Switch = Switch;
+exports.buildApp = buildApp;
+exports.buildSSR = buildSSR;
+exports.delayPromise = delayPromise;
+exports.effect = effect;
+exports.errorAction = errorAction;
+exports.exportActions = exportActions;
+exports.exportModule = exportModule$1;
+exports.loadView = loadView;
+exports.logger = logger;
+exports.modelHotReplacement = modelHotReplacement;
+exports.reducer = reducer;
+exports.setConfig = setConfig;
+exports.setLoading = setLoading;
+exports.setLoadingDepthTime = setLoadingDepthTime;
+exports.setRouteConfig = setRouteConfig;
+exports.viewHotReplacement = viewHotReplacement;

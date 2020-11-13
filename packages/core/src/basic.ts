@@ -191,9 +191,9 @@ export type CoreRootState = {
 /**
  * 模块Model的数据结构，该数据由ExportModule方法自动生成
  */
-export interface ModuleModel<ModelState extends CoreModuleState = CoreModuleState> {
+export interface ModuleModel<ModuleState extends CoreModuleState = CoreModuleState> {
   moduleName: string;
-  initState: ModelState;
+  initState: ModuleState;
   /**
    * model初始化函数
    * - model初始化时会触发dispatch moduleName.Init的action，并返回执行结果

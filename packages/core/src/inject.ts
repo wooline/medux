@@ -144,7 +144,7 @@ export abstract class CoreModelHandlers<S extends CoreModuleState, R extends Cor
    * @param store 全局单例Store的引用
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public constructor(protected readonly moduleName: string, protected readonly store: ModelStore) {
+  public constructor(public readonly moduleName: string, public readonly initState: S, protected readonly store: ModelStore) {
     this.actions = null as any;
   }
 
@@ -329,7 +329,7 @@ export type ExportModule<Component> = <
   moduleName: N,
   initState: S,
   ActionHandles: {
-    new (moduleName: string, store: any): T;
+    new (...args: any[]): T;
   },
   views: V
 ) => Module<ModuleModel<S>, V, Actions<T>, N>['default'];

@@ -84,7 +84,7 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
  * - 参见 loadModel
  * @param moduleGetter 模块的获取方式
  */
-export function exportActions<G extends {[N in keyof G]: N extends ModuleName<ReturnModule<G[N]>> ? G[N] : never}>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
+export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
   MetaData.moduleGetter = moduleGetter as any;
   MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
     maps[moduleName] =

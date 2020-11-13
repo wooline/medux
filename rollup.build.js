@@ -7,16 +7,28 @@ import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 import alias from '@rollup/plugin-alias';
 
-const tag = process.env.NODE_TAG || process.env.NODE_ENV;
-const cfg = {
-  next: {module: 'esm', outDir: 'next'},
-  esm: {module: 'esm', outDir: 'esm'},
-  cjs: {module: 'cjs', outDir: 'cjs'},
-};
-const env = cfg[tag];
+const tag = process.env.NODE_ENV === 'production' ? 'pro' : process.env.NODE_TAG;
 
-export default function (root, replaceNodeEnv, aliasEntries) {
-  const nodeEnv = process.env.NODE_ENV;
+export default function (root, moduleName, globals, aliasEntries) {
+  const cfg = {
+    next: {output: [{file: `dist/next/index.js`, format: 'esm'}], mainFields: ['jsnext:main', 'module', 'main']},
+    esm: {
+      output: [
+        {file: `dist/esm/index.js`, format: 'esm'},
+        {file: `dist/cjs/index.js`, format: 'cjs'},
+        {file: `dist/umd/index.js`, format: 'umd', name: moduleName, globals},
+      ],
+      mainFields: ['module', 'main'],
+    },
+    pro: {
+      output: [
+        {file: `dist/esm/index.min.js`, format: 'esm', plugins: [terser()], sourcemap: true},
+        {file: `dist/cjs/index.min.js`, format: 'cjs', plugins: [terser()], sourcemap: true},
+      ],
+      mainFields: ['main'],
+    },
+  };
+  const env = cfg[tag];
   const extensions = ['.js', '.ts', '.tsx'];
   const pkgResult = {include: {}, external: {}};
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -25,7 +37,7 @@ export default function (root, replaceNodeEnv, aliasEntries) {
   const externals = Object.keys(pkg.externals ? pkg.externals : {...pkg.dependencies, ...pkg.peerDependencies});
   const config = {
     input: 'src/',
-    output: [{file: `dist/${env.outDir}/index.js`, format: env.module}].filter(Boolean),
+    output: env.output,
     external: (id) => {
       const hit = externals.some((mod) => mod === id || id.startsWith(`${mod}/`));
       if (hit) {
@@ -44,8 +56,8 @@ export default function (root, replaceNodeEnv, aliasEntries) {
         alias({
           entries: aliasEntries,
         }),
-      replaceNodeEnv && replace({'process.env.NODE_ENV': `'${nodeEnv}'`}),
-      resolve({extensions, mainFields: ['jsnext:main', 'module', 'main']}),
+      process.env.NODE_ENV === 'production' && replace({'process.env.NODE_ENV': '"production"'}),
+      resolve({extensions, mainFields: env.mainFields}),
       babel({
         exclude: 'node_modules/**',
         extensions,

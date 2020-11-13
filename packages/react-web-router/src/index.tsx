@@ -23,7 +23,7 @@ export {
   logger,
   setLoadingDepthTime,
 } from '@medux/core';
-export {setRouteConfig, RouteModelHandlers as BaseModelHandlers} from '@medux/route-plan-a';
+export {setRouteConfig, RouteModelHandlers as BaseModelHandlers, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
 
 export type {Actions} from '@medux/core';
 export type {LoadView} from '@medux/react';
