@@ -1,18 +1,26 @@
 /// <reference path="../env/global.d.ts" />
-import { ModuleGetter, StoreOptions } from '@medux/core';
-import { Store } from 'redux';
-import React, { ReactElement } from 'react';
+import { RootActions, ModuleGetter, StoreOptions } from '@medux/core';
+import React, { ReactElement, ComponentType } from 'react';
+import { LoadView } from '@medux/react';
 import { HistoryActions } from '@medux/web';
-import type { LocationMap, RouteRule } from '@medux/route-plan-a';
-export { loadView, exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, exportActions, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, } from '@medux/core';
-export { setRouteConfig, RouteModelHandlers as BaseModelHandlers } from '@medux/route-plan-a';
-export type { Actions } from '@medux/core';
-export type { LoadView } from '@medux/react';
-export type { RootState, RouteRule, LocationMap } from '@medux/route-plan-a';
+import { Options as ReactReduxOptions, GetProps } from 'react-redux';
+import type { Dispatch, Store } from 'redux';
+import type { LocationMap, RouteRule, RootState, RootRouteParams } from '@medux/route-plan-a';
+export { exportModule } from '@medux/react';
+export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
+export { setRouteConfig, RouteModuleHandlers as BaseModuleHandlers } from '@medux/route-plan-a';
+export type { Dispatch, Store } from 'redux';
+export type { RouteRule, RouteState, LocationMap, RouteModuleState as BaseModuleState } from '@medux/route-plan-a';
 export type { HistoryActions } from '@medux/web';
-export declare function buildApp({ moduleGetter, appModuleName, appViewName, historyType, routeRule, locationMap, defaultRouteParams, storeOptions, container, beforeRender, }: {
-    moduleGetter: ModuleGetter;
+declare type APP<MG extends ModuleGetter> = {
+    store: Store;
+    state: RootState<MG>;
+    actions: RootActions<MG>;
+    loadView: LoadView<MG>;
+    history: HistoryActions<RootRouteParams<MG>>;
+};
+export declare function exportApp<MG extends ModuleGetter>(): APP<MG>;
+export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, routeRule, locationMap, defaultRouteParams, storeOptions, container, }: {
     appModuleName?: string;
     appViewName?: string;
     historyType?: 'Browser' | 'Hash' | 'Memory';
@@ -23,13 +31,10 @@ export declare function buildApp({ moduleGetter, appModuleName, appViewName, his
     };
     storeOptions?: StoreOptions;
     container?: string | Element | ((component: ReactElement<any>) => void);
-    beforeRender?: (data: {
-        store: Store;
-        historyActions: HistoryActions;
-    }) => Store;
-}): Promise<void>;
-export declare function buildSSR({ moduleGetter, appModuleName, appViewName, location, routeRule, locationMap, defaultRouteParams, storeOptions, renderToStream, beforeRender, }: {
-    moduleGetter: ModuleGetter;
+}): Promise<{
+    store: Store<any, import("redux").AnyAction>;
+}>;
+export declare function buildSSR(moduleGetter: ModuleGetter, { appModuleName, appViewName, location, routeRule, locationMap, defaultRouteParams, storeOptions, renderToStream, }: {
     appModuleName?: string;
     appViewName?: string;
     location: string;
@@ -40,10 +45,6 @@ export declare function buildSSR({ moduleGetter, appModuleName, appViewName, loc
     };
     storeOptions?: StoreOptions;
     renderToStream?: boolean;
-    beforeRender?: (data: {
-        store: Store;
-        historyActions: HistoryActions;
-    }) => Store;
 }): Promise<{
     html: string | meduxCore.ReadableStream;
     data: any;
@@ -57,4 +58,11 @@ export declare const Switch: React.FC<SwitchProps>;
 export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
     replace?: boolean;
 }
+export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C extends ComponentType<any>>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
+export interface Connect {
+    <S = {}, D = {}, W = {}>(mapStateToProps?: Function, mapDispatchToProps?: Function, options?: ReactReduxOptions<any, S, W>): InferableComponentEnhancerWithProps<S & D & {
+        dispatch: Dispatch;
+    }>;
+}
+export declare const connect: Connect;
 export declare const Link: React.ForwardRefExoticComponent<LinkProps & React.RefAttributes<HTMLAnchorElement>>;

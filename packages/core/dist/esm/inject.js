@@ -111,21 +111,26 @@ function _loadModel(moduleName, store) {
 }
 
 export { _loadModel as loadModel };
-export var CoreModelHandlers = _decorate(null, function (_initialize) {
-  var CoreModelHandlers = function CoreModelHandlers(moduleName, store) {
+export var CoreModuleHandlers = _decorate(null, function (_initialize) {
+  var CoreModuleHandlers = function CoreModuleHandlers(moduleName, initState) {
     this.moduleName = moduleName;
-    this.store = store;
+    this.initState = initState;
 
     _initialize(this);
 
     this.actions = null;
+    this.store = null;
   };
 
   return {
-    F: CoreModelHandlers,
+    F: CoreModuleHandlers,
     d: [{
       kind: "field",
       key: "actions",
+      value: void 0
+    }, {
+      kind: "field",
+      key: "store",
       value: void 0
     }, {
       kind: "get",
@@ -256,17 +261,21 @@ export var CoreModelHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-export var exportModule = function exportModule(moduleName, initState, ActionHandles, views) {
+export var exportModule = function exportModule(ModuleHandles, views) {
+  var moduleHandles = new ModuleHandles();
+  var moduleName = moduleHandles.moduleName;
+  var initState = moduleHandles.initState;
+
   var model = function model(store) {
     var hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = initState;
-      var handlers = new ActionHandles(moduleName, store);
 
-      var _actions = injectActions(store, moduleName, handlers);
+      var _actions = injectActions(store, moduleName, moduleHandles);
 
-      handlers.actions = _actions;
+      moduleHandles.store = store;
+      moduleHandles.actions = _actions;
       var preModuleState = store.getState()[moduleName] || {};
       var moduleState = Object.assign({}, initState, preModuleState);
 
@@ -279,11 +288,10 @@ export var exportModule = function exportModule(moduleName, initState, ActionHan
     return undefined;
   };
 
-  model.moduleName = moduleName;
-  model.initState = initState;
   var actions = {};
   return {
     moduleName: moduleName,
+    initState: initState,
     model: model,
     views: views,
     actions: actions

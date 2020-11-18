@@ -8,7 +8,6 @@ exports.routeParamsAction = routeParamsAction;
 exports.dataIsLocation = dataIsLocation;
 exports.checkLocation = checkLocation;
 exports.urlToLocation = urlToLocation;
-exports.locationToUrl = locationToUrl;
 exports.compileRule = compileRule;
 exports.RouteActionTypes = exports.routeConfig = void 0;
 
@@ -116,10 +115,6 @@ function urlToLocation(url) {
     search: search && "?" + search,
     hash: hash && "#" + hash
   };
-}
-
-function locationToUrl(safeLocation) {
-  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
 }
 
 function compileRule(routeRule, parentAbsoluteViewName, viewToRule, ruleToKeys) {

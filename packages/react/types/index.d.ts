@@ -1,10 +1,12 @@
 /// <reference path="../env/global.d.ts" />
 import * as core from '@medux/core';
-import { ExportModule, ModuleGetter, StoreOptions, CoreRootState } from '@medux/core';
+import { ExportModule, ModuleGetter, StoreOptions } from '@medux/core';
 import { ComponentType, ReactElement } from 'react';
 import { Store } from 'redux';
-export declare function renderApp(moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void), beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>): Promise<void>;
-export declare function renderSSR(moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions?: StoreOptions, renderToStream?: boolean, beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>): Promise<{
+export declare function renderApp(moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions: StoreOptions, container?: string | Element | ((component: ReactElement<any>) => void), beforeRender?: (store: Store) => Store): Promise<{
+    store: Store<any, import("redux").AnyAction>;
+}>;
+export declare function renderSSR(moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions?: StoreOptions, renderToStream?: boolean, beforeRender?: (store: Store) => Store): Promise<{
     html: any;
     data: any;
     ssrInitStoreKey: string;

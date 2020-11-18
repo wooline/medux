@@ -1,10 +1,10 @@
-import { CoreModelHandlers, CoreModuleState, CoreRootState } from '@medux/core';
+import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
 import { Middleware, Reducer } from 'redux';
-import { HistoryAction, RouteState } from './basic';
+import { HistoryAction } from './basic';
 import assignDeep from './deep-extend';
-import type { RouteParams, Location, PaRouteData, PaLocation, LocationPayload, RoutePayload, RouteRule } from './basic';
+import type { RouteParams, Location, PaRouteData, PaLocation, RouteState, LocationPayload, RoutePayload, RouteRule } from './basic';
 export declare const deepAssign: typeof assignDeep;
-export type { RootState, PaRouteData, PaLocation, LocationPayload, RoutePayload, Location, RouteRule, RouteParams } from './basic';
+export type { RootState, PaRouteData, PaLocation, LocationPayload, RouteState, RoutePayload, Location, RouteRule, RouteParams, RootRouteParams } from './basic';
 export { setRouteConfig } from './basic';
 export declare function assignRouteData(paths: string[], params: {
     [moduleName: string]: any;
@@ -45,9 +45,10 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
         [moduleName: string]: any;
     }, initUrl: string, routeRule: RouteRule, locationMap?: LocationMap | undefined);
     setStore(_store: Store): void;
-    mergeInitState<T extends CoreRootState>(initState: T): RouteRootState;
+    mergeInitState<T extends RouteRootState>(initState: T): RouteRootState;
     protected getCurKey(): string;
     getRouteState(): RouteState<P>;
+    locationToUrl(safeLocation: PaLocation): string;
     protected locationToRoute(safeLocation: PaLocation): PaRouteData<P>;
     protected routeToLocation(paths: string[] | string, params?: RouteParams): PaLocation;
     payloadToRoute(data: RoutePayload<P> | LocationPayload | string): PaRouteData<P>;
@@ -75,7 +76,7 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
 }
 export declare const routeMiddleware: Middleware;
 export declare const routeReducer: Reducer;
-export interface RouteModuleState<P extends RouteParams = RouteParams> extends CoreModuleState {
+export interface RouteModuleState<P extends Record<string, any> = {}> extends CoreModuleState {
     routeParams?: P;
 }
 export declare type RouteRootState<P extends RouteParams = RouteParams> = {
@@ -83,7 +84,7 @@ export declare type RouteRootState<P extends RouteParams = RouteParams> = {
 } & {
     route: RouteState<P>;
 };
-export declare class RouteModelHandlers<S extends RouteModuleState, R extends RouteRootState> extends CoreModelHandlers<S, R> {
+export declare class RouteModuleHandlers<N extends string, S extends RouteModuleState> extends CoreModuleHandlers<N, S> {
     protected Init(initState: S): S;
     RouteParams(payload: {
         [key: string]: any;

@@ -3,7 +3,9 @@ import {RouteRule, BaseHistoryActions, setRouteConfig} from 'src/index';
 export class HistoryActions extends BaseHistoryActions<RouteParams> {
   destroy() {}
 }
-export const nativeHistory: any = {};
+export const nativeHistory: any = {
+  relaunch() {},
+};
 
 export enum ViewNames {
   'appMain' = 'app.Main',

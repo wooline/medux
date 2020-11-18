@@ -80,27 +80,30 @@ function viewHotReplacement(moduleName, views) {
 }
 
 function exportActions(moduleGetter) {
-  _basic.MetaData.moduleGetter = moduleGetter;
-  _basic.MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
-    maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-      get: function get(target, key) {
-        return function () {
-          for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-            payload[_key] = arguments[_key];
-          }
+  if (!_basic.MetaData.actionCreatorMap) {
+    _basic.MetaData.moduleGetter = moduleGetter;
+    _basic.MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
+      maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
+        get: function get(target, key) {
+          return function () {
+            for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+              payload[_key] = arguments[_key];
+            }
 
-          return {
-            type: moduleName + _basic.config.NSP + key,
-            payload: payload
+            return {
+              type: moduleName + _basic.config.NSP + key,
+              payload: payload
+            };
           };
-        };
-      },
-      set: function set() {
-        return true;
-      }
-    });
-    return maps;
-  }, {});
+        },
+        set: function set() {
+          return true;
+        }
+      });
+      return maps;
+    }, {});
+  }
+
   return _basic.MetaData.actionCreatorMap;
 }
 
@@ -177,8 +180,11 @@ function _renderApp() {
 
           case 26:
             reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+            return _context.abrupt("return", {
+              store: store
+            });
 
-          case 27:
+          case 28:
           case "end":
             return _context.stop();
         }

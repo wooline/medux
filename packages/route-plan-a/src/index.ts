@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {config, CoreModelHandlers, CoreModuleState, CoreRootState, reducer, moduleInitAction} from '@medux/core';
+import {config, CoreModuleHandlers, CoreModuleState, reducer, moduleInitAction} from '@medux/core';
 import {Middleware, Reducer} from 'redux';
 import {compileToPath, matchPath} from './matchPath';
 import {
@@ -9,20 +9,18 @@ import {
   compileRule,
   HistoryAction,
   DisplayViews,
-  RouteState,
   urlToLocation,
-  locationToUrl,
   dataIsLocation,
   routeChangeAction,
   beforeRouteChangeAction,
   routeParamsAction,
 } from './basic';
 import assignDeep from './deep-extend';
-import type {RouteParams, Location, PaRouteData, PaLocation, LocationPayload, RoutePayload, RouteRule} from './basic';
+import type {RouteParams, Location, PaRouteData, PaLocation, RouteState, LocationPayload, RoutePayload, RouteRule} from './basic';
 
 export const deepAssign = assignDeep;
 
-export type {RootState, PaRouteData, PaLocation, LocationPayload, RoutePayload, Location, RouteRule, RouteParams} from './basic';
+export type {RootState, PaRouteData, PaLocation, LocationPayload, RouteState, RoutePayload, Location, RouteRule, RouteParams, RootRouteParams} from './basic';
 export {setRouteConfig} from './basic';
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
@@ -159,13 +157,15 @@ export function assignRouteData(paths: string[], params: {[moduleName: string]: 
       }
       prev[moduleName]![viewName] = true;
       if (!params[moduleName]) {
-        params[moduleName] = {};
+        params[moduleName] = undefined;
       }
     }
     return prev;
   }, {});
   Object.keys(params).forEach((moduleName) => {
-    params[moduleName] = assignDeep({}, defaultRouteParams[moduleName], params[moduleName]);
+    if (defaultRouteParams[moduleName]) {
+      params[moduleName] = assignDeep({}, defaultRouteParams[moduleName], params[moduleName]);
+    }
   });
   return {views, paths, params};
 }
@@ -326,13 +326,14 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     const routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
     this._routeState = routeState;
     this._startupRouteState = routeState;
+    nativeHistory.relaunch(routeState);
   }
 
   setStore(_store: Store) {
     this.store = _store;
   }
 
-  mergeInitState<T extends CoreRootState>(initState: T): RouteRootState {
+  mergeInitState<T extends RouteRootState>(initState: T): RouteRootState {
     const routeState = this.getRouteState();
     const data: RouteRootState = {...initState, route: routeState};
     Object.keys(routeState.views).forEach((moduleName) => {
@@ -358,10 +359,13 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
   // getRouteData(startup?: boolean): RouteData<P> | undefined {
   //   return startup ? this._startupRouteData : this._routeData;
   // }
+  locationToUrl(safeLocation: PaLocation) {
+    return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+  }
 
   protected locationToRoute(safeLocation: PaLocation): PaRouteData<P> {
     // const safeLocation = checkLocation(location, this._getCurPathname());
-    const url = locationToUrl(safeLocation);
+    const url = this.locationToUrl(safeLocation);
     const item = cacheData.find((val) => {
       return val && val.url === url;
     });
@@ -409,13 +413,20 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     if (dataIsLocation(data)) {
       return this.locationToRoute(checkLocation(data));
     }
-    const params: RouteParams | undefined = data.extendParams ? assignDeep({}, data.extendParams, data.params) : data.params;
+    const clone = {...data};
+    if (clone.extendParams === true) {
+      clone.extendParams = this.getRouteState().params;
+    }
+    if (!clone.paths) {
+      clone.paths = this.getRouteState().pathname;
+    }
+    const params: RouteParams | undefined = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
     let paths: string[] = [];
-    if (typeof data.paths === 'string') {
-      const pathname = data.paths;
+    if (typeof clone.paths === 'string') {
+      const pathname = clone.paths;
       pathnameParse(pathname, this.routeRule, paths, {});
     } else {
-      paths = data.paths;
+      paths = clone.paths;
     }
     return assignRouteData(paths, params || {}, this.defaultRouteParams) as PaRouteData<P>;
   }
@@ -427,8 +438,15 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     if (dataIsLocation(data)) {
       return checkLocation(data);
     }
-    const params: RouteParams | undefined = data.extendParams ? assignDeep({}, data.extendParams, data.params) : data.params;
-    return this.routeToLocation(data.paths, params);
+    const clone = {...data};
+    if (clone.extendParams === true) {
+      clone.extendParams = this.getRouteState().params;
+    }
+    if (!clone.paths) {
+      clone.paths = this.getRouteState().pathname;
+    }
+    const params: RouteParams | undefined = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
+    return this.routeToLocation(clone.paths, params);
   }
 
   private _createKey() {
@@ -545,7 +563,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
   private _toNativeLocation(location: Location): Location {
     if (this.locationMap) {
       const nLocation = checkLocation(this.locationMap.out(location));
-      return {...nLocation, action: location.action, url: locationToUrl(nLocation), key: location.key};
+      return {...nLocation, action: location.action, url: this.locationToUrl(nLocation), key: location.key};
     }
     return location;
   }
@@ -553,7 +571,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
   private _createRouteState(safeLocation: PaLocation, action: HistoryAction, key: string): RouteState<P> {
     key = key || this._createKey();
     const data = this._getEfficientLocation(safeLocation);
-    const location: Location = {...data.location, action, url: locationToUrl(data.location), key};
+    const location: Location = {...data.location, action, url: this.locationToUrl(data.location), key};
     const {history, stack} = this._buildHistory(location);
     const routeState: RouteState<P> = {...location, ...data.routeData, history, stack};
     return routeState;
@@ -673,7 +691,7 @@ export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (
     const result = next(action);
     const routeState: RouteState = action.payload[0];
     const rootRouteParams = routeState.params;
-    const rootState: CoreRootState = getState();
+    const rootState = getState();
     Object.keys(rootRouteParams).forEach((moduleName) => {
       const routeParams = rootRouteParams[moduleName];
       if (routeParams) {
@@ -706,7 +724,8 @@ export const routeReducer: Reducer = (state: RouteState, action) => {
 //   });
 // }
 
-export interface RouteModuleState<P extends RouteParams = RouteParams> extends CoreModuleState {
+// eslint-disable-next-line @typescript-eslint/ban-types
+export interface RouteModuleState<P extends Record<string, any> = {}> extends CoreModuleState {
   routeParams?: P;
 }
 export type RouteRootState<P extends RouteParams = RouteParams> = {
@@ -714,12 +733,12 @@ export type RouteRootState<P extends RouteParams = RouteParams> = {
 } & {
   route: RouteState<P>;
 };
-export class RouteModelHandlers<S extends RouteModuleState, R extends RouteRootState> extends CoreModelHandlers<S, R> {
+export class RouteModuleHandlers<N extends string, S extends RouteModuleState> extends CoreModuleHandlers<N, S> {
   @reducer
   protected Init(initState: S): S {
-    const rootState = this.getRootState();
+    const rootState = this.getRootState<RouteRootState>();
     const routeParams = rootState.route.params[this.moduleName];
-    return {...initState, routeParams};
+    return routeParams ? {...initState, routeParams} : initState;
   }
 
   @reducer

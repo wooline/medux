@@ -91,9 +91,6 @@ export function urlToLocation(url) {
     hash: hash && "#" + hash
   };
 }
-export function locationToUrl(safeLocation) {
-  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
-}
 export function compileRule(routeRule, parentAbsoluteViewName, viewToRule, ruleToKeys) {
   if (parentAbsoluteViewName === void 0) {
     parentAbsoluteViewName = '';

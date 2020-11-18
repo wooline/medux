@@ -54,21 +54,24 @@ export function viewHotReplacement(moduleName, views) {
   }
 }
 export function exportActions(moduleGetter) {
-  MetaData.moduleGetter = moduleGetter;
-  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
-    maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-      get: (target, key) => {
-        return (...payload) => ({
-          type: moduleName + config.NSP + key,
-          payload
-        });
-      },
-      set: () => {
-        return true;
-      }
-    });
-    return maps;
-  }, {});
+  if (!MetaData.actionCreatorMap) {
+    MetaData.moduleGetter = moduleGetter;
+    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
+      maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
+        get: (target, key) => {
+          return (...payload) => ({
+            type: moduleName + config.NSP + key,
+            payload
+          });
+        },
+        set: () => {
+          return true;
+        }
+      });
+      return maps;
+    }, {});
+  }
+
   return MetaData.actionCreatorMap;
 }
 export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, beforeRender) {
@@ -110,6 +113,9 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   }
 
   reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  return {
+    store
+  };
 }
 export async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;

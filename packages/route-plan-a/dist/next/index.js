@@ -1,8 +1,8 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { config, CoreModelHandlers, reducer, moduleInitAction } from '@medux/core';
+import { config, CoreModuleHandlers, reducer, moduleInitAction } from '@medux/core';
 import { compileToPath, matchPath } from './matchPath';
-import { RouteActionTypes, routeConfig, checkLocation, compileRule, urlToLocation, locationToUrl, dataIsLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction } from './basic';
+import { RouteActionTypes, routeConfig, checkLocation, compileRule, urlToLocation, dataIsLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction } from './basic';
 import assignDeep from './deep-extend';
 export const deepAssign = assignDeep;
 export { setRouteConfig } from './basic';
@@ -305,6 +305,7 @@ export class BaseHistoryActions {
 
     this._routeState = routeState;
     this._startupRouteState = routeState;
+    nativeHistory.relaunch(routeState);
   }
 
   setStore(_store) {
@@ -336,8 +337,12 @@ export class BaseHistoryActions {
     return this._routeState;
   }
 
+  locationToUrl(safeLocation) {
+    return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+  }
+
   locationToRoute(safeLocation) {
-    const url = locationToUrl(safeLocation);
+    const url = this.locationToUrl(safeLocation);
     const item = cacheData.find(val => {
       return val && val.url === url;
     });
@@ -397,14 +402,24 @@ export class BaseHistoryActions {
       return this.locationToRoute(checkLocation(data));
     }
 
-    const params = data.extendParams ? assignDeep({}, data.extendParams, data.params) : data.params;
+    const clone = Object.assign({}, data);
+
+    if (clone.extendParams === true) {
+      clone.extendParams = this.getRouteState().params;
+    }
+
+    if (!clone.paths) {
+      clone.paths = this.getRouteState().pathname;
+    }
+
+    const params = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
     let paths = [];
 
-    if (typeof data.paths === 'string') {
-      const pathname = data.paths;
+    if (typeof clone.paths === 'string') {
+      const pathname = clone.paths;
       pathnameParse(pathname, this.routeRule, paths, {});
     } else {
-      paths = data.paths;
+      paths = clone.paths;
     }
 
     return assignRouteData(paths, params || {}, this.defaultRouteParams);
@@ -419,8 +434,18 @@ export class BaseHistoryActions {
       return checkLocation(data);
     }
 
-    const params = data.extendParams ? assignDeep({}, data.extendParams, data.params) : data.params;
-    return this.routeToLocation(data.paths, params);
+    const clone = Object.assign({}, data);
+
+    if (clone.extendParams === true) {
+      clone.extendParams = this.getRouteState().params;
+    }
+
+    if (!clone.paths) {
+      clone.paths = this.getRouteState().pathname;
+    }
+
+    const params = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
+    return this.routeToLocation(clone.paths, params);
   }
 
   _createKey() {
@@ -562,7 +587,7 @@ export class BaseHistoryActions {
       const nLocation = checkLocation(this.locationMap.out(location));
       return Object.assign({}, nLocation, {
         action: location.action,
-        url: locationToUrl(nLocation),
+        url: this.locationToUrl(nLocation),
         key: location.key
       });
     }
@@ -577,7 +602,7 @@ export class BaseHistoryActions {
 
     const location = Object.assign({}, data.location, {
       action,
-      url: locationToUrl(data.location),
+      url: this.locationToUrl(data.location),
       key
     });
 
@@ -695,8 +720,8 @@ export const routeReducer = (state, action) => {
 
   return state;
 };
-export let RouteModelHandlers = _decorate(null, function (_initialize, _CoreModelHandlers) {
-  class RouteModelHandlers extends _CoreModelHandlers {
+export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
+  class RouteModuleHandlers extends _CoreModuleHandlers {
     constructor(...args) {
       super(...args);
 
@@ -706,7 +731,7 @@ export let RouteModelHandlers = _decorate(null, function (_initialize, _CoreMode
   }
 
   return {
-    F: RouteModelHandlers,
+    F: RouteModuleHandlers,
     d: [{
       kind: "method",
       decorators: [reducer],
@@ -714,9 +739,9 @@ export let RouteModelHandlers = _decorate(null, function (_initialize, _CoreMode
       value: function Init(initState) {
         const rootState = this.getRootState();
         const routeParams = rootState.route.params[this.moduleName];
-        return Object.assign({}, initState, {
+        return routeParams ? Object.assign({}, initState, {
           routeParams
-        });
+        }) : initState;
       }
     }, {
       kind: "method",
@@ -730,4 +755,4 @@ export let RouteModelHandlers = _decorate(null, function (_initialize, _CoreMode
       }
     }]
   };
-}, CoreModelHandlers);
+}, CoreModuleHandlers);

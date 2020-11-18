@@ -1,4 +1,5 @@
-import {config, ModuleGetter, ReturnModule, RootState as CoreRootState} from '@medux/core';
+import {config, ModuleGetter, ReturnModule, RootState as CoreRootState, CommonModule} from '@medux/core';
+import {RouteModuleState} from './index';
 import {compilePath} from './matchPath';
 
 export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
@@ -28,44 +29,48 @@ export type RouteParams = {[moduleName: string]: {[key: string]: any} | undefine
 export interface DisplayViews {
   [moduleName: string]: {[viewName: string]: boolean | undefined} | undefined;
 }
-export interface RouteData<P extends RouteParams = any> {
-  /**
-   * 表示当前路由下加载了哪些views
-   */
-  views: DisplayViews;
-  /**
-   * 表示当前路由传递了哪些参数
-   */
-  params: P;
-  /**
-   * 表示当前路由下加载views的父子嵌套关系
-   */
-  paths: string[];
-  /**
-   * 路由的打开方式
-   */
-  action: HistoryAction;
-  key: string;
-}
+// export interface RouteData<P extends RouteParams = any> {
+//   /**
+//    * 表示当前路由下加载了哪些views
+//    */
+//   views: DisplayViews;
+//   /**
+//    * 表示当前路由传递了哪些参数
+//    */
+//   params: P;
+//   /**
+//    * 表示当前路由下加载views的父子嵌套关系
+//    */
+//   paths: string[];
+//   /**
+//    * 路由的打开方式
+//    */
+//   action: HistoryAction;
+//   key: string;
+// }
 /**
  * Redux中保存的路由数据结构
  */
-export type RouteState<P extends RouteParams = RouteParams> = Location &
-  RouteData<P> & {
-    /**
-     * 路由记录
-     */
-    history: string[];
-    /**
-     * pathname记录
-     */
-    stack: string[];
-  };
 
-type MountViews<M extends any> = {[key in keyof M['views']]?: boolean};
-type ModuleParams<M extends any> = M['model']['initState']['routeParams'];
+export type RouteState<P extends RouteParams = RouteParams> = Location & {
+  paths: string[];
+  views: DisplayViews;
+  params: P;
+  /**
+   * 路由记录
+   */
+  history: string[];
+  /**
+   * pathname记录
+   */
+  stack: string[];
+};
 
-export type RouteViews<G extends ModuleGetter> = {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
+type MountViews<M extends CommonModule> = {[key in keyof M['default']['views']]?: boolean};
+type ModuleParams<M extends CommonModule<RouteModuleState>> = M['default']['initState']['routeParams'];
+
+export type RootRouteParams<G extends ModuleGetter> = {[key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>};
+// export type RouteViews<G extends ModuleGetter> = {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
 /**
  * 整个Store的数据结构模型，主要分为三部分
  * - route，路由数据
@@ -80,8 +85,8 @@ export type RootState<G extends ModuleGetter> = {
     pathname: string;
     search: string;
     hash: string;
-    views: {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
-    params: {[key in keyof G]?: ModuleParams<ReturnModule<G[key]>>};
+    views: {[key in keyof G]?: MountViews<ReturnModule<ReturnType<G[key]>>>};
+    params: {[key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>};
     paths: string[];
     key: string;
     action: HistoryAction;
@@ -157,9 +162,9 @@ export interface LocationPayload {
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 export interface RoutePayload<P extends RouteParams = RouteParams> {
-  paths: string[] | string;
+  paths?: string[] | string;
   params?: DeepPartial<P>;
-  extendParams?: DeepPartial<P>;
+  extendParams?: DeepPartial<P> | true;
 }
 
 export function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload {
@@ -202,10 +207,6 @@ export function urlToLocation(url: string): PaLocation {
     search: search && `?${search}`,
     hash: hash && `#${hash}`,
   };
-}
-
-export function locationToUrl(safeLocation: PaLocation): string {
-  return safeLocation.pathname + safeLocation.search + safeLocation.hash;
 }
 
 /**

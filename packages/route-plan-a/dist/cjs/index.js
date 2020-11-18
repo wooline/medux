@@ -4,7 +4,7 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 exports.__esModule = true;
 exports.assignRouteData = assignRouteData;
-exports.RouteModelHandlers = exports.routeReducer = exports.routeMiddleware = exports.BaseHistoryActions = exports.setRouteConfig = exports.deepAssign = void 0;
+exports.RouteModuleHandlers = exports.routeReducer = exports.routeMiddleware = exports.BaseHistoryActions = exports.setRouteConfig = exports.deepAssign = void 0;
 
 var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
@@ -347,6 +347,7 @@ var BaseHistoryActions = function () {
 
     this._routeState = routeState;
     this._startupRouteState = routeState;
+    nativeHistory.relaunch(routeState);
   }
 
   var _proto = BaseHistoryActions.prototype;
@@ -380,8 +381,12 @@ var BaseHistoryActions = function () {
     return this._routeState;
   };
 
+  _proto.locationToUrl = function locationToUrl(safeLocation) {
+    return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+  };
+
   _proto.locationToRoute = function locationToRoute(safeLocation) {
-    var url = (0, _basic.locationToUrl)(safeLocation);
+    var url = this.locationToUrl(safeLocation);
     var item = cacheData.find(function (val) {
       return val && val.url === url;
     });
@@ -442,14 +447,24 @@ var BaseHistoryActions = function () {
       return this.locationToRoute((0, _basic.checkLocation)(data));
     }
 
-    var params = data.extendParams ? (0, _deepExtend.default)({}, data.extendParams, data.params) : data.params;
+    var clone = Object.assign({}, data);
+
+    if (clone.extendParams === true) {
+      clone.extendParams = this.getRouteState().params;
+    }
+
+    if (!clone.paths) {
+      clone.paths = this.getRouteState().pathname;
+    }
+
+    var params = clone.extendParams ? (0, _deepExtend.default)({}, clone.extendParams, clone.params) : clone.params;
     var paths = [];
 
-    if (typeof data.paths === 'string') {
-      var pathname = data.paths;
+    if (typeof clone.paths === 'string') {
+      var pathname = clone.paths;
       pathnameParse(pathname, this.routeRule, paths, {});
     } else {
-      paths = data.paths;
+      paths = clone.paths;
     }
 
     return assignRouteData(paths, params || {}, this.defaultRouteParams);
@@ -464,8 +479,18 @@ var BaseHistoryActions = function () {
       return (0, _basic.checkLocation)(data);
     }
 
-    var params = data.extendParams ? (0, _deepExtend.default)({}, data.extendParams, data.params) : data.params;
-    return this.routeToLocation(data.paths, params);
+    var clone = Object.assign({}, data);
+
+    if (clone.extendParams === true) {
+      clone.extendParams = this.getRouteState().params;
+    }
+
+    if (!clone.paths) {
+      clone.paths = this.getRouteState().pathname;
+    }
+
+    var params = clone.extendParams ? (0, _deepExtend.default)({}, clone.extendParams, clone.params) : clone.params;
+    return this.routeToLocation(clone.paths, params);
   };
 
   _proto._createKey = function _createKey() {
@@ -620,7 +645,7 @@ var BaseHistoryActions = function () {
       var nLocation = (0, _basic.checkLocation)(this.locationMap.out(location));
       return Object.assign({}, nLocation, {
         action: location.action,
-        url: (0, _basic.locationToUrl)(nLocation),
+        url: this.locationToUrl(nLocation),
         key: location.key
       });
     }
@@ -635,7 +660,7 @@ var BaseHistoryActions = function () {
 
     var location = Object.assign({}, data.location, {
       action: action,
-      url: (0, _basic.locationToUrl)(data.location),
+      url: this.locationToUrl(data.location),
       key: key
     });
 
@@ -804,29 +829,29 @@ var routeReducer = function routeReducer(state, action) {
 };
 
 exports.routeReducer = routeReducer;
-var RouteModelHandlers = (0, _decorate2.default)(null, function (_initialize, _CoreModelHandlers) {
-  var RouteModelHandlers = function (_CoreModelHandlers2) {
-    (0, _inheritsLoose2.default)(RouteModelHandlers, _CoreModelHandlers2);
+var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _CoreModuleHandlers) {
+  var RouteModuleHandlers = function (_CoreModuleHandlers2) {
+    (0, _inheritsLoose2.default)(RouteModuleHandlers, _CoreModuleHandlers2);
 
-    function RouteModelHandlers() {
+    function RouteModuleHandlers() {
       var _this2;
 
       for (var _len = arguments.length, args = new Array(_len), _key3 = 0; _key3 < _len; _key3++) {
         args[_key3] = arguments[_key3];
       }
 
-      _this2 = _CoreModelHandlers2.call.apply(_CoreModelHandlers2, [this].concat(args)) || this;
+      _this2 = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
 
       _initialize((0, _assertThisInitialized2.default)(_this2));
 
       return _this2;
     }
 
-    return RouteModelHandlers;
-  }(_CoreModelHandlers);
+    return RouteModuleHandlers;
+  }(_CoreModuleHandlers);
 
   return {
-    F: RouteModelHandlers,
+    F: RouteModuleHandlers,
     d: [{
       kind: "method",
       decorators: [_core.reducer],
@@ -834,9 +859,9 @@ var RouteModelHandlers = (0, _decorate2.default)(null, function (_initialize, _C
       value: function Init(initState) {
         var rootState = this.getRootState();
         var routeParams = rootState.route.params[this.moduleName];
-        return Object.assign({}, initState, {
+        return routeParams ? Object.assign({}, initState, {
           routeParams: routeParams
-        });
+        }) : initState;
       }
     }, {
       kind: "method",
@@ -850,5 +875,5 @@ var RouteModelHandlers = (0, _decorate2.default)(null, function (_initialize, _C
       }
     }]
   };
-}, _core.CoreModelHandlers);
-exports.RouteModelHandlers = RouteModelHandlers;
+}, _core.CoreModuleHandlers);
+exports.RouteModuleHandlers = RouteModuleHandlers;

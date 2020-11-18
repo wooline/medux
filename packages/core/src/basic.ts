@@ -30,6 +30,20 @@ export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string; RS
   _config.MSP && (config.MSP = _config.MSP);
 }
 
+export interface CommonModule<S extends CoreModuleState = CoreModuleState> {
+  default: {
+    moduleName: string;
+    initState: S;
+    model: (store: ModelStore) => void | Promise<void>;
+    views: {
+      [key: string]: any;
+    };
+    actions: {
+      [actionName: string]: (...args: any[]) => Action;
+    };
+  };
+}
+
 /**
  * 框架内置的几个ActionTypes
  */
@@ -51,9 +65,9 @@ export const ActionTypes = {
 /**
  * 一个数据结构用来指示如何获取模块，允许同步或异步获取
  */
-export interface ModuleGetter {
-  [moduleName: string]: () => Module | Promise<Module>;
-}
+export type ModuleGetter = {
+  [moduleName: string]: () => CommonModule | Promise<CommonModule>;
+};
 
 export const MetaData: {
   actionCreatorMap: ActionCreatorMap;
@@ -191,18 +205,7 @@ export type CoreRootState = {
 /**
  * 模块Model的数据结构，该数据由ExportModule方法自动生成
  */
-export interface ModuleModel<ModuleState extends CoreModuleState = CoreModuleState> {
-  moduleName: string;
-  initState: ModuleState;
-  /**
-   * model初始化函数
-   * - model初始化时会触发dispatch moduleName.Init的action，并返回执行结果
-   * @param store Store的引用
-   * @param options 该数据将与initState合并注入model初始状态
-   * @returns 如果模块已经初始化过，不再重复初始化并返回void，否则返回Promise
-   */
-  (store: ModelStore): void | Promise<void>;
-}
+export type ModuleModel = (store: ModelStore) => void | Promise<void>;
 
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;
@@ -214,29 +217,6 @@ export interface ActionCreatorList {
 
 export type ActionCreator = (...args: any[]) => Action;
 
-/**
- * 模块的数据结构，该数据由ExportModule方法自动生成
- */
-export interface Module<M extends ModuleModel = ModuleModel, VS extends {[key: string]: any} = {[key: string]: any}, AS extends ActionCreatorList = Record<string, any>, N extends string = string> {
-  default: {
-    /**
-     * 模块名称
-     */
-    moduleName: N;
-    /**
-     * 模块model
-     */
-    model: M;
-    /**
-     * 模块供外部使用的views
-     */
-    views: VS;
-    /**
-     * 模块可供调用的actionCreator
-     */
-    actions: AS;
-  };
-}
 /**
  * 一个类方法的装饰器，用来指示该方法为一个reducerHandler
  * - reducerHandler必须通过dispatch Action来触发

@@ -1,61 +1,58 @@
 /// <reference path="../env/global.d.ts" />
 import {routeMiddleware, routeReducer} from '@medux/route-plan-a';
-import {ModuleGetter, StoreOptions} from '@medux/core';
-import {Store} from 'redux';
-import React, {ReactElement} from 'react';
-import {renderApp, renderSSR} from '@medux/react';
+import {RootActions, ModuleGetter, StoreOptions, exportActions} from '@medux/core';
+import React, {ReactElement, ComponentType} from 'react';
+import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
-import type {LocationMap, RouteRule} from '@medux/route-plan-a';
+import {connect as baseConnect, Options as ReactReduxOptions, GetProps} from 'react-redux';
+import type {Dispatch, Store} from 'redux';
+import type {LocationMap, RouteRule, RootState, RootRouteParams} from '@medux/route-plan-a';
 
-export {loadView, exportModule} from '@medux/react';
-export {
-  ActionTypes,
-  delayPromise,
-  LoadingState,
-  exportActions,
-  modelHotReplacement,
-  effect,
-  errorAction,
-  reducer,
-  viewHotReplacement,
-  setLoading,
-  setConfig,
-  logger,
-  setLoadingDepthTime,
-} from '@medux/core';
-export {setRouteConfig, RouteModelHandlers as BaseModelHandlers, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
+export {exportModule} from '@medux/react';
+export {ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime} from '@medux/core';
+export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers} from '@medux/route-plan-a';
 
-export type {Actions} from '@medux/core';
-export type {LoadView} from '@medux/react';
-export type {RootState, RouteRule, LocationMap} from '@medux/route-plan-a';
+export type {Dispatch, Store} from 'redux';
+export type {RouteRule, RouteState, LocationMap, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
 export type {HistoryActions} from '@medux/web';
 
-let historyActions: HistoryActions | undefined;
+type APP<MG extends ModuleGetter> = {
+  store: Store;
+  state: RootState<MG>;
+  actions: RootActions<MG>;
+  loadView: LoadView<MG>;
+  history: HistoryActions<RootRouteParams<MG>>;
+};
+const App: APP<any> = {loadView} as any;
 
-export function buildApp({
-  moduleGetter,
-  appModuleName = 'app',
-  appViewName = 'main',
-  historyType = 'Browser',
-  routeRule = {},
-  locationMap,
-  defaultRouteParams = {},
-  storeOptions = {},
-  container = 'root',
-  beforeRender,
-}: {
-  moduleGetter: ModuleGetter;
-  appModuleName?: string;
-  appViewName?: string;
-  historyType?: 'Browser' | 'Hash' | 'Memory';
-  routeRule?: RouteRule;
-  locationMap?: LocationMap;
-  defaultRouteParams?: {[moduleName: string]: any};
-  storeOptions?: StoreOptions;
-  container?: string | Element | ((component: ReactElement<any>) => void);
-  beforeRender?: (data: {store: Store; historyActions: HistoryActions}) => Store;
-}) {
-  historyActions = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+export function exportApp<MG extends ModuleGetter>(): APP<MG> {
+  return App;
+}
+
+export function buildApp(
+  moduleGetter: ModuleGetter,
+  {
+    appModuleName = 'app',
+    appViewName = 'main',
+    historyType = 'Browser',
+    routeRule = {},
+    locationMap,
+    defaultRouteParams = {},
+    storeOptions = {},
+    container = 'root',
+  }: {
+    appModuleName?: string;
+    appViewName?: string;
+    historyType?: 'Browser' | 'Hash' | 'Memory';
+    routeRule?: RouteRule;
+    locationMap?: LocationMap;
+    defaultRouteParams?: {[moduleName: string]: any};
+    storeOptions?: StoreOptions;
+    container?: string | Element | ((component: ReactElement<any>) => void);
+  }
+) {
+  App.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+  App.actions = exportActions(moduleGetter);
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
   }
@@ -67,46 +64,57 @@ export function buildApp({
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
+  storeOptions.initData = App.history.mergeInitState(storeOptions.initData as any);
+
   return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
-    const newStore = beforeRender ? beforeRender({store, historyActions: historyActions!}) : store;
-    historyActions?.setStore(newStore);
-    return newStore;
+    App.store = store;
+    Object.defineProperty(App, 'state', {
+      get: () => {
+        return store.getState();
+      },
+    });
+    App.history.setStore(store);
+    return store;
   });
 }
 
-export function buildSSR({
-  moduleGetter,
-  appModuleName = 'app',
-  appViewName = 'main',
-  location,
-  routeRule = {},
-  locationMap,
-  defaultRouteParams = {},
-  storeOptions = {},
-  renderToStream = false,
-  beforeRender,
-}: {
-  moduleGetter: ModuleGetter;
-  appModuleName?: string;
-  appViewName?: string;
-  location: string;
-  routeRule?: RouteRule;
-  locationMap?: LocationMap;
-  defaultRouteParams?: {[moduleName: string]: any};
-  storeOptions?: StoreOptions;
-  renderToStream?: boolean;
-  beforeRender?: (data: {store: Store; historyActions: HistoryActions}) => Store;
-}): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
-  historyActions = createRouter(location, defaultRouteParams, routeRule, locationMap);
+export function buildSSR(
+  moduleGetter: ModuleGetter,
+  {
+    appModuleName = 'app',
+    appViewName = 'main',
+    location,
+    routeRule = {},
+    locationMap,
+    defaultRouteParams = {},
+    storeOptions = {},
+    renderToStream = false,
+  }: {
+    appModuleName?: string;
+    appViewName?: string;
+    location: string;
+    routeRule?: RouteRule;
+    locationMap?: LocationMap;
+    defaultRouteParams?: {[moduleName: string]: any};
+    storeOptions?: StoreOptions;
+    renderToStream?: boolean;
+  }
+): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
+  App.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
+  App.actions = exportActions(moduleGetter);
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = historyActions.mergeInitState(storeOptions.initData);
+  storeOptions.initData = App.history.mergeInitState(storeOptions.initData as any);
   return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, (store) => {
-    const newStore = beforeRender ? beforeRender({store, historyActions: historyActions!}) : store;
-    historyActions?.setStore(newStore);
-    return newStore;
+    App.store = store;
+    Object.defineProperty(App, 'state', {
+      get: () => {
+        return store.getState();
+      },
+    });
+    App.history.setStore(store);
+    return store;
   });
 }
 
@@ -129,6 +137,13 @@ function isModifiedEvent(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>)
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
+export type InferableComponentEnhancerWithProps<TInjectedProps> = <C extends ComponentType<any>>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
+
+export interface Connect {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  <S = {}, D = {}, W = {}>(mapStateToProps?: Function, mapDispatchToProps?: Function, options?: ReactReduxOptions<any, S, W>): InferableComponentEnhancerWithProps<S & D & {dispatch: Dispatch}>;
+}
+export const connect: Connect = baseConnect as any;
 export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(({onClick, replace, ...rest}, ref) => {
   const {target} = rest;
   const props = {
@@ -148,7 +163,7 @@ export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(({onClick, re
         !isModifiedEvent(event) // ignore clicks with modifier keys
       ) {
         event.preventDefault();
-        replace ? historyActions!.replace(rest.href!) : historyActions!.push(rest.href!);
+        replace ? App.history.replace(rest.href!) : App.history.push(rest.href!);
       }
     },
   };

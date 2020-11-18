@@ -11,14 +11,27 @@ export declare function setConfig(_config: {
     MSP?: string;
     RSP?: string;
 }): void;
+export interface CommonModule<S extends CoreModuleState = CoreModuleState> {
+    default: {
+        moduleName: string;
+        initState: S;
+        model: (store: ModelStore) => void | Promise<void>;
+        views: {
+            [key: string]: any;
+        };
+        actions: {
+            [actionName: string]: (...args: any[]) => Action;
+        };
+    };
+}
 export declare const ActionTypes: {
     MLoading: string;
     MInit: string;
     Error: string;
 };
-export interface ModuleGetter {
-    [moduleName: string]: () => Module | Promise<Module>;
-}
+export declare type ModuleGetter = {
+    [moduleName: string]: () => CommonModule | Promise<CommonModule>;
+};
 export declare const MetaData: {
     actionCreatorMap: ActionCreatorMap;
     clientStore: ModelStore;
@@ -92,11 +105,7 @@ export interface CoreModuleState {
 export declare type CoreRootState = {
     [moduleName: string]: CoreModuleState;
 };
-export interface ModuleModel<ModelState extends CoreModuleState = CoreModuleState> {
-    moduleName: string;
-    initState: ModelState;
-    (store: ModelStore): void | Promise<void>;
-}
+export declare type ModuleModel = (store: ModelStore) => void | Promise<void>;
 export interface ActionCreatorMap {
     [moduleName: string]: ActionCreatorList;
 }
@@ -104,18 +113,6 @@ export interface ActionCreatorList {
     [actionName: string]: ActionCreator;
 }
 export declare type ActionCreator = (...args: any[]) => Action;
-export interface Module<M extends ModuleModel = ModuleModel, VS extends {
-    [key: string]: any;
-} = {
-    [key: string]: any;
-}, AS extends ActionCreatorList = Record<string, any>, N extends string = string> {
-    default: {
-        moduleName: N;
-        model: M;
-        views: VS;
-        actions: AS;
-    };
-}
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;
 export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;

@@ -1,7 +1,7 @@
 /// <reference path="../env/global.d.ts" />
 import * as core from '@medux/core';
 
-import {ExportModule, ModuleGetter, StoreOptions, CoreRootState, env, getView, isPromise} from '@medux/core';
+import {ExportModule, ModuleGetter, StoreOptions, env, getView, isPromise} from '@medux/core';
 import React, {ComponentType, FC, ReactElement, useEffect, useState} from 'react';
 
 import {renderToNodeStream, renderToString} from 'react-dom/server';
@@ -16,7 +16,7 @@ export function renderApp(
   appViewName: string,
   storeOptions: StoreOptions,
   container: string | Element | ((component: ReactElement<any>) => void) = 'root',
-  beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>
+  beforeRender?: (store: Store) => Store
 ) {
   return core.renderApp<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
@@ -46,14 +46,7 @@ export function renderApp(
   );
 }
 
-export function renderSSR(
-  moduleGetter: ModuleGetter,
-  appModuleName: string,
-  appViewName: string,
-  storeOptions: StoreOptions = {},
-  renderToStream = false,
-  beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>
-) {
+export function renderSSR(moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions: StoreOptions = {}, renderToStream = false, beforeRender?: (store: Store) => Store) {
   return core.renderSSR<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
       const data = store.getState();

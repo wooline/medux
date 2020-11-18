@@ -1,25 +1,19 @@
 /* eslint-disable no-await-in-loop */
 import {Store} from 'redux';
-import {ActionHandlerMap, Module, MetaData, CoreRootState, config, ModuleGetter, ModuleModel} from './basic';
-import {CoreModelHandlers, CommonModule, cacheModule, injectActions, getModuleByName} from './inject';
+import {ActionHandlerMap, MetaData, CoreRootState, CommonModule, config, ModuleGetter, ModuleModel} from './basic';
+import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName} from './inject';
 import {buildStore, StoreOptions} from './store';
 import {client, env} from './env';
 
-type MeduxModule<M extends any> = M['default'];
-export type ReturnModule<T> = T extends () => Promise<infer R> ? MeduxModule<R> : T extends () => infer R ? MeduxModule<R> : never;
-// export type ReturnViews<T extends () => any> = T extends () => Promise<Module<ModuleModel, infer R>> ? R : T extends () => Module<ModuleModel, infer R> ? R : never;
-export type ModuleName<M extends any> = M['moduleName'];
-export type ModuleStates<M extends any> = M['model']['initState'];
-export type ModuleViews<M extends any> = M['views'];
-export type ModuleActions<M extends any> = M['actions'];
+export type ReturnModule<T> = T extends Promise<infer R> ? R : T;
+export type ModuleName<M extends CommonModule> = M['default']['moduleName'];
+export type ModuleStates<M extends CommonModule> = M['default']['initState'];
+export type ModuleViews<M extends CommonModule> = M['default']['views'];
+export type ModuleActions<M extends CommonModule> = M['default']['actions'];
 
-/**
- * 整个Store的数据结构模型，主要分为三部分
- * - route，路由数据
- * - modules，各个模块的数据，可通过isModule辨别
- * - otherReducers，其他第三方reducers生成的数据
- */
-export type RootState<G extends ModuleGetter> = {[key in keyof G]?: ModuleStates<ReturnModule<G[key]>>};
+export type RootState<G extends ModuleGetter> = {[key in keyof G]?: ModuleStates<ReturnModule<ReturnType<G[key]>>>};
+
+export type RootActions<G extends ModuleGetter> = {[key in keyof G]: ModuleActions<ReturnModule<ReturnType<G[key]>>>};
 
 function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
   for (const actionName in actionHandlerMap) {
@@ -34,7 +28,7 @@ function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
  * - 注意通常initState发生变更时不确保热更新100%有效，此时会console警告
  * - 通常actionHandlers发生变更时热更新有效
  */
-export function modelHotReplacement(moduleName: string, initState: any, ActionHandles: {new (moduleName: string, store: any): CoreModelHandlers<any, any>}) {
+export function modelHotReplacement(moduleName: string, initState: any, ActionHandles: {new (moduleName: string, store: any): CoreModuleHandlers}) {
   const store = MetaData.clientStore;
   const prevInitState = store._medux_.injectedModules[moduleName];
   if (prevInitState) {
@@ -84,25 +78,27 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
  * - 参见 loadModel
  * @param moduleGetter 模块的获取方式
  */
-export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in keyof G]: ModuleActions<ReturnModule<G[key]>>} {
-  MetaData.moduleGetter = moduleGetter as any;
-  MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
-    maps[moduleName] =
-      typeof Proxy === 'undefined'
-        ? {}
-        : new Proxy(
-            {},
-            {
-              get: (target: any, key: string) => {
-                return (...payload: any[]) => ({type: moduleName + config.NSP + key, payload});
-              },
-              set: () => {
-                return true;
-              },
-            }
-          );
-    return maps;
-  }, {});
+export function exportActions<G extends ModuleGetter>(moduleGetter: G): RootActions<G> {
+  if (!MetaData.actionCreatorMap) {
+    MetaData.moduleGetter = moduleGetter as any;
+    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
+      maps[moduleName] =
+        typeof Proxy === 'undefined'
+          ? {}
+          : new Proxy(
+              {},
+              {
+                get: (target: any, key: string) => {
+                  return (...payload: any[]) => ({type: moduleName + config.NSP + key, payload});
+                },
+                set: () => {
+                  return true;
+                },
+              }
+            );
+      return maps;
+    }, {});
+  }
   return MetaData.actionCreatorMap as any;
 }
 
@@ -111,7 +107,11 @@ export function exportActions<G extends ModuleGetter>(moduleGetter: G): {[key in
  * @see getView
  */
 
-export type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<MG[M]>>, N extends Extract<keyof V, string>>(
+export type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <
+  M extends Extract<keyof MG, string>,
+  V extends ModuleViews<ReturnModule<ReturnType<MG[M]>>>,
+  N extends Extract<keyof V, string>
+>(
   moduleName: M,
   viewName: N,
   options?: Options,
@@ -147,7 +147,7 @@ export async function renderApp<V>(
   appViewName: string,
   storeOptions: StoreOptions = {},
   beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>
-): Promise<void> {
+): Promise<{store: Store}> {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -178,6 +178,7 @@ export async function renderApp<V>(
     }
   }
   reRender = render(reduxStore, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
+  return {store};
 }
 /**
  * SSR时该方法用来创建并启动Server应用

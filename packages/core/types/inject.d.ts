@@ -1,22 +1,6 @@
-import { Action, ActionHandler, CoreModuleState, CoreRootState, Module, ModuleModel, ModuleGetter, ModelStore } from './basic';
+import { Action, ActionHandler, CoreModuleState, CommonModule, ModuleModel, ModuleGetter, ModelStore } from './basic';
 export interface ActionHandlerList {
     [actionName: string]: ActionHandler;
-}
-export interface CommonModule {
-    default: {
-        moduleName: string;
-        model: {
-            moduleName: string;
-            initState: any;
-            (store: any, options?: any): void | Promise<void>;
-        };
-        views: {
-            [key: string]: any;
-        };
-        actions: {
-            [actionName: string]: (...args: any[]) => Action;
-        };
-    };
 }
 export declare function cacheModule<T extends CommonModule>(module: T): () => T;
 export declare function getClientStore(): ModelStore;
@@ -28,23 +12,24 @@ export declare type Actions<Ins> = {
     [K in keyof Ins]: Ins[K] extends (...args: any[]) => any ? Handler<Ins[K]> : never;
 };
 export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore): void | Promise<void>;
-export declare abstract class CoreModelHandlers<S extends CoreModuleState, R extends CoreRootState> {
-    protected readonly moduleName: string;
-    protected readonly store: ModelStore;
+export declare abstract class CoreModuleHandlers<N extends string = any, S extends CoreModuleState = any> {
+    readonly moduleName: N;
+    readonly initState: S;
     protected readonly actions: Actions<this>;
-    constructor(moduleName: string, store: ModelStore);
+    protected readonly store: ModelStore;
+    constructor(moduleName: N, initState: S);
     protected get state(): S;
     protected getState(): S;
-    protected get rootState(): R;
-    protected getRootState(): R;
+    protected get rootState(): unknown;
+    protected getRootState<R>(): R;
     protected get currentState(): S;
     protected getCurrentState(): S;
-    protected get currentRootState(): R;
-    protected getCurrentRootState(): R;
+    protected get currentRootState(): unknown;
+    protected getCurrentRootState<R>(): R;
     protected get prevState(): undefined | S;
     protected getPrevState(): undefined | S;
-    protected get prevRootState(): R;
-    protected getPrevRootState(): R;
+    protected get prevRootState(): unknown;
+    protected getPrevRootState<R>(): R;
     protected dispatch(action: Action): Action | Promise<void>;
     protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {
         type: string;
@@ -58,11 +43,24 @@ export declare abstract class CoreModelHandlers<S extends CoreModuleState, R ext
         [group: string]: string;
     }): S;
 }
-export declare type ExportModule<Component> = <S extends CoreModuleState, V extends {
+export interface Module<H extends CoreModuleHandlers = CoreModuleHandlers, VS extends {
+    [key: string]: any;
+} = {
+    [key: string]: any;
+}> {
+    default: {
+        moduleName: H['moduleName'];
+        initState: H['initState'];
+        model: ModuleModel;
+        views: VS;
+        actions: Actions<H>;
+    };
+}
+export declare type ExportModule<Component> = <V extends {
     [key: string]: Component;
-}, T extends CoreModelHandlers<S, any>, N extends string>(moduleName: N, initState: S, ActionHandles: {
-    new (moduleName: string, store: any): T;
-}, views: V) => Module<ModuleModel<S>, V, Actions<T>, N>['default'];
+}, T extends CoreModuleHandlers>(ModuleHandles: {
+    new (): T;
+}, views: V) => Module<T, V>['default'];
 export declare const exportModule: ExportModule<any>;
 export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
 export declare function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module;

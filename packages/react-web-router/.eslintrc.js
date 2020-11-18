@@ -4,5 +4,5 @@ module.exports = {
     project: `${__dirname}/tsconfig.json`,
   },
   rules: {},
-  ignorePatterns: ['./main.js','./index.js', '/dist', '/src', '/tests', '/types', '/api'],
+  ignorePatterns: ['/main.js','/index.js', '/dist', '/src', '/tests', '/types', '/api'],
 };

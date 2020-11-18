@@ -1,24 +1,9 @@
-import {Action, ActionHandler, ActionHandlerMap, CoreModuleState, CoreRootState, MetaData, Module, ModuleModel, ModuleGetter, ModelStore, config, reducer, isPromise} from './basic';
+import {Action, ActionHandler, ActionHandlerMap, CoreModuleState, CommonModule, MetaData, ModuleModel, ModuleGetter, ModelStore, config, reducer, isPromise} from './basic';
 import {moduleInitAction} from './actions';
 import {isServerEnv} from './env';
 
 export interface ActionHandlerList {
   [actionName: string]: ActionHandler;
-}
-
-export interface CommonModule {
-  default: {
-    moduleName: string;
-    model: {
-      moduleName: string;
-      initState: any;
-      (store: any, options?: any): void | Promise<void>;
-    };
-    views: {[key: string]: any};
-    actions: {
-      [actionName: string]: (...args: any[]) => Action;
-    };
-  };
 }
 
 export function cacheModule<T extends CommonModule>(module: T): () => T {
@@ -131,12 +116,14 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
  * ModuleHandlers基类
  * 所有ModuleHandlers必须继承此基类
  */
-export abstract class CoreModelHandlers<S extends CoreModuleState, R extends CoreRootState> {
+export abstract class CoreModuleHandlers<N extends string = any, S extends CoreModuleState = any> {
   /**
    * - 引用本module的actions
    * - this.actions相当于actions[this.moduleName]
    */
   protected readonly actions: Actions<this>;
+
+  protected readonly store: ModelStore;
 
   /**
    * 构造函数的参数将由框架自动传入
@@ -144,8 +131,9 @@ export abstract class CoreModelHandlers<S extends CoreModuleState, R extends Cor
    * @param store 全局单例Store的引用
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public constructor(public readonly moduleName: string, public readonly initState: S, protected readonly store: ModelStore) {
+  public constructor(public readonly moduleName: N, public readonly initState: S) {
     this.actions = null as any;
+    this.store = null as any;
   }
 
   /**
@@ -165,14 +153,14 @@ export abstract class CoreModelHandlers<S extends CoreModuleState, R extends Cor
   /**
    * 获取整个store的state
    */
-  protected get rootState(): R {
+  protected get rootState() {
     return this.getRootState();
   }
 
   /**
    * ie8不支持getter专用
    */
-  protected getRootState(): R {
+  protected getRootState<R>(): R {
     return this.store._medux_.prevState as any;
   }
 
@@ -197,14 +185,14 @@ export abstract class CoreModelHandlers<S extends CoreModuleState, R extends Cor
    * - state会等到所有模块的reducer更新完成时才变化
    * - currentState是实时更新变化
    */
-  protected get currentRootState(): R {
+  protected get currentRootState() {
     return this.getCurrentRootState();
   }
 
   /**
    * ie8不支持getter专用
    */
-  protected getCurrentRootState(): R {
+  protected getCurrentRootState<R>(): R {
     return this.store._medux_.currentState as any;
   }
 
@@ -232,14 +220,14 @@ export abstract class CoreModelHandlers<S extends CoreModuleState, R extends Cor
    * - 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
    * - 使用prevState可以取到reducer变更之前的state
    */
-  protected get prevRootState(): R {
+  protected get prevRootState() {
     return this.getPrevRootState();
   }
 
   /**
    * ie8不支持getter专用
    */
-  protected getPrevRootState(): R {
+  protected getPrevRootState<R>(): R {
     return this.store._medux_.beforeState as any;
   }
 
@@ -259,7 +247,7 @@ export abstract class CoreModelHandlers<S extends CoreModuleState, R extends Cor
    */
   protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; payload?: any[]} {
     const actions = MetaData.actionCreatorMap[this.moduleName];
-    return actions[(handler as ActionHandler).__actionName__](...rest);
+    return actions[(handler as any).__actionName__](...rest);
   }
 
   /**
@@ -311,66 +299,76 @@ export abstract class CoreModelHandlers<S extends CoreModuleState, R extends Cor
 }
 
 /**
+ * 模块的数据结构，该数据由ExportModule方法自动生成
+ */
+export interface Module<H extends CoreModuleHandlers = CoreModuleHandlers, VS extends {[key: string]: any} = {[key: string]: any}> {
+  default: {
+    /**
+     * 模块名称
+     */
+    moduleName: H['moduleName'];
+    initState: H['initState'];
+    model: ModuleModel;
+    /**
+     * 模块供外部使用的views
+     */
+    views: VS;
+    /**
+     * 模块可供调用的actionCreator
+     */
+    actions: Actions<H>;
+  };
+}
+
+/**
  * 导出Module
- * @param moduleName 模块名，不能重复
- * @param initState 模块初始状态
- * @param ActionHandles 模块的ModuleHandlers类，必须继承BaseModuleHandlers
+ * @param ModuleHandles 模块的ModuleHandlers类，必须继承BaseModuleHandlers
  * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
  * @returns medux定义的module标准数据结构
  */
 export type ExportModule<Component> = <
-  S extends CoreModuleState,
   V extends {
     [key: string]: Component;
   },
-  T extends CoreModelHandlers<S, any>,
-  N extends string
+  T extends CoreModuleHandlers
 >(
-  moduleName: N,
-  initState: S,
-  ActionHandles: {
-    new (...args: any[]): T;
+  ModuleHandles: {
+    new (): T;
   },
   views: V
-) => Module<ModuleModel<S>, V, Actions<T>, N>['default'];
+) => Module<T, V>['default'];
 
 /**
  * 导出Module，该方法为ExportModule接口的实现
- * @param moduleName 模块名，不能重复
- * @param initState 模块初始状态
- * @param ActionHandles 模块的ModuleHandlers类，必须继承CoreModelHandlers
+ * @param ModuleHandles 模块的ModuleHandlers类，必须继承CoreModuleHandlers
  * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
  * @returns medux定义的module标准数据结构
  */
-export const exportModule: ExportModule<any> = (moduleName, initState, ActionHandles, views) => {
-  const model = (store: ModelStore) => {
+export const exportModule: ExportModule<any> = (ModuleHandles, views) => {
+  const moduleHandles = new ModuleHandles();
+  const moduleName = moduleHandles.moduleName;
+  const initState = moduleHandles.initState;
+
+  const model: ModuleModel = (store) => {
     const hasInjected = !!store._medux_.injectedModules[moduleName];
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = initState;
-      const handlers = new ActionHandles(moduleName, store);
-      const actions = injectActions(store, moduleName, handlers as any);
-      (handlers as any).actions = actions;
+      const actions = injectActions(store, moduleName, moduleHandles as any);
+      (moduleHandles as any).store = store;
+      (moduleHandles as any).actions = actions;
       const preModuleState: CoreModuleState = store.getState()[moduleName] || {};
       const moduleState: CoreModuleState = {...initState, ...preModuleState};
       if (!moduleState.initialized) {
         moduleState.initialized = true;
         return store.dispatch(moduleInitAction(moduleName, moduleState)) as any;
       }
-      // const params = store._medux_.prevState.route?.data.params || {};
-      // if (!moduleState) {
-      //   moduleState = initState;
-      //   moduleState.isModule = true;
-      // } else {
-      //   moduleState = {...moduleState, isHydrate: true};
-      // }
     }
     return undefined;
   };
-  model.moduleName = moduleName;
-  model.initState = initState;
   const actions = {} as any;
   return {
     moduleName,
+    initState,
     model,
     views,
     actions,
@@ -416,9 +414,9 @@ export function getModuleByName(moduleName: string, moduleGetter: ModuleGetter):
     return result.then((module) => {
       // 在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       cacheModule(module);
-      return module;
+      return module as Module;
     });
   }
   cacheModule(result);
-  return result;
+  return result as Module;
 }

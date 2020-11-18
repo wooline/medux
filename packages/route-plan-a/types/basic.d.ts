@@ -1,4 +1,5 @@
-import { ModuleGetter, ReturnModule, RootState as CoreRootState } from '@medux/core';
+import { ModuleGetter, ReturnModule, RootState as CoreRootState, CommonModule } from '@medux/core';
+import { RouteModuleState } from './index';
 export declare type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
 export interface Location {
     url: string;
@@ -18,23 +19,19 @@ export interface DisplayViews {
         [viewName: string]: boolean | undefined;
     } | undefined;
 }
-export interface RouteData<P extends RouteParams = any> {
+export declare type RouteState<P extends RouteParams = RouteParams> = Location & {
+    paths: string[];
     views: DisplayViews;
     params: P;
-    paths: string[];
-    action: HistoryAction;
-    key: string;
-}
-export declare type RouteState<P extends RouteParams = RouteParams> = Location & RouteData<P> & {
     history: string[];
     stack: string[];
 };
-declare type MountViews<M extends any> = {
-    [key in keyof M['views']]?: boolean;
+declare type MountViews<M extends CommonModule> = {
+    [key in keyof M['default']['views']]?: boolean;
 };
-declare type ModuleParams<M extends any> = M['model']['initState']['routeParams'];
-export declare type RouteViews<G extends ModuleGetter> = {
-    [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
+declare type ModuleParams<M extends CommonModule<RouteModuleState>> = M['default']['initState']['routeParams'];
+export declare type RootRouteParams<G extends ModuleGetter> = {
+    [key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>;
 };
 export declare type RootState<G extends ModuleGetter> = {
     route: {
@@ -45,10 +42,10 @@ export declare type RootState<G extends ModuleGetter> = {
         search: string;
         hash: string;
         views: {
-            [key in keyof G]?: MountViews<ReturnModule<G[key]>>;
+            [key in keyof G]?: MountViews<ReturnModule<ReturnType<G[key]>>>;
         };
         params: {
-            [key in keyof G]?: ModuleParams<ReturnModule<G[key]>>;
+            [key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>;
         };
         paths: string[];
         key: string;
@@ -107,14 +104,13 @@ declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
 export interface RoutePayload<P extends RouteParams = RouteParams> {
-    paths: string[] | string;
+    paths?: string[] | string;
     params?: DeepPartial<P>;
-    extendParams?: DeepPartial<P>;
+    extendParams?: DeepPartial<P> | true;
 }
 export declare function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload;
 export declare function checkLocation(location: LocationPayload): PaLocation;
 export declare function urlToLocation(url: string): PaLocation;
-export declare function locationToUrl(safeLocation: PaLocation): string;
 export interface RouteRule {
     [path: string]: string | [string, RouteRule];
 }

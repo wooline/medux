@@ -101,24 +101,29 @@ function _loadModel(moduleName, store) {
 }
 
 export { _loadModel as loadModel };
-export let CoreModelHandlers = _decorate(null, function (_initialize) {
-  class CoreModelHandlers {
-    constructor(moduleName, store) {
+export let CoreModuleHandlers = _decorate(null, function (_initialize) {
+  class CoreModuleHandlers {
+    constructor(moduleName, initState) {
       this.moduleName = moduleName;
-      this.store = store;
+      this.initState = initState;
 
       _initialize(this);
 
       this.actions = null;
+      this.store = null;
     }
 
   }
 
   return {
-    F: CoreModelHandlers,
+    F: CoreModuleHandlers,
     d: [{
       kind: "field",
       key: "actions",
+      value: void 0
+    }, {
+      kind: "field",
+      key: "store",
       value: void 0
     }, {
       kind: "get",
@@ -244,15 +249,19 @@ export let CoreModelHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-export const exportModule = (moduleName, initState, ActionHandles, views) => {
+export const exportModule = (ModuleHandles, views) => {
+  const moduleHandles = new ModuleHandles();
+  const moduleName = moduleHandles.moduleName;
+  const initState = moduleHandles.initState;
+
   const model = store => {
     const hasInjected = !!store._medux_.injectedModules[moduleName];
 
     if (!hasInjected) {
       store._medux_.injectedModules[moduleName] = initState;
-      const handlers = new ActionHandles(moduleName, store);
-      const actions = injectActions(store, moduleName, handlers);
-      handlers.actions = actions;
+      const actions = injectActions(store, moduleName, moduleHandles);
+      moduleHandles.store = store;
+      moduleHandles.actions = actions;
       const preModuleState = store.getState()[moduleName] || {};
       const moduleState = Object.assign({}, initState, preModuleState);
 
@@ -265,11 +274,10 @@ export const exportModule = (moduleName, initState, ActionHandles, views) => {
     return undefined;
   };
 
-  model.moduleName = moduleName;
-  model.initState = initState;
   const actions = {};
   return {
     moduleName,
+    initState,
     model,
     views,
     actions
