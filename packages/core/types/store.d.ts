@@ -1,5 +1,5 @@
 import { Middleware, ReducersMapObject, StoreEnhancer } from 'redux';
-import { Action, ModelStore } from './basic';
+import { Action, ModuleStore } from './basic';
 export interface StoreOptions {
     ssrInitStoreKey?: string;
     reducers?: ReducersMapObject;
@@ -12,4 +12,4 @@ export interface StoreOptions {
 export declare function getActionData(action: Action): any[];
 export declare function buildStore(preloadedState?: {
     [key: string]: any;
-}, storeReducers?: ReducersMapObject<any, any>, storeMiddlewares?: Middleware[], storeEnhancers?: StoreEnhancer[]): ModelStore;
+}, storeReducers?: ReducersMapObject<any, any>, storeMiddlewares?: Middleware[], storeEnhancers?: StoreEnhancer[]): ModuleStore;

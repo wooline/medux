@@ -2,384 +2,389 @@
 
 # Class: BaseModelHandlers <**S, R**>
 
-ModelHandlers基类
-所有ModelHandlers必须继承此基类
+ModelHandlers 基类
+所有 ModelHandlers 必须继承此基类
 
 ## Type parameters
 
-▪ **S**: *[BaseModelState](../interfaces/basemodelstate.md)*
+▪ **S**: _[BaseModelState](../interfaces/basemodelstate.md)_
 
-▪ **R**: *object*
+▪ **R**: _object_
 
 ## Hierarchy
 
-* **BaseModelHandlers**
+- **BaseModelHandlers**
 
 ## Index
 
 ### Constructors
 
-* [constructor](basemodelhandlers.md#constructor)
+- [constructor](basemodelhandlers.md#constructor)
 
 ### Properties
 
-* [actions](basemodelhandlers.md#protected-actions)
-* [moduleName](basemodelhandlers.md#protected-modulename)
-* [store](basemodelhandlers.md#protected-store)
+- [actions](basemodelhandlers.md#protected-actions)
+- [moduleName](basemodelhandlers.md#protected-modulename)
+- [store](basemodelhandlers.md#protected-store)
 
 ### Accessors
 
-* [currentRootState](basemodelhandlers.md#protected-currentrootstate)
-* [currentState](basemodelhandlers.md#protected-currentstate)
-* [prevRootState](basemodelhandlers.md#protected-prevrootstate)
-* [prevState](basemodelhandlers.md#protected-prevstate)
-* [rootState](basemodelhandlers.md#protected-rootstate)
-* [state](basemodelhandlers.md#protected-state)
+- [currentRootState](basemodelhandlers.md#protected-currentrootstate)
+- [currentState](basemodelhandlers.md#protected-currentstate)
+- [prevRootState](basemodelhandlers.md#protected-prevrootstate)
+- [prevState](basemodelhandlers.md#protected-prevstate)
+- [rootState](basemodelhandlers.md#protected-rootstate)
+- [state](basemodelhandlers.md#protected-state)
 
 ### Methods
 
-* [Init](basemodelhandlers.md#protected-init)
-* [Loading](basemodelhandlers.md#protected-loading)
-* [RouteParams](basemodelhandlers.md#routeparams)
-* [Update](basemodelhandlers.md#protected-update)
-* [callThisAction](basemodelhandlers.md#protected-callthisaction)
-* [dispatch](basemodelhandlers.md#protected-dispatch)
-* [getCurrentRootState](basemodelhandlers.md#protected-getcurrentrootstate)
-* [getCurrentState](basemodelhandlers.md#protected-getcurrentstate)
-* [getPrevRootState](basemodelhandlers.md#protected-getprevrootstate)
-* [getPrevState](basemodelhandlers.md#protected-getprevstate)
-* [getRootState](basemodelhandlers.md#protected-getrootstate)
-* [getState](basemodelhandlers.md#protected-getstate)
-* [loadModel](basemodelhandlers.md#protected-loadmodel)
-* [updateState](basemodelhandlers.md#protected-updatestate)
+- [Init](basemodelhandlers.md#protected-init)
+- [Loading](basemodelhandlers.md#protected-loading)
+- [RouteParams](basemodelhandlers.md#routeparams)
+- [Update](basemodelhandlers.md#protected-update)
+- [callThisAction](basemodelhandlers.md#protected-callthisaction)
+- [dispatch](basemodelhandlers.md#protected-dispatch)
+- [getCurrentRootState](basemodelhandlers.md#protected-getcurrentrootstate)
+- [getCurrentState](basemodelhandlers.md#protected-getcurrentstate)
+- [getPrevRootState](basemodelhandlers.md#protected-getprevrootstate)
+- [getPrevState](basemodelhandlers.md#protected-getprevstate)
+- [getRootState](basemodelhandlers.md#protected-getrootstate)
+- [getState](basemodelhandlers.md#protected-getstate)
+- [loadModel](basemodelhandlers.md#protected-loadmodel)
+- [updateState](basemodelhandlers.md#protected-updatestate)
 
 ## Constructors
 
-###  constructor
+### constructor
 
-\+ **new BaseModelHandlers**(`moduleName`: string, `store`: ModelStore): *[BaseModelHandlers](basemodelhandlers.md)*
+\+ **new BaseModelHandlers**(`moduleName`: string, `store`: ModuleStore): _[BaseModelHandlers](basemodelhandlers.md)_
 
 构造函数的参数将由框架自动传入
 
 **Parameters:**
 
-Name | Type | Description |
------- | ------ | ------ |
-`moduleName` | string | 模块名称，不能重复 |
-`store` | ModelStore | 全局单例Store的引用  |
+| Name         | Type        | Description           |
+| ------------ | ----------- | --------------------- |
+| `moduleName` | string      | 模块名称，不能重复    |
+| `store`      | ModuleStore | 全局单例 Store 的引用 |
 
-**Returns:** *[BaseModelHandlers](basemodelhandlers.md)*
+**Returns:** _[BaseModelHandlers](basemodelhandlers.md)_
 
 ## Properties
 
 ### `Protected` actions
 
-• **actions**: *[Actions](../README.md#actions)‹this›*
+• **actions**: _[Actions](../README.md#actions)‹this›_
 
-- 引用本module的actions
-- this.actions相当于actions[this.moduleName]
+- 引用本 module 的 actions
+- this.actions 相当于 actions[this.moduleName]
 
-___
+---
 
 ### `Protected` moduleName
 
-• **moduleName**: *string*
+• **moduleName**: _string_
 
 模块名称，不能重复
 
-___
+---
 
 ### `Protected` store
 
-• **store**: *ModelStore*
+• **store**: _ModuleStore_
 
-全局单例Store的引用
+全局单例 Store 的引用
 
 ## Accessors
 
 ### `Protected` currentRootState
 
-• **get currentRootState**(): *R*
+• **get currentRootState**(): _R_
 
-获取整个store的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
-- state会等到所有模块的reducer更新完成时才变化
-- currentState是实时更新变化
+获取整个 store 的实时 state，通常在 reducer 中使用，当一个 action 引起多个不同模块 reducer 执行时：
 
-**Returns:** *R*
+- state 会等到所有模块的 reducer 更新完成时才变化
+- currentState 是实时更新变化
 
-___
+**Returns:** _R_
+
+---
 
 ### `Protected` currentState
 
-• **get currentState**(): *S*
+• **get currentState**(): _S_
 
-- 获取本Model的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
-- state会等到所有模块的reducer更新完成时才变化
-- currentState是实时更新变化
+- 获取本 Model 的实时 state，通常在 reducer 中使用，当一个 action 引起多个不同模块 reducer 执行时：
+- state 会等到所有模块的 reducer 更新完成时才变化
+- currentState 是实时更新变化
 
-**Returns:** *S*
+**Returns:** _S_
 
-___
+---
 
 ### `Protected` prevRootState
 
-• **get prevRootState**(): *R*
+• **get prevRootState**(): _R_
 
-获整个store的前state状态，通常在effect中使用，
-当一个action同时引起reducer和effect执行时：
-- 所有reducer会先执行完毕并更新rootState
-- 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
-- 使用prevState可以取到reducer变更之前的state
+获整个 store 的前 state 状态，通常在 effect 中使用，
+当一个 action 同时引起 reducer 和 effect 执行时：
 
-**Returns:** *R*
+- 所有 reducer 会先执行完毕并更新 rootState
+- 之后才开始执行 effect，此时 effect 中取到的 rootState 已经被 reducer 变更了
+- 使用 prevState 可以取到 reducer 变更之前的 state
 
-___
+**Returns:** _R_
+
+---
 
 ### `Protected` prevState
 
-• **get prevState**(): *undefined | S*
+• **get prevState**(): _undefined | S_
 
-获取本Model的前state状态，通常在effect中使用，当一个action同时引起reducer和effect执行时：
-- 所有reducer会先执行完毕并更新rootState
-- 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
-- 使用prevState可以取到reducer变更之前的state
+获取本 Model 的前 state 状态，通常在 effect 中使用，当一个 action 同时引起 reducer 和 effect 执行时：
 
-**Returns:** *undefined | S*
+- 所有 reducer 会先执行完毕并更新 rootState
+- 之后才开始执行 effect，此时 effect 中取到的 rootState 已经被 reducer 变更了
+- 使用 prevState 可以取到 reducer 变更之前的 state
 
-___
+**Returns:** _undefined | S_
+
+---
 
 ### `Protected` rootState
 
-• **get rootState**(): *R*
+• **get rootState**(): _R_
 
-获取整个store的state
+获取整个 store 的 state
 
-**Returns:** *R*
+**Returns:** _R_
 
-___
+---
 
 ### `Protected` state
 
-• **get state**(): *S*
+• **get state**(): _S_
 
-获取本Model的state
+获取本 Model 的 state
 
-**Returns:** *S*
+**Returns:** _S_
 
 ## Methods
 
 ### `Protected` Init
 
-▸ **Init**(`initState`: S, `routeParams?`: any, `options?`: any): *S*
+▸ **Init**(`initState`: S, `routeParams?`: any, `options?`: any): _S_
 
-- 模块被加载并初始化时将触发‘moduleName.Init’的action
-- 此方法为该action的默认reducerHandler，通常用来注入初始化moduleState
+- 模块被加载并初始化时将触发‘moduleName.Init’的 action
+- 此方法为该 action 的默认 reducerHandler，通常用来注入初始化 moduleState
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`initState` | S |
-`routeParams?` | any |
-`options?` | any |
+| Name           | Type |
+| -------------- | ---- |
+| `initState`    | S    |
+| `routeParams?` | any  |
+| `options?`     | any  |
 
-**Returns:** *S*
+**Returns:** _S_
 
-___
+---
 
 ### `Protected` Loading
 
-▸ **Loading**(`payload`: object): *S*
+▸ **Loading**(`payload`: object): _S_
 
-- effect异步执行时，将自动派发‘moduleName.Loading’的action
-- 此方法为该action的默认reducerHandler，通常用来在moduleState中注入loading状态
-
-**Parameters:**
-
-Name | Type |
------- | ------ |
-`payload` | object |
-
-**Returns:** *S*
-
-___
-
-###  RouteParams
-
-▸ **RouteParams**(`payload`: object, `action?`: undefined | string): *S*
-
-- 路由发生变化时如果路由中有该模块的routeParams，框架将自动为各个模块派发‘moduleName.RouteParams’的action
-- 此方法为该action的默认reducerHandler，通常用来在moduleState中注入路由参数
+- effect 异步执行时，将自动派发‘moduleName.Loading’的 action
+- 此方法为该 action 的默认 reducerHandler，通常用来在 moduleState 中注入 loading 状态
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`payload` | object |
-`action?` | undefined &#124; string |
+| Name      | Type   |
+| --------- | ------ |
+| `payload` | object |
 
-**Returns:** *S*
+**Returns:** _S_
 
-___
+---
+
+### RouteParams
+
+▸ **RouteParams**(`payload`: object, `action?`: undefined | string): _S_
+
+- 路由发生变化时如果路由中有该模块的 routeParams，框架将自动为各个模块派发‘moduleName.RouteParams’的 action
+- 此方法为该 action 的默认 reducerHandler，通常用来在 moduleState 中注入路由参数
+
+**Parameters:**
+
+| Name      | Type                    |
+| --------- | ----------------------- |
+| `payload` | object                  |
+| `action?` | undefined &#124; string |
+
+**Returns:** _S_
+
+---
 
 ### `Protected` Update
 
-▸ **Update**(`payload`: S): *S*
+▸ **Update**(`payload`: S): _S_
 
-通用的reducerHandler，通常用来更新moduleState
+通用的 reducerHandler，通常用来更新 moduleState
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`payload` | S |
+| Name      | Type |
+| --------- | ---- |
+| `payload` | S    |
 
-**Returns:** *S*
+**Returns:** _S_
 
-___
+---
 
 ### `Protected` callThisAction
 
-▸ **callThisAction**<**T**>(`handler`: function, ...`rest`: T): *object*
+▸ **callThisAction**<**T**>(`handler`: function, ...`rest`: T): _object_
 
-对于某些仅供本模块内部使用的action，限制非public不对外开放.
-所以即使this.actions也调用不到，此时可以使用callThisAction.
+对于某些仅供本模块内部使用的 action，限制非 public 不对外开放.
+所以即使 this.actions 也调用不到，此时可以使用 callThisAction.
+
 ```
 this.dispatch(this.callThisAction(this.anyPrivateHandle, args1, args2));
 ```
 
 **Type parameters:**
 
-▪ **T**: *any[]*
+▪ **T**: _any[]_
 
 **Parameters:**
 
-▪ **handler**: *function*
+▪ **handler**: _function_
 
-▸ (...`args`: T): *any*
+▸ (...`args`: T): _any_
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`...args` | T |
+| Name      | Type |
+| --------- | ---- |
+| `...args` | T    |
 
-▪... **rest**: *T*
+▪... **rest**: _T_
 
-**Returns:** *object*
+**Returns:** _object_
 
-* **payload**? : *any[]*
+- **payload**? : _any[]_
 
-* **type**: *string*
+- **type**: _string_
 
-___
+---
 
 ### `Protected` dispatch
 
-▸ **dispatch**(`action`: [Action](../interfaces/action.md)): *[Action](../interfaces/action.md) | Promise‹void›*
+▸ **dispatch**(`action`: [Action](../interfaces/action.md)): _[Action](../interfaces/action.md) | Promise‹void›_
 
-store.dispatch的引用
+store.dispatch 的引用
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`action` | [Action](../interfaces/action.md) |
+| Name     | Type                              |
+| -------- | --------------------------------- |
+| `action` | [Action](../interfaces/action.md) |
 
-**Returns:** *[Action](../interfaces/action.md) | Promise‹void›*
+**Returns:** _[Action](../interfaces/action.md) | Promise‹void›_
 
-___
+---
 
 ### `Protected` getCurrentRootState
 
-▸ **getCurrentRootState**(): *R*
+▸ **getCurrentRootState**(): _R_
 
-ie8不支持getter专用
+ie8 不支持 getter 专用
 
-**Returns:** *R*
+**Returns:** _R_
 
-___
+---
 
 ### `Protected` getCurrentState
 
-▸ **getCurrentState**(): *S*
+▸ **getCurrentState**(): _S_
 
-ie8不支持getter专用
+ie8 不支持 getter 专用
 
-**Returns:** *S*
+**Returns:** _S_
 
-___
+---
 
 ### `Protected` getPrevRootState
 
-▸ **getPrevRootState**(): *R*
+▸ **getPrevRootState**(): _R_
 
-ie8不支持getter专用
+ie8 不支持 getter 专用
 
-**Returns:** *R*
+**Returns:** _R_
 
-___
+---
 
 ### `Protected` getPrevState
 
-▸ **getPrevState**(): *undefined | S*
+▸ **getPrevState**(): _undefined | S_
 
-ie8不支持getter专用
+ie8 不支持 getter 专用
 
-**Returns:** *undefined | S*
+**Returns:** _undefined | S_
 
-___
+---
 
 ### `Protected` getRootState
 
-▸ **getRootState**(): *R*
+▸ **getRootState**(): _R_
 
-ie8不支持getter专用
+ie8 不支持 getter 专用
 
-**Returns:** *R*
+**Returns:** _R_
 
-___
+---
 
 ### `Protected` getState
 
-▸ **getState**(): *S*
+▸ **getState**(): _S_
 
-ie8不支持getter专用
+ie8 不支持 getter 专用
 
-**Returns:** *S*
+**Returns:** _S_
 
-___
+---
 
 ### `Protected` loadModel
 
-▸ **loadModel**(`moduleName`: string, `options?`: any): *void | Promise‹void›*
+▸ **loadModel**(`moduleName`: string, `options?`: any): _void | Promise‹void›_
 
-动态加载并初始化其他模块的model
+动态加载并初始化其他模块的 model
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`moduleName` | string |
-`options?` | any |
+| Name         | Type   |
+| ------------ | ------ |
+| `moduleName` | string |
+| `options?`   | any    |
 
-**Returns:** *void | Promise‹void›*
+**Returns:** _void | Promise‹void›_
 
-___
+---
 
 ### `Protected` updateState
 
-▸ **updateState**(`payload`: Partial‹S›): *void*
+▸ **updateState**(`payload`: Partial‹S›): _void_
 
 一个快捷操作，相当于
+
 ```
 this.dispatch(this.actions.Update({...this.state,...args}));
 ```
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`payload` | Partial‹S› |
+| Name      | Type       |
+| --------- | ---------- |
+| `payload` | Partial‹S› |
 
-**Returns:** *void*
+**Returns:** _void_

@@ -3,8 +3,8 @@ module.exports = function loader(source) {
     const arr = source.match(/export default exportModule\s*\(([^)]+)\)/m);
     if (arr) {
         const args = arr[1].replace(/\s/gm, '');
-        const [modelName, initModelState, ModelHandlers] = args.split(',', 3);
-        const views = args.replace([modelName, initModelState, ModelHandlers, ''].join(','), '');
+        const [modelName, ModelHandlers] = args.split(',', 3);
+        const views = args.replace([modelName, ModelHandlers, ''].join(','), '');
         const viewPaths = source.match(/['"]\.\/views\/.*['"]/gm) || [];
         const strs = [
             `import {modelHotReplacement} from '@medux/core';`,
@@ -12,7 +12,7 @@ module.exports = function loader(source) {
             source,
             `if (module.hot) {
       module.hot.accept("./model", () => {
-        modelHotReplacement(${[modelName, initModelState, ModelHandlers].join(' , ')});
+        modelHotReplacement(${[modelName, ModelHandlers].join(' , ')});
       });
       module.hot.accept([${viewPaths.toString()}], () => {
         viewHotReplacement(${[modelName, views].join(' , ')});

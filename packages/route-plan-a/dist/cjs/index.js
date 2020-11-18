@@ -189,14 +189,16 @@ function assignRouteData(paths, params, defaultRouteParams) {
       prev[moduleName][viewName] = true;
 
       if (!params[moduleName]) {
-        params[moduleName] = {};
+        params[moduleName] = undefined;
       }
     }
 
     return prev;
   }, {});
   Object.keys(params).forEach(function (moduleName) {
-    params[moduleName] = (0, _deepExtend.default)({}, defaultRouteParams[moduleName], params[moduleName]);
+    if (defaultRouteParams[moduleName]) {
+      params[moduleName] = (0, _deepExtend.default)({}, defaultRouteParams[moduleName], params[moduleName]);
+    }
   });
   return {
     views: views,
@@ -857,8 +859,7 @@ var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _
       decorators: [_core.reducer],
       key: "Init",
       value: function Init(initState) {
-        var rootState = this.getRootState();
-        var routeParams = rootState.route.params[this.moduleName];
+        var routeParams = this.rootState.route.params[this.moduleName];
         return routeParams ? Object.assign({}, initState, {
           routeParams: routeParams
         }) : initState;
@@ -868,8 +869,7 @@ var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _
       decorators: [_core.reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        var state = this.getState();
-        return Object.assign({}, state, {
+        return Object.assign({}, this.state, {
           routeParams: payload
         });
       }

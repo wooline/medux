@@ -6,393 +6,399 @@
 
 ### Enumerations
 
-* [LoadingState](enums/loadingstate.md)
+- [LoadingState](enums/loadingstate.md)
 
 ### Classes
 
-* [BaseModelHandlers](classes/basemodelhandlers.md)
+- [BaseModelHandlers](classes/basemodelhandlers.md)
 
 ### Interfaces
 
-* [Action](interfaces/action.md)
-* [BaseModelState](interfaces/basemodelstate.md)
-* [CommonModule](interfaces/commonmodule.md)
-* [DisplayViews](interfaces/displayviews.md)
-* [HistoryProxy](interfaces/historyproxy.md)
-* [Model](interfaces/model.md)
-* [Module](interfaces/module.md)
-* [ModuleGetter](interfaces/modulegetter.md)
-* [RouteData](interfaces/routedata.md)
-* [RouteState](interfaces/routestate.md)
-* [StoreOptions](interfaces/storeoptions.md)
+- [Action](interfaces/action.md)
+- [BaseModelState](interfaces/basemodelstate.md)
+- [CommonModule](interfaces/commonmodule.md)
+- [DisplayViews](interfaces/displayviews.md)
+- [HistoryProxy](interfaces/historyproxy.md)
+- [Model](interfaces/model.md)
+- [Module](interfaces/module.md)
+- [ModuleGetter](interfaces/modulegetter.md)
+- [RouteData](interfaces/routedata.md)
+- [RouteState](interfaces/routestate.md)
+- [StoreOptions](interfaces/storeoptions.md)
 
 ### Type aliases
 
-* [Actions](README.md#actions)
-* [ExportModule](README.md#exportmodule)
-* [LoadView](README.md#loadview)
-* [RootState](README.md#rootstate)
-* [RouteViews](README.md#routeviews)
-* [StoreState](README.md#storestate)
+- [Actions](README.md#actions)
+- [ExportModule](README.md#exportmodule)
+- [LoadView](README.md#loadview)
+- [RootState](README.md#rootstate)
+- [RouteViews](README.md#routeviews)
+- [StoreState](README.md#storestate)
 
 ### Variables
 
-* [client](README.md#const-client)
-* [env](README.md#const-env)
-* [isDevelopmentEnv](README.md#const-isdevelopmentenv)
-* [isServerEnv](README.md#const-isserverenv)
+- [client](README.md#const-client)
+- [env](README.md#const-env)
+- [isDevelopmentEnv](README.md#const-isdevelopmentenv)
+- [isServerEnv](README.md#const-isserverenv)
 
 ### Functions
 
-* [cacheModule](README.md#cachemodule)
-* [delayPromise](README.md#delaypromise)
-* [effect](README.md#effect)
-* [errorAction](README.md#erroraction)
-* [exportActions](README.md#exportactions)
-* [exportModule](README.md#const-exportmodule)
-* [getActionData](README.md#getactiondata)
-* [getClientStore](README.md#getclientstore)
-* [getView](README.md#getview)
-* [isPromiseModule](README.md#ispromisemodule)
-* [isPromiseView](README.md#ispromiseview)
-* [isServer](README.md#isserver)
-* [loadModel](README.md#loadmodel)
-* [logger](README.md#logger)
-* [modelHotReplacement](README.md#modelhotreplacement)
-* [reducer](README.md#reducer)
-* [renderApp](README.md#renderapp)
-* [renderSSR](README.md#renderssr)
-* [routeChangeAction](README.md#routechangeaction)
-* [routeParamsAction](README.md#routeparamsaction)
-* [setConfig](README.md#setconfig)
-* [setLoading](README.md#setloading)
-* [setLoadingDepthTime](README.md#setloadingdepthtime)
-* [viewHotReplacement](README.md#viewhotreplacement)
+- [cacheModule](README.md#cachemodule)
+- [delayPromise](README.md#delaypromise)
+- [effect](README.md#effect)
+- [errorAction](README.md#erroraction)
+- [exportActions](README.md#exportactions)
+- [exportModule](README.md#const-exportmodule)
+- [getActionData](README.md#getactiondata)
+- [getClientStore](README.md#getclientstore)
+- [getView](README.md#getview)
+- [isPromiseModule](README.md#ispromisemodule)
+- [isPromiseView](README.md#ispromiseview)
+- [isServer](README.md#isserver)
+- [loadModel](README.md#loadmodel)
+- [logger](README.md#logger)
+- [modelHotReplacement](README.md#modelhotreplacement)
+- [reducer](README.md#reducer)
+- [renderApp](README.md#renderapp)
+- [renderSSR](README.md#renderssr)
+- [routeChangeAction](README.md#routechangeaction)
+- [routeParamsAction](README.md#routeparamsaction)
+- [setConfig](README.md#setconfig)
+- [setLoading](README.md#setloading)
+- [setLoadingDepthTime](README.md#setloadingdepthtime)
+- [viewHotReplacement](README.md#viewhotreplacement)
 
 ### Object literals
 
-* [ActionTypes](README.md#const-actiontypes)
-* [config](README.md#const-config)
+- [ActionTypes](README.md#const-actiontypes)
+- [config](README.md#const-config)
 
 ## Type aliases
 
-###  Actions
+### Actions
 
-Ƭ **Actions**: *object*
+Ƭ **Actions**: _object_
 
-将ModelHandlers变成Action Creator
-- 该数据结构由ExportModule自动生成
-- medux中的action通常都由此Creator自动生成
+将 ModelHandlers 变成 Action Creator
+
+- 该数据结构由 ExportModule 自动生成
+- medux 中的 action 通常都由此 Creator 自动生成
 
 #### Type declaration:
 
-___
+---
 
-###  ExportModule
+### ExportModule
 
-Ƭ **ExportModule**: *function*
+Ƭ **ExportModule**: _function_
 
-导出Module
+导出 Module
 
 **`param`** 模块名，不能重复
 
 **`param`** 模块初始状态
 
-**`param`** 模块的ModelHandlers类，必须继承BaseModelHandlers
+**`param`** 模块的 ModelHandlers 类，必须继承 BaseModelHandlers
 
-**`param`** 模块需要导出给外部使用的View，若无需给外部使用可不导出
+**`param`** 模块需要导出给外部使用的 View，若无需给外部使用可不导出
 
-**`returns`** medux定义的module标准数据结构
+**`returns`** medux 定义的 module 标准数据结构
 
 #### Type declaration:
 
-▸ <**S**, **V**, **T**, **N**>(`moduleName`: N, `initState`: S, `ActionHandles`: object, `views`: V): *Module<Model&lt;S&gt;, V, Actions&lt;T&gt;, N>["default"]*
+▸ <**S**, **V**, **T**, **N**>(`moduleName`: N, `initState`: S, `ActionHandles`: object, `views`: V): _Module<Model&lt;S&gt;, V, Actions&lt;T&gt;, N>["default"]_
 
 **Type parameters:**
 
-▪ **S**: *[BaseModelState](interfaces/basemodelstate.md)*
+▪ **S**: _[BaseModelState](interfaces/basemodelstate.md)_
 
-▪ **V**: *object*
+▪ **V**: _object_
 
-▪ **T**: *[BaseModelHandlers](classes/basemodelhandlers.md)‹S, any›*
+▪ **T**: _[BaseModelHandlers](classes/basemodelhandlers.md)‹S, any›_
 
-▪ **N**: *string*
+▪ **N**: _string_
 
 **Parameters:**
 
-▪ **moduleName**: *N*
+▪ **moduleName**: _N_
 
-▪ **initState**: *S*
+▪ **initState**: _S_
 
-▪ **ActionHandles**: *object*
+▪ **ActionHandles**: _object_
 
-Name | Type |
------- | ------ |
-`constructor` |  |
+| Name          | Type |
+| ------------- | ---- |
+| `constructor` |      |
 
-▪ **views**: *V*
+▪ **views**: _V_
 
-___
+---
 
-###  LoadView
+### LoadView
 
-Ƭ **LoadView**: *function*
+Ƭ **LoadView**: _function_
 
-动态加载View，因为每种UI框架动态加载View的方式不一样，所有此处只是提供一个抽象接口
+动态加载 View，因为每种 UI 框架动态加载 View 的方式不一样，所有此处只是提供一个抽象接口
 
 **`see`** getView
 
 #### Type declaration:
 
-▸ <**M**, **V**, **N**>(`moduleName`: M, `viewName`: N, `options?`: Options, `loading?`: Comp, `error?`: Comp): *V[N]*
+▸ <**M**, **V**, **N**>(`moduleName`: M, `viewName`: N, `options?`: Options, `loading?`: Comp, `error?`: Comp): _V[N]_
 
 **Type parameters:**
 
-▪ **M**: *Extract‹keyof MG, string›*
+▪ **M**: _Extract‹keyof MG, string›_
 
-▪ **V**: *ModuleViews‹ReturnModule‹MG[M]››*
+▪ **V**: _ModuleViews‹ReturnModule‹MG[M]››_
 
-▪ **N**: *Extract‹keyof V, string›*
+▪ **N**: _Extract‹keyof V, string›_
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`moduleName` | M |
-`viewName` | N |
-`options?` | Options |
-`loading?` | Comp |
-`error?` | Comp |
+| Name         | Type    |
+| ------------ | ------- |
+| `moduleName` | M       |
+| `viewName`   | N       |
+| `options?`   | Options |
+| `loading?`   | Comp    |
+| `error?`     | Comp    |
 
-___
+---
 
-###  RootState
+### RootState
 
-Ƭ **RootState**: *object & object*
+Ƭ **RootState**: _object & object_
 
-整个Store的数据结构模型，主要分为三部分
+整个 Store 的数据结构模型，主要分为三部分
+
 - route，路由数据
-- modules，各个模块的数据，可通过isModule辨别
-- otherReducers，其他第三方reducers生成的数据
+- modules，各个模块的数据，可通过 isModule 辨别
+- otherReducers，其他第三方 reducers 生成的数据
 
-___
+---
 
-###  RouteViews
+### RouteViews
 
-Ƭ **RouteViews**: *object*
+Ƭ **RouteViews**: _object_
 
-描述当前路由下展示了哪些views
+描述当前路由下展示了哪些 views
 
 #### Type declaration:
 
-___
+---
 
-###  StoreState
+### StoreState
 
-Ƭ **StoreState**: *object & object*
+Ƭ **StoreState**: _object & object_
 
-medux使用的Store数据模型结构
+medux 使用的 Store 数据模型结构
 
 ## Variables
 
 ### `Const` client
 
-• **client**: *ENV | undefined* = isServerEnv ? undefined : env
+• **client**: _ENV | undefined_ = isServerEnv ? undefined : env
 
-___
+---
 
 ### `Const` env
 
-• **env**: *ENV* = (typeof window === 'object' && window.window) || (typeof global === 'object' && global.global) || global
+• **env**: _ENV_ = (typeof window === 'object' && window.window) || (typeof global === 'object' && global.global) || global
 
-___
+---
 
 ### `Const` isDevelopmentEnv
 
-• **isDevelopmentEnv**: *boolean* = process.env.NODE_ENV !== 'production'
+• **isDevelopmentEnv**: _boolean_ = process.env.NODE_ENV !== 'production'
 
-___
+---
 
 ### `Const` isServerEnv
 
-• **isServerEnv**: *boolean* = typeof window === 'undefined' && typeof global === 'object' && global.global === global
+• **isServerEnv**: _boolean_ = typeof window === 'undefined' && typeof global === 'object' && global.global === global
 
 ## Functions
 
-###  cacheModule
+### cacheModule
 
-▸ **cacheModule**<**T**>(`module`: T): *function*
+▸ **cacheModule**<**T**>(`module`: T): _function_
 
 **Type parameters:**
 
-▪ **T**: *[CommonModule](interfaces/commonmodule.md)*
+▪ **T**: _[CommonModule](interfaces/commonmodule.md)_
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`module` | T |
+| Name     | Type |
+| -------- | ---- |
+| `module` | T    |
 
-**Returns:** *function*
+**Returns:** _function_
 
-▸ (): *T*
+▸ (): _T_
 
-___
+---
 
-###  delayPromise
+### delayPromise
 
-▸ **delayPromise**(`second`: number): *(Anonymous function)*
+▸ **delayPromise**(`second`: number): _(Anonymous function)_
 
 一个类方法的装饰器，将其延迟执行
-- 可用来装饰effectHandler
+
+- 可用来装饰 effectHandler
 - 也可以装饰其他类
 
 **Parameters:**
 
-Name | Type | Description |
------- | ------ | ------ |
-`second` | number | 延迟秒数  |
+| Name     | Type   | Description |
+| -------- | ------ | ----------- |
+| `second` | number | 延迟秒数    |
 
-**Returns:** *(Anonymous function)*
+**Returns:** _(Anonymous function)_
 
-___
+---
 
-###  effect
+### effect
 
-▸ **effect**(`loadingForGroupName?`: string | null, `loadingForModuleName?`: undefined | string): *(Anonymous function)*
+▸ **effect**(`loadingForGroupName?`: string | null, `loadingForModuleName?`: undefined | string): _(Anonymous function)_
 
-一个类方法的装饰器，用来指示该方法为一个effectHandler
-- effectHandler必须通过dispatch Action来触发
+一个类方法的装饰器，用来指示该方法为一个 effectHandler
 
-**Parameters:**
-
-Name | Type | Description |
------- | ------ | ------ |
-`loadingForGroupName?` | string &#124; null | 注入加载状态的分组key，默认为global，如果为null表示不注入加载状态 |
-`loadingForModuleName?` | undefined &#124; string | 可将loading状态合并注入到其他module，默认为入口主模块  ``` effect(null) 不注入加载状态 effect() == effect('global','app') effect('global') = effect('global',thisModuleName) ```  |
-
-**Returns:** *(Anonymous function)*
-
-___
-
-###  errorAction
-
-▸ **errorAction**(`error`: any): *object*
-
-框架定义的全局错误ActionCreator，拥有固定的type
+- effectHandler 必须通过 dispatch Action 来触发
 
 **Parameters:**
 
-Name | Type | Description |
------- | ------ | ------ |
-`error` | any | 错误  |
+| Name                    | Type                    | Description                                                                                                                                                                  |
+| ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loadingForGroupName?`  | string &#124; null      | 注入加载状态的分组 key，默认为 global，如果为 null 表示不注入加载状态                                                                                                        |
+| `loadingForModuleName?` | undefined &#124; string | 可将 loading 状态合并注入到其他 module，默认为入口主模块 `effect(null) 不注入加载状态 effect() == effect('global','app') effect('global') = effect('global',thisModuleName)` |
 
-**Returns:** *object*
+**Returns:** _(Anonymous function)_
 
-* **payload**: *any[]* = [error]
+---
 
-* **type**: *string* = ActionTypes.Error
+### errorAction
 
-___
+▸ **errorAction**(`error`: any): _object_
 
-###  exportActions
+框架定义的全局错误 ActionCreator，拥有固定的 type
 
-▸ **exportActions**<**G**>(`moduleGetter`: G): *object*
+**Parameters:**
 
-为所有模块的modelHanders自动生成ActionCreator
-- 注意如果环境不支持ES7 Proxy，将无法dispatch一个未经初始化的ModelAction，此时必须手动提前loadModel
+| Name    | Type | Description |
+| ------- | ---- | ----------- |
+| `error` | any  | 错误        |
+
+**Returns:** _object_
+
+- **payload**: _any[]_ = [error]
+
+- **type**: _string_ = ActionTypes.Error
+
+---
+
+### exportActions
+
+▸ **exportActions**<**G**>(`moduleGetter`: G): _object_
+
+为所有模块的 modelHanders 自动生成 ActionCreator
+
+- 注意如果环境不支持 ES7 Proxy，将无法 dispatch 一个未经初始化的 ModelAction，此时必须手动提前 loadModel
 - 参见 loadModel
 
 **Type parameters:**
 
-▪ **G**: *object*
+▪ **G**: _object_
 
 **Parameters:**
 
-Name | Type | Description |
------- | ------ | ------ |
-`moduleGetter` | G | 模块的获取方式  |
+| Name           | Type | Description    |
+| -------------- | ---- | -------------- |
+| `moduleGetter` | G    | 模块的获取方式 |
 
-**Returns:** *object*
+**Returns:** _object_
 
-___
+---
 
 ### `Const` exportModule
 
-▸ **exportModule**(`moduleName`: N, `initState`: S, `ActionHandles`: object, `views`: V): *object*
+▸ **exportModule**(`moduleName`: N, `initState`: S, `ActionHandles`: object, `views`: V): _object_
 
-导出Module，该方法为ExportModule接口的实现
+导出 Module，该方法为 ExportModule 接口的实现
 
 **Parameters:**
 
-▪ **moduleName**: *N*
+▪ **moduleName**: _N_
 
 模块名，不能重复
 
-▪ **initState**: *S*
+▪ **initState**: _S_
 
 模块初始状态
 
-▪ **ActionHandles**: *object*
+▪ **ActionHandles**: _object_
 
-模块的ModelHandlers类，必须继承BaseModelHandlers
+模块的 ModelHandlers 类，必须继承 BaseModelHandlers
 
-Name | Type |
------- | ------ |
-`constructor` |  |
+| Name          | Type |
+| ------------- | ---- |
+| `constructor` |      |
 
-▪ **views**: *V*
+▪ **views**: _V_
 
-模块需要导出给外部使用的View，若无需给外部使用可不导出
+模块需要导出给外部使用的 View，若无需给外部使用可不导出
 
-**Returns:** *object*
+**Returns:** _object_
 
-medux定义的module标准数据结构
+medux 定义的 module 标准数据结构
 
-* **actions**: *any*
+- **actions**: _any_
 
-* **model**: *model*
+- **model**: _model_
 
-* **moduleName**: *N*
+- **moduleName**: _N_
 
-* **views**: *V*
+- **views**: _V_
 
-___
+---
 
-###  getActionData
+### getActionData
 
-▸ **getActionData**(`action`: [Action](interfaces/action.md)): *any[]*
+▸ **getActionData**(`action`: [Action](interfaces/action.md)): _any[]_
 
-从redux action上获取有效数据载体
+从 redux action 上获取有效数据载体
 
 **Parameters:**
 
-Name | Type | Description |
------- | ------ | ------ |
-`action` | [Action](interfaces/action.md) | redux的action  |
+| Name     | Type                           | Description     |
+| -------- | ------------------------------ | --------------- |
+| `action` | [Action](interfaces/action.md) | redux 的 action |
 
-**Returns:** *any[]*
+**Returns:** _any[]_
 
-___
+---
 
-###  getClientStore
+### getClientStore
 
-▸ **getClientStore**(): *ModelStore*
+▸ **getClientStore**(): _ModuleStore_
 
-在client中运行时，全局只有一个单例的Store对象，可通过该方法直接获得
+在 client 中运行时，全局只有一个单例的 Store 对象，可通过该方法直接获得
 
-**Returns:** *ModelStore*
+**Returns:** _ModuleStore_
 
-___
+---
 
-###  getView
+### getView
 
-▸ **getView**<**T**>(`moduleName`: string, `viewName`: string, `modelOptions?`: any): *T | Promise‹T›*
+▸ **getView**<**T**>(`moduleName`: string, `viewName`: string, `modelOptions?`: any): _T | Promise‹T›_
 
-动态获取View，与LoadView的区别是：
-- getView仅获取view，并不渲染，与UI平台无关
-- LoadView内部会调用getView之后会渲染View
-- getView会自动加载并初始化该view对应的model
+动态获取 View，与 LoadView 的区别是：
+
+- getView 仅获取 view，并不渲染，与 UI 平台无关
+- LoadView 内部会调用 getView 之后会渲染 View
+- getView 会自动加载并初始化该 view 对应的 model
 
 **Type parameters:**
 
@@ -400,37 +406,37 @@ ___
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`moduleName` | string |
-`viewName` | string |
-`modelOptions?` | any |
+| Name            | Type   |
+| --------------- | ------ |
+| `moduleName`    | string |
+| `viewName`      | string |
+| `modelOptions?` | any    |
 
-**Returns:** *T | Promise‹T›*
+**Returns:** _T | Promise‹T›_
 
-___
+---
 
-###  isPromiseModule
+### isPromiseModule
 
-▸ **isPromiseModule**(`module`: [Module](interfaces/module.md) | Promise‹[Module](interfaces/module.md)›): *module is Promise&lt;Module&gt;*
+▸ **isPromiseModule**(`module`: [Module](interfaces/module.md) | Promise‹[Module](interfaces/module.md)›): _module is Promise&lt;Module&gt;_
 
-通过moduleGetter获得的module可能是同步的也可能是异步的，此方法用来判断
+通过 moduleGetter 获得的 module 可能是同步的也可能是异步的，此方法用来判断
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`module` | [Module](interfaces/module.md) &#124; Promise‹[Module](interfaces/module.md)› |
+| Name     | Type                                                                          |
+| -------- | ----------------------------------------------------------------------------- |
+| `module` | [Module](interfaces/module.md) &#124; Promise‹[Module](interfaces/module.md)› |
 
-**Returns:** *module is Promise&lt;Module&gt;*
+**Returns:** _module is Promise&lt;Module&gt;_
 
-___
+---
 
-###  isPromiseView
+### isPromiseView
 
-▸ **isPromiseView**<**T**>(`moduleView`: T | Promise‹T›): *moduleView is Promise&lt;T&gt;*
+▸ **isPromiseView**<**T**>(`moduleView`: T | Promise‹T›): _moduleView is Promise&lt;T&gt;_
 
-通过getView获得的view可能是同步的也可能是异步的，此方法用来判断
+通过 getView 获得的 view 可能是同步的也可能是异步的，此方法用来判断
 
 **Type parameters:**
 
@@ -438,184 +444,128 @@ ___
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`moduleView` | T &#124; Promise‹T› |
+| Name         | Type                |
+| ------------ | ------------------- |
+| `moduleView` | T &#124; Promise‹T› |
 
-**Returns:** *moduleView is Promise&lt;T&gt;*
+**Returns:** _moduleView is Promise&lt;T&gt;_
 
-___
+---
 
-###  isServer
+### isServer
 
-▸ **isServer**(): *boolean*
+▸ **isServer**(): _boolean_
 
-**Returns:** *boolean*
+**Returns:** _boolean_
 
-___
+---
 
-###  loadModel
+### loadModel
 
-▸ **loadModel**<**MG**>(`moduleName`: Extract‹keyof MG, string›, `storeInstance?`: ModelStore, `options?`: any): *void | Promise‹void›*
+▸ **loadModel**<**MG**>(`moduleName`: Extract‹keyof MG, string›, `storeInstance?`: ModuleStore, `options?`: any): _void | Promise‹void›_
 
-动态加载并初始化其他模块的model
-
-**Type parameters:**
-
-▪ **MG**: *[ModuleGetter](interfaces/modulegetter.md)*
-
-**Parameters:**
-
-Name | Type | Description |
------- | ------ | ------ |
-`moduleName` | Extract‹keyof MG, string› | 要加载的模块名 |
-`storeInstance?` | ModelStore | - |
-`options?` | any | model初始化时可以传入的数据，参见Model接口  |
-
-**Returns:** *void | Promise‹void›*
-
-___
-
-###  logger
-
-▸ **logger**(`before`: function, `after`: null | function): *(Anonymous function)*
-
-一个类方法的装饰器，用来向reducerHandler或effectHandler中注入before和after的钩子
-- 注意不管该handler是否执行成功，前后钩子都会强制执行
-
-**Parameters:**
-
-▪ **before**: *function*
-
-actionHandler执行前的钩子
-
-▸ (`action`: [Action](interfaces/action.md), `moduleName`: string, `promiseResult`: Promise‹any›): *void*
-
-**Parameters:**
-
-Name | Type |
------- | ------ |
-`action` | [Action](interfaces/action.md) |
-`moduleName` | string |
-`promiseResult` | Promise‹any› |
-
-▪ **after**: *null | function*
-
-actionHandler执行后的钩子
-
-**Returns:** *(Anonymous function)*
-
-___
-
-###  modelHotReplacement
-
-▸ **modelHotReplacement**(`moduleName`: string, `initState`: any, `ActionHandles`: object): *void*
-
-当model发生变化时，用来热更新model
-- 注意通常initState发生变更时不确保热更新100%有效，此时会console警告
-- 通常actionHandlers发生变更时热更新有效
-
-**Parameters:**
-
-▪ **moduleName**: *string*
-
-▪ **initState**: *any*
-
-▪ **ActionHandles**: *object*
-
-Name | Type |
------- | ------ |
-`constructor` |  |
-
-**Returns:** *void*
-
-___
-
-###  reducer
-
-▸ **reducer**(`target`: any, `key`: string, `descriptor`: PropertyDescriptor): *any*
-
-一个类方法的装饰器，用来指示该方法为一个reducerHandler
-- reducerHandler必须通过dispatch Action来触发
-
-**Parameters:**
-
-Name | Type |
------- | ------ |
-`target` | any |
-`key` | string |
-`descriptor` | PropertyDescriptor |
-
-**Returns:** *any*
-
-___
-
-###  renderApp
-
-▸ **renderApp**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleOrName`: string | [CommonModule](interfaces/commonmodule.md), `appViewName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹void›*
-
-该方法用来创建并启动Client应用
-- 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
+动态加载并初始化其他模块的 model
 
 **Type parameters:**
 
-▪ **V**
+▪ **MG**: _[ModuleGetter](interfaces/modulegetter.md)_
 
 **Parameters:**
 
-▪ **render**: *function*
+| Name             | Type                      | Description                                   |
+| ---------------- | ------------------------- | --------------------------------------------- |
+| `moduleName`     | Extract‹keyof MG, string› | 要加载的模块名                                |
+| `storeInstance?` | ModuleStore               | -                                             |
+| `options?`       | any                       | model 初始化时可以传入的数据，参见 Model 接口 |
 
-渲染View的回调函数，该回调函数可返回一个reRender的方法用来热更新UI
+**Returns:** _void | Promise‹void›_
 
-▸ (`store`: Store‹[StoreState](README.md#storestate)›, `appModel`: [Model](interfaces/model.md), `appView`: V, `ssrInitStoreKey`: string): *function*
+---
+
+### logger
+
+▸ **logger**(`before`: function, `after`: null | function): _(Anonymous function)_
+
+一个类方法的装饰器，用来向 reducerHandler 或 effectHandler 中注入 before 和 after 的钩子
+
+- 注意不管该 handler 是否执行成功，前后钩子都会强制执行
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`store` | Store‹[StoreState](README.md#storestate)› |
-`appModel` | [Model](interfaces/model.md) |
-`appView` | V |
-`ssrInitStoreKey` | string |
+▪ **before**: _function_
 
-▸ (`appView`: V): *void*
+actionHandler 执行前的钩子
+
+▸ (`action`: [Action](interfaces/action.md), `moduleName`: string, `promiseResult`: Promise‹any›): _void_
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`appView` | V |
+| Name            | Type                           |
+| --------------- | ------------------------------ |
+| `action`        | [Action](interfaces/action.md) |
+| `moduleName`    | string                         |
+| `promiseResult` | Promise‹any›                   |
 
-▪ **moduleGetter**: *[ModuleGetter](interfaces/modulegetter.md)*
+▪ **after**: _null | function_
 
-模块的获取方式
+actionHandler 执行后的钩子
 
-▪ **appModuleOrName**: *string | [CommonModule](interfaces/commonmodule.md)*
+**Returns:** _(Anonymous function)_
 
-▪ **appViewName**: *string*
+---
 
-▪ **history**: *[HistoryProxy](interfaces/historyproxy.md)*
+### modelHotReplacement
 
-抽象的HistoryProxy实现
+▸ **modelHotReplacement**(`moduleName`: string, `initState`: any, `ActionHandles`: object): _void_
 
-▪`Default value`  **storeOptions**: *[StoreOptions](interfaces/storeoptions.md)*= {}
+当 model 发生变化时，用来热更新 model
 
-store的参数，参见StoreOptions
+- 注意通常 initState 发生变更时不确保热更新 100%有效，此时会 console 警告
+- 通常 actionHandlers 发生变更时热更新有效
 
-▪`Optional`  **beforeRender**: *undefined | function*
+**Parameters:**
 
-渲染前的钩子，通过该钩子你可以保存或修改store
+▪ **moduleName**: _string_
 
-**Returns:** *Promise‹void›*
+▪ **initState**: _any_
 
-___
+▪ **ActionHandles**: _object_
 
-###  renderSSR
+| Name          | Type |
+| ------------- | ---- |
+| `constructor` |      |
 
-▸ **renderSSR**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleName`: string, `appViewName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): *Promise‹object›*
+**Returns:** _void_
 
-SSR时该方法用来创建并启动Server应用
-- 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
+---
+
+### reducer
+
+▸ **reducer**(`target`: any, `key`: string, `descriptor`: PropertyDescriptor): _any_
+
+一个类方法的装饰器，用来指示该方法为一个 reducerHandler
+
+- reducerHandler 必须通过 dispatch Action 来触发
+
+**Parameters:**
+
+| Name         | Type               |
+| ------------ | ------------------ |
+| `target`     | any                |
+| `key`        | string             |
+| `descriptor` | PropertyDescriptor |
+
+**Returns:** _any_
+
+---
+
+### renderApp
+
+▸ **renderApp**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleOrName`: string | [CommonModule](interfaces/commonmodule.md), `appViewName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): _Promise‹void›_
+
+该方法用来创建并启动 Client 应用
+
+- 注意该方法只负责加载 Module 和创建 Model，具体的渲染 View 将通过回调执行
 
 **Type parameters:**
 
@@ -623,233 +573,297 @@ SSR时该方法用来创建并启动Server应用
 
 **Parameters:**
 
-▪ **render**: *function*
+▪ **render**: _function_
 
-渲染View的回调函数
+渲染 View 的回调函数，该回调函数可返回一个 reRender 的方法用来热更新 UI
 
-▸ (`store`: Store‹[StoreState](README.md#storestate)›, `appModel`: [Model](interfaces/model.md), `appView`: V, `ssrInitStoreKey`: string): *object*
+▸ (`store`: Store‹[StoreState](README.md#storestate)›, `appModel`: [Model](interfaces/model.md), `appView`: V, `ssrInitStoreKey`: string): _function_
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`store` | Store‹[StoreState](README.md#storestate)› |
-`appModel` | [Model](interfaces/model.md) |
-`appView` | V |
-`ssrInitStoreKey` | string |
+| Name              | Type                                      |
+| ----------------- | ----------------------------------------- |
+| `store`           | Store‹[StoreState](README.md#storestate)› |
+| `appModel`        | [Model](interfaces/model.md)              |
+| `appView`         | V                                         |
+| `ssrInitStoreKey` | string                                    |
 
-* **data**: *any*
+▸ (`appView`: V): _void_
 
-* **html**: *any*
+**Parameters:**
 
-* **ssrInitStoreKey**: *string*
+| Name      | Type |
+| --------- | ---- |
+| `appView` | V    |
 
-* **store**: *Store*
-
-▪ **moduleGetter**: *[ModuleGetter](interfaces/modulegetter.md)*
+▪ **moduleGetter**: _[ModuleGetter](interfaces/modulegetter.md)_
 
 模块的获取方式
 
-▪ **appModuleName**: *string*
+▪ **appModuleOrName**: _string | [CommonModule](interfaces/commonmodule.md)_
+
+▪ **appViewName**: _string_
+
+▪ **history**: _[HistoryProxy](interfaces/historyproxy.md)_
+
+抽象的 HistoryProxy 实现
+
+▪`Default value` **storeOptions**: _[StoreOptions](interfaces/storeoptions.md)_= {}
+
+store 的参数，参见 StoreOptions
+
+▪`Optional` **beforeRender**: _undefined | function_
+
+渲染前的钩子，通过该钩子你可以保存或修改 store
+
+**Returns:** _Promise‹void›_
+
+---
+
+### renderSSR
+
+▸ **renderSSR**<**V**>(`render`: function, `moduleGetter`: [ModuleGetter](interfaces/modulegetter.md), `appModuleName`: string, `appViewName`: string, `history`: [HistoryProxy](interfaces/historyproxy.md), `storeOptions`: [StoreOptions](interfaces/storeoptions.md), `beforeRender?`: undefined | function): _Promise‹object›_
+
+SSR 时该方法用来创建并启动 Server 应用
+
+- 注意该方法只负责加载 Module 和创建 Model，具体的渲染 View 将通过回调执行
+
+**Type parameters:**
+
+▪ **V**
+
+**Parameters:**
+
+▪ **render**: _function_
+
+渲染 View 的回调函数
+
+▸ (`store`: Store‹[StoreState](README.md#storestate)›, `appModel`: [Model](interfaces/model.md), `appView`: V, `ssrInitStoreKey`: string): _object_
+
+**Parameters:**
+
+| Name              | Type                                      |
+| ----------------- | ----------------------------------------- |
+| `store`           | Store‹[StoreState](README.md#storestate)› |
+| `appModel`        | [Model](interfaces/model.md)              |
+| `appView`         | V                                         |
+| `ssrInitStoreKey` | string                                    |
+
+- **data**: _any_
+
+- **html**: _any_
+
+- **ssrInitStoreKey**: _string_
+
+- **store**: _Store_
+
+▪ **moduleGetter**: _[ModuleGetter](interfaces/modulegetter.md)_
+
+模块的获取方式
+
+▪ **appModuleName**: _string_
 
 模块的主入口模块名称
 
-▪ **appViewName**: *string*
+▪ **appViewName**: _string_
 
-▪ **history**: *[HistoryProxy](interfaces/historyproxy.md)*
+▪ **history**: _[HistoryProxy](interfaces/historyproxy.md)_
 
-抽象的HistoryProxy实现
+抽象的 HistoryProxy 实现
 
-▪`Default value`  **storeOptions**: *[StoreOptions](interfaces/storeoptions.md)*= {}
+▪`Default value` **storeOptions**: _[StoreOptions](interfaces/storeoptions.md)_= {}
 
-store的参数，参见StoreOptions
+store 的参数，参见 StoreOptions
 
-▪`Optional`  **beforeRender**: *undefined | function*
+▪`Optional` **beforeRender**: _undefined | function_
 
-渲染前的钩子，通过该钩子你可以保存或修改store
+渲染前的钩子，通过该钩子你可以保存或修改 store
 
-**Returns:** *Promise‹object›*
+**Returns:** _Promise‹object›_
 
-___
+---
 
-###  routeChangeAction
+### routeChangeAction
 
-▸ **routeChangeAction**(`route`: [RouteState](interfaces/routestate.md)): *object*
+▸ **routeChangeAction**(`route`: [RouteState](interfaces/routestate.md)): _object_
 
-框架定义的全局路由切换ActionCreator，拥有固定的type
-
-**Parameters:**
-
-Name | Type | Description |
------- | ------ | ------ |
-`route` | [RouteState](interfaces/routestate.md) | 路由数据  |
-
-**Returns:** *object*
-
-* **payload**: *[RouteState](interfaces/routestate.md)‹any›[]* = [route]
-
-* **type**: *string* = ActionTypes.RouteChange
-
-___
-
-###  routeParamsAction
-
-▸ **routeParamsAction**(`moduleName`: string, `params`: any, `action?`: undefined | string): *object*
-
-当路由发生变化时，通过该action触发相关模块的状态发生变化
+框架定义的全局路由切换 ActionCreator，拥有固定的 type
 
 **Parameters:**
 
-Name | Type | Description |
------- | ------ | ------ |
-`moduleName` | string | 模块名称 |
-`params` | any | 存放在路由上的数据  |
-`action?` | undefined &#124; string | - |
+| Name    | Type                                   | Description |
+| ------- | -------------------------------------- | ----------- |
+| `route` | [RouteState](interfaces/routestate.md) | 路由数据    |
 
-**Returns:** *object*
+**Returns:** _object_
 
-* **payload**: *any[]* = [params, action]
+- **payload**: _[RouteState](interfaces/routestate.md)‹any›[]_ = [route]
 
-* **type**: *string* = `${moduleName}${config.NSP}${ActionTypes.MRouteParams}`
+- **type**: _string_ = ActionTypes.RouteChange
 
-___
+---
 
-###  setConfig
+### routeParamsAction
 
-▸ **setConfig**(`_config`: object): *void*
+▸ **routeParamsAction**(`moduleName`: string, `params`: any, `action?`: undefined | string): _object_
+
+当路由发生变化时，通过该 action 触发相关模块的状态发生变化
+
+**Parameters:**
+
+| Name         | Type                    | Description        |
+| ------------ | ----------------------- | ------------------ |
+| `moduleName` | string                  | 模块名称           |
+| `params`     | any                     | 存放在路由上的数据 |
+| `action?`    | undefined &#124; string | -                  |
+
+**Returns:** _object_
+
+- **payload**: _any[]_ = [params, action]
+
+- **type**: _string_ = `${moduleName}${config.NSP}${ActionTypes.MRouteParams}`
+
+---
+
+### setConfig
+
+▸ **setConfig**(`_config`: object): _void_
 
 可供设置的全局参数
 
 **Parameters:**
 
-▪ **_config**: *object*
+▪ **\_config**: _object_
 
 设置参数
-- NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
-- VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
-- MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
 
-Name | Type |
------- | ------ |
-`MSP?` | undefined &#124; string |
-`NSP?` | undefined &#124; string |
-`VSP?` | undefined &#124; string |
+- NSP 默认为. ModuleName\${NSP}ActionName 用于 ActionName 的连接
+- VSP 默认为. ModuleName\${VSP}ViewName 用于路由 ViewName 的连接
+- MSP 默认为, 用于一个 ActionHandler 同时监听多个 Action 的连接
 
-**Returns:** *void*
+| Name   | Type                    |
+| ------ | ----------------------- |
+| `MSP?` | undefined &#124; string |
+| `NSP?` | undefined &#124; string |
+| `VSP?` | undefined &#124; string |
 
-___
+**Returns:** _void_
 
-###  setLoading
+---
 
-▸ **setLoading**<**T**>(`item`: T, `moduleName`: string, `groupName`: string): *T*
+### setLoading
 
-手动设置Loading状态，同一个key名的loading状态将自动合并
-- 参见LoadingState
+▸ **setLoading**<**T**>(`item`: T, `moduleName`: string, `groupName`: string): _T_
+
+手动设置 Loading 状态，同一个 key 名的 loading 状态将自动合并
+
+- 参见 LoadingState
 
 **Type parameters:**
 
-▪ **T**: *Promise‹any›*
+▪ **T**: _Promise‹any›_
 
 **Parameters:**
 
-Name | Type | Default | Description |
------- | ------ | ------ | ------ |
-`item` | T | - | 一个Promise加载项 |
-`moduleName` | string | MetaData.appModuleName | moduleName+groupName合起来作为该加载项的key |
-`groupName` | string | "global" | moduleName+groupName合起来作为该加载项的key  |
+| Name         | Type   | Default                | Description                                   |
+| ------------ | ------ | ---------------------- | --------------------------------------------- |
+| `item`       | T      | -                      | 一个 Promise 加载项                           |
+| `moduleName` | string | MetaData.appModuleName | moduleName+groupName 合起来作为该加载项的 key |
+| `groupName`  | string | "global"               | moduleName+groupName 合起来作为该加载项的 key |
 
-**Returns:** *T*
+**Returns:** _T_
 
-___
+---
 
-###  setLoadingDepthTime
+### setLoadingDepthTime
 
-▸ **setLoadingDepthTime**(`second`: number): *void*
+▸ **setLoadingDepthTime**(`second`: number): _void_
 
 设置深度加载的时间阀值
 
 **Parameters:**
 
-Name | Type | Description |
------- | ------ | ------ |
-`second` | number | 超过多少秒进入深度加载，默认为2秒  |
+| Name     | Type   | Description                         |
+| -------- | ------ | ----------------------------------- |
+| `second` | number | 超过多少秒进入深度加载，默认为 2 秒 |
 
-**Returns:** *void*
+**Returns:** _void_
 
-___
+---
 
-###  viewHotReplacement
+### viewHotReplacement
 
-▸ **viewHotReplacement**(`moduleName`: string, `views`: object): *void*
+▸ **viewHotReplacement**(`moduleName`: string, `views`: object): _void_
 
-当view发生变化时，用来热更新UI
+当 view 发生变化时，用来热更新 UI
 
 **Parameters:**
 
-Name | Type |
------- | ------ |
-`moduleName` | string |
-`views` | object |
+| Name         | Type   |
+| ------------ | ------ |
+| `moduleName` | string |
+| `views`      | object |
 
-**Returns:** *void*
+**Returns:** _void_
 
 ## Object literals
 
 ### `Const` ActionTypes
 
-### ▪ **ActionTypes**: *object*
+### ▪ **ActionTypes**: _object_
 
-框架内置的几个ActionTypes
+框架内置的几个 ActionTypes
 
-###  Error
+### Error
 
-• **Error**: *string* = `medux${config.NSP}Error`
+• **Error**: _string_ = `medux${config.NSP}Error`
 
-全局捕获到错误时使用ActionType：{Error}
+全局捕获到错误时使用 ActionType：{Error}
 
-###  MInit
+### MInit
 
-• **MInit**: *string* = "Init"
+• **MInit**: _string_ = "Init"
 
-模块初始化时使用ActionType：{moduleName}.{MInit}
+模块初始化时使用 ActionType：{moduleName}.{MInit}
 
-###  MLoading
+### MLoading
 
-• **MLoading**: *string* = "Loading"
+• **MLoading**: _string_ = "Loading"
 
-为模块注入加载状态时使用ActionType：{moduleName}.{MLoading}
+为模块注入加载状态时使用 ActionType：{moduleName}.{MLoading}
 
-###  MRouteParams
+### MRouteParams
 
-• **MRouteParams**: *string* = "RouteParams"
+• **MRouteParams**: _string_ = "RouteParams"
 
-模块存放在路由中的参数发生变化时使用ActionType：{moduleName}.{MRouteParams}
+模块存放在路由中的参数发生变化时使用 ActionType：{moduleName}.{MRouteParams}
 
-###  RouteChange
+### RouteChange
 
-• **RouteChange**: *string* = `medux${config.NSP}RouteChange`
+• **RouteChange**: _string_ = `medux${config.NSP}RouteChange`
 
-全局路由发生变化时使用ActionType：{RouteChange}
+全局路由发生变化时使用 ActionType：{RouteChange}
 
-___
+---
 
 ### `Const` config
 
-### ▪ **config**: *object*
+### ▪ **config**: _object_
 
-可供设置的全局参数，参见setConfig
-- NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
-- VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
-- MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
+可供设置的全局参数，参见 setConfig
 
-###  MSP
+- NSP 默认为. ModuleName\${NSP}ActionName 用于 ActionName 的连接
+- VSP 默认为. ModuleName\${VSP}ViewName 用于路由 ViewName 的连接
+- MSP 默认为, 用于一个 ActionHandler 同时监听多个 Action 的连接
 
-• **MSP**: *string* = ","
+### MSP
 
-###  NSP
+• **MSP**: _string_ = ","
 
-• **NSP**: *string* = "."
+### NSP
 
-###  VSP
+• **NSP**: _string_ = "."
 
-• **VSP**: *string* = "."
+### VSP
+
+• **VSP**: _string_ = "."

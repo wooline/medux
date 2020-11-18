@@ -26,6 +26,7 @@ export declare class HistoryActions<P extends RouteParams = RouteParams> extends
     }, routeRule: RouteRule, locationMap?: LocationMap | undefined);
     getNativeHistory(): History<never>;
     destroy(): void;
+    refresh(): void;
 }
 export declare function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, defaultRouteParams: {
     [moduleName: string]: any;

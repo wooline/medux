@@ -131,6 +131,10 @@ export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHis
   destroy() {
     this._unlistenHistory();
   }
+
+  refresh() {
+    this.nativeHistory.history.go(0);
+  }
 }
 
 export function createRouter(createHistory: 'Browser' | 'Hash' | 'Memory' | string, defaultRouteParams: {[moduleName: string]: any}, routeRule: RouteRule, locationMap?: LocationMap) {

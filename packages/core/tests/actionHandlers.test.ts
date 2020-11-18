@@ -1,12 +1,12 @@
-import {Middleware, Store} from 'redux';
-import {getView, renderApp} from 'src/index';
+import {Middleware} from 'redux';
+import {getView, renderApp, ModuleStore} from 'src/index';
 
 import {actions, moduleGetter} from './modules';
 
 declare const console: any;
 
 describe('init', () => {
-  let mockStore: Store;
+  let mockStore: ModuleStore;
   const actionLogs: string[] = [];
 
   const logerMiddleware: Middleware = ({dispatch}) => (next) => (originalAction) => {
@@ -42,7 +42,7 @@ describe('init', () => {
   });
 });
 describe('无SSR时', () => {
-  let mockStore: Store;
+  let mockStore: ModuleStore;
   const actionLogs: string[] = [];
 
   const logerMiddleware: Middleware = ({dispatch}) => (next) => (originalAction) => {

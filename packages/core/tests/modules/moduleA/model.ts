@@ -13,9 +13,9 @@ export const initModelState: State = {
 };
 
 // 定义本模块的Handlers
-export class ModelHandlers extends CoreModuleHandlers<'moduleA', State> {
+export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
   constructor() {
-    super('moduleA', initModelState);
+    super(initModelState);
   }
 
   @reducer

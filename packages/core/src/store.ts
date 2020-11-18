@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
-import {Action, ActionTypes, MetaData, ModelStore, CoreRootState, config, isPromise} from './basic';
+import {Action, ActionTypes, MetaData, ModuleStore, config, isPromise} from './basic';
 import {loadModel} from './inject';
 import {client, isDevelopmentEnv, isServerEnv} from './env';
 import {errorAction} from './actions';
@@ -62,12 +62,12 @@ export function buildStore(
   storeReducers: ReducersMapObject<any, any> = {},
   storeMiddlewares: Middleware[] = [],
   storeEnhancers: StoreEnhancer[] = []
-): ModelStore {
+): ModuleStore {
   if (MetaData.clientStore) {
     MetaData.clientStore.destroy();
   }
 
-  const combineReducers = (rootState: CoreRootState, action: Action) => {
+  const combineReducers = (rootState: Record<string, any>, action: Action) => {
     if (!store) {
       return rootState;
     }
@@ -234,8 +234,8 @@ export function buildStore(
   const enhancer: StoreEnhancer = (newCreateStore) => {
     return (...args) => {
       const newStore = newCreateStore(...args);
-      const modelStore: ModelStore = newStore as any;
-      modelStore._medux_ = {
+      const moduleStore: ModuleStore = newStore as any;
+      moduleStore._medux_ = {
         beforeState: {} as any,
         prevState: {} as any,
         currentState: {} as any,
@@ -250,7 +250,7 @@ export function buildStore(
   if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
-  const store: ModelStore = createStore(combineReducers as any, preloadedState, compose(...enhancers));
+  const store: ModuleStore = createStore(combineReducers as any, preloadedState, compose(...enhancers));
   store.destroy = () => undefined;
   if (!isServerEnv) {
     MetaData.clientStore = store;

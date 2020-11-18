@@ -158,6 +158,10 @@ export class HistoryActions extends BaseHistoryActions {
     this._unlistenHistory();
   }
 
+  refresh() {
+    this.nativeHistory.history.go(0);
+  }
+
 }
 export function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {
   const nativeHistory = new WebNativeHistory(createHistory);

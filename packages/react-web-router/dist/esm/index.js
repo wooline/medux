@@ -2336,14 +2336,10 @@ function _loadModel(moduleName, store) {
   return undefined;
 }
 var CoreModuleHandlers = _decorate(null, function (_initialize) {
-  var CoreModuleHandlers = function CoreModuleHandlers(moduleName, initState) {
-    this.moduleName = moduleName;
+  var CoreModuleHandlers = function CoreModuleHandlers(initState) {
     this.initState = initState;
 
     _initialize(this);
-
-    this.actions = null;
-    this.store = null;
   };
 
   return {
@@ -2351,81 +2347,55 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     d: [{
       kind: "field",
       key: "actions",
-      value: void 0
+      value: function value() {
+        return null;
+      }
     }, {
       kind: "field",
       key: "store",
-      value: void 0
+      value: function value() {
+        return null;
+      }
+    }, {
+      kind: "field",
+      key: "moduleName",
+      value: function value() {
+        return '';
+      }
     }, {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.getState();
-      }
-    }, {
-      kind: "method",
-      key: "getState",
-      value: function getState() {
         return this.store._medux_.prevState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.getRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getRootState",
-      value: function getRootState() {
         return this.store._medux_.prevState;
       }
     }, {
       kind: "get",
       key: "currentState",
       value: function currentState() {
-        return this.getCurrentState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentState",
-      value: function getCurrentState() {
         return this.store._medux_.currentState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "currentRootState",
       value: function currentRootState() {
-        return this.getCurrentRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentRootState",
-      value: function getCurrentRootState() {
         return this.store._medux_.currentState;
       }
     }, {
       kind: "get",
       key: "prevState",
       value: function prevState() {
-        return this.getPrevState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevState",
-      value: function getPrevState() {
         return this.store._medux_.beforeState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "prevRootState",
       value: function prevRootState() {
-        return this.getPrevRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevRootState",
-      value: function getPrevRootState() {
         return this.store._medux_.beforeState;
       }
     }, {
@@ -2450,7 +2420,7 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.getState(), payload), key));
+        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.state, payload), key));
       }
     }, {
       kind: "method",
@@ -2477,7 +2447,7 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
-        var state = this.getState();
+        var state = this.state;
         return Object.assign({}, state, {
           loading: Object.assign({}, state.loading, payload)
         });
@@ -2485,21 +2455,18 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-var exportModule = function exportModule(ModuleHandles, views) {
-  var moduleHandles = new ModuleHandles();
-  var moduleName = moduleHandles.moduleName;
-  var initState = moduleHandles.initState;
-
+var exportModule = function exportModule(moduleName, ModuleHandles, views) {
   var model = function model(store) {
-    var hasInjected = !!store._medux_.injectedModules[moduleName];
+    var initState = store._medux_.injectedModules[moduleName];
 
-    if (!hasInjected) {
-      store._medux_.injectedModules[moduleName] = initState;
-
-      var _actions = injectActions(store, moduleName, moduleHandles);
-
+    if (!initState) {
+      var moduleHandles = new ModuleHandles();
+      moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
-      moduleHandles.actions = _actions;
+      initState = moduleHandles.initState;
+      store._medux_.injectedModules[moduleName] = initState;
+      var actions = injectActions(store, moduleName, moduleHandles);
+      moduleHandles.actions = actions;
       var preModuleState = store.getState()[moduleName] || {};
       var moduleState = Object.assign({}, initState, preModuleState);
 
@@ -2509,16 +2476,15 @@ var exportModule = function exportModule(ModuleHandles, views) {
       }
     }
 
-    return undefined;
+    return initState;
   };
 
-  var actions = {};
   return {
     moduleName: moduleName,
-    initState: initState,
     model: model,
     views: views,
-    actions: actions
+    initState: undefined,
+    actions: undefined
   };
 };
 function getView(moduleName, viewName) {
@@ -2822,8 +2788,8 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
   var enhancer = function enhancer(newCreateStore) {
     return function () {
       var newStore = newCreateStore.apply(void 0, arguments);
-      var modelStore = newStore;
-      modelStore._medux_ = {
+      var moduleStore = newStore;
+      moduleStore._medux_ = {
         beforeState: {},
         prevState: {},
         currentState: {},
@@ -2863,20 +2829,23 @@ function clearHandlers(key, actionHandlerMap) {
   }
 }
 
-function modelHotReplacement(moduleName, initState, ActionHandles) {
+function modelHotReplacement(moduleName, ActionHandles) {
   var store = MetaData.clientStore;
   var prevInitState = store._medux_.injectedModules[moduleName];
 
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+    clearHandlers(moduleName, store._medux_.reducerMap);
+    clearHandlers(moduleName, store._medux_.effectMap);
+    var handlers = new ActionHandles();
+    handlers.moduleName = moduleName;
+    handlers.store = store;
+    var actions = injectActions(store, moduleName, handlers);
+    handlers.actions = actions;
+
+    if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
       env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
     }
 
-    clearHandlers(moduleName, store._medux_.reducerMap);
-    clearHandlers(moduleName, store._medux_.effectMap);
-    var handlers = new ActionHandles(moduleName, store);
-    var actions = injectActions(store, moduleName, handlers);
-    handlers.actions = actions;
     env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
   }
 }
@@ -2939,7 +2908,7 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 
 function _renderApp() {
   _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-    var appModuleName, ssrInitStoreKey, initData, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName, module;
+    var appModuleName, ssrInitStoreKey, initData, moduleStore, store, storeState, preModuleNames, appModule, i, k, _moduleName, module;
 
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
@@ -2969,9 +2938,9 @@ function _renderApp() {
               initData = Object.assign({}, initData, client[ssrInitStoreKey]);
             }
 
-            store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            reduxStore = beforeRender ? beforeRender(store) : store;
-            storeState = reduxStore.getState();
+            moduleStore = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+            storeState = store.getState();
             preModuleNames = Object.keys(storeState).filter(function (key) {
               return key !== appModuleName && moduleGetter[key];
             });
@@ -2991,7 +2960,7 @@ function _renderApp() {
           case 19:
             module = _context.sent;
             _context.next = 22;
-            return module.default.model(reduxStore);
+            return module.default.model(store);
 
           case 22:
             if (i === 0) {
@@ -3004,7 +2973,7 @@ function _renderApp() {
             break;
 
           case 26:
-            reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+            reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
             return _context.abrupt("return", {
               store: store
             });
@@ -3025,7 +2994,7 @@ function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
 
 function _renderSSR() {
   _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-    var ssrInitStoreKey, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName2, module;
+    var ssrInitStoreKey, moduleStore, store, storeState, preModuleNames, appModule, i, k, _moduleName2, module;
 
     return regenerator.wrap(function _callee2$(_context2) {
       while (1) {
@@ -3038,9 +3007,9 @@ function _renderSSR() {
             MetaData.appModuleName = appModuleName;
             MetaData.appViewName = appViewName;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-            store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            reduxStore = beforeRender ? beforeRender(store) : store;
-            storeState = reduxStore.getState();
+            moduleStore = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+            storeState = store.getState();
             preModuleNames = Object.keys(storeState).filter(function (key) {
               return key !== appModuleName && moduleGetter[key];
             });
@@ -3056,7 +3025,7 @@ function _renderSSR() {
             _moduleName2 = preModuleNames[i];
             module = moduleGetter[_moduleName2]();
             _context2.next = 15;
-            return module.default.model(reduxStore);
+            return module.default.model(store);
 
           case 15:
             if (i === 0) {
@@ -3069,7 +3038,7 @@ function _renderSSR() {
             break;
 
           case 19:
-            return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
+            return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
           case 20:
           case "end":
@@ -4017,14 +3986,16 @@ function assignRouteData(paths, params, defaultRouteParams) {
       prev[moduleName][viewName] = true;
 
       if (!params[moduleName]) {
-        params[moduleName] = {};
+        params[moduleName] = undefined;
       }
     }
 
     return prev;
   }, {});
   Object.keys(params).forEach(function (moduleName) {
-    params[moduleName] = deepExtend({}, defaultRouteParams[moduleName], params[moduleName]);
+    if (defaultRouteParams[moduleName]) {
+      params[moduleName] = deepExtend({}, defaultRouteParams[moduleName], params[moduleName]);
+    }
   });
   return {
     views: views,
@@ -4683,8 +4654,7 @@ var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHand
       decorators: [reducer],
       key: "Init",
       value: function Init(initState) {
-        var rootState = this.getRootState();
-        var routeParams = rootState.route.params[this.moduleName];
+        var routeParams = this.rootState.route.params[this.moduleName];
         return routeParams ? Object.assign({}, initState, {
           routeParams: routeParams
         }) : initState;
@@ -4694,8 +4664,7 @@ var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHand
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        var state = this.getState();
-        return Object.assign({}, state, {
+        return Object.assign({}, this.state, {
           routeParams: payload
         });
       }
@@ -8310,6 +8279,10 @@ var HistoryActions = function (_BaseHistoryActions) {
     this._unlistenHistory();
   };
 
+  _proto2.refresh = function refresh() {
+    this.nativeHistory.history.go(0);
+  };
+
   return HistoryActions;
 }(BaseHistoryActions);
 function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {
@@ -8318,11 +8291,11 @@ function createRouter(createHistory, defaultRouteParams, routeRule, locationMap)
   return historyActions;
 }
 
-var App = {
+var appExports = {
   loadView: loadView
 };
 function exportApp() {
-  return App;
+  return appExports;
 }
 function buildApp(moduleGetter, _ref) {
   var _ref$appModuleName = _ref.appModuleName,
@@ -8340,8 +8313,8 @@ function buildApp(moduleGetter, _ref) {
       storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
       _ref$container = _ref.container,
       container = _ref$container === void 0 ? 'root' : _ref$container;
-  App.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
-  App.actions = exportActions(moduleGetter);
+  appExports.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+  appExports.actions = exportActions(moduleGetter);
 
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
@@ -8359,15 +8332,15 @@ function buildApp(moduleGetter, _ref) {
     storeOptions.initData = {};
   }
 
-  storeOptions.initData = App.history.mergeInitState(storeOptions.initData);
+  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData);
   return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, function (store) {
-    App.store = store;
-    Object.defineProperty(App, 'state', {
+    appExports.store = store;
+    Object.defineProperty(appExports, 'state', {
       get: function get() {
         return store.getState();
       }
     });
-    App.history.setStore(store);
+    appExports.history.setStore(store);
     return store;
   });
 }
@@ -8386,22 +8359,22 @@ function buildSSR(moduleGetter, _ref2) {
       storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
       _ref2$renderToStream = _ref2.renderToStream,
       renderToStream = _ref2$renderToStream === void 0 ? false : _ref2$renderToStream;
-  App.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
-  App.actions = exportActions(moduleGetter);
+  appExports.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
+  appExports.actions = exportActions(moduleGetter);
 
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
 
-  storeOptions.initData = App.history.mergeInitState(storeOptions.initData);
+  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData);
   return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, function (store) {
-    App.store = store;
-    Object.defineProperty(App, 'state', {
+    appExports.store = store;
+    Object.defineProperty(appExports, 'state', {
       get: function get() {
         return store.getState();
       }
     });
-    App.history.setStore(store);
+    appExports.history.setStore(store);
     return store;
   });
 }
@@ -8440,7 +8413,7 @@ var Link = React.forwardRef(function (_ref4, ref) {
 
       if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
           event.preventDefault();
-          replace ? App.history.replace(rest.href) : App.history.push(rest.href);
+          replace ? appExports.history.replace(rest.href) : appExports.history.push(rest.href);
         }
     }
   });

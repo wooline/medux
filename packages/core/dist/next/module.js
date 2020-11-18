@@ -12,20 +12,23 @@ function clearHandlers(key, actionHandlerMap) {
   }
 }
 
-export function modelHotReplacement(moduleName, initState, ActionHandles) {
+export function modelHotReplacement(moduleName, ActionHandles) {
   const store = MetaData.clientStore;
   const prevInitState = store._medux_.injectedModules[moduleName];
 
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
+    clearHandlers(moduleName, store._medux_.reducerMap);
+    clearHandlers(moduleName, store._medux_.effectMap);
+    const handlers = new ActionHandles();
+    handlers.moduleName = moduleName;
+    handlers.store = store;
+    const actions = injectActions(store, moduleName, handlers);
+    handlers.actions = actions;
+
+    if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
       env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
     }
 
-    clearHandlers(moduleName, store._medux_.reducerMap);
-    clearHandlers(moduleName, store._medux_.effectMap);
-    const handlers = new ActionHandles(moduleName, store);
-    const actions = injectActions(store, moduleName, handlers);
-    handlers.actions = actions;
     env.console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
   }
 }
@@ -95,9 +98,9 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
     initData = Object.assign({}, initData, client[ssrInitStoreKey]);
   }
 
-  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const reduxStore = beforeRender ? beforeRender(store) : store;
-  const storeState = reduxStore.getState();
+  const moduleStore = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+  const storeState = store.getState();
   const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
   preModuleNames.unshift(appModuleName);
   let appModule;
@@ -105,14 +108,14 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
     const module = await getModuleByName(moduleName, moduleGetter);
-    await module.default.model(reduxStore);
+    await module.default.model(store);
 
     if (i === 0) {
       appModule = module;
     }
   }
 
-  reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
   return {
     store
   };
@@ -121,9 +124,9 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const reduxStore = beforeRender ? beforeRender(store) : store;
-  const storeState = reduxStore.getState();
+  const moduleStore = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+  const storeState = store.getState();
   const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
   preModuleNames.unshift(appModuleName);
   let appModule;
@@ -131,12 +134,12 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
     const module = moduleGetter[moduleName]();
-    await module.default.model(reduxStore);
+    await module.default.model(store);
 
     if (i === 0) {
       appModule = module;
     }
   }
 
-  return render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }

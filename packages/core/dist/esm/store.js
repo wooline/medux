@@ -248,8 +248,8 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
   var enhancer = function enhancer(newCreateStore) {
     return function () {
       var newStore = newCreateStore.apply(void 0, arguments);
-      var modelStore = newStore;
-      modelStore._medux_ = {
+      var moduleStore = newStore;
+      moduleStore._medux_ = {
         beforeState: {},
         prevState: {},
         currentState: {},

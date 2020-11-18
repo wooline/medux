@@ -15,7 +15,7 @@ export interface CommonModule<S extends CoreModuleState = CoreModuleState> {
     default: {
         moduleName: string;
         initState: S;
-        model: (store: ModelStore) => void | Promise<void>;
+        model: (store: ModuleStore) => void | Promise<void>;
         views: {
             [key: string]: any;
         };
@@ -34,7 +34,7 @@ export declare type ModuleGetter = {
 };
 export declare const MetaData: {
     actionCreatorMap: ActionCreatorMap;
-    clientStore: ModelStore;
+    clientStore: ModuleStore;
     appModuleName: string;
     appViewName: string;
     moduleGetter: ModuleGetter;
@@ -46,7 +46,7 @@ export interface Action {
     priority?: string[];
     payload?: any[];
 }
-export interface Store {
+interface Store {
     dispatch(action: Action): Action | Promise<void>;
     getState(): {
         [key: string]: any;
@@ -69,6 +69,9 @@ export interface ReducerHandler extends ActionHandler {
 export interface EffectHandler extends ActionHandler {
     (payload: any, prevRootState: CoreRootState): Promise<any>;
 }
+export interface ActionHandlerList {
+    [actionName: string]: ActionHandler;
+}
 export interface ActionHandlerMap {
     [actionName: string]: {
         [moduleName: string]: ActionHandler;
@@ -84,7 +87,7 @@ export interface EffectMap extends ActionHandlerMap {
         [moduleName: string]: EffectHandler;
     };
 }
-export interface ModelStore extends Store {
+export interface ModuleStore extends Store {
     _medux_: {
         reducerMap: ReducerMap;
         effectMap: EffectMap;
@@ -102,10 +105,10 @@ export interface CoreModuleState {
         [key: string]: LoadingState;
     };
 }
-export declare type CoreRootState = {
+declare type CoreRootState = {
     [moduleName: string]: CoreModuleState;
 };
-export declare type ModuleModel = (store: ModelStore) => void | Promise<void>;
+export declare type ModuleModel = (store: ModuleStore) => void | Promise<void>;
 export interface ActionCreatorMap {
     [moduleName: string]: ActionCreatorList;
 }
@@ -119,3 +122,4 @@ export declare function logger(before: (action: Action, moduleName: string, prom
 export declare function delayPromise(second: number): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function isPromise(data: any): data is Promise<any>;
 export declare function isServer(): boolean;
+export {};

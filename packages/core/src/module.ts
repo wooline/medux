@@ -1,6 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import {Store} from 'redux';
-import {ActionHandlerMap, MetaData, CoreRootState, CommonModule, config, ModuleGetter, ModuleModel} from './basic';
+import {ActionHandlerMap, MetaData, CommonModule, config, ModuleGetter, ModuleStore, ModuleModel} from './basic';
 import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName} from './inject';
 import {buildStore, StoreOptions} from './store';
 import {client, env} from './env';
@@ -28,18 +27,20 @@ function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
  * - 注意通常initState发生变更时不确保热更新100%有效，此时会console警告
  * - 通常actionHandlers发生变更时热更新有效
  */
-export function modelHotReplacement(moduleName: string, initState: any, ActionHandles: {new (moduleName: string, store: any): CoreModuleHandlers}) {
+export function modelHotReplacement(moduleName: string, ActionHandles: {new (): CoreModuleHandlers}) {
   const store = MetaData.clientStore;
   const prevInitState = store._medux_.injectedModules[moduleName];
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
-    }
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
-    const handlers = new ActionHandles(moduleName, store);
+    const handlers = new ActionHandles();
+    handlers.moduleName = moduleName;
+    (handlers as any).store = store;
     const actions = injectActions(store, moduleName, handlers as any);
     (handlers as any).actions = actions;
+    if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
+      env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
+    }
     env.console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
   }
 }
@@ -68,8 +69,8 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
 }
 
 // export function moduleHasInjected(moduleName: string, store: Store): boolean {
-//   const modelStore: ModelStore = store as any;
-//   return !!modelStore._medux_.injectedModules[moduleName];
+//   const moduleStore: ModuleStore = store as any;
+//   return !!moduleStore._medux_.injectedModules[moduleName];
 // }
 
 /**
@@ -141,13 +142,13 @@ export type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <
  * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
  */
 export async function renderApp<V>(
-  render: (store: Store<CoreRootState>, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
+  render: (store: ModuleStore, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
   moduleGetter: ModuleGetter,
   appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>
-): Promise<{store: Store}> {
+  beforeRender?: (store: ModuleStore) => ModuleStore
+): Promise<{store: ModuleStore}> {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -159,25 +160,25 @@ export async function renderApp<V>(
     cacheModule(appModuleOrName);
   }
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  let initData: CoreRootState = storeOptions.initData || {};
+  let initData = storeOptions.initData || {};
   if (client![ssrInitStoreKey]) {
     initData = {...initData, ...client![ssrInitStoreKey]};
   }
-  const store: Store<CoreRootState> = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers) as any;
-  const reduxStore = beforeRender ? beforeRender(store) : store;
-  const storeState = reduxStore.getState();
+  const moduleStore = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+  const storeState = store.getState();
   const preModuleNames: string[] = Object.keys(storeState).filter((key) => key !== appModuleName && moduleGetter[key]);
   preModuleNames.unshift(appModuleName);
   let appModule: Module | undefined;
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
     const module = await getModuleByName(moduleName, moduleGetter);
-    await module.default.model(reduxStore as any);
+    await module.default.model(store);
     if (i === 0) {
       appModule = module;
     }
   }
-  reRender = render(reduxStore, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
+  reRender = render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
   return {store};
 }
 /**
@@ -190,31 +191,29 @@ export async function renderApp<V>(
  * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
  */
 export async function renderSSR<V>(
-  render: (store: Store<CoreRootState>, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: Store},
+  render: (store: ModuleStore, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: ModuleStore},
   moduleGetter: ModuleGetter,
   appModuleName: string,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender?: (store: Store<CoreRootState>) => Store<CoreRootState>
+  beforeRender?: (store: ModuleStore) => ModuleStore
 ) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const store: Store<CoreRootState> = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers) as any;
-  const reduxStore = beforeRender ? beforeRender(store) : store;
-  const storeState: CoreRootState = reduxStore.getState();
+  const moduleStore = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+  const storeState = store.getState();
   const preModuleNames: string[] = Object.keys(storeState).filter((key) => key !== appModuleName && moduleGetter[key]);
   preModuleNames.unshift(appModuleName);
   let appModule: Module | undefined;
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
     const module = moduleGetter[moduleName]() as Module;
-    await module.default.model(reduxStore as any);
+    await module.default.model(store);
     if (i === 0) {
       appModule = module;
     }
   }
-  // const {paths} = storeState.route.data;
-  // paths.length === 0 && paths.push(appModuleName);
-  return render(reduxStore, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
+  return render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
 }

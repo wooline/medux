@@ -44,7 +44,7 @@ function getResult(url: string, buffer: Buffer, res: Response) {
   const contentType = res.get('content-type') || '';
   let body = '';
   if (buffer.length) {
-    const encoding = contentType.split('charset=')[1] || 'utf8';
+    const encoding: any = contentType.split('charset=')[1] || 'utf8';
     if (res.getHeader('content-encoding') === 'gzip') {
       try {
         body = zlib.gunzipSync(buffer).toString(encoding);

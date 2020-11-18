@@ -156,14 +156,16 @@ export function assignRouteData(paths, params, defaultRouteParams) {
       prev[moduleName][viewName] = true;
 
       if (!params[moduleName]) {
-        params[moduleName] = {};
+        params[moduleName] = undefined;
       }
     }
 
     return prev;
   }, {});
   Object.keys(params).forEach(moduleName => {
-    params[moduleName] = assignDeep({}, defaultRouteParams[moduleName], params[moduleName]);
+    if (defaultRouteParams[moduleName]) {
+      params[moduleName] = assignDeep({}, defaultRouteParams[moduleName], params[moduleName]);
+    }
   });
   return {
     views,
@@ -737,8 +739,7 @@ export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreMod
       decorators: [reducer],
       key: "Init",
       value: function Init(initState) {
-        const rootState = this.getRootState();
-        const routeParams = rootState.route.params[this.moduleName];
+        const routeParams = this.rootState.route.params[this.moduleName];
         return routeParams ? Object.assign({}, initState, {
           routeParams
         }) : initState;
@@ -748,8 +749,7 @@ export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreMod
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        const state = this.getState();
-        return Object.assign({}, state, {
+        return Object.assign({}, this.state, {
           routeParams: payload
         });
       }

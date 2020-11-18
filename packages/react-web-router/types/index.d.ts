@@ -1,9 +1,9 @@
 /// <reference path="../env/global.d.ts" />
 import { RootActions, ModuleGetter, StoreOptions } from '@medux/core';
-import React, { ReactElement, ComponentType } from 'react';
+import React, { ReactElement, ComponentType, FunctionComponent, ComponentClass } from 'react';
 import { LoadView } from '@medux/react';
 import { HistoryActions } from '@medux/web';
-import { Options as ReactReduxOptions, GetProps } from 'react-redux';
+import { Options as ReactReduxOptions } from 'react-redux';
 import type { Dispatch, Store } from 'redux';
 import type { LocationMap, RouteRule, RootState, RootRouteParams } from '@medux/route-plan-a';
 export { exportModule } from '@medux/react';
@@ -12,14 +12,14 @@ export { setRouteConfig, RouteModuleHandlers as BaseModuleHandlers } from '@medu
 export type { Dispatch, Store } from 'redux';
 export type { RouteRule, RouteState, LocationMap, RouteModuleState as BaseModuleState } from '@medux/route-plan-a';
 export type { HistoryActions } from '@medux/web';
-declare type APP<MG extends ModuleGetter> = {
+export declare type AppExports<MG extends ModuleGetter> = {
     store: Store;
     state: RootState<MG>;
     actions: RootActions<MG>;
     loadView: LoadView<MG>;
     history: HistoryActions<RootRouteParams<MG>>;
 };
-export declare function exportApp<MG extends ModuleGetter>(): APP<MG>;
+export declare function exportApp(): any;
 export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, routeRule, locationMap, defaultRouteParams, storeOptions, container, }: {
     appModuleName?: string;
     appViewName?: string;
@@ -32,7 +32,7 @@ export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, ap
     storeOptions?: StoreOptions;
     container?: string | Element | ((component: ReactElement<any>) => void);
 }): Promise<{
-    store: Store<any, import("redux").AnyAction>;
+    store: import("@medux/core/types").ModuleStore;
 }>;
 export declare function buildSSR(moduleGetter: ModuleGetter, { appModuleName, appViewName, location, routeRule, locationMap, defaultRouteParams, storeOptions, renderToStream, }: {
     appModuleName?: string;
@@ -58,9 +58,10 @@ export declare const Switch: React.FC<SwitchProps>;
 export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
     replace?: boolean;
 }
-export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C extends ComponentType<any>>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
+export declare type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
+export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
 export interface Connect {
-    <S = {}, D = {}, W = {}>(mapStateToProps?: Function, mapDispatchToProps?: Function, options?: ReactReduxOptions<any, S, W>): InferableComponentEnhancerWithProps<S & D & {
+    <S = {}, D = {}, W = {}>(mapStateToProps?: (state: any, owner: W) => S, mapDispatchToProps?: (dispatch: Dispatch, owner: W) => D, options?: ReactReduxOptions<any, S, W>): InferableComponentEnhancerWithProps<S & D & {
         dispatch: Dispatch;
     }>;
 }

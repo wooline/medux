@@ -30,20 +30,22 @@ function clearHandlers(key, actionHandlerMap) {
   }
 }
 
-function modelHotReplacement(moduleName, initState, ActionHandles) {
+function modelHotReplacement(moduleName, ActionHandles) {
   var store = _basic.MetaData.clientStore;
   var prevInitState = store._medux_.injectedModules[moduleName];
 
   if (prevInitState) {
-    if (JSON.stringify(prevInitState) !== JSON.stringify(initState)) {
-      _env.env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
-    }
-
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
-    var handlers = new ActionHandles(moduleName, store);
+    var handlers = new ActionHandles();
+    handlers.moduleName = moduleName;
+    handlers.store = store;
     var actions = (0, _inject.injectActions)(store, moduleName, handlers);
     handlers.actions = actions;
+
+    if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
+      _env.env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
+    }
 
     _env.env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
   }
@@ -113,7 +115,7 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 
 function _renderApp() {
   _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-    var appModuleName, ssrInitStoreKey, initData, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName, module;
+    var appModuleName, ssrInitStoreKey, initData, moduleStore, store, storeState, preModuleNames, appModule, i, k, _moduleName, module;
 
     return _regenerator.default.wrap(function _callee$(_context) {
       while (1) {
@@ -144,9 +146,9 @@ function _renderApp() {
               initData = Object.assign({}, initData, _env.client[ssrInitStoreKey]);
             }
 
-            store = (0, _store.buildStore)(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            reduxStore = beforeRender ? beforeRender(store) : store;
-            storeState = reduxStore.getState();
+            moduleStore = (0, _store.buildStore)(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+            storeState = store.getState();
             preModuleNames = Object.keys(storeState).filter(function (key) {
               return key !== appModuleName && moduleGetter[key];
             });
@@ -166,7 +168,7 @@ function _renderApp() {
           case 19:
             module = _context.sent;
             _context.next = 22;
-            return module.default.model(reduxStore);
+            return module.default.model(store);
 
           case 22:
             if (i === 0) {
@@ -179,7 +181,7 @@ function _renderApp() {
             break;
 
           case 26:
-            reRender = render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+            reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
             return _context.abrupt("return", {
               store: store
             });
@@ -200,7 +202,7 @@ function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
 
 function _renderSSR() {
   _renderSSR = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-    var ssrInitStoreKey, store, reduxStore, storeState, preModuleNames, appModule, i, k, _moduleName2, module;
+    var ssrInitStoreKey, moduleStore, store, storeState, preModuleNames, appModule, i, k, _moduleName2, module;
 
     return _regenerator.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -213,9 +215,9 @@ function _renderSSR() {
             _basic.MetaData.appModuleName = appModuleName;
             _basic.MetaData.appViewName = appViewName;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-            store = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            reduxStore = beforeRender ? beforeRender(store) : store;
-            storeState = reduxStore.getState();
+            moduleStore = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+            store = beforeRender ? beforeRender(moduleStore) : moduleStore;
+            storeState = store.getState();
             preModuleNames = Object.keys(storeState).filter(function (key) {
               return key !== appModuleName && moduleGetter[key];
             });
@@ -231,7 +233,7 @@ function _renderSSR() {
             _moduleName2 = preModuleNames[i];
             module = moduleGetter[_moduleName2]();
             _context2.next = 15;
-            return module.default.model(reduxStore);
+            return module.default.model(store);
 
           case 15:
             if (i === 0) {
@@ -244,7 +246,7 @@ function _renderSSR() {
             break;
 
           case 19:
-            return _context2.abrupt("return", render(reduxStore, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
+            return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
           case 20:
           case "end":

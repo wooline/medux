@@ -1,10 +1,10 @@
 /// <reference path="../env/global.d.ts" />
 import {routeMiddleware, routeReducer} from '@medux/route-plan-a';
 import {RootActions, ModuleGetter, StoreOptions, exportActions} from '@medux/core';
-import React, {ReactElement, ComponentType} from 'react';
+import React, {ReactElement, ComponentType, FunctionComponent, ComponentClass} from 'react';
 import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
-import {connect as baseConnect, Options as ReactReduxOptions, GetProps} from 'react-redux';
+import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux';
 import type {Dispatch, Store} from 'redux';
 import type {LocationMap, RouteRule, RootState, RootRouteParams} from '@medux/route-plan-a';
 
@@ -16,17 +16,17 @@ export type {Dispatch, Store} from 'redux';
 export type {RouteRule, RouteState, LocationMap, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
 export type {HistoryActions} from '@medux/web';
 
-type APP<MG extends ModuleGetter> = {
+export type AppExports<MG extends ModuleGetter> = {
   store: Store;
   state: RootState<MG>;
   actions: RootActions<MG>;
   loadView: LoadView<MG>;
   history: HistoryActions<RootRouteParams<MG>>;
 };
-const App: APP<any> = {loadView} as any;
+const appExports: AppExports<{}> = {loadView} as any;
 
-export function exportApp<MG extends ModuleGetter>(): APP<MG> {
-  return App;
+export function exportApp(): any {
+  return appExports;
 }
 
 export function buildApp(
@@ -51,8 +51,8 @@ export function buildApp(
     container?: string | Element | ((component: ReactElement<any>) => void);
   }
 ) {
-  App.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
-  App.actions = exportActions(moduleGetter);
+  appExports.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+  appExports.actions = exportActions(moduleGetter);
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
   }
@@ -64,16 +64,16 @@ export function buildApp(
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = App.history.mergeInitState(storeOptions.initData as any);
+  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
 
   return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
-    App.store = store;
-    Object.defineProperty(App, 'state', {
+    appExports.store = store as any;
+    Object.defineProperty(appExports, 'state', {
       get: () => {
         return store.getState();
       },
     });
-    App.history.setStore(store);
+    appExports.history.setStore(store);
     return store;
   });
 }
@@ -100,20 +100,20 @@ export function buildSSR(
     renderToStream?: boolean;
   }
 ): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
-  App.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
-  App.actions = exportActions(moduleGetter);
+  appExports.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
+  appExports.actions = exportActions(moduleGetter);
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = App.history.mergeInitState(storeOptions.initData as any);
+  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
   return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, (store) => {
-    App.store = store;
-    Object.defineProperty(App, 'state', {
+    appExports.store = store as any;
+    Object.defineProperty(appExports, 'state', {
       get: () => {
         return store.getState();
       },
     });
-    App.history.setStore(store);
+    appExports.history.setStore(store);
     return store;
   });
 }
@@ -137,11 +137,17 @@ function isModifiedEvent(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>)
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-export type InferableComponentEnhancerWithProps<TInjectedProps> = <C extends ComponentType<any>>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
+export type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
+
+export type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
 
 export interface Connect {
   // eslint-disable-next-line @typescript-eslint/ban-types
-  <S = {}, D = {}, W = {}>(mapStateToProps?: Function, mapDispatchToProps?: Function, options?: ReactReduxOptions<any, S, W>): InferableComponentEnhancerWithProps<S & D & {dispatch: Dispatch}>;
+  <S = {}, D = {}, W = {}>(
+    mapStateToProps?: (state: any, owner: W) => S,
+    mapDispatchToProps?: (dispatch: Dispatch, owner: W) => D,
+    options?: ReactReduxOptions<any, S, W>
+  ): InferableComponentEnhancerWithProps<S & D & {dispatch: Dispatch}>;
 }
 export const connect: Connect = baseConnect as any;
 export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(({onClick, replace, ...rest}, ref) => {
@@ -163,7 +169,7 @@ export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(({onClick, re
         !isModifiedEvent(event) // ignore clicks with modifier keys
       ) {
         event.preventDefault();
-        replace ? App.history.replace(rest.href!) : App.history.push(rest.href!);
+        replace ? appExports.history.replace(rest.href!) : appExports.history.push(rest.href!);
       }
     },
   };

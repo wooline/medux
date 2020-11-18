@@ -1,14 +1,13 @@
 /// <reference path="../env/global.d.ts" />
 import * as core from '@medux/core';
 
-import {ExportModule, ModuleGetter, StoreOptions, env, getView, isPromise} from '@medux/core';
+import {ExportModule, ModuleGetter, StoreOptions, env, getView, isPromise, ModuleStore} from '@medux/core';
 import React, {ComponentType, FC, ReactElement, useEffect, useState} from 'react';
 
 import {renderToNodeStream, renderToString} from 'react-dom/server';
 
 import {Provider} from 'react-redux';
 import ReactDOM from 'react-dom';
-import {Store} from 'redux';
 
 export function renderApp(
   moduleGetter: ModuleGetter,
@@ -16,13 +15,13 @@ export function renderApp(
   appViewName: string,
   storeOptions: StoreOptions,
   container: string | Element | ((component: ReactElement<any>) => void) = 'root',
-  beforeRender?: (store: Store) => Store
+  beforeRender?: (store: ModuleStore) => ModuleStore
 ) {
   return core.renderApp<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
       const reRender = (View: ComponentType<any>) => {
         const reduxProvider = (
-          <Provider store={store}>
+          <Provider store={store as any}>
             <View />
           </Provider>
         );
@@ -46,12 +45,19 @@ export function renderApp(
   );
 }
 
-export function renderSSR(moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions: StoreOptions = {}, renderToStream = false, beforeRender?: (store: Store) => Store) {
+export function renderSSR(
+  moduleGetter: ModuleGetter,
+  appModuleName: string,
+  appViewName: string,
+  storeOptions: StoreOptions = {},
+  renderToStream = false,
+  beforeRender?: (store: ModuleStore) => ModuleStore
+) {
   return core.renderSSR<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
       const data = store.getState();
       const reduxProvider = (
-        <Provider store={store}>
+        <Provider store={store as any}>
           <AppView />
         </Provider>
       );

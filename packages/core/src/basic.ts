@@ -34,7 +34,7 @@ export interface CommonModule<S extends CoreModuleState = CoreModuleState> {
   default: {
     moduleName: string;
     initState: S;
-    model: (store: ModelStore) => void | Promise<void>;
+    model: (store: ModuleStore) => void | Promise<void>;
     views: {
       [key: string]: any;
     };
@@ -71,7 +71,7 @@ export type ModuleGetter = {
 
 export const MetaData: {
   actionCreatorMap: ActionCreatorMap;
-  clientStore: ModelStore;
+  clientStore: ModuleStore;
   appModuleName: string;
   appViewName: string;
   moduleGetter: ModuleGetter;
@@ -136,7 +136,7 @@ export interface Action {
   payload?: any[];
 }
 
-export interface Store {
+interface Store {
   dispatch(action: Action): Action | Promise<void>;
   getState(): {[key: string]: any};
   subscribe(listener: () => void): Unsubscribe;
@@ -160,6 +160,9 @@ export interface EffectHandler extends ActionHandler {
   (payload: any, prevRootState: CoreRootState): Promise<any>;
 }
 
+export interface ActionHandlerList {
+  [actionName: string]: ActionHandler;
+}
 export interface ActionHandlerMap {
   [actionName: string]: {[moduleName: string]: ActionHandler};
 }
@@ -171,7 +174,7 @@ export interface EffectMap extends ActionHandlerMap {
   [actionName: string]: {[moduleName: string]: EffectHandler};
 }
 
-export interface ModelStore extends Store {
+export interface ModuleStore extends Store {
   _medux_: {
     reducerMap: ReducerMap;
     effectMap: EffectMap;
@@ -198,14 +201,14 @@ export interface CoreModuleState {
   };
 }
 
-export type CoreRootState = {
+type CoreRootState = {
   [moduleName: string]: CoreModuleState;
 };
 
 /**
  * 模块Model的数据结构，该数据由ExportModule方法自动生成
  */
-export type ModuleModel = (store: ModelStore) => void | Promise<void>;
+export type ModuleModel = (store: ModuleStore) => void | Promise<void>;
 
 export interface ActionCreatorMap {
   [moduleName: string]: ActionCreatorList;

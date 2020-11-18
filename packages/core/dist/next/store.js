@@ -217,8 +217,8 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
   const enhancer = newCreateStore => {
     return (...args) => {
       const newStore = newCreateStore(...args);
-      const modelStore = newStore;
-      modelStore._medux_ = {
+      const moduleStore = newStore;
+      moduleStore._medux_ = {
         beforeState: {},
         prevState: {},
         currentState: {},

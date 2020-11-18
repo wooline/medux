@@ -1,10 +1,6 @@
-import {Action, ActionHandler, ActionHandlerMap, CoreModuleState, CommonModule, MetaData, ModuleModel, ModuleGetter, ModelStore, config, reducer, isPromise} from './basic';
+import {Action, ActionHandler, ActionHandlerList, ActionHandlerMap, CoreModuleState, CommonModule, MetaData, ModuleModel, ModuleGetter, ModuleStore, config, reducer, isPromise} from './basic';
 import {moduleInitAction} from './actions';
 import {isServerEnv} from './env';
-
-export interface ActionHandlerList {
-  [actionName: string]: ActionHandler;
-}
 
 export function cacheModule<T extends CommonModule>(module: T): () => T {
   const moduleName = module.default.moduleName;
@@ -50,7 +46,7 @@ function addModuleActionCreatorList(moduleName: string, actionName: string) {
     actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
   }
 }
-export function injectActions(store: ModelStore, moduleName: string, handlers: ActionHandlerList) {
+export function injectActions(store: ModuleStore, moduleName: string, handlers: ActionHandlerList) {
   for (const actionNames in handlers) {
     if (typeof handlers[actionNames] === 'function') {
       let handler = handlers[actionNames];
@@ -95,7 +91,7 @@ export type Actions<Ins> = {[K in keyof Ins]: Ins[K] extends (...args: any[]) =>
  * @param store 当前Store的引用
  * @param options model初始化时可以传入的数据，参见Model接口
  */
-export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModelStore): void | Promise<void> {
+export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModuleStore): void | Promise<void> {
   const hasInjected = !!store._medux_.injectedModules[moduleName];
   if (!hasInjected) {
     const moduleGetter = MetaData.moduleGetter;
@@ -116,52 +112,31 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
  * ModuleHandlers基类
  * 所有ModuleHandlers必须继承此基类
  */
-export abstract class CoreModuleHandlers<N extends string = any, S extends CoreModuleState = any> {
+export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> {
   /**
    * - 引用本module的actions
    * - this.actions相当于actions[this.moduleName]
    */
-  protected readonly actions: Actions<this>;
+  protected actions: Actions<this> = null as any;
 
-  protected readonly store: ModelStore;
+  protected store: ModuleStore = null as any;
 
-  /**
-   * 构造函数的参数将由框架自动传入
-   * @param moduleName 模块名称，不能重复
-   * @param store 全局单例Store的引用
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public constructor(public readonly moduleName: N, public readonly initState: S) {
-    this.actions = null as any;
-    this.store = null as any;
-  }
+  public moduleName: string = '';
+
+  constructor(public readonly initState: S) {}
 
   /**
    * 获取本Model的state
    */
   protected get state(): S {
-    return this.getState();
-  }
-
-  /**
-   * ie8不支持getter专用
-   */
-  protected getState(): S {
     return this.store._medux_.prevState[this.moduleName] as S;
   }
 
   /**
    * 获取整个store的state
    */
-  protected get rootState() {
-    return this.getRootState();
-  }
-
-  /**
-   * ie8不支持getter专用
-   */
-  protected getRootState<R>(): R {
-    return this.store._medux_.prevState as any;
+  protected get rootState(): R {
+    return this.store._medux_.prevState as R;
   }
 
   /**
@@ -170,13 +145,6 @@ export abstract class CoreModuleHandlers<N extends string = any, S extends CoreM
    * - currentState是实时更新变化
    */
   protected get currentState(): S {
-    return this.getCurrentState();
-  }
-
-  /**
-   * ie8不支持getter专用
-   */
-  protected getCurrentState(): S {
     return this.store._medux_.currentState[this.moduleName] as S;
   }
 
@@ -185,15 +153,8 @@ export abstract class CoreModuleHandlers<N extends string = any, S extends CoreM
    * - state会等到所有模块的reducer更新完成时才变化
    * - currentState是实时更新变化
    */
-  protected get currentRootState() {
-    return this.getCurrentRootState();
-  }
-
-  /**
-   * ie8不支持getter专用
-   */
-  protected getCurrentRootState<R>(): R {
-    return this.store._medux_.currentState as any;
+  protected get currentRootState(): R {
+    return this.store._medux_.currentState as R;
   }
 
   /**
@@ -203,13 +164,6 @@ export abstract class CoreModuleHandlers<N extends string = any, S extends CoreM
    * - 使用prevState可以取到reducer变更之前的state
    */
   protected get prevState(): undefined | S {
-    return this.getPrevState();
-  }
-
-  /**
-   * ie8不支持getter专用
-   */
-  protected getPrevState(): undefined | S {
     return this.store._medux_.beforeState[this.moduleName] as S;
   }
 
@@ -220,14 +174,7 @@ export abstract class CoreModuleHandlers<N extends string = any, S extends CoreM
    * - 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
    * - 使用prevState可以取到reducer变更之前的state
    */
-  protected get prevRootState() {
-    return this.getPrevRootState();
-  }
-
-  /**
-   * ie8不支持getter专用
-   */
-  protected getPrevRootState<R>(): R {
+  protected get prevRootState(): R {
     return this.store._medux_.beforeState as any;
   }
 
@@ -257,7 +204,7 @@ export abstract class CoreModuleHandlers<N extends string = any, S extends CoreM
    * ```
    */
   protected updateState(payload: Partial<S>, key: string) {
-    this.dispatch(this.callThisAction(this.Update, {...this.getState(), ...payload}, key));
+    this.dispatch(this.callThisAction(this.Update, {...this.state, ...payload}, key));
   }
 
   /**
@@ -290,7 +237,7 @@ export abstract class CoreModuleHandlers<N extends string = any, S extends CoreM
    */
   @reducer
   protected Loading(payload: {[group: string]: string}): S {
-    const state = this.getState();
+    const state = this.state;
     return {
       ...state,
       loading: {...state.loading, ...payload},
@@ -301,14 +248,14 @@ export abstract class CoreModuleHandlers<N extends string = any, S extends CoreM
 /**
  * 模块的数据结构，该数据由ExportModule方法自动生成
  */
-export interface Module<H extends CoreModuleHandlers = CoreModuleHandlers, VS extends {[key: string]: any} = {[key: string]: any}> {
+export interface Module<N extends string = string, H extends CoreModuleHandlers = CoreModuleHandlers, VS extends {[key: string]: any} = {[key: string]: any}> {
   default: {
     /**
      * 模块名称
      */
-    moduleName: H['moduleName'];
-    initState: H['initState'];
+    moduleName: N;
     model: ModuleModel;
+    initState: H['initState'];
     /**
      * 模块供外部使用的views
      */
@@ -327,16 +274,18 @@ export interface Module<H extends CoreModuleHandlers = CoreModuleHandlers, VS ex
  * @returns medux定义的module标准数据结构
  */
 export type ExportModule<Component> = <
+  N extends string,
   V extends {
     [key: string]: Component;
   },
-  T extends CoreModuleHandlers
+  H extends CoreModuleHandlers
 >(
+  moduleName: N,
   ModuleHandles: {
-    new (): T;
+    new (): H;
   },
   views: V
-) => Module<T, V>['default'];
+) => Module<N, H, V>['default'];
 
 /**
  * 导出Module，该方法为ExportModule接口的实现
@@ -344,17 +293,16 @@ export type ExportModule<Component> = <
  * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
  * @returns medux定义的module标准数据结构
  */
-export const exportModule: ExportModule<any> = (ModuleHandles, views) => {
-  const moduleHandles = new ModuleHandles();
-  const moduleName = moduleHandles.moduleName;
-  const initState = moduleHandles.initState;
-
+export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views) => {
   const model: ModuleModel = (store) => {
-    const hasInjected = !!store._medux_.injectedModules[moduleName];
-    if (!hasInjected) {
+    let initState = store._medux_.injectedModules[moduleName];
+    if (!initState) {
+      const moduleHandles = new ModuleHandles();
+      moduleHandles.moduleName = moduleName;
+      (moduleHandles as any).store = store;
+      initState = moduleHandles.initState;
       store._medux_.injectedModules[moduleName] = initState;
       const actions = injectActions(store, moduleName, moduleHandles as any);
-      (moduleHandles as any).store = store;
       (moduleHandles as any).actions = actions;
       const preModuleState: CoreModuleState = store.getState()[moduleName] || {};
       const moduleState: CoreModuleState = {...initState, ...preModuleState};
@@ -363,15 +311,14 @@ export const exportModule: ExportModule<any> = (ModuleHandles, views) => {
         return store.dispatch(moduleInitAction(moduleName, moduleState)) as any;
       }
     }
-    return undefined;
+    return initState;
   };
-  const actions = {} as any;
   return {
     moduleName,
-    initState,
     model,
     views,
-    actions,
+    initState: undefined as any,
+    actions: undefined as any,
   };
 };
 /**

@@ -84,7 +84,7 @@ export declare type RouteRootState<P extends RouteParams = RouteParams> = {
 } & {
     route: RouteState<P>;
 };
-export declare class RouteModuleHandlers<N extends string, S extends RouteModuleState> extends CoreModuleHandlers<N, S> {
+export declare class RouteModuleHandlers<S extends RouteModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
     protected Init(initState: S): S;
     RouteParams(payload: {
         [key: string]: any;

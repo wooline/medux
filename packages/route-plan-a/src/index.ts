@@ -733,19 +733,17 @@ export type RouteRootState<P extends RouteParams = RouteParams> = {
 } & {
   route: RouteState<P>;
 };
-export class RouteModuleHandlers<N extends string, S extends RouteModuleState> extends CoreModuleHandlers<N, S> {
+export class RouteModuleHandlers<S extends RouteModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
   @reducer
   protected Init(initState: S): S {
-    const rootState = this.getRootState<RouteRootState>();
-    const routeParams = rootState.route.params[this.moduleName];
+    const routeParams = this.rootState.route.params[this.moduleName];
     return routeParams ? {...initState, routeParams} : initState;
   }
 
   @reducer
   public RouteParams(payload: {[key: string]: any}): S {
-    const state = this.getState();
     return {
-      ...state,
+      ...this.state,
       routeParams: payload,
     };
   }

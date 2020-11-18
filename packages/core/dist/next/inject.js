@@ -103,14 +103,10 @@ function _loadModel(moduleName, store) {
 export { _loadModel as loadModel };
 export let CoreModuleHandlers = _decorate(null, function (_initialize) {
   class CoreModuleHandlers {
-    constructor(moduleName, initState) {
-      this.moduleName = moduleName;
+    constructor(initState) {
       this.initState = initState;
 
       _initialize(this);
-
-      this.actions = null;
-      this.store = null;
     }
 
   }
@@ -120,81 +116,61 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
     d: [{
       kind: "field",
       key: "actions",
-      value: void 0
+
+      value() {
+        return null;
+      }
+
     }, {
       kind: "field",
       key: "store",
-      value: void 0
+
+      value() {
+        return null;
+      }
+
+    }, {
+      kind: "field",
+      key: "moduleName",
+
+      value() {
+        return '';
+      }
+
     }, {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.getState();
-      }
-    }, {
-      kind: "method",
-      key: "getState",
-      value: function getState() {
         return this.store._medux_.prevState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.getRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getRootState",
-      value: function getRootState() {
         return this.store._medux_.prevState;
       }
     }, {
       kind: "get",
       key: "currentState",
       value: function currentState() {
-        return this.getCurrentState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentState",
-      value: function getCurrentState() {
         return this.store._medux_.currentState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "currentRootState",
       value: function currentRootState() {
-        return this.getCurrentRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentRootState",
-      value: function getCurrentRootState() {
         return this.store._medux_.currentState;
       }
     }, {
       kind: "get",
       key: "prevState",
       value: function prevState() {
-        return this.getPrevState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevState",
-      value: function getPrevState() {
         return this.store._medux_.beforeState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "prevRootState",
       value: function prevRootState() {
-        return this.getPrevRootState();
-      }
-    }, {
-      kind: "method",
-      key: "getPrevRootState",
-      value: function getPrevRootState() {
         return this.store._medux_.beforeState;
       }
     }, {
@@ -214,7 +190,7 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "method",
       key: "updateState",
       value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.getState(), payload), key));
+        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.state, payload), key));
       }
     }, {
       kind: "method",
@@ -241,7 +217,7 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
-        const state = this.getState();
+        const state = this.state;
         return Object.assign({}, state, {
           loading: Object.assign({}, state.loading, payload)
         });
@@ -249,18 +225,17 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-export const exportModule = (ModuleHandles, views) => {
-  const moduleHandles = new ModuleHandles();
-  const moduleName = moduleHandles.moduleName;
-  const initState = moduleHandles.initState;
-
+export const exportModule = (moduleName, ModuleHandles, views) => {
   const model = store => {
-    const hasInjected = !!store._medux_.injectedModules[moduleName];
+    let initState = store._medux_.injectedModules[moduleName];
 
-    if (!hasInjected) {
+    if (!initState) {
+      const moduleHandles = new ModuleHandles();
+      moduleHandles.moduleName = moduleName;
+      moduleHandles.store = store;
+      initState = moduleHandles.initState;
       store._medux_.injectedModules[moduleName] = initState;
       const actions = injectActions(store, moduleName, moduleHandles);
-      moduleHandles.store = store;
       moduleHandles.actions = actions;
       const preModuleState = store.getState()[moduleName] || {};
       const moduleState = Object.assign({}, initState, preModuleState);
@@ -271,16 +246,15 @@ export const exportModule = (ModuleHandles, views) => {
       }
     }
 
-    return undefined;
+    return initState;
   };
 
-  const actions = {};
   return {
     moduleName,
-    initState,
     model,
     views,
-    actions
+    initState: undefined,
+    actions: undefined
   };
 };
 export function getView(moduleName, viewName) {

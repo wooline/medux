@@ -175,6 +175,10 @@ export var HistoryActions = function (_BaseHistoryActions) {
     this._unlistenHistory();
   };
 
+  _proto2.refresh = function refresh() {
+    this.nativeHistory.history.go(0);
+  };
+
   return HistoryActions;
 }(BaseHistoryActions);
 export function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {

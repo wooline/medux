@@ -129,7 +129,7 @@ describe('locationToRoute：', () => {
     expect(route).toEqual({
       views: {'@': {'/photos': true}},
       paths: ['@./photos'],
-      params: {'@': {}},
+      params: {'@': undefined},
     });
   });
   test('/?q={"photos":{"listSearch":{"page":2}}}', () => {
@@ -138,7 +138,7 @@ describe('locationToRoute：', () => {
     expect(route).toEqual({
       views: {'@': {'/photos': true}},
       paths: ['@./photos'],
-      params: {'@': {}, photos: {_detailKey: '', _listKey: '', itemId: '', listSearch: {title: '', page: 2, pageSize: 10}}},
+      params: {'@': undefined, photos: {_detailKey: '', _listKey: '', itemId: '', listSearch: {title: '', page: 2, pageSize: 10}}},
     });
   });
   test('/photos', () => {
