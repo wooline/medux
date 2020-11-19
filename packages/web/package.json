@@ -1,6 +1,6 @@
 {
   "name": "@medux/web",
-  "version": "1.1.1-alpha.8",
+  "version": "1.1.1-alpha.9",
   "description": "The practice of @medux/core in web app.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/web",
   "author": "wooline <wooline@qq.com>",
@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^1.1.1-alpha.8",
-    "@medux/route-plan-a": "^1.1.1-alpha.8",
+    "@medux/core": "^1.1.1-alpha.9",
+    "@medux/route-plan-a": "^1.1.1-alpha.9",
     "@types/history": "~4.7.7",
     "history": "~4.10.1"
   },
