@@ -2912,8 +2912,7 @@
 
   function _renderApp() {
     _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-      var appModuleName, ssrInitStoreKey, initData, store, preModuleNames, appModule, i, k, _moduleName, module;
-
+      var appModuleName, ssrInitStoreKey, initData, store, appModule;
       return regenerator.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -2943,47 +2942,22 @@
               }
 
               store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-              preModuleNames = beforeRender(store);
-              i = 0, k = preModuleNames.length;
+              beforeRender(store);
+              _context.next = 13;
+              return getModuleByName(appModuleName, moduleGetter);
 
-            case 12:
-              if (!(i < k)) {
-                _context.next = 24;
-                break;
-              }
+            case 13:
+              appModule = _context.sent;
+              _context.next = 16;
+              return appModule.default.model(store);
 
-              _moduleName = preModuleNames[i];
-
-              if (!moduleGetter[_moduleName]) {
-                _context.next = 21;
-                break;
-              }
-
-              _context.next = 17;
-              return getModuleByName(_moduleName, moduleGetter);
-
-            case 17:
-              module = _context.sent;
-              _context.next = 20;
-              return module.default.model(store);
-
-            case 20:
-              if (i === 0) {
-                appModule = module;
-              }
-
-            case 21:
-              i++;
-              _context.next = 12;
-              break;
-
-            case 24:
+            case 16:
               reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
               return _context.abrupt("return", {
                 store: store
               });
 
-            case 26:
+            case 18:
             case "end":
               return _context.stop();
           }
@@ -2999,8 +2973,7 @@
 
   function _renderSSR() {
     _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-      var ssrInitStoreKey, store, preModuleNames, appModule, i, k, _moduleName2, module;
-
+      var ssrInitStoreKey, store, preModuleNames, appModule;
       return regenerator.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
@@ -3014,39 +2987,25 @@
               ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
               store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
               preModuleNames = beforeRender(store);
-              i = 0, k = preModuleNames.length;
+              _context2.next = 8;
+              return Promise.all(preModuleNames.map(function (moduleName) {
+                if (moduleGetter[moduleName]) {
+                  var module = moduleGetter[moduleName]();
 
-            case 7:
-              if (!(i < k)) {
-                _context2.next = 17;
-                break;
-              }
+                  if (module.default.moduleName === appModuleName) {
+                    appModule = module;
+                  }
 
-              _moduleName2 = preModuleNames[i];
+                  return module.default.model(store);
+                }
 
-              if (!moduleGetter[_moduleName2]) {
-                _context2.next = 14;
-                break;
-              }
+                return null;
+              }));
 
-              module = moduleGetter[_moduleName2]();
-              _context2.next = 13;
-              return module.default.model(store);
-
-            case 13:
-              if (i === 0) {
-                appModule = module;
-              }
-
-            case 14:
-              i++;
-              _context2.next = 7;
-              break;
-
-            case 17:
+            case 8:
               return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-            case 18:
+            case 9:
             case "end":
               return _context2.stop();
           }
@@ -4608,7 +4567,6 @@
     return function (next) {
       return function (action) {
         if (action.type === RouteActionTypes.RouteChange) {
-          var result = next(action);
           var routeState = action.payload[0];
           var rootRouteParams = routeState.params;
           var rootState = getState();
@@ -4620,12 +4578,9 @@
 
               if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
                 dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-              } else {
-                dispatch(moduleInitAction(moduleName, undefined));
               }
             }
           });
-          return result;
         }
 
         return next(action);
@@ -8354,7 +8309,6 @@
         }
       });
       appExports.history.setStore(store);
-      return appExports.history.getModulePath();
     });
   }
   function buildSSR(moduleGetter, _ref2) {

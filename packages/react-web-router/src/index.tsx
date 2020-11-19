@@ -74,7 +74,6 @@ export function buildApp(
       },
     });
     appExports.history.setStore(store);
-    return appExports.history.getModulePath();
   });
 }
 

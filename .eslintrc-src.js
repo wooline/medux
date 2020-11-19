@@ -8,7 +8,5 @@ module.exports = {
     node: false,
   },
   rules: {
-    '@typescript-eslint/ban-types': 'off',
-    'import/prefer-default-export': 'off',
   },
 };

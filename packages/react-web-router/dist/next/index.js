@@ -2031,22 +2031,9 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
   }
 
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  let appModule;
-
-  for (let i = 0, k = preModuleNames.length; i < k; i++) {
-    const moduleName = preModuleNames[i];
-
-    if (moduleGetter[moduleName]) {
-      const module = await getModuleByName(moduleName, moduleGetter);
-      await module.default.model(store);
-
-      if (i === 0) {
-        appModule = module;
-      }
-    }
-  }
-
+  beforeRender(store);
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  await appModule.default.model(store);
   reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
   return {
     store
@@ -2059,20 +2046,19 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);
   let appModule;
-
-  for (let i = 0, k = preModuleNames.length; i < k; i++) {
-    const moduleName = preModuleNames[i];
-
+  await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
       const module = moduleGetter[moduleName]();
-      await module.default.model(store);
 
-      if (i === 0) {
+      if (module.default.moduleName === appModuleName) {
         appModule = module;
       }
-    }
-  }
 
+      return module.default.model(store);
+    }
+
+    return null;
+  }));
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }
 
@@ -3458,7 +3444,6 @@ const routeMiddleware = ({
   getState
 }) => next => action => {
   if (action.type === RouteActionTypes.RouteChange) {
-    const result = next(action);
     const routeState = action.payload[0];
     const rootRouteParams = routeState.params;
     const rootState = getState();
@@ -3470,12 +3455,9 @@ const routeMiddleware = ({
 
         if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-        } else {
-          dispatch(moduleInitAction(moduleName, undefined));
         }
       }
     });
-    return result;
   }
 
   return next(action);
@@ -7168,7 +7150,6 @@ function buildApp(moduleGetter, {
       }
     });
     appExports.history.setStore(store);
-    return appExports.history.getModulePath();
   });
 }
 function buildSSR(moduleGetter, {

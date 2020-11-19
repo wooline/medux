@@ -1,6 +1,6 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { CoreModuleHandlers, reducer, moduleInitAction } from '@medux/core';
+import { CoreModuleHandlers, reducer } from '@medux/core';
 import { compileToPath, matchPath } from './matchPath';
 import { RouteActionTypes, routeConfig, checkLocation, compileRule, urlToLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction } from './basic';
 import assignDeep from './deep-extend';
@@ -695,7 +695,6 @@ export const routeMiddleware = ({
   getState
 }) => next => action => {
   if (action.type === RouteActionTypes.RouteChange) {
-    const result = next(action);
     const routeState = action.payload[0];
     const rootRouteParams = routeState.params;
     const rootState = getState();
@@ -707,12 +706,9 @@ export const routeMiddleware = ({
 
         if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-        } else {
-          dispatch(moduleInitAction(moduleName, undefined));
         }
       }
     });
-    return result;
   }
 
   return next(action);

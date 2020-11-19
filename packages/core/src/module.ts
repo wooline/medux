@@ -147,7 +147,7 @@ export async function renderApp<V>(
   appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender: (store: ModuleStore) => string[]
+  beforeRender: (store: ModuleStore) => void
 ): Promise<{store: ModuleStore}> {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
@@ -165,18 +165,9 @@ export async function renderApp<V>(
     initData = {...initData, ...client![ssrInitStoreKey]};
   }
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  let appModule: Module | undefined;
-  for (let i = 0, k = preModuleNames.length; i < k; i++) {
-    const moduleName = preModuleNames[i];
-    if (moduleGetter[moduleName]) {
-      const module = await getModuleByName(moduleName, moduleGetter);
-      await module.default.model(store);
-      if (i === 0) {
-        appModule = module;
-      }
-    }
-  }
+  beforeRender(store);
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  await appModule.default.model(store);
   reRender = render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
   return {store};
 }
@@ -203,15 +194,17 @@ export async function renderSSR<V>(
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);
   let appModule: Module | undefined;
-  for (let i = 0, k = preModuleNames.length; i < k; i++) {
-    const moduleName = preModuleNames[i];
-    if (moduleGetter[moduleName]) {
-      const module = moduleGetter[moduleName]() as Module;
-      await module.default.model(store);
-      if (i === 0) {
-        appModule = module;
+  await Promise.all(
+    preModuleNames.map((moduleName) => {
+      if (moduleGetter[moduleName]) {
+        const module = moduleGetter[moduleName]() as Module;
+        if (module.default.moduleName === appModuleName) {
+          appModule = module;
+        }
+        return module.default.model(store);
       }
-    }
-  }
+      return null;
+    })
+  );
   return render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
 }

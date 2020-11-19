@@ -799,7 +799,6 @@ var routeMiddleware = function routeMiddleware(_ref3) {
   return function (next) {
     return function (action) {
       if (action.type === _basic.RouteActionTypes.RouteChange) {
-        var result = next(action);
         var routeState = action.payload[0];
         var rootRouteParams = routeState.params;
         var rootState = getState();
@@ -811,12 +810,9 @@ var routeMiddleware = function routeMiddleware(_ref3) {
 
             if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
               dispatch((0, _basic.routeParamsAction)(moduleName, routeParams, routeState.action));
-            } else {
-              dispatch((0, _core.moduleInitAction)(moduleName, undefined));
             }
           }
         });
-        return result;
       }
 
       return next(action);

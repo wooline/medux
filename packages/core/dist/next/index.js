@@ -1,4 +1,4 @@
-export { errorAction, moduleInitAction } from './actions';
+export { errorAction } from './actions';
 export { ActionTypes, reducer, config, effect, logger, setConfig, delayPromise, setLoading, setLoadingDepthTime, isServer, isPromise } from './basic';
 export { getActionData } from './store';
 export { CoreModuleHandlers, cacheModule, loadModel, getClientStore, exportModule, getView } from './inject';

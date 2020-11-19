@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {CoreModuleHandlers, CoreModuleState, reducer, moduleInitAction} from '@medux/core';
+import {CoreModuleHandlers, CoreModuleState, reducer} from '@medux/core';
 import {Middleware, Reducer} from 'redux';
 import {compileToPath, matchPath} from './matchPath';
 import {RouteActionTypes, routeConfig, checkLocation, compileRule, HistoryAction, DisplayViews, urlToLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction} from './basic';
@@ -680,7 +680,6 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
 }
 export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (action) => {
   if (action.type === RouteActionTypes.RouteChange) {
-    const result = next(action);
     const routeState: RouteState = action.payload[0];
     const rootRouteParams = routeState.params;
     const rootState = getState();
@@ -689,12 +688,9 @@ export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (
       if (routeParams) {
         if (rootState[moduleName]?.initialized) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-        } else {
-          dispatch(moduleInitAction(moduleName, undefined));
         }
       }
     });
-    return result;
   }
   return next(action);
 };

@@ -4,7 +4,7 @@ import _decorate from "@babel/runtime/helpers/esm/decorate";
 import _regeneratorRuntime from "@babel/runtime/regenerator";
 import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { CoreModuleHandlers, reducer, moduleInitAction } from '@medux/core';
+import { CoreModuleHandlers, reducer } from '@medux/core';
 import { compileToPath, matchPath } from './matchPath';
 import { RouteActionTypes, routeConfig, checkLocation, compileRule, urlToLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction } from './basic';
 import assignDeep from './deep-extend';
@@ -782,7 +782,6 @@ export var routeMiddleware = function routeMiddleware(_ref3) {
   return function (next) {
     return function (action) {
       if (action.type === RouteActionTypes.RouteChange) {
-        var result = next(action);
         var routeState = action.payload[0];
         var rootRouteParams = routeState.params;
         var rootState = getState();
@@ -794,12 +793,9 @@ export var routeMiddleware = function routeMiddleware(_ref3) {
 
             if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
               dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-            } else {
-              dispatch(moduleInitAction(moduleName, undefined));
             }
           }
         });
-        return result;
       }
 
       return next(action);
