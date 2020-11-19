@@ -1510,12 +1510,10 @@
 
   var config = {
     NSP: '.',
-    VSP: '.',
     MSP: ','
   };
   function setConfig(_config) {
     _config.NSP && (config.NSP = _config.NSP);
-    _config.VSP && (config.VSP = _config.VSP);
     _config.MSP && (config.MSP = _config.MSP);
   }
   var ActionTypes = {
@@ -2914,7 +2912,7 @@
 
   function _renderApp() {
     _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-      var appModuleName, ssrInitStoreKey, initData, moduleStore, store, storeState, preModuleNames, appModule, i, k, _moduleName, module;
+      var appModuleName, ssrInitStoreKey, initData, store, preModuleNames, appModule, i, k, _moduleName, module;
 
       return regenerator.wrap(function _callee$(_context) {
         while (1) {
@@ -2944,47 +2942,48 @@
                 initData = Object.assign({}, initData, client[ssrInitStoreKey]);
               }
 
-              moduleStore = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-              store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-              storeState = store.getState();
-              preModuleNames = Object.keys(storeState).filter(function (key) {
-                return key !== appModuleName && moduleGetter[key];
-              });
-              preModuleNames.unshift(appModuleName);
+              store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+              preModuleNames = beforeRender(store);
               i = 0, k = preModuleNames.length;
 
-            case 15:
+            case 12:
               if (!(i < k)) {
-                _context.next = 26;
+                _context.next = 24;
                 break;
               }
 
               _moduleName = preModuleNames[i];
-              _context.next = 19;
+
+              if (!moduleGetter[_moduleName]) {
+                _context.next = 21;
+                break;
+              }
+
+              _context.next = 17;
               return getModuleByName(_moduleName, moduleGetter);
 
-            case 19:
+            case 17:
               module = _context.sent;
-              _context.next = 22;
+              _context.next = 20;
               return module.default.model(store);
 
-            case 22:
+            case 20:
               if (i === 0) {
                 appModule = module;
               }
 
-            case 23:
+            case 21:
               i++;
-              _context.next = 15;
+              _context.next = 12;
               break;
 
-            case 26:
+            case 24:
               reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
               return _context.abrupt("return", {
                 store: store
               });
 
-            case 28:
+            case 26:
             case "end":
               return _context.stop();
           }
@@ -3000,7 +2999,7 @@
 
   function _renderSSR() {
     _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-      var ssrInitStoreKey, moduleStore, store, storeState, preModuleNames, appModule, i, k, _moduleName2, module;
+      var ssrInitStoreKey, store, preModuleNames, appModule, i, k, _moduleName2, module;
 
       return regenerator.wrap(function _callee2$(_context2) {
         while (1) {
@@ -3013,40 +3012,41 @@
               MetaData.appModuleName = appModuleName;
               MetaData.appViewName = appViewName;
               ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-              moduleStore = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-              store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-              storeState = store.getState();
-              preModuleNames = Object.keys(storeState).filter(function (key) {
-                return key !== appModuleName && moduleGetter[key];
-              });
-              preModuleNames.unshift(appModuleName);
+              store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+              preModuleNames = beforeRender(store);
               i = 0, k = preModuleNames.length;
 
-            case 10:
+            case 7:
               if (!(i < k)) {
-                _context2.next = 19;
+                _context2.next = 17;
                 break;
               }
 
               _moduleName2 = preModuleNames[i];
+
+              if (!moduleGetter[_moduleName2]) {
+                _context2.next = 14;
+                break;
+              }
+
               module = moduleGetter[_moduleName2]();
-              _context2.next = 15;
+              _context2.next = 13;
               return module.default.model(store);
 
-            case 15:
+            case 13:
               if (i === 0) {
                 appModule = module;
               }
 
-            case 16:
+            case 14:
               i++;
-              _context2.next = 10;
+              _context2.next = 7;
               break;
 
-            case 19:
+            case 17:
               return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-            case 20:
+            case 18:
             case "end":
               return _context2.stop();
           }
@@ -3615,6 +3615,7 @@
 
   var routeConfig = {
     RSP: '|',
+    VSP: '.',
     escape: true,
     dateParse: false,
     splitKey: 'q',
@@ -3622,6 +3623,7 @@
     homeUrl: '/'
   };
   function setRouteConfig(conf) {
+    conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
     conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
     conf.escape !== undefined && (routeConfig.escape = conf.escape);
     conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
@@ -3652,19 +3654,20 @@
       payload: [params, action]
     };
   }
-  function dataIsLocation(data) {
-    return !!data['pathname'];
-  }
   function checkLocation(location) {
-    var data = Object.assign({}, location);
+    var data = {
+      pathname: location.pathname || '',
+      search: location.search || '',
+      hash: location.hash || ''
+    };
     data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
 
     if (data.pathname !== '/') {
       data.pathname = data.pathname.replace(/\/$/, '');
     }
 
-    data.search = ("?" + (location.search || '')).replace('??', '?');
-    data.hash = ("#" + (location.hash || '')).replace('##', '#');
+    data.search = ("?" + data.search).replace('??', '?');
+    data.hash = ("#" + data.hash).replace('##', '#');
 
     if (data.search === '?') {
       data.search = '';
@@ -3960,7 +3963,7 @@
         if (match) {
           paths.push(_viewName);
 
-          var _moduleName = _viewName.split(config.VSP)[0];
+          var _moduleName = _viewName.split(routeConfig.VSP)[0];
 
           var params = match.params;
 
@@ -3980,7 +3983,7 @@
 
   function assignRouteData(paths, params, defaultRouteParams) {
     var views = paths.reduce(function (prev, cur) {
-      var _cur$split = cur.split(config.VSP),
+      var _cur$split = cur.split(routeConfig.VSP),
           moduleName = _cur$split[0],
           viewName = _cur$split[1];
 
@@ -4089,7 +4092,7 @@
     var pathname = '';
     var views = {};
     paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-      var _viewName$split = viewName.split(config.VSP),
+      var _viewName$split = viewName.split(routeConfig.VSP),
           moduleName = _viewName$split[0],
           view = _viewName$split[1];
 
@@ -4184,6 +4187,12 @@
       return data;
     };
 
+    _proto.getModulePath = function getModulePath() {
+      return this.getRouteState().paths.map(function (viewName) {
+        return viewName.split(routeConfig.VSP)[0];
+      });
+    };
+
     _proto.getCurKey = function getCurKey() {
       return this._routeState.key;
     };
@@ -4224,18 +4233,11 @@
 
     _proto.routeToLocation = function routeToLocation(paths, params) {
       params = params || {};
-      var pathname;
       var views = {};
-
-      if (typeof paths === 'string') {
-        pathname = paths;
-      } else {
-        var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
-        pathname = data.pathname;
-        params = data.params;
-        views = data.views;
-      }
-
+      var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+      var pathname = data.pathname;
+      params = data.params;
+      views = data.views;
       var paramsFilter = excludeDefaultData(params, this.defaultRouteParams, false, views);
 
       var _extractHashData = extractHashData(paramsFilter),
@@ -4254,7 +4256,7 @@
         return this.locationToRoute(urlToLocation(data));
       }
 
-      if (dataIsLocation(data)) {
+      if (data.pathname && !data.extendParams && !data.params) {
         return this.locationToRoute(checkLocation(data));
       }
 
@@ -4264,21 +4266,19 @@
         clone.extendParams = this.getRouteState().params;
       }
 
+      if (clone.pathname) {
+        clone.paths = [];
+        clone.params = {};
+        pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+        deepExtend(clone.params, data.params);
+      }
+
       if (!clone.paths) {
-        clone.paths = this.getRouteState().pathname;
+        clone.paths = this.getRouteState().paths;
       }
 
       var params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
-      var paths = [];
-
-      if (typeof clone.paths === 'string') {
-        var pathname = clone.paths;
-        pathnameParse(pathname, this.routeRule, paths, {});
-      } else {
-        paths = clone.paths;
-      }
-
-      return assignRouteData(paths, params || {}, this.defaultRouteParams);
+      return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
     };
 
     _proto.payloadToLocation = function payloadToLocation(data) {
@@ -4286,7 +4286,7 @@
         return urlToLocation(data);
       }
 
-      if (dataIsLocation(data)) {
+      if (data.pathname && !data.extendParams && !data.params) {
         return checkLocation(data);
       }
 
@@ -4296,8 +4296,15 @@
         clone.extendParams = this.getRouteState().params;
       }
 
+      if (clone.pathname) {
+        clone.paths = [];
+        clone.params = {};
+        pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+        deepExtend(clone.params, data.params);
+      }
+
       if (!clone.paths) {
-        clone.paths = this.getRouteState().pathname;
+        clone.paths = this.getRouteState().paths;
       }
 
       var params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
@@ -8347,7 +8354,7 @@
         }
       });
       appExports.history.setStore(store);
-      return store;
+      return appExports.history.getModulePath();
     });
   }
   function buildSSR(moduleGetter, _ref2) {
@@ -8381,7 +8388,7 @@
         }
       });
       appExports.history.setStore(store);
-      return store;
+      return appExports.history.getModulePath();
     });
   }
   var Switch = function Switch(_ref3) {

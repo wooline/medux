@@ -2,12 +2,10 @@ import { TaskCountEvent, TaskCounter } from './sprite';
 import { env, isServerEnv } from './env';
 export var config = {
   NSP: '.',
-  VSP: '.',
   MSP: ','
 };
 export function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
-  _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
 export var ActionTypes = {

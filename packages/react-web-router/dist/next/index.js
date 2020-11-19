@@ -679,12 +679,10 @@ class TaskCounter extends PDispatcher {
 
 const config = {
   NSP: '.',
-  VSP: '.',
   MSP: ','
 };
 function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
-  _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
 const ActionTypes = {
@@ -2032,20 +2030,20 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
     initData = Object.assign({}, initData, client[ssrInitStoreKey]);
   }
 
-  const moduleStore = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-  const storeState = store.getState();
-  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
+  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const preModuleNames = beforeRender(store);
   let appModule;
 
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
-    const module = await getModuleByName(moduleName, moduleGetter);
-    await module.default.model(store);
 
-    if (i === 0) {
-      appModule = module;
+    if (moduleGetter[moduleName]) {
+      const module = await getModuleByName(moduleName, moduleGetter);
+      await module.default.model(store);
+
+      if (i === 0) {
+        appModule = module;
+      }
     }
   }
 
@@ -2058,20 +2056,20 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const moduleStore = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-  const storeState = store.getState();
-  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
+  const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const preModuleNames = beforeRender(store);
   let appModule;
 
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
-    const module = moduleGetter[moduleName]();
-    await module.default.model(store);
 
-    if (i === 0) {
-      appModule = module;
+    if (moduleGetter[moduleName]) {
+      const module = moduleGetter[moduleName]();
+      await module.default.model(store);
+
+      if (i === 0) {
+        appModule = module;
+      }
     }
   }
 
@@ -2573,6 +2571,7 @@ function matchPath(pathname, options = {}) {
 
 const routeConfig = {
   RSP: '|',
+  VSP: '.',
   escape: true,
   dateParse: false,
   splitKey: 'q',
@@ -2580,6 +2579,7 @@ const routeConfig = {
   homeUrl: '/'
 };
 function setRouteConfig(conf) {
+  conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.escape !== undefined && (routeConfig.escape = conf.escape);
   conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
@@ -2610,19 +2610,20 @@ function routeParamsAction(moduleName, params, action) {
     payload: [params, action]
   };
 }
-function dataIsLocation(data) {
-  return !!data['pathname'];
-}
 function checkLocation(location) {
-  const data = Object.assign({}, location);
+  const data = {
+    pathname: location.pathname || '',
+    search: location.search || '',
+    hash: location.hash || ''
+  };
   data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
 
   if (data.pathname !== '/') {
     data.pathname = data.pathname.replace(/\/$/, '');
   }
 
-  data.search = `?${location.search || ''}`.replace('??', '?');
-  data.hash = `#${location.hash || ''}`.replace('##', '#');
+  data.search = `?${data.search}`.replace('??', '?');
+  data.hash = `#${data.hash}`.replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';
@@ -2887,7 +2888,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
       if (match) {
         paths.push(viewName);
-        const moduleName = viewName.split(config.VSP)[0];
+        const moduleName = viewName.split(routeConfig.VSP)[0];
         const {
           params
         } = match;
@@ -2908,7 +2909,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
 function assignRouteData(paths, params, defaultRouteParams) {
   const views = paths.reduce((prev, cur) => {
-    const [moduleName, viewName] = cur.split(config.VSP);
+    const [moduleName, viewName] = cur.split(routeConfig.VSP);
 
     if (moduleName && viewName) {
       if (!prev[moduleName]) {
@@ -3003,7 +3004,7 @@ function pathsToPathname(paths, params = {}, viewToRule, ruleToKeys) {
   let pathname = '';
   const views = {};
   paths.reduce((parentAbsoluteViewName, viewName, index) => {
-    const [moduleName, view] = viewName.split(config.VSP);
+    const [moduleName, view] = viewName.split(routeConfig.VSP);
     const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
     const rule = viewToRule[absoluteViewName];
     const keys = ruleToKeys[rule] || [];
@@ -3093,6 +3094,10 @@ class BaseHistoryActions {
     return data;
   }
 
+  getModulePath() {
+    return this.getRouteState().paths.map(viewName => viewName.split(routeConfig.VSP)[0]);
+  }
+
   getCurKey() {
     return this._routeState.key;
   }
@@ -3133,18 +3138,11 @@ class BaseHistoryActions {
 
   routeToLocation(paths, params) {
     params = params || {};
-    let pathname;
     let views = {};
-
-    if (typeof paths === 'string') {
-      pathname = paths;
-    } else {
-      const data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
-      pathname = data.pathname;
-      params = data.params;
-      views = data.views;
-    }
-
+    const data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+    const pathname = data.pathname;
+    params = data.params;
+    views = data.views;
     const paramsFilter = excludeDefaultData(params, this.defaultRouteParams, false, views);
     const {
       search,
@@ -3162,7 +3160,7 @@ class BaseHistoryActions {
       return this.locationToRoute(urlToLocation(data));
     }
 
-    if (dataIsLocation(data)) {
+    if (data.pathname && !data.extendParams && !data.params) {
       return this.locationToRoute(checkLocation(data));
     }
 
@@ -3172,21 +3170,19 @@ class BaseHistoryActions {
       clone.extendParams = this.getRouteState().params;
     }
 
+    if (clone.pathname) {
+      clone.paths = [];
+      clone.params = {};
+      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+      deepExtend(clone.params, data.params);
+    }
+
     if (!clone.paths) {
-      clone.paths = this.getRouteState().pathname;
+      clone.paths = this.getRouteState().paths;
     }
 
     const params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
-    let paths = [];
-
-    if (typeof clone.paths === 'string') {
-      const pathname = clone.paths;
-      pathnameParse(pathname, this.routeRule, paths, {});
-    } else {
-      paths = clone.paths;
-    }
-
-    return assignRouteData(paths, params || {}, this.defaultRouteParams);
+    return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
   }
 
   payloadToLocation(data) {
@@ -3194,7 +3190,7 @@ class BaseHistoryActions {
       return urlToLocation(data);
     }
 
-    if (dataIsLocation(data)) {
+    if (data.pathname && !data.extendParams && !data.params) {
       return checkLocation(data);
     }
 
@@ -3204,8 +3200,15 @@ class BaseHistoryActions {
       clone.extendParams = this.getRouteState().params;
     }
 
+    if (clone.pathname) {
+      clone.paths = [];
+      clone.params = {};
+      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+      deepExtend(clone.params, data.params);
+    }
+
     if (!clone.paths) {
-      clone.paths = this.getRouteState().pathname;
+      clone.paths = this.getRouteState().paths;
     }
 
     const params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
@@ -7165,7 +7168,7 @@ function buildApp(moduleGetter, {
       }
     });
     appExports.history.setStore(store);
-    return store;
+    return appExports.history.getModulePath();
   });
 }
 function buildSSR(moduleGetter, {
@@ -7194,7 +7197,7 @@ function buildSSR(moduleGetter, {
       }
     });
     appExports.history.setStore(store);
-    return store;
+    return appExports.history.getModulePath();
   });
 }
 const Switch = ({

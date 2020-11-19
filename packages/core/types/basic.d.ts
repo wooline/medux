@@ -2,7 +2,6 @@ import { Unsubscribe } from 'redux';
 import { LoadingState } from './sprite';
 export declare const config: {
     NSP: string;
-    VSP: string;
     MSP: string;
 };
 export declare function setConfig(_config: {

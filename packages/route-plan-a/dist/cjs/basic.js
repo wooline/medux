@@ -5,7 +5,6 @@ exports.setRouteConfig = setRouteConfig;
 exports.beforeRouteChangeAction = beforeRouteChangeAction;
 exports.routeChangeAction = routeChangeAction;
 exports.routeParamsAction = routeParamsAction;
-exports.dataIsLocation = dataIsLocation;
 exports.checkLocation = checkLocation;
 exports.urlToLocation = urlToLocation;
 exports.compileRule = compileRule;
@@ -17,6 +16,7 @@ var _matchPath = require("./matchPath");
 
 var routeConfig = {
   RSP: '|',
+  VSP: '.',
   escape: true,
   dateParse: false,
   splitKey: 'q',
@@ -26,6 +26,7 @@ var routeConfig = {
 exports.routeConfig = routeConfig;
 
 function setRouteConfig(conf) {
+  conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.escape !== undefined && (routeConfig.escape = conf.escape);
   conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
@@ -62,20 +63,20 @@ function routeParamsAction(moduleName, params, action) {
   };
 }
 
-function dataIsLocation(data) {
-  return !!data['pathname'];
-}
-
 function checkLocation(location) {
-  var data = Object.assign({}, location);
+  var data = {
+    pathname: location.pathname || '',
+    search: location.search || '',
+    hash: location.hash || ''
+  };
   data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
 
   if (data.pathname !== '/') {
     data.pathname = data.pathname.replace(/\/$/, '');
   }
 
-  data.search = ("?" + (location.search || '')).replace('??', '?');
-  data.hash = ("#" + (location.hash || '')).replace('##', '#');
+  data.search = ("?" + data.search).replace('??', '?');
+  data.hash = ("#" + data.hash).replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';

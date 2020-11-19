@@ -147,7 +147,7 @@ export async function renderApp<V>(
   appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender?: (store: ModuleStore) => ModuleStore
+  beforeRender: (store: ModuleStore) => string[]
 ): Promise<{store: ModuleStore}> {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
@@ -164,18 +164,17 @@ export async function renderApp<V>(
   if (client![ssrInitStoreKey]) {
     initData = {...initData, ...client![ssrInitStoreKey]};
   }
-  const moduleStore = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-  const storeState = store.getState();
-  const preModuleNames: string[] = Object.keys(storeState).filter((key) => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
+  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const preModuleNames = beforeRender(store);
   let appModule: Module | undefined;
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
-    const module = await getModuleByName(moduleName, moduleGetter);
-    await module.default.model(store);
-    if (i === 0) {
-      appModule = module;
+    if (moduleGetter[moduleName]) {
+      const module = await getModuleByName(moduleName, moduleGetter);
+      await module.default.model(store);
+      if (i === 0) {
+        appModule = module;
+      }
     }
   }
   reRender = render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
@@ -196,23 +195,22 @@ export async function renderSSR<V>(
   appModuleName: string,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender?: (store: ModuleStore) => ModuleStore
+  beforeRender: (store: ModuleStore) => string[]
 ) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const moduleStore = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-  const storeState = store.getState();
-  const preModuleNames: string[] = Object.keys(storeState).filter((key) => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
+  const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const preModuleNames = beforeRender(store);
   let appModule: Module | undefined;
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
-    const module = moduleGetter[moduleName]() as Module;
-    await module.default.model(store);
-    if (i === 0) {
-      appModule = module;
+    if (moduleGetter[moduleName]) {
+      const module = moduleGetter[moduleName]() as Module;
+      await module.default.model(store);
+      if (i === 0) {
+        appModule = module;
+      }
     }
   }
   return render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);

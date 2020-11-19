@@ -1,8 +1,8 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { config, CoreModuleHandlers, reducer, moduleInitAction } from '@medux/core';
+import { CoreModuleHandlers, reducer, moduleInitAction } from '@medux/core';
 import { compileToPath, matchPath } from './matchPath';
-import { RouteActionTypes, routeConfig, checkLocation, compileRule, urlToLocation, dataIsLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction } from './basic';
+import { RouteActionTypes, routeConfig, checkLocation, compileRule, urlToLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction } from './basic';
 import assignDeep from './deep-extend';
 export const deepAssign = assignDeep;
 export { setRouteConfig } from './basic';
@@ -125,7 +125,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
       if (match) {
         paths.push(viewName);
-        const moduleName = viewName.split(config.VSP)[0];
+        const moduleName = viewName.split(routeConfig.VSP)[0];
         const {
           params
         } = match;
@@ -146,7 +146,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
 export function assignRouteData(paths, params, defaultRouteParams) {
   const views = paths.reduce((prev, cur) => {
-    const [moduleName, viewName] = cur.split(config.VSP);
+    const [moduleName, viewName] = cur.split(routeConfig.VSP);
 
     if (moduleName && viewName) {
       if (!prev[moduleName]) {
@@ -241,7 +241,7 @@ function pathsToPathname(paths, params = {}, viewToRule, ruleToKeys) {
   let pathname = '';
   const views = {};
   paths.reduce((parentAbsoluteViewName, viewName, index) => {
-    const [moduleName, view] = viewName.split(config.VSP);
+    const [moduleName, view] = viewName.split(routeConfig.VSP);
     const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
     const rule = viewToRule[absoluteViewName];
     const keys = ruleToKeys[rule] || [];
@@ -331,6 +331,10 @@ export class BaseHistoryActions {
     return data;
   }
 
+  getModulePath() {
+    return this.getRouteState().paths.map(viewName => viewName.split(routeConfig.VSP)[0]);
+  }
+
   getCurKey() {
     return this._routeState.key;
   }
@@ -371,18 +375,11 @@ export class BaseHistoryActions {
 
   routeToLocation(paths, params) {
     params = params || {};
-    let pathname;
     let views = {};
-
-    if (typeof paths === 'string') {
-      pathname = paths;
-    } else {
-      const data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
-      pathname = data.pathname;
-      params = data.params;
-      views = data.views;
-    }
-
+    const data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+    const pathname = data.pathname;
+    params = data.params;
+    views = data.views;
     const paramsFilter = excludeDefaultData(params, this.defaultRouteParams, false, views);
     const {
       search,
@@ -400,7 +397,7 @@ export class BaseHistoryActions {
       return this.locationToRoute(urlToLocation(data));
     }
 
-    if (dataIsLocation(data)) {
+    if (data.pathname && !data.extendParams && !data.params) {
       return this.locationToRoute(checkLocation(data));
     }
 
@@ -410,21 +407,19 @@ export class BaseHistoryActions {
       clone.extendParams = this.getRouteState().params;
     }
 
+    if (clone.pathname) {
+      clone.paths = [];
+      clone.params = {};
+      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+      assignDeep(clone.params, data.params);
+    }
+
     if (!clone.paths) {
-      clone.paths = this.getRouteState().pathname;
+      clone.paths = this.getRouteState().paths;
     }
 
     const params = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
-    let paths = [];
-
-    if (typeof clone.paths === 'string') {
-      const pathname = clone.paths;
-      pathnameParse(pathname, this.routeRule, paths, {});
-    } else {
-      paths = clone.paths;
-    }
-
-    return assignRouteData(paths, params || {}, this.defaultRouteParams);
+    return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
   }
 
   payloadToLocation(data) {
@@ -432,7 +427,7 @@ export class BaseHistoryActions {
       return urlToLocation(data);
     }
 
-    if (dataIsLocation(data)) {
+    if (data.pathname && !data.extendParams && !data.params) {
       return checkLocation(data);
     }
 
@@ -442,8 +437,15 @@ export class BaseHistoryActions {
       clone.extendParams = this.getRouteState().params;
     }
 
+    if (clone.pathname) {
+      clone.paths = [];
+      clone.params = {};
+      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+      assignDeep(clone.params, data.params);
+    }
+
     if (!clone.paths) {
-      clone.paths = this.getRouteState().pathname;
+      clone.paths = this.getRouteState().paths;
     }
 
     const params = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;

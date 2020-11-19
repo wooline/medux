@@ -157,7 +157,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
       if (match) {
         paths.push(_viewName);
 
-        var _moduleName = _viewName.split(_core.config.VSP)[0];
+        var _moduleName = _viewName.split(_basic.routeConfig.VSP)[0];
 
         var params = match.params;
 
@@ -177,7 +177,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
 function assignRouteData(paths, params, defaultRouteParams) {
   var views = paths.reduce(function (prev, cur) {
-    var _cur$split = cur.split(_core.config.VSP),
+    var _cur$split = cur.split(_basic.routeConfig.VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
@@ -286,7 +286,7 @@ function pathsToPathname(paths, params, viewToRule, ruleToKeys) {
   var pathname = '';
   var views = {};
   paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-    var _viewName$split = viewName.split(_core.config.VSP),
+    var _viewName$split = viewName.split(_basic.routeConfig.VSP),
         moduleName = _viewName$split[0],
         view = _viewName$split[1];
 
@@ -375,6 +375,12 @@ var BaseHistoryActions = function () {
     return data;
   };
 
+  _proto.getModulePath = function getModulePath() {
+    return this.getRouteState().paths.map(function (viewName) {
+      return viewName.split(_basic.routeConfig.VSP)[0];
+    });
+  };
+
   _proto.getCurKey = function getCurKey() {
     return this._routeState.key;
   };
@@ -415,18 +421,11 @@ var BaseHistoryActions = function () {
 
   _proto.routeToLocation = function routeToLocation(paths, params) {
     params = params || {};
-    var pathname;
     var views = {};
-
-    if (typeof paths === 'string') {
-      pathname = paths;
-    } else {
-      var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
-      pathname = data.pathname;
-      params = data.params;
-      views = data.views;
-    }
-
+    var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
+    var pathname = data.pathname;
+    params = data.params;
+    views = data.views;
     var paramsFilter = excludeDefaultData(params, this.defaultRouteParams, false, views);
 
     var _extractHashData = extractHashData(paramsFilter),
@@ -445,7 +444,7 @@ var BaseHistoryActions = function () {
       return this.locationToRoute((0, _basic.urlToLocation)(data));
     }
 
-    if ((0, _basic.dataIsLocation)(data)) {
+    if (data.pathname && !data.extendParams && !data.params) {
       return this.locationToRoute((0, _basic.checkLocation)(data));
     }
 
@@ -455,21 +454,19 @@ var BaseHistoryActions = function () {
       clone.extendParams = this.getRouteState().params;
     }
 
+    if (clone.pathname) {
+      clone.paths = [];
+      clone.params = {};
+      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+      (0, _deepExtend.default)(clone.params, data.params);
+    }
+
     if (!clone.paths) {
-      clone.paths = this.getRouteState().pathname;
+      clone.paths = this.getRouteState().paths;
     }
 
     var params = clone.extendParams ? (0, _deepExtend.default)({}, clone.extendParams, clone.params) : clone.params;
-    var paths = [];
-
-    if (typeof clone.paths === 'string') {
-      var pathname = clone.paths;
-      pathnameParse(pathname, this.routeRule, paths, {});
-    } else {
-      paths = clone.paths;
-    }
-
-    return assignRouteData(paths, params || {}, this.defaultRouteParams);
+    return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
   };
 
   _proto.payloadToLocation = function payloadToLocation(data) {
@@ -477,7 +474,7 @@ var BaseHistoryActions = function () {
       return (0, _basic.urlToLocation)(data);
     }
 
-    if ((0, _basic.dataIsLocation)(data)) {
+    if (data.pathname && !data.extendParams && !data.params) {
       return (0, _basic.checkLocation)(data);
     }
 
@@ -487,8 +484,15 @@ var BaseHistoryActions = function () {
       clone.extendParams = this.getRouteState().params;
     }
 
+    if (clone.pathname) {
+      clone.paths = [];
+      clone.params = {};
+      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
+      (0, _deepExtend.default)(clone.params, data.params);
+    }
+
     if (!clone.paths) {
-      clone.paths = this.getRouteState().pathname;
+      clone.paths = this.getRouteState().paths;
     }
 
     var params = clone.extendParams ? (0, _deepExtend.default)({}, clone.extendParams, clone.params) : clone.params;

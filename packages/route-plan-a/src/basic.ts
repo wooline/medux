@@ -95,6 +95,7 @@ export type RootState<G extends ModuleGetter> = {
 
 export const routeConfig = {
   RSP: '|',
+  VSP: '.',
   escape: true,
   dateParse: false,
   splitKey: 'q',
@@ -107,9 +108,10 @@ export const routeConfig = {
  * - escape 是否对生成的url进行escape编码
  * - dateParse 是否自动解析url中的日期格式
  * - splitKey 使用一个key来作为数据的载体
- * - defaultRouteParams 默认的路由参数
+ * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  */
-export function setRouteConfig(conf: {RSP?: string; escape?: boolean; dateParse?: boolean; splitKey?: string; historyMax?: number; homeUrl?: string}) {
+export function setRouteConfig(conf: {VSP?: string; RSP?: string; escape?: boolean; dateParse?: boolean; splitKey?: string; historyMax?: number; homeUrl?: string}) {
+  conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.escape !== undefined && (routeConfig.escape = conf.escape);
   conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
@@ -154,31 +156,34 @@ export interface PaLocation {
   search: string;
   hash: string;
 }
-export interface LocationPayload {
-  pathname: string;
-  search?: string;
-  hash?: string;
-}
+// export interface LocationPayload {
+//   pathname: string;
+//   search?: string;
+//   hash?: string;
+// }
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 export interface RoutePayload<P extends RouteParams = RouteParams> {
-  paths?: string[] | string;
+  pathname?: string;
+  search?: string;
+  hash?: string;
+  paths?: string[];
   params?: DeepPartial<P>;
   extendParams?: DeepPartial<P> | true;
 }
 
-export function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload {
-  return !!data['pathname'];
-}
-export function checkLocation(location: LocationPayload): PaLocation {
-  const data: PaLocation = {...location} as any;
+// export function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload {
+//   return !!data['pathname'];
+// }
+export function checkLocation(location: RoutePayload): PaLocation {
+  const data: PaLocation = {pathname: location.pathname || '', search: location.search || '', hash: location.hash || ''};
   data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
   if (data.pathname !== '/') {
     data.pathname = data.pathname.replace(/\/$/, '');
   }
 
-  data.search = `?${location.search || ''}`.replace('??', '?');
-  data.hash = `#${location.hash || ''}`.replace('##', '#');
+  data.search = `?${data.search}`.replace('??', '?');
+  data.hash = `#${data.hash}`.replace('##', '#');
   if (data.search === '?') {
     data.search = '';
   }

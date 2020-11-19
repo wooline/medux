@@ -15,7 +15,7 @@ export function renderApp(
   appViewName: string,
   storeOptions: StoreOptions,
   container: string | Element | ((component: ReactElement<any>) => void) = 'root',
-  beforeRender?: (store: ModuleStore) => ModuleStore
+  beforeRender: (store: ModuleStore) => string[]
 ) {
   return core.renderApp<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
@@ -51,7 +51,7 @@ export function renderSSR(
   appViewName: string,
   storeOptions: StoreOptions = {},
   renderToStream = false,
-  beforeRender?: (store: ModuleStore) => ModuleStore
+  beforeRender: (store: ModuleStore) => string[]
 ) {
   return core.renderSSR<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {

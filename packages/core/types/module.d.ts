@@ -20,7 +20,7 @@ export declare function viewHotReplacement(moduleName: string, views: {
 }): void;
 export declare function exportActions<G extends ModuleGetter>(moduleGetter: G): RootActions<G>;
 export declare type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <M extends Extract<keyof MG, string>, V extends ModuleViews<ReturnModule<ReturnType<MG[M]>>>, N extends Extract<keyof V, string>>(moduleName: M, viewName: N, options?: Options, loading?: Comp, error?: Comp) => V[N];
-export declare function renderApp<V>(render: (store: ModuleStore, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string, storeOptions?: StoreOptions, beforeRender?: (store: ModuleStore) => ModuleStore): Promise<{
+export declare function renderApp<V>(render: (store: ModuleStore, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string, storeOptions: StoreOptions | undefined, beforeRender: (store: ModuleStore) => string[]): Promise<{
     store: ModuleStore;
 }>;
 export declare function renderSSR<V>(render: (store: ModuleStore, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => {
@@ -28,7 +28,7 @@ export declare function renderSSR<V>(render: (store: ModuleStore, appModel: Modu
     data: any;
     ssrInitStoreKey: string;
     store: ModuleStore;
-}, moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions?: StoreOptions, beforeRender?: (store: ModuleStore) => ModuleStore): Promise<{
+}, moduleGetter: ModuleGetter, appModuleName: string, appViewName: string, storeOptions: StoreOptions | undefined, beforeRender: (store: ModuleStore) => string[]): Promise<{
     html: any;
     data: any;
     ssrInitStoreKey: string;

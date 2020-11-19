@@ -2,6 +2,7 @@ import { config } from '@medux/core';
 import { compilePath } from './matchPath';
 export const routeConfig = {
   RSP: '|',
+  VSP: '.',
   escape: true,
   dateParse: false,
   splitKey: 'q',
@@ -9,6 +10,7 @@ export const routeConfig = {
   homeUrl: '/'
 };
 export function setRouteConfig(conf) {
+  conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.escape !== undefined && (routeConfig.escape = conf.escape);
   conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
@@ -39,19 +41,20 @@ export function routeParamsAction(moduleName, params, action) {
     payload: [params, action]
   };
 }
-export function dataIsLocation(data) {
-  return !!data['pathname'];
-}
 export function checkLocation(location) {
-  const data = Object.assign({}, location);
+  const data = {
+    pathname: location.pathname || '',
+    search: location.search || '',
+    hash: location.hash || ''
+  };
   data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
 
   if (data.pathname !== '/') {
     data.pathname = data.pathname.replace(/\/$/, '');
   }
 
-  data.search = `?${location.search || ''}`.replace('??', '?');
-  data.hash = `#${location.hash || ''}`.replace('##', '#');
+  data.search = `?${data.search}`.replace('??', '?');
+  data.hash = `#${data.hash}`.replace('##', '#');
 
   if (data.search === '?') {
     data.search = '';

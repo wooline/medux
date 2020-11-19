@@ -54,6 +54,7 @@ export declare type RootState<G extends ModuleGetter> = {
 } & CoreRootState<G>;
 export declare const routeConfig: {
     RSP: string;
+    VSP: string;
     escape: boolean;
     dateParse: boolean;
     splitKey: string;
@@ -61,6 +62,7 @@ export declare const routeConfig: {
     homeUrl: string;
 };
 export declare function setRouteConfig(conf: {
+    VSP?: string;
     RSP?: string;
     escape?: boolean;
     dateParse?: boolean;
@@ -95,21 +97,18 @@ export interface PaLocation {
     search: string;
     hash: string;
 }
-export interface LocationPayload {
-    pathname: string;
-    search?: string;
-    hash?: string;
-}
 declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
 export interface RoutePayload<P extends RouteParams = RouteParams> {
-    paths?: string[] | string;
+    pathname?: string;
+    search?: string;
+    hash?: string;
+    paths?: string[];
     params?: DeepPartial<P>;
     extendParams?: DeepPartial<P> | true;
 }
-export declare function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload;
-export declare function checkLocation(location: LocationPayload): PaLocation;
+export declare function checkLocation(location: RoutePayload): PaLocation;
 export declare function urlToLocation(url: string): PaLocation;
 export interface RouteRule {
     [path: string]: string | [string, RouteRule];

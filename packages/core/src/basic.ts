@@ -5,28 +5,23 @@ import {env, isServerEnv} from './env';
 /**
  * 可供设置的全局参数，参见setConfig
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
- * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
 export const config: {
   NSP: string;
-  VSP: string;
   MSP: string;
 } = {
   NSP: '.',
-  VSP: '.',
   MSP: ',',
 };
 /**
  * 可供设置的全局参数
  * @param _config 设置参数
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
- * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
 export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string; RSP?: string}) {
   _config.NSP && (config.NSP = _config.NSP);
-  _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
 

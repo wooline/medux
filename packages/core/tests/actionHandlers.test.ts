@@ -27,7 +27,7 @@ describe('init', () => {
       {middlewares: [logerMiddleware], initData: {thirdParty: 123}},
       (store) => {
         mockStore = store;
-        return store;
+        return ['moduleA'];
       }
     );
   });
@@ -63,7 +63,7 @@ describe('无SSR时', () => {
       {middlewares: [logerMiddleware], initData: {thirdParty: 123}},
       (store) => {
         mockStore = store;
-        return store;
+        return ['moduleA'];
       }
     );
   });

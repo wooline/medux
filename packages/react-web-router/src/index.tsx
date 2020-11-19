@@ -74,7 +74,7 @@ export function buildApp(
       },
     });
     appExports.history.setStore(store);
-    return store;
+    return appExports.history.getModulePath();
   });
 }
 
@@ -114,7 +114,7 @@ export function buildSSR(
       },
     });
     appExports.history.setStore(store);
-    return store;
+    return appExports.history.getModulePath();
   });
 }
 

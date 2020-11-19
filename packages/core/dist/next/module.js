@@ -98,20 +98,20 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
     initData = Object.assign({}, initData, client[ssrInitStoreKey]);
   }
 
-  const moduleStore = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-  const storeState = store.getState();
-  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
+  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const preModuleNames = beforeRender(store);
   let appModule;
 
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
-    const module = await getModuleByName(moduleName, moduleGetter);
-    await module.default.model(store);
 
-    if (i === 0) {
-      appModule = module;
+    if (moduleGetter[moduleName]) {
+      const module = await getModuleByName(moduleName, moduleGetter);
+      await module.default.model(store);
+
+      if (i === 0) {
+        appModule = module;
+      }
     }
   }
 
@@ -124,20 +124,20 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
-  const moduleStore = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const store = beforeRender ? beforeRender(moduleStore) : moduleStore;
-  const storeState = store.getState();
-  const preModuleNames = Object.keys(storeState).filter(key => key !== appModuleName && moduleGetter[key]);
-  preModuleNames.unshift(appModuleName);
+  const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const preModuleNames = beforeRender(store);
   let appModule;
 
   for (let i = 0, k = preModuleNames.length; i < k; i++) {
     const moduleName = preModuleNames[i];
-    const module = moduleGetter[moduleName]();
-    await module.default.model(store);
 
-    if (i === 0) {
-      appModule = module;
+    if (moduleGetter[moduleName]) {
+      const module = moduleGetter[moduleName]();
+      await module.default.model(store);
+
+      if (i === 0) {
+        appModule = module;
+      }
     }
   }
 

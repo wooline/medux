@@ -18,14 +18,12 @@ var _env = require("./env");
 
 var config = {
   NSP: '.',
-  VSP: '.',
   MSP: ','
 };
 exports.config = config;
 
 function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
-  _config.VSP && (config.VSP = _config.VSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
 
