@@ -1,7 +1,7 @@
 import {Middleware} from 'redux';
 import {getView, renderApp, ModuleStore} from 'src/index';
 
-import {actions, moduleGetter} from './modules';
+import {App, moduleGetter} from './modules';
 
 declare const console: any;
 
@@ -94,7 +94,7 @@ describe('无SSR时', () => {
     console.log = (...args: any[]) => {
       consoleLogs.push(...args);
     };
-    mockStore.dispatch(actions.moduleA.setMessage('message-changed'));
+    mockStore.dispatch(App.moduleA.actions.setMessage('message-changed'));
     // rootState尚未发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
@@ -126,7 +126,7 @@ describe('无SSR时', () => {
     console.log = (...args: any[]) => {
       consoleLogs.push(...args);
     };
-    const result: any = mockStore.dispatch(actions.moduleA.setText('text-changed'));
+    const result: any = mockStore.dispatch(App.moduleA.actions.setText('text-changed'));
     // 当action同时有reducer和effect监听时，reducer先执行完毕后才执行effect，所以在effectHandle中rootState已经发生改变
     expect(consoleLogs[0]).toEqual({
       thirdParty: 123,
@@ -162,7 +162,7 @@ describe('无SSR时', () => {
     console.log = _log;
   });
   test('moduleA触发reducerAction,moduleB、moduleC链式监听', async () => {
-    const result: any = mockStore.dispatch(actions.moduleA.setTips('tips-changed'));
+    const result: any = mockStore.dispatch(App.moduleA.actions.setTips('tips-changed'));
     expect(actionLogs.join(' ')).toBe(['moduleA.setTips', 'moduleB.setTips', 'moduleA.Loading', 'moduleC.setTips'].join(' '));
     await result;
     expect(actionLogs.join(' ')).toBe(['moduleA.setTips', 'moduleB.setTips', 'moduleA.Loading', 'moduleC.setTips', 'moduleB.setMessage', 'moduleC.setMessage', 'moduleA.Loading'].join(' '));

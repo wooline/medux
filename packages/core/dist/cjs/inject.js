@@ -61,23 +61,6 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
   actionHandlerMap[actionName][listenerModule] = action;
 }
 
-function addModuleActionCreatorList(moduleName, actionName) {
-  var actions = _basic.MetaData.actionCreatorMap[moduleName];
-
-  if (!actions[actionName]) {
-    actions[actionName] = function () {
-      for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-        payload[_key] = arguments[_key];
-      }
-
-      return {
-        type: moduleName + _basic.config.NSP + actionName,
-        payload: payload
-      };
-    };
-  }
-}
-
 function injectActions(store, moduleName, handlers) {
   for (var actionNames in handlers) {
     if (typeof handlers[actionNames] === 'function') {
@@ -96,7 +79,6 @@ function injectActions(store, moduleName, handlers) {
             } else {
               handler.__isHandler__ = false;
               transformAction(moduleName + _basic.config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-              addModuleActionCreatorList(moduleName, actionName);
             }
           });
         }
@@ -203,8 +185,8 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       value: function callThisAction(handler) {
         var actions = _basic.MetaData.actionCreatorMap[this.moduleName];
 
-        for (var _len2 = arguments.length, rest = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-          rest[_key2 - 1] = arguments[_key2];
+        for (var _len = arguments.length, rest = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          rest[_key - 1] = arguments[_key];
         }
 
         return actions[handler.__actionName__].apply(actions, rest);

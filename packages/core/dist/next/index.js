@@ -3,5 +3,5 @@ export { ActionTypes, reducer, config, effect, logger, setConfig, delayPromise, 
 export { getActionData } from './store';
 export { CoreModuleHandlers, cacheModule, loadModel, getClientStore, exportModule, getView } from './inject';
 export { LoadingState } from './sprite';
-export { exportActions, renderApp, renderSSR, modelHotReplacement, viewHotReplacement } from './module';
+export { exportModuleStaticInfo, renderApp, renderSSR, modelHotReplacement, viewHotReplacement } from './module';
 export { env, client, isServerEnv, isDevelopmentEnv } from './env';

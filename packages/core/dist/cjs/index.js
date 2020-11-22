@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.exportActions = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.getActionData = exports.isPromise = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
+exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.exportModuleStaticInfo = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.getActionData = exports.isPromise = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -40,7 +40,7 @@ exports.LoadingState = _sprite.LoadingState;
 
 var _module = require("./module");
 
-exports.exportActions = _module.exportActions;
+exports.exportModuleStaticInfo = _module.exportModuleStaticInfo;
 exports.renderApp = _module.renderApp;
 exports.renderSSR = _module.renderSSR;
 exports.modelHotReplacement = _module.modelHotReplacement;

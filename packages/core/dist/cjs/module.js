@@ -5,7 +5,7 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 exports.__esModule = true;
 exports.modelHotReplacement = modelHotReplacement;
 exports.viewHotReplacement = viewHotReplacement;
-exports.exportActions = exportActions;
+exports.exportModuleStaticInfo = exportModuleStaticInfo;
 exports.renderApp = renderApp;
 exports.renderSSR = renderSSR;
 
@@ -81,32 +81,70 @@ function viewHotReplacement(moduleName, views) {
   }
 }
 
-function exportActions(moduleGetter) {
+function exportModuleStaticInfo(actionCreatorMap, viewNamesMap) {
   if (!_basic.MetaData.actionCreatorMap) {
-    _basic.MetaData.moduleGetter = moduleGetter;
-    _basic.MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
-      maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-        get: function get(target, key) {
-          return function () {
-            for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-              payload[_key] = arguments[_key];
-            }
+    if (typeof Proxy === 'undefined') {
+      _basic.MetaData.actionCreatorMap = actionCreatorMap;
+    } else {
+      var cacheData = {};
+      _basic.MetaData.actionCreatorMap = new Proxy({}, {
+        get: function get(_, moduleName) {
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = new Proxy({}, {
+              get: function get(__, actionName) {
+                var type = moduleName + _basic.config.NSP + actionName;
 
-            return {
-              type: moduleName + _basic.config.NSP + key,
-              payload: payload
-            };
-          };
-        },
-        set: function set() {
-          return true;
+                var action = function action() {
+                  for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+                    payload[_key] = arguments[_key];
+                  }
+
+                  return {
+                    type: type,
+                    payload: payload
+                  };
+                };
+
+                action.toString = function () {
+                  return type;
+                };
+
+                return action;
+              }
+            });
+          }
+
+          return cacheData[moduleName];
         }
       });
-      return maps;
-    }, {});
+    }
   }
 
-  return _basic.MetaData.actionCreatorMap;
+  if (!_basic.MetaData.viewNamesMap) {
+    if (typeof Proxy === 'undefined') {
+      _basic.MetaData.viewNamesMap = viewNamesMap;
+    } else {
+      var _cacheData = {};
+      _basic.MetaData.viewNamesMap = new Proxy({}, {
+        get: function get(_, moduleName) {
+          if (!_cacheData[moduleName]) {
+            _cacheData[moduleName] = new Proxy({}, {
+              get: function get(__, viewName) {
+                return "" + moduleName + _basic.config.VSP + viewName;
+              }
+            });
+          }
+
+          return _cacheData[moduleName];
+        }
+      });
+    }
+  }
+
+  return {
+    actions: _basic.MetaData.actionCreatorMap,
+    views: _basic.MetaData.viewNamesMap
+  };
 }
 
 function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
@@ -133,6 +171,7 @@ function _renderApp() {
             appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
             _basic.MetaData.appModuleName = appModuleName;
             _basic.MetaData.appViewName = appViewName;
+            _basic.MetaData.moduleGetter = moduleGetter;
 
             if (typeof appModuleOrName !== 'string') {
               (0, _inject.cacheModule)(appModuleOrName);
@@ -147,21 +186,21 @@ function _renderApp() {
 
             store = (0, _store.buildStore)(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             beforeRender(store);
-            _context.next = 13;
+            _context.next = 14;
             return (0, _inject.getModuleByName)(appModuleName, moduleGetter);
 
-          case 13:
+          case 14:
             appModule = _context.sent;
-            _context.next = 16;
+            _context.next = 17;
             return appModule.default.model(store);
 
-          case 16:
+          case 17:
             reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
             return _context.abrupt("return", {
               store: store
             });
 
-          case 18:
+          case 19:
           case "end":
             return _context.stop();
         }
@@ -188,10 +227,11 @@ function _renderSSR() {
 
             _basic.MetaData.appModuleName = appModuleName;
             _basic.MetaData.appViewName = appViewName;
+            _basic.MetaData.moduleGetter = moduleGetter;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             preModuleNames = beforeRender(store);
-            _context2.next = 8;
+            _context2.next = 9;
             return Promise.all(preModuleNames.map(function (moduleName) {
               if (moduleGetter[moduleName]) {
                 var module = moduleGetter[moduleName]();
@@ -206,10 +246,10 @@ function _renderSSR() {
               return null;
             }));
 
-          case 8:
+          case 9:
             return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 9:
+          case 10:
           case "end":
             return _context2.stop();
         }

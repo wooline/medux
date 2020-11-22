@@ -56,26 +56,66 @@ export function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-export function exportActions(moduleGetter) {
+export function exportModuleStaticInfo(actionCreatorMap, viewNamesMap) {
   if (!MetaData.actionCreatorMap) {
-    MetaData.moduleGetter = moduleGetter;
-    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
-      maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-        get: (target, key) => {
-          return (...payload) => ({
-            type: moduleName + config.NSP + key,
-            payload
-          });
-        },
-        set: () => {
-          return true;
+    if (typeof Proxy === 'undefined') {
+      MetaData.actionCreatorMap = actionCreatorMap;
+    } else {
+      const cacheData = {};
+      MetaData.actionCreatorMap = new Proxy({}, {
+        get(_, moduleName) {
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = new Proxy({}, {
+              get(__, actionName) {
+                const type = moduleName + config.NSP + actionName;
+
+                const action = (...payload) => ({
+                  type,
+                  payload
+                });
+
+                action.toString = () => type;
+
+                return action;
+              }
+
+            });
+          }
+
+          return cacheData[moduleName];
         }
+
       });
-      return maps;
-    }, {});
+    }
   }
 
-  return MetaData.actionCreatorMap;
+  if (!MetaData.viewNamesMap) {
+    if (typeof Proxy === 'undefined') {
+      MetaData.viewNamesMap = viewNamesMap;
+    } else {
+      const cacheData = {};
+      MetaData.viewNamesMap = new Proxy({}, {
+        get(_, moduleName) {
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = new Proxy({}, {
+              get(__, viewName) {
+                return `${moduleName}${config.VSP}${viewName}`;
+              }
+
+            });
+          }
+
+          return cacheData[moduleName];
+        }
+
+      });
+    }
+  }
+
+  return {
+    actions: MetaData.actionCreatorMap,
+    views: MetaData.viewNamesMap
+  };
 }
 export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, beforeRender) {
   if (reRenderTimer) {
@@ -86,6 +126,7 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
+  MetaData.moduleGetter = moduleGetter;
 
   if (typeof appModuleOrName !== 'string') {
     cacheModule(appModuleOrName);
@@ -110,6 +151,7 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
 export async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
+  MetaData.moduleGetter = moduleGetter;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);

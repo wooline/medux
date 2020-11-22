@@ -1,6 +1,7 @@
 import { Unsubscribe } from 'redux';
 import { LoadingState } from './sprite';
 export declare const config: {
+    VSP: string;
     NSP: string;
     MSP: string;
 };
@@ -8,7 +9,6 @@ export declare function setConfig(_config: {
     NSP?: string;
     VSP?: string;
     MSP?: string;
-    RSP?: string;
 }): void;
 export interface CommonModule<S extends CoreModuleState = CoreModuleState> {
     default: {
@@ -31,7 +31,13 @@ export declare const ActionTypes: {
 export declare type ModuleGetter = {
     [moduleName: string]: () => CommonModule | Promise<CommonModule>;
 };
+export interface ViewNamesMap {
+    [moduleName: string]: {
+        [viewName: string]: string;
+    };
+}
 export declare const MetaData: {
+    viewNamesMap: ViewNamesMap;
     actionCreatorMap: ActionCreatorMap;
     clientStore: ModuleStore;
     appModuleName: string;
@@ -100,6 +106,9 @@ export interface ModuleStore extends Store {
 }
 export interface CoreModuleState {
     initialized?: boolean;
+    route?: {
+        [key: string]: any;
+    };
     loading?: {
         [key: string]: LoadingState;
     };

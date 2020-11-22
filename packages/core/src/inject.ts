@@ -40,12 +40,12 @@ function transformAction(actionName: string, action: ActionHandler, listenerModu
   actionHandlerMap[actionName][listenerModule] = action;
 }
 
-function addModuleActionCreatorList(moduleName: string, actionName: string) {
-  const actions = MetaData.actionCreatorMap[moduleName];
-  if (!actions[actionName]) {
-    actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
-  }
-}
+// function addModuleActionCreatorList(moduleName: string, actionName: string) {
+//   const actions = MetaData.facadeMap[moduleName].actions;
+//   if (!actions[actionName]) {
+//     actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
+//   }
+// }
 export function injectActions(store: ModuleStore, moduleName: string, handlers: ActionHandlerList) {
   for (const actionNames in handlers) {
     if (typeof handlers[actionNames] === 'function') {
@@ -62,13 +62,13 @@ export function injectActions(store: ModuleStore, moduleName: string, handlers: 
           } else {
             handler.__isHandler__ = false;
             transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            addModuleActionCreatorList(moduleName, actionName);
+            // addModuleActionCreatorList(moduleName, actionName);
           }
         });
       }
     }
   }
-  return MetaData.actionCreatorMap[moduleName];
+  return MetaData.facadeMap[moduleName].actions;
 }
 
 type Handler<F> = F extends (...args: infer P) => any
@@ -193,7 +193,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * ```
    */
   protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; payload?: any[]} {
-    const actions = MetaData.actionCreatorMap[this.moduleName];
+    const actions = MetaData.facadeMap[this.moduleName].actions;
     return actions[(handler as any).__actionName__](...rest);
   }
 

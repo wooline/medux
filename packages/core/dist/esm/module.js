@@ -60,32 +60,70 @@ export function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-export function exportActions(moduleGetter) {
+export function exportModuleStaticInfo(actionCreatorMap, viewNamesMap) {
   if (!MetaData.actionCreatorMap) {
-    MetaData.moduleGetter = moduleGetter;
-    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
-      maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-        get: function get(target, key) {
-          return function () {
-            for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-              payload[_key] = arguments[_key];
-            }
+    if (typeof Proxy === 'undefined') {
+      MetaData.actionCreatorMap = actionCreatorMap;
+    } else {
+      var cacheData = {};
+      MetaData.actionCreatorMap = new Proxy({}, {
+        get: function get(_, moduleName) {
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = new Proxy({}, {
+              get: function get(__, actionName) {
+                var type = moduleName + config.NSP + actionName;
 
-            return {
-              type: moduleName + config.NSP + key,
-              payload: payload
-            };
-          };
-        },
-        set: function set() {
-          return true;
+                var action = function action() {
+                  for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+                    payload[_key] = arguments[_key];
+                  }
+
+                  return {
+                    type: type,
+                    payload: payload
+                  };
+                };
+
+                action.toString = function () {
+                  return type;
+                };
+
+                return action;
+              }
+            });
+          }
+
+          return cacheData[moduleName];
         }
       });
-      return maps;
-    }, {});
+    }
   }
 
-  return MetaData.actionCreatorMap;
+  if (!MetaData.viewNamesMap) {
+    if (typeof Proxy === 'undefined') {
+      MetaData.viewNamesMap = viewNamesMap;
+    } else {
+      var _cacheData = {};
+      MetaData.viewNamesMap = new Proxy({}, {
+        get: function get(_, moduleName) {
+          if (!_cacheData[moduleName]) {
+            _cacheData[moduleName] = new Proxy({}, {
+              get: function get(__, viewName) {
+                return "" + moduleName + config.VSP + viewName;
+              }
+            });
+          }
+
+          return _cacheData[moduleName];
+        }
+      });
+    }
+  }
+
+  return {
+    actions: MetaData.actionCreatorMap,
+    views: MetaData.viewNamesMap
+  };
 }
 export function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
   return _renderApp.apply(this, arguments);
@@ -110,6 +148,7 @@ function _renderApp() {
             appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
             MetaData.appModuleName = appModuleName;
             MetaData.appViewName = appViewName;
+            MetaData.moduleGetter = moduleGetter;
 
             if (typeof appModuleOrName !== 'string') {
               cacheModule(appModuleOrName);
@@ -124,21 +163,21 @@ function _renderApp() {
 
             store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             beforeRender(store);
-            _context.next = 13;
+            _context.next = 14;
             return getModuleByName(appModuleName, moduleGetter);
 
-          case 13:
+          case 14:
             appModule = _context.sent;
-            _context.next = 16;
+            _context.next = 17;
             return appModule.default.model(store);
 
-          case 16:
+          case 17:
             reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
             return _context.abrupt("return", {
               store: store
             });
 
-          case 18:
+          case 19:
           case "end":
             return _context.stop();
         }
@@ -165,10 +204,11 @@ function _renderSSR() {
 
             MetaData.appModuleName = appModuleName;
             MetaData.appViewName = appViewName;
+            MetaData.moduleGetter = moduleGetter;
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             preModuleNames = beforeRender(store);
-            _context2.next = 8;
+            _context2.next = 9;
             return Promise.all(preModuleNames.map(function (moduleName) {
               if (moduleGetter[moduleName]) {
                 var module = moduleGetter[moduleName]();
@@ -183,10 +223,10 @@ function _renderSSR() {
               return null;
             }));
 
-          case 8:
+          case 9:
             return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 9:
+          case 10:
           case "end":
             return _context2.stop();
         }

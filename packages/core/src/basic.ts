@@ -4,13 +4,16 @@ import {env, isServerEnv} from './env';
 
 /**
  * 可供设置的全局参数，参见setConfig
+ * - VSP 默认为. ModuleName${VSP}ViewName 用于标记View
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
 export const config: {
+  VSP: string;
   NSP: string;
   MSP: string;
 } = {
+  VSP: '.',
   NSP: '.',
   MSP: ',',
 };
@@ -20,7 +23,8 @@ export const config: {
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
-export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string; RSP?: string}) {
+export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
+  _config.VSP && (config.VSP = _config.VSP);
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
@@ -63,16 +67,18 @@ export const ActionTypes = {
 export type ModuleGetter = {
   [moduleName: string]: () => CommonModule | Promise<CommonModule>;
 };
-
+export interface FacadeMap {
+  [moduleName: string]: {name: string; actions: ActionCreatorList; actionNames: {[key: string]: string}; viewNames: {[key: string]: string}};
+}
 export const MetaData: {
-  actionCreatorMap: ActionCreatorMap;
+  facadeMap: FacadeMap;
   clientStore: ModuleStore;
   appModuleName: string;
   appViewName: string;
   moduleGetter: ModuleGetter;
 } = {
   appViewName: null as any,
-  actionCreatorMap: null as any,
+  facadeMap: null as any,
   clientStore: null as any,
   appModuleName: null as any,
   moduleGetter: null as any,
@@ -107,7 +113,7 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
     loadings[key].addListener(TaskCountEvent, (e) => {
       const store = MetaData.clientStore;
       if (store) {
-        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+        const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({[groupName]: e.data});
         store.dispatch(action);
       }

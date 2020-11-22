@@ -41,17 +41,6 @@ function transformAction(actionName, action, listenerModule, actionHandlerMap) {
   actionHandlerMap[actionName][listenerModule] = action;
 }
 
-function addModuleActionCreatorList(moduleName, actionName) {
-  const actions = MetaData.actionCreatorMap[moduleName];
-
-  if (!actions[actionName]) {
-    actions[actionName] = (...payload) => ({
-      type: moduleName + config.NSP + actionName,
-      payload
-    });
-  }
-}
-
 export function injectActions(store, moduleName, handlers) {
   for (const actionNames in handlers) {
     if (typeof handlers[actionNames] === 'function') {
@@ -69,7 +58,6 @@ export function injectActions(store, moduleName, handlers) {
           } else {
             handler.__isHandler__ = false;
             transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            addModuleActionCreatorList(moduleName, actionName);
           }
         });
       }

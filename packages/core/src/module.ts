@@ -1,19 +1,103 @@
 /* eslint-disable no-await-in-loop */
-import {ActionHandlerMap, MetaData, CommonModule, config, ModuleGetter, ModuleStore, ModuleModel} from './basic';
+import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore, ModuleModel} from './basic';
 import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName} from './inject';
 import {buildStore, StoreOptions} from './store';
 import {client, env} from './env';
 
 export type ReturnModule<T> = T extends Promise<infer R> ? R : T;
-export type ModuleName<M extends CommonModule> = M['default']['moduleName'];
-export type ModuleStates<M extends CommonModule> = M['default']['initState'];
-export type ModuleViews<M extends CommonModule> = M['default']['views'];
-export type ModuleActions<M extends CommonModule> = M['default']['actions'];
+// export type ModuleName<M extends CommonModule> = M['default']['moduleName'];
+// export type ModuleStates<M extends CommonModule> = M['default']['initState'];
+// export type ModuleViews<M extends CommonModule> = M['default']['views'];
+// export type ModuleActions<M extends CommonModule> = M['default']['actions'];
 
-export type RootState<G extends ModuleGetter> = {[key in keyof G]?: ModuleStates<ReturnModule<ReturnType<G[key]>>>};
+// export type RootState<G extends ModuleGetter> = {[key in keyof G]?: ModuleStates<ReturnModule<ReturnType<G[key]>>>};
 
-export type RootActions<G extends ModuleGetter> = {[key in keyof G]: ModuleActions<ReturnModule<ReturnType<G[key]>>>};
+// export type RootActions<G extends ModuleGetter> = {[key in keyof G]: ModuleActions<ReturnModule<ReturnType<G[key]>>>};
 
+type ModuleFacade<M extends CommonModule> = {
+  name: string;
+  views: M['default']['views'];
+  viewName: keyof M['default']['views'];
+  viewNames: {[key in keyof M['default']['views']]: string};
+  viewMounted: {[key in keyof M['default']['views']]?: boolean};
+  state: M['default']['initState'];
+  actions: M['default']['actions'];
+  actionNames: {[key in keyof M['default']['actions']]: string};
+};
+export type APPFacade<G extends ModuleGetter = ModuleGetter> = {[key in keyof G]: ModuleFacade<ReturnModule<ReturnType<G[key]>>>};
+
+export type CoreAPP<G extends APPFacade = APPFacade> = {[key in keyof G]: Pick<G[key], 'name' | 'actions' | 'actionNames' | 'viewNames'>};
+
+export type LoadView<MS extends APPFacade, Options = any, Comp = any> = <M extends keyof MS, V extends MS[M]['viewName']>(
+  moduleName: M,
+  viewName: V,
+  options?: Options,
+  loading?: Comp,
+  error?: Comp
+) => MS[M]['views'][V];
+
+export function getCoreAPP(data?: {[moduleName: string]: {viewNames: {[key: string]: string}; actionNames: {[key: string]: string}}}): CoreAPP<any> {
+  if (!MetaData.facadeMap) {
+    if (data) {
+      MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
+        const obj = data[moduleName];
+        const actions: {[actionName: string]: any} = {};
+        const actionNames: {[actionName: string]: string} = {};
+        Object.keys(obj.actionNames).forEach((actionName) => {
+          actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
+          actionNames[actionName] = moduleName + config.NSP + actionName;
+        });
+        const viewNames: {[viewName: string]: string} = {};
+        Object.keys(obj.viewNames).forEach((viewName) => {
+          viewNames[viewName] = moduleName + config.VSP + viewName;
+        });
+        const moduleFacade = {name: moduleName, actions, actionNames, viewNames};
+        prev[moduleName] = moduleFacade;
+        return prev;
+      }, {} as FacadeMap);
+    } else {
+      const cacheData = {};
+      MetaData.facadeMap = new Proxy(
+        {},
+        {
+          get(_, moduleName: string) {
+            if (!cacheData[moduleName]) {
+              cacheData[moduleName] = {
+                name: moduleName,
+                viewNames: new Proxy(
+                  {},
+                  {
+                    get(__, viewName: string) {
+                      return moduleName + config.VSP + viewName;
+                    },
+                  }
+                ),
+                actionNames: new Proxy(
+                  {},
+                  {
+                    get(__, actionName: string) {
+                      return moduleName + config.NSP + actionName;
+                    },
+                  }
+                ),
+                actions: new Proxy(
+                  {},
+                  {
+                    get(__, actionName: string) {
+                      return (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
+                    },
+                  }
+                ),
+              };
+            }
+            return cacheData[moduleName];
+          },
+        }
+      );
+    }
+  }
+  return MetaData.facadeMap;
+}
 function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
   for (const actionName in actionHandlerMap) {
     if (actionHandlerMap.hasOwnProperty(actionName)) {
@@ -73,53 +157,6 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
 //   return !!moduleStore._medux_.injectedModules[moduleName];
 // }
 
-/**
- * 为所有模块的modelHanders自动生成ActionCreator
- * - 注意如果环境不支持ES7 Proxy，将无法dispatch一个未经初始化的ModelAction，此时必须手动提前loadModel
- * - 参见 loadModel
- * @param moduleGetter 模块的获取方式
- */
-export function exportActions<G extends ModuleGetter>(moduleGetter: G): RootActions<G> {
-  if (!MetaData.actionCreatorMap) {
-    MetaData.moduleGetter = moduleGetter as any;
-    MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce((maps, moduleName) => {
-      maps[moduleName] =
-        typeof Proxy === 'undefined'
-          ? {}
-          : new Proxy(
-              {},
-              {
-                get: (target: any, key: string) => {
-                  return (...payload: any[]) => ({type: moduleName + config.NSP + key, payload});
-                },
-                set: () => {
-                  return true;
-                },
-              }
-            );
-      return maps;
-    }, {});
-  }
-  return MetaData.actionCreatorMap as any;
-}
-
-/**
- * 动态加载View，因为每种UI框架动态加载View的方式不一样，所有此处只是提供一个抽象接口
- * @see getView
- */
-
-export type LoadView<MG extends ModuleGetter, Options = any, Comp = any> = <
-  M extends Extract<keyof MG, string>,
-  V extends ModuleViews<ReturnModule<ReturnType<MG[M]>>>,
-  N extends Extract<keyof V, string>
->(
-  moduleName: M,
-  viewName: N,
-  options?: Options,
-  loading?: Comp,
-  error?: Comp
-) => V[N];
-
 // function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter): Promise<Module[]> {
 //   const preModules = moduleNames.map((moduleName) => {
 //     const module = getModuleByName(moduleName, moduleGetter);
@@ -156,6 +193,7 @@ export async function renderApp<V>(
   const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
+  MetaData.moduleGetter = moduleGetter;
   if (typeof appModuleOrName !== 'string') {
     cacheModule(appModuleOrName);
   }
@@ -190,6 +228,7 @@ export async function renderSSR<V>(
 ) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
+  MetaData.moduleGetter = moduleGetter;
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);

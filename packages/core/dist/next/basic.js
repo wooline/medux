@@ -1,10 +1,12 @@
 import { TaskCountEvent, TaskCounter } from './sprite';
 import { env, isServerEnv } from './env';
 export const config = {
+  VSP: '.',
   NSP: '.',
   MSP: ','
 };
 export function setConfig(_config) {
+  _config.VSP && (config.VSP = _config.VSP);
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
@@ -14,6 +16,7 @@ export const ActionTypes = {
   Error: `medux${config.NSP}Error`
 };
 export const MetaData = {
+  viewNamesMap: null,
   appViewName: null,
   actionCreatorMap: null,
   clientStore: null,
