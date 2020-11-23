@@ -63,8 +63,6 @@ export function injectActions(store, moduleName, handlers) {
       }
     }
   }
-
-  return MetaData.actionCreatorMap[moduleName];
 }
 
 function _loadModel(moduleName, store) {
@@ -169,19 +167,6 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "method",
-      key: "callThisAction",
-      value: function callThisAction(handler, ...rest) {
-        const actions = MetaData.actionCreatorMap[this.moduleName];
-        return actions[handler.__actionName__](...rest);
-      }
-    }, {
-      kind: "method",
-      key: "updateState",
-      value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.state, payload), key));
-      }
-    }, {
-      kind: "method",
       key: "loadModel",
       value: function loadModel(moduleName) {
         return _loadModel(moduleName, this.store);
@@ -198,7 +183,7 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Update",
       value: function Update(payload, key) {
-        return payload;
+        return Object.assign({}, this.state, payload);
       }
     }, {
       kind: "method",
@@ -215,16 +200,16 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
 });
 export const exportModule = (moduleName, ModuleHandles, views) => {
   const model = store => {
-    let initState = store._medux_.injectedModules[moduleName];
+    const hasInjected = store._medux_.injectedModules[moduleName];
 
-    if (!initState) {
+    if (!hasInjected) {
+      store._medux_.injectedModules[moduleName] = true;
       const moduleHandles = new ModuleHandles();
       moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
-      initState = moduleHandles.initState;
-      store._medux_.injectedModules[moduleName] = initState;
-      const actions = injectActions(store, moduleName, moduleHandles);
-      moduleHandles.actions = actions;
+      moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
+      const initState = moduleHandles.initState;
+      injectActions(store, moduleName, moduleHandles);
       const preModuleState = store.getState()[moduleName] || {};
       const moduleState = Object.assign({}, initState, preModuleState);
 
@@ -234,7 +219,7 @@ export const exportModule = (moduleName, ModuleHandles, views) => {
       }
     }
 
-    return initState;
+    return undefined;
   };
 
   return {

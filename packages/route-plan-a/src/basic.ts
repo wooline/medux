@@ -1,5 +1,4 @@
-import {config, ModuleGetter, ReturnModule, RootState as CoreRootState, CommonModule} from '@medux/core';
-import {RouteModuleState} from './index';
+import {config, RootModuleFacade} from '@medux/core';
 import {compilePath} from './matchPath';
 
 export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
@@ -66,10 +65,9 @@ export type RouteState<P extends RouteParams = RouteParams> = Location & {
   stack: string[];
 };
 
-type MountViews<M extends CommonModule> = {[key in keyof M['default']['views']]?: boolean};
-type ModuleParams<M extends CommonModule<RouteModuleState>> = M['default']['initState']['routeParams'];
+// type ModuleParams<M extends CommonModule<RouteModuleState>> = M['default']['initState']['routeParams'];
 
-export type RootRouteParams<G extends ModuleGetter> = {[key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>};
+// export type RootRouteParams<G extends ModuleGetter> = {[key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>};
 // export type RouteViews<G extends ModuleGetter> = {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
 /**
  * 整个Store的数据结构模型，主要分为三部分
@@ -77,7 +75,7 @@ export type RootRouteParams<G extends ModuleGetter> = {[key in keyof G]?: Module
  * - modules，各个模块的数据，可通过isModule辨别
  * - otherReducers，其他第三方reducers生成的数据
  */
-export type RootState<G extends ModuleGetter> = {
+export type RootState<A extends RootModuleFacade> = {
   route: {
     history: string[];
     stack: string[];
@@ -85,17 +83,16 @@ export type RootState<G extends ModuleGetter> = {
     pathname: string;
     search: string;
     hash: string;
-    views: {[key in keyof G]?: MountViews<ReturnModule<ReturnType<G[key]>>>};
-    params: {[key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>};
+    views: {[M in keyof A]?: A[M]['viewMounted']};
+    params: {[M in keyof A]?: A[M]['state']['routeParams']};
     paths: string[];
     key: string;
     action: HistoryAction;
   };
-} & CoreRootState<G>;
+} & {[M in keyof A]?: A[M]['state']};
 
 export const routeConfig = {
   RSP: '|',
-  VSP: '.',
   escape: true,
   dateParse: false,
   splitKey: 'q',
@@ -110,8 +107,7 @@ export const routeConfig = {
  * - splitKey 使用一个key来作为数据的载体
  * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  */
-export function setRouteConfig(conf: {VSP?: string; RSP?: string; escape?: boolean; dateParse?: boolean; splitKey?: string; historyMax?: number; homeUrl?: string}) {
-  conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
+export function setRouteConfig(conf: {RSP?: string; escape?: boolean; dateParse?: boolean; splitKey?: string; historyMax?: number; homeUrl?: string}) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.escape !== undefined && (routeConfig.escape = conf.escape);
   conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);

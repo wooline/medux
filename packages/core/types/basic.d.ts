@@ -10,10 +10,10 @@ export declare function setConfig(_config: {
     VSP?: string;
     MSP?: string;
 }): void;
-export interface CommonModule<S extends CoreModuleState = CoreModuleState> {
+export interface CommonModule {
     default: {
         moduleName: string;
-        initState: S;
+        initState: CoreModuleState;
         model: (store: ModuleStore) => void | Promise<void>;
         views: {
             [key: string]: any;
@@ -31,14 +31,20 @@ export declare const ActionTypes: {
 export declare type ModuleGetter = {
     [moduleName: string]: () => CommonModule | Promise<CommonModule>;
 };
-export interface ViewNamesMap {
+export interface FacadeMap {
     [moduleName: string]: {
-        [viewName: string]: string;
+        name: string;
+        actions: ActionCreatorList;
+        actionNames: {
+            [key: string]: string;
+        };
+        viewNames: {
+            [key: string]: string;
+        };
     };
 }
 export declare const MetaData: {
-    viewNamesMap: ViewNamesMap;
-    actionCreatorMap: ActionCreatorMap;
+    facadeMap: FacadeMap;
     clientStore: ModuleStore;
     appModuleName: string;
     appViewName: string;
@@ -97,7 +103,7 @@ export interface ModuleStore extends Store {
         reducerMap: ReducerMap;
         effectMap: EffectMap;
         injectedModules: {
-            [moduleName: string]: Record<string, any>;
+            [moduleName: string]: boolean | undefined;
         };
         beforeState: CoreRootState;
         prevState: CoreRootState;
@@ -106,9 +112,7 @@ export interface ModuleStore extends Store {
 }
 export interface CoreModuleState {
     initialized?: boolean;
-    route?: {
-        [key: string]: any;
-    };
+    routeParams?: any;
     loading?: {
         [key: string]: LoadingState;
     };

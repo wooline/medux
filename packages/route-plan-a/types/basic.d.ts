@@ -1,5 +1,4 @@
-import { ModuleGetter, ReturnModule, RootState as CoreRootState, CommonModule } from '@medux/core';
-import { RouteModuleState } from './index';
+import { RootModuleFacade } from '@medux/core';
 export declare type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
 export interface Location {
     url: string;
@@ -26,14 +25,7 @@ export declare type RouteState<P extends RouteParams = RouteParams> = Location &
     history: string[];
     stack: string[];
 };
-declare type MountViews<M extends CommonModule> = {
-    [key in keyof M['default']['views']]?: boolean;
-};
-declare type ModuleParams<M extends CommonModule<RouteModuleState>> = M['default']['initState']['routeParams'];
-export declare type RootRouteParams<G extends ModuleGetter> = {
-    [key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>;
-};
-export declare type RootState<G extends ModuleGetter> = {
+export declare type RootState<A extends RootModuleFacade> = {
     route: {
         history: string[];
         stack: string[];
@@ -42,19 +34,20 @@ export declare type RootState<G extends ModuleGetter> = {
         search: string;
         hash: string;
         views: {
-            [key in keyof G]?: MountViews<ReturnModule<ReturnType<G[key]>>>;
+            [M in keyof A]?: A[M]['viewMounted'];
         };
         params: {
-            [key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>;
+            [M in keyof A]?: A[M]['state']['routeParams'];
         };
         paths: string[];
         key: string;
         action: HistoryAction;
     };
-} & CoreRootState<G>;
+} & {
+    [M in keyof A]?: A[M]['state'];
+};
 export declare const routeConfig: {
     RSP: string;
-    VSP: string;
     escape: boolean;
     dateParse: boolean;
     splitKey: string;
@@ -62,7 +55,6 @@ export declare const routeConfig: {
     homeUrl: string;
 };
 export declare function setRouteConfig(conf: {
-    VSP?: string;
     RSP?: string;
     escape?: boolean;
     dateParse?: boolean;

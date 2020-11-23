@@ -4,11 +4,96 @@ import { MetaData, config } from './basic';
 import { cacheModule, injectActions, getModuleByName } from './inject';
 import { buildStore } from './store';
 import { client, env } from './env';
+export function getRootModuleAPI(data) {
+  if (!MetaData.facadeMap) {
+    if (data) {
+      MetaData.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
+        var obj = data[moduleName];
+        var actions = {};
+        var actionNames = {};
+        Object.keys(obj.actionNames).forEach(function (actionName) {
+          actions[actionName] = function () {
+            for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+              payload[_key] = arguments[_key];
+            }
+
+            return {
+              type: moduleName + config.NSP + actionName,
+              payload: payload
+            };
+          };
+
+          actionNames[actionName] = moduleName + config.NSP + actionName;
+        });
+        var viewNames = {};
+        Object.keys(obj.viewNames).forEach(function (viewName) {
+          viewNames[viewName] = moduleName + config.VSP + viewName;
+        });
+        var moduleFacade = {
+          name: moduleName,
+          actions: actions,
+          actionNames: actionNames,
+          viewNames: viewNames
+        };
+        prev[moduleName] = moduleFacade;
+        return prev;
+      }, {});
+    } else {
+      var cacheData = {};
+      MetaData.facadeMap = new Proxy({}, {
+        set: function set(target, moduleName, val, receiver) {
+          return Reflect.set(target, moduleName, val, receiver);
+        },
+        get: function get(target, moduleName, receiver) {
+          var val = Reflect.get(target, moduleName, receiver);
+
+          if (val !== undefined) {
+            return val;
+          }
+
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = {
+              name: moduleName,
+              viewNames: new Proxy({}, {
+                get: function get(__, viewName) {
+                  return moduleName + config.VSP + viewName;
+                }
+              }),
+              actionNames: new Proxy({}, {
+                get: function get(__, actionName) {
+                  return moduleName + config.NSP + actionName;
+                }
+              }),
+              actions: new Proxy({}, {
+                get: function get(__, actionName) {
+                  return function () {
+                    for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                      payload[_key2] = arguments[_key2];
+                    }
+
+                    return {
+                      type: moduleName + config.NSP + actionName,
+                      payload: payload
+                    };
+                  };
+                }
+              })
+            };
+          }
+
+          return cacheData[moduleName];
+        }
+      });
+    }
+  }
+
+  return MetaData.facadeMap;
+}
 
 function clearHandlers(key, actionHandlerMap) {
-  for (var actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(actionName)) {
-      var maps = actionHandlerMap[actionName];
+  for (var _actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(_actionName)) {
+      var maps = actionHandlerMap[_actionName];
       delete maps[key];
     }
   }
@@ -24,14 +109,9 @@ export function modelHotReplacement(moduleName, ActionHandles) {
     var handlers = new ActionHandles();
     handlers.moduleName = moduleName;
     handlers.store = store;
-    var actions = injectActions(store, moduleName, handlers);
-    handlers.actions = actions;
-
-    if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
-      env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
-    }
-
-    env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
+    handlers.actions = MetaData.facadeMap[moduleName].actions;
+    injectActions(store, moduleName, handlers);
+    env.console.log("[HMR] @medux Updated model: " + moduleName);
   }
 }
 
@@ -59,71 +139,6 @@ export function viewHotReplacement(moduleName, views) {
   } else {
     throw 'views cannot apply update for HMR.';
   }
-}
-export function exportModuleStaticInfo(actionCreatorMap, viewNamesMap) {
-  if (!MetaData.actionCreatorMap) {
-    if (typeof Proxy === 'undefined') {
-      MetaData.actionCreatorMap = actionCreatorMap;
-    } else {
-      var cacheData = {};
-      MetaData.actionCreatorMap = new Proxy({}, {
-        get: function get(_, moduleName) {
-          if (!cacheData[moduleName]) {
-            cacheData[moduleName] = new Proxy({}, {
-              get: function get(__, actionName) {
-                var type = moduleName + config.NSP + actionName;
-
-                var action = function action() {
-                  for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-                    payload[_key] = arguments[_key];
-                  }
-
-                  return {
-                    type: type,
-                    payload: payload
-                  };
-                };
-
-                action.toString = function () {
-                  return type;
-                };
-
-                return action;
-              }
-            });
-          }
-
-          return cacheData[moduleName];
-        }
-      });
-    }
-  }
-
-  if (!MetaData.viewNamesMap) {
-    if (typeof Proxy === 'undefined') {
-      MetaData.viewNamesMap = viewNamesMap;
-    } else {
-      var _cacheData = {};
-      MetaData.viewNamesMap = new Proxy({}, {
-        get: function get(_, moduleName) {
-          if (!_cacheData[moduleName]) {
-            _cacheData[moduleName] = new Proxy({}, {
-              get: function get(__, viewName) {
-                return "" + moduleName + config.VSP + viewName;
-              }
-            });
-          }
-
-          return _cacheData[moduleName];
-        }
-      });
-    }
-  }
-
-  return {
-    actions: MetaData.actionCreatorMap,
-    views: MetaData.viewNamesMap
-  };
 }
 export function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
   return _renderApp.apply(this, arguments);

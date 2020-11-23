@@ -2,6 +2,84 @@ import { MetaData, config } from './basic';
 import { cacheModule, injectActions, getModuleByName } from './inject';
 import { buildStore } from './store';
 import { client, env } from './env';
+export function getRootModuleAPI(data) {
+  if (!MetaData.facadeMap) {
+    if (data) {
+      MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
+        const obj = data[moduleName];
+        const actions = {};
+        const actionNames = {};
+        Object.keys(obj.actionNames).forEach(actionName => {
+          actions[actionName] = (...payload) => ({
+            type: moduleName + config.NSP + actionName,
+            payload
+          });
+
+          actionNames[actionName] = moduleName + config.NSP + actionName;
+        });
+        const viewNames = {};
+        Object.keys(obj.viewNames).forEach(viewName => {
+          viewNames[viewName] = moduleName + config.VSP + viewName;
+        });
+        const moduleFacade = {
+          name: moduleName,
+          actions,
+          actionNames,
+          viewNames
+        };
+        prev[moduleName] = moduleFacade;
+        return prev;
+      }, {});
+    } else {
+      const cacheData = {};
+      MetaData.facadeMap = new Proxy({}, {
+        set(target, moduleName, val, receiver) {
+          return Reflect.set(target, moduleName, val, receiver);
+        },
+
+        get(target, moduleName, receiver) {
+          const val = Reflect.get(target, moduleName, receiver);
+
+          if (val !== undefined) {
+            return val;
+          }
+
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = {
+              name: moduleName,
+              viewNames: new Proxy({}, {
+                get(__, viewName) {
+                  return moduleName + config.VSP + viewName;
+                }
+
+              }),
+              actionNames: new Proxy({}, {
+                get(__, actionName) {
+                  return moduleName + config.NSP + actionName;
+                }
+
+              }),
+              actions: new Proxy({}, {
+                get(__, actionName) {
+                  return (...payload) => ({
+                    type: moduleName + config.NSP + actionName,
+                    payload
+                  });
+                }
+
+              })
+            };
+          }
+
+          return cacheData[moduleName];
+        }
+
+      });
+    }
+  }
+
+  return MetaData.facadeMap;
+}
 
 function clearHandlers(key, actionHandlerMap) {
   for (const actionName in actionHandlerMap) {
@@ -22,14 +100,9 @@ export function modelHotReplacement(moduleName, ActionHandles) {
     const handlers = new ActionHandles();
     handlers.moduleName = moduleName;
     handlers.store = store;
-    const actions = injectActions(store, moduleName, handlers);
-    handlers.actions = actions;
-
-    if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
-      env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
-    }
-
-    env.console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
+    handlers.actions = MetaData.facadeMap[moduleName].actions;
+    injectActions(store, moduleName, handlers);
+    env.console.log(`[HMR] @medux Updated model: ${moduleName}`);
   }
 }
 
@@ -55,67 +128,6 @@ export function viewHotReplacement(moduleName, views) {
   } else {
     throw 'views cannot apply update for HMR.';
   }
-}
-export function exportModuleStaticInfo(actionCreatorMap, viewNamesMap) {
-  if (!MetaData.actionCreatorMap) {
-    if (typeof Proxy === 'undefined') {
-      MetaData.actionCreatorMap = actionCreatorMap;
-    } else {
-      const cacheData = {};
-      MetaData.actionCreatorMap = new Proxy({}, {
-        get(_, moduleName) {
-          if (!cacheData[moduleName]) {
-            cacheData[moduleName] = new Proxy({}, {
-              get(__, actionName) {
-                const type = moduleName + config.NSP + actionName;
-
-                const action = (...payload) => ({
-                  type,
-                  payload
-                });
-
-                action.toString = () => type;
-
-                return action;
-              }
-
-            });
-          }
-
-          return cacheData[moduleName];
-        }
-
-      });
-    }
-  }
-
-  if (!MetaData.viewNamesMap) {
-    if (typeof Proxy === 'undefined') {
-      MetaData.viewNamesMap = viewNamesMap;
-    } else {
-      const cacheData = {};
-      MetaData.viewNamesMap = new Proxy({}, {
-        get(_, moduleName) {
-          if (!cacheData[moduleName]) {
-            cacheData[moduleName] = new Proxy({}, {
-              get(__, viewName) {
-                return `${moduleName}${config.VSP}${viewName}`;
-              }
-
-            });
-          }
-
-          return cacheData[moduleName];
-        }
-
-      });
-    }
-  }
-
-  return {
-    actions: MetaData.actionCreatorMap,
-    views: MetaData.viewNamesMap
-  };
 }
 export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, beforeRender) {
   if (reRenderTimer) {

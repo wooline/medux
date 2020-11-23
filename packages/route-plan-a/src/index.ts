@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {CoreModuleHandlers, CoreModuleState, reducer} from '@medux/core';
+import {CoreModuleHandlers, CoreModuleState, config, reducer} from '@medux/core';
 import {Middleware, Reducer} from 'redux';
 import {compileToPath, matchPath} from './matchPath';
 import {RouteActionTypes, routeConfig, checkLocation, compileRule, HistoryAction, DisplayViews, urlToLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction} from './basic';
@@ -8,7 +8,7 @@ import type {RouteParams, Location, PaRouteData, PaLocation, RouteState, RoutePa
 
 export const deepAssign = assignDeep;
 
-export type {RootState, PaRouteData, PaLocation, RouteState, RoutePayload, Location, RouteRule, RouteParams, RootRouteParams} from './basic';
+export type {RootState, PaRouteData, PaLocation, RouteState, RoutePayload, Location, RouteRule, RouteParams} from './basic';
 export {setRouteConfig} from './basic';
 
 // 排除默认路由参数，路由中如果参数值与默认参数相同可省去
@@ -118,7 +118,7 @@ function pathnameParse(pathname: string, routeRule: RouteRule, paths: string[], 
       // const match = matchPath(pathname, {path: rule.replace(/\$$/, ''), exact: rule.endsWith('$')});
       if (match) {
         paths.push(viewName);
-        const moduleName = viewName.split(routeConfig.VSP)[0];
+        const moduleName = viewName.split(config.VSP)[0];
         const {params} = match;
         if (params && Object.keys(params).length > 0) {
           args[moduleName] = Object.assign(args[moduleName] || {}, checkPathArgs(params));
@@ -138,7 +138,7 @@ function pathnameParse(pathname: string, routeRule: RouteRule, paths: string[], 
  */
 export function assignRouteData(paths: string[], params: {[moduleName: string]: any}, defaultRouteParams: {[moduleName: string]: any}): PaRouteData {
   const views: DisplayViews = paths.reduce((prev: DisplayViews, cur) => {
-    const [moduleName, viewName] = cur.split(routeConfig.VSP);
+    const [moduleName, viewName] = cur.split(config.VSP);
     if (moduleName && viewName) {
       if (!prev[moduleName]) {
         prev[moduleName] = {};
@@ -230,7 +230,7 @@ function pathsToPathname(
   let pathname = '';
   const views: DisplayViews = {};
   paths.reduce((parentAbsoluteViewName, viewName, index) => {
-    const [moduleName, view] = viewName.split(routeConfig.VSP);
+    const [moduleName, view] = viewName.split(config.VSP);
     const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
     const rule = viewToRule[absoluteViewName];
     const keys = ruleToKeys[rule] || [];
@@ -334,7 +334,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
   }
 
   getModulePath(): string[] {
-    return this.getRouteState().paths.map((viewName) => viewName.split(routeConfig.VSP)[0]);
+    return this.getRouteState().paths.map((viewName) => viewName.split(config.VSP)[0]);
   }
 
   protected getCurKey(): string {
@@ -713,17 +713,17 @@ export const routeReducer: Reducer = (state: RouteState, action) => {
 // }
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export interface RouteModuleState<P extends Record<string, any> = {}> extends CoreModuleState {
-  routeParams?: P;
+export interface RouteModuleState<R extends Record<string, any> = {}> extends CoreModuleState {
+  routeParams?: R;
 }
-export type RouteRootState<P extends RouteParams = RouteParams> = {
+type RouteRootState = {
   [moduleName: string]: RouteModuleState;
 } & {
-  route: RouteState<P>;
+  route: RouteState;
 };
 export class RouteModuleHandlers<S extends RouteModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
   @reducer
-  protected Init(initState: S): S {
+  public Init(initState: S): S {
     const routeParams = this.rootState.route.params[this.moduleName];
     return routeParams ? {...initState, routeParams} : initState;
   }

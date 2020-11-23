@@ -68,7 +68,7 @@ export function injectActions(store: ModuleStore, moduleName: string, handlers: 
       }
     }
   }
-  return MetaData.facadeMap[moduleName].actions;
+  // return MetaData.facadeMap[moduleName].actions;
 }
 
 type Handler<F> = F extends (...args: infer P) => any
@@ -78,12 +78,9 @@ type Handler<F> = F extends (...args: infer P) => any
       type: string;
     }
   : never;
-/**
- * 将ModuleHandlers变成Action Creator
- * - 该数据结构由ExportModule自动生成
- * - medux中的action通常都由此Creator自动生成
- */
-export type Actions<Ins> = {[K in keyof Ins]: Ins[K] extends (...args: any[]) => any ? Handler<Ins[K]> : never};
+export type Actions<Ins> = {
+  [K in Exclude<keyof Ins, 'initState'>]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
+};
 
 /**
  * 动态加载并初始化其他模块的model
@@ -121,7 +118,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
 
   protected store: ModuleStore = null as any;
 
-  public moduleName: string = '';
+  protected moduleName: string = '';
 
   constructor(public readonly initState: S) {}
 
@@ -186,28 +183,6 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
   }
 
   /**
-   * 对于某些仅供本模块内部使用的action，限制非public不对外开放.
-   * 所以即使this.actions也调用不到，此时可以使用callThisAction.
-   * ```
-   * this.dispatch(this.callThisAction(this.anyPrivateHandle, args1, args2));
-   * ```
-   */
-  protected callThisAction<T extends any[]>(handler: (...args: T) => any, ...rest: T): {type: string; payload?: any[]} {
-    const actions = MetaData.facadeMap[this.moduleName].actions;
-    return actions[(handler as any).__actionName__](...rest);
-  }
-
-  /**
-   * 一个快捷操作，相当于
-   * ```
-   * this.dispatch(this.actions.Update({...this.state,...args}));
-   * ```
-   */
-  protected updateState(payload: Partial<S>, key: string) {
-    this.dispatch(this.callThisAction(this.Update, {...this.state, ...payload}, key));
-  }
-
-  /**
    * 动态加载并初始化其他模块的model
    */
   protected loadModel(moduleName: string) {
@@ -219,7 +194,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * - 此方法为该action的默认reducerHandler，通常用来注入初始化moduleState
    */
   @reducer
-  protected Init(initState: S): S {
+  public Init(initState: S): S {
     return initState;
   }
 
@@ -227,8 +202,8 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * 通用的reducerHandler，通常用来更新moduleState
    */
   @reducer
-  protected Update(payload: S, key: string): S {
-    return payload;
+  public Update(payload: Partial<S>, key: string): S {
+    return {...this.state, ...payload};
   }
 
   /**
@@ -236,7 +211,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入loading状态
    */
   @reducer
-  protected Loading(payload: {[group: string]: string}): S {
+  public Loading(payload: {[group: string]: string}): S {
     const state = this.state;
     return {
       ...state,
@@ -295,15 +270,15 @@ export type ExportModule<Component> = <
  */
 export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views) => {
   const model: ModuleModel = (store) => {
-    let initState = store._medux_.injectedModules[moduleName];
-    if (!initState) {
+    const hasInjected = store._medux_.injectedModules[moduleName];
+    if (!hasInjected) {
+      store._medux_.injectedModules[moduleName] = true;
       const moduleHandles = new ModuleHandles();
-      moduleHandles.moduleName = moduleName;
+      (moduleHandles as any).moduleName = moduleName;
       (moduleHandles as any).store = store;
-      initState = moduleHandles.initState;
-      store._medux_.injectedModules[moduleName] = initState;
-      const actions = injectActions(store, moduleName, moduleHandles as any);
-      (moduleHandles as any).actions = actions;
+      (moduleHandles as any).actions = MetaData.facadeMap[moduleName].actions;
+      const initState = moduleHandles.initState;
+      injectActions(store, moduleName, moduleHandles as any);
       const preModuleState: CoreModuleState = store.getState()[moduleName] || {};
       const moduleState: CoreModuleState = {...initState, ...preModuleState};
       if (!moduleState.initialized) {
@@ -311,7 +286,7 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
         return store.dispatch(moduleInitAction(moduleName, moduleState)) as any;
       }
     }
-    return initState;
+    return undefined;
   };
   return {
     moduleName,

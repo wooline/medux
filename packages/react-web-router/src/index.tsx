@@ -1,32 +1,40 @@
 /// <reference path="../env/global.d.ts" />
 import {routeMiddleware, routeReducer} from '@medux/route-plan-a';
-import {RootActions, ModuleGetter, StoreOptions, exportActions} from '@medux/core';
+import {getRootModuleAPI} from '@medux/core';
 import React, {ReactElement, ComponentType, FunctionComponent, ComponentClass} from 'react';
 import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
 import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux';
+
+import type {RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions} from '@medux/core';
 import type {Dispatch, Store} from 'redux';
-import type {LocationMap, RouteRule, RootState, RootRouteParams} from '@medux/route-plan-a';
+import type {LocationMap, RouteRule, RootState} from '@medux/route-plan-a';
 
 export {exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime} from '@medux/core';
 export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers} from '@medux/route-plan-a';
 
+export type {RootModuleFacade} from '@medux/core';
 export type {Dispatch, Store} from 'redux';
-export type {RouteRule, RouteState, LocationMap, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
+export type {RouteRule, RouteState, RootState, LocationMap, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
 export type {HistoryActions} from '@medux/web';
 
-export type AppExports<MG extends ModuleGetter> = {
-  store: Store;
-  state: RootState<MG>;
-  actions: RootActions<MG>;
-  loadView: LoadView<MG>;
-  history: HistoryActions<RootRouteParams<MG>>;
+export type FacadeExports<APP extends RootModuleFacade> = {
+  App: {
+    store: Store;
+    state: RootState<APP>;
+    loadView: LoadView<APP>;
+    history: HistoryActions<RootState<APP>['route']['params']>;
+  };
+  Modules: RootModuleAPI<APP>;
 };
-const appExports: AppExports<{}> = {loadView} as any;
+const appExports: {store: any; state: any; loadView: any; history: any} = {loadView, state: undefined, store: undefined, history: undefined};
 
-export function exportApp(): any {
-  return appExports;
+export function exportApp(): FacadeExports<any> {
+  return {
+    App: appExports as any,
+    Modules: getRootModuleAPI(),
+  };
 }
 
 export function buildApp(
@@ -52,7 +60,6 @@ export function buildApp(
   }
 ) {
   appExports.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
-  appExports.actions = exportActions(moduleGetter);
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
   }
@@ -68,11 +75,6 @@ export function buildApp(
 
   return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
     appExports.store = store as any;
-    Object.defineProperty(appExports, 'state', {
-      get: () => {
-        return store.getState();
-      },
-    });
     appExports.history.setStore(store);
   });
 }
@@ -100,7 +102,6 @@ export function buildSSR(
   }
 ): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
   appExports.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
-  appExports.actions = exportActions(moduleGetter);
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }

@@ -85,8 +85,6 @@ function injectActions(store, moduleName, handlers) {
       })();
     }
   }
-
-  return _basic.MetaData.actionCreatorMap[moduleName];
 }
 
 function _loadModel(moduleName, store) {
@@ -181,24 +179,6 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       }
     }, {
       kind: "method",
-      key: "callThisAction",
-      value: function callThisAction(handler) {
-        var actions = _basic.MetaData.actionCreatorMap[this.moduleName];
-
-        for (var _len = arguments.length, rest = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-          rest[_key - 1] = arguments[_key];
-        }
-
-        return actions[handler.__actionName__].apply(actions, rest);
-      }
-    }, {
-      kind: "method",
-      key: "updateState",
-      value: function updateState(payload, key) {
-        this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.state, payload), key));
-      }
-    }, {
-      kind: "method",
       key: "loadModel",
       value: function loadModel(moduleName) {
         return _loadModel(moduleName, this.store);
@@ -215,7 +195,7 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       decorators: [_basic.reducer],
       key: "Update",
       value: function Update(payload, key) {
-        return payload;
+        return Object.assign({}, this.state, payload);
       }
     }, {
       kind: "method",
@@ -234,18 +214,18 @@ exports.CoreModuleHandlers = CoreModuleHandlers;
 
 var exportModule = function exportModule(moduleName, ModuleHandles, views) {
   var model = function model(store) {
-    var initState = store._medux_.injectedModules[moduleName];
+    var hasInjected = store._medux_.injectedModules[moduleName];
 
-    if (!initState) {
+    if (!hasInjected) {
+      store._medux_.injectedModules[moduleName] = true;
       var moduleHandles = new ModuleHandles();
       moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
-      initState = moduleHandles.initState;
-      store._medux_.injectedModules[moduleName] = initState;
-      var actions = injectActions(store, moduleName, moduleHandles);
-      moduleHandles.actions = actions;
+      moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
+      var _initState = moduleHandles.initState;
+      injectActions(store, moduleName, moduleHandles);
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign({}, initState, preModuleState);
+      var moduleState = Object.assign({}, _initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;
@@ -253,7 +233,7 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       }
     }
 
-    return initState;
+    return undefined;
   };
 
   return {

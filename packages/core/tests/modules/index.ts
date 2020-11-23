@@ -1,4 +1,4 @@
-import {getCoreAPP} from 'src/index';
+import {getRootModuleAPI} from 'src/index';
 import * as moduleA from './moduleA';
 import * as moduleB from './moduleB';
 import * as moduleC from './moduleC';
@@ -14,4 +14,4 @@ export const moduleGetter = {
     return moduleC;
   },
 };
-export const App = getCoreAPP();
+export const App = getRootModuleAPI();

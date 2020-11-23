@@ -10,8 +10,6 @@ export type ReturnModule<T> = T extends Promise<infer R> ? R : T;
 // export type ModuleViews<M extends CommonModule> = M['default']['views'];
 // export type ModuleActions<M extends CommonModule> = M['default']['actions'];
 
-// export type RootState<G extends ModuleGetter> = {[key in keyof G]?: ModuleStates<ReturnModule<ReturnType<G[key]>>>};
-
 // export type RootActions<G extends ModuleGetter> = {[key in keyof G]: ModuleActions<ReturnModule<ReturnType<G[key]>>>};
 
 type ModuleFacade<M extends CommonModule> = {
@@ -24,19 +22,21 @@ type ModuleFacade<M extends CommonModule> = {
   actions: M['default']['actions'];
   actionNames: {[key in keyof M['default']['actions']]: string};
 };
-export type APPFacade<G extends ModuleGetter = ModuleGetter> = {[key in keyof G]: ModuleFacade<ReturnModule<ReturnType<G[key]>>>};
+export type RootModuleFacade<G extends ModuleGetter = ModuleGetter> = {[key in keyof G]: ModuleFacade<ReturnModule<ReturnType<G[key]>>>};
 
-export type CoreAPP<G extends APPFacade = APPFacade> = {[key in keyof G]: Pick<G[key], 'name' | 'actions' | 'actionNames' | 'viewNames'>};
+export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames' | 'viewNames'>};
 
-export type LoadView<MS extends APPFacade, Options = any, Comp = any> = <M extends keyof MS, V extends MS[M]['viewName']>(
+export type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: A[key]['state']};
+
+export type LoadView<A extends RootModuleFacade = {}, Options = any, Comp = any> = <M extends keyof A, V extends A[M]['viewName']>(
   moduleName: M,
   viewName: V,
   options?: Options,
   loading?: Comp,
   error?: Comp
-) => MS[M]['views'][V];
+) => A[M]['views'][V];
 
-export function getCoreAPP(data?: {[moduleName: string]: {viewNames: {[key: string]: string}; actionNames: {[key: string]: string}}}): CoreAPP<any> {
+export function getRootModuleAPI(data?: {[moduleName: string]: {viewNames: {[key: string]: string}; actionNames: {[key: string]: string}}}): RootModuleAPI<any> {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
@@ -60,7 +60,14 @@ export function getCoreAPP(data?: {[moduleName: string]: {viewNames: {[key: stri
       MetaData.facadeMap = new Proxy(
         {},
         {
-          get(_, moduleName: string) {
+          set(target, moduleName: string, val, receiver) {
+            return Reflect.set(target, moduleName, val, receiver);
+          },
+          get(target, moduleName: string, receiver) {
+            const val = Reflect.get(target, moduleName, receiver);
+            if (val !== undefined) {
+              return val;
+            }
             if (!cacheData[moduleName]) {
               cacheData[moduleName] = {
                 name: moduleName,
@@ -118,14 +125,14 @@ export function modelHotReplacement(moduleName: string, ActionHandles: {new (): 
     clearHandlers(moduleName, store._medux_.reducerMap);
     clearHandlers(moduleName, store._medux_.effectMap);
     const handlers = new ActionHandles();
-    handlers.moduleName = moduleName;
+    (handlers as any).moduleName = moduleName;
     (handlers as any).store = store;
-    const actions = injectActions(store, moduleName, handlers as any);
-    (handlers as any).actions = actions;
-    if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
-      env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
-    }
-    env.console.log(`[HMR] @medux Updated model actionHandles: ${moduleName}`);
+    (handlers as any).actions = MetaData.facadeMap[moduleName].actions;
+    injectActions(store, moduleName, handlers as any);
+    // if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
+    //   env.console.warn(`[HMR] @medux Updated model initState: ${moduleName}`);
+    // }
+    env.console.log(`[HMR] @medux Updated model: ${moduleName}`);
   }
 }
 let reRender: (appView: any) => void = () => undefined;

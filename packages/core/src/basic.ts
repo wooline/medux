@@ -29,10 +29,10 @@ export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
   _config.MSP && (config.MSP = _config.MSP);
 }
 
-export interface CommonModule<S extends CoreModuleState = CoreModuleState> {
+export interface CommonModule {
   default: {
     moduleName: string;
-    initState: S;
+    initState: CoreModuleState;
     model: (store: ModuleStore) => void | Promise<void>;
     views: {
       [key: string]: any;
@@ -179,7 +179,7 @@ export interface ModuleStore extends Store {
   _medux_: {
     reducerMap: ReducerMap;
     effectMap: EffectMap;
-    injectedModules: {[moduleName: string]: Record<string, any>};
+    injectedModules: {[moduleName: string]: boolean | undefined};
     beforeState: CoreRootState;
     prevState: CoreRootState;
     currentState: CoreRootState;
@@ -194,6 +194,7 @@ export interface CoreModuleState {
    * 如果已经初始化(如：SSR)，该值为true
    */
   initialized?: boolean;
+  routeParams?: any;
   /**
    * 该模块的各种loading状态，执行effect时会自动注入loading状态
    */

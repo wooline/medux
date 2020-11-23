@@ -1509,10 +1509,12 @@
   }(PDispatcher);
 
   var config = {
+    VSP: '.',
     NSP: '.',
     MSP: ','
   };
   function setConfig(_config) {
+    _config.VSP && (config.VSP = _config.VSP);
     _config.NSP && (config.NSP = _config.NSP);
     _config.MSP && (config.MSP = _config.MSP);
   }
@@ -1523,7 +1525,7 @@
   };
   var MetaData = {
     appViewName: null,
-    actionCreatorMap: null,
+    facadeMap: null,
     clientStore: null,
     appModuleName: null,
     moduleGetter: null
@@ -1556,7 +1558,7 @@
         if (store) {
           var _actions;
 
-          var actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+          var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
 
           var _action = actions((_actions = {}, _actions[groupName] = e.data, _actions));
 
@@ -2273,23 +2275,6 @@
     actionHandlerMap[actionName][listenerModule] = action;
   }
 
-  function addModuleActionCreatorList(moduleName, actionName) {
-    var actions = MetaData.actionCreatorMap[moduleName];
-
-    if (!actions[actionName]) {
-      actions[actionName] = function () {
-        for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-          payload[_key] = arguments[_key];
-        }
-
-        return {
-          type: moduleName + config.NSP + actionName,
-          payload: payload
-        };
-      };
-    }
-  }
-
   function injectActions(store, moduleName, handlers) {
     for (var actionNames in handlers) {
       if (typeof handlers[actionNames] === 'function') {
@@ -2308,15 +2293,12 @@
               } else {
                 handler.__isHandler__ = false;
                 transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-                addModuleActionCreatorList(moduleName, actionName);
               }
             });
           }
         })();
       }
     }
-
-    return MetaData.actionCreatorMap[moduleName];
   }
 
   function _loadModel(moduleName, store) {
@@ -2410,24 +2392,6 @@
         }
       }, {
         kind: "method",
-        key: "callThisAction",
-        value: function callThisAction(handler) {
-          var actions = MetaData.actionCreatorMap[this.moduleName];
-
-          for (var _len2 = arguments.length, rest = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-            rest[_key2 - 1] = arguments[_key2];
-          }
-
-          return actions[handler.__actionName__].apply(actions, rest);
-        }
-      }, {
-        kind: "method",
-        key: "updateState",
-        value: function updateState(payload, key) {
-          this.dispatch(this.callThisAction(this.Update, Object.assign({}, this.state, payload), key));
-        }
-      }, {
-        kind: "method",
         key: "loadModel",
         value: function loadModel(moduleName) {
           return _loadModel(moduleName, this.store);
@@ -2444,7 +2408,7 @@
         decorators: [reducer],
         key: "Update",
         value: function Update(payload, key) {
-          return payload;
+          return Object.assign({}, this.state, payload);
         }
       }, {
         kind: "method",
@@ -2461,18 +2425,18 @@
   });
   var exportModule = function exportModule(moduleName, ModuleHandles, views) {
     var model = function model(store) {
-      var initState = store._medux_.injectedModules[moduleName];
+      var hasInjected = store._medux_.injectedModules[moduleName];
 
-      if (!initState) {
+      if (!hasInjected) {
+        store._medux_.injectedModules[moduleName] = true;
         var moduleHandles = new ModuleHandles();
         moduleHandles.moduleName = moduleName;
         moduleHandles.store = store;
-        initState = moduleHandles.initState;
-        store._medux_.injectedModules[moduleName] = initState;
-        var actions = injectActions(store, moduleName, moduleHandles);
-        moduleHandles.actions = actions;
+        moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
+        var _initState = moduleHandles.initState;
+        injectActions(store, moduleName, moduleHandles);
         var preModuleState = store.getState()[moduleName] || {};
-        var moduleState = Object.assign({}, initState, preModuleState);
+        var moduleState = Object.assign({}, _initState, preModuleState);
 
         if (!moduleState.initialized) {
           moduleState.initialized = true;
@@ -2480,7 +2444,7 @@
         }
       }
 
-      return initState;
+      return undefined;
     };
 
     return {
@@ -2824,10 +2788,96 @@
     return store;
   }
 
+  function getRootModuleAPI(data) {
+    if (!MetaData.facadeMap) {
+      if (data) {
+        MetaData.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
+          var obj = data[moduleName];
+          var actions = {};
+          var actionNames = {};
+          Object.keys(obj.actionNames).forEach(function (actionName) {
+            actions[actionName] = function () {
+              for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+                payload[_key] = arguments[_key];
+              }
+
+              return {
+                type: moduleName + config.NSP + actionName,
+                payload: payload
+              };
+            };
+
+            actionNames[actionName] = moduleName + config.NSP + actionName;
+          });
+          var viewNames = {};
+          Object.keys(obj.viewNames).forEach(function (viewName) {
+            viewNames[viewName] = moduleName + config.VSP + viewName;
+          });
+          var moduleFacade = {
+            name: moduleName,
+            actions: actions,
+            actionNames: actionNames,
+            viewNames: viewNames
+          };
+          prev[moduleName] = moduleFacade;
+          return prev;
+        }, {});
+      } else {
+        var cacheData = {};
+        MetaData.facadeMap = new Proxy({}, {
+          set: function set(target, moduleName, val, receiver) {
+            return Reflect.set(target, moduleName, val, receiver);
+          },
+          get: function get(target, moduleName, receiver) {
+            var val = Reflect.get(target, moduleName, receiver);
+
+            if (val !== undefined) {
+              return val;
+            }
+
+            if (!cacheData[moduleName]) {
+              cacheData[moduleName] = {
+                name: moduleName,
+                viewNames: new Proxy({}, {
+                  get: function get(__, viewName) {
+                    return moduleName + config.VSP + viewName;
+                  }
+                }),
+                actionNames: new Proxy({}, {
+                  get: function get(__, actionName) {
+                    return moduleName + config.NSP + actionName;
+                  }
+                }),
+                actions: new Proxy({}, {
+                  get: function get(__, actionName) {
+                    return function () {
+                      for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                        payload[_key2] = arguments[_key2];
+                      }
+
+                      return {
+                        type: moduleName + config.NSP + actionName,
+                        payload: payload
+                      };
+                    };
+                  }
+                })
+              };
+            }
+
+            return cacheData[moduleName];
+          }
+        });
+      }
+    }
+
+    return MetaData.facadeMap;
+  }
+
   function clearHandlers(key, actionHandlerMap) {
-    for (var actionName in actionHandlerMap) {
-      if (actionHandlerMap.hasOwnProperty(actionName)) {
-        var maps = actionHandlerMap[actionName];
+    for (var _actionName in actionHandlerMap) {
+      if (actionHandlerMap.hasOwnProperty(_actionName)) {
+        var maps = actionHandlerMap[_actionName];
         delete maps[key];
       }
     }
@@ -2843,14 +2893,9 @@
       var handlers = new ActionHandles();
       handlers.moduleName = moduleName;
       handlers.store = store;
-      var actions = injectActions(store, moduleName, handlers);
-      handlers.actions = actions;
-
-      if (JSON.stringify(prevInitState) !== JSON.stringify(handlers.initState)) {
-        env.console.warn("[HMR] @medux Updated model initState: " + moduleName);
-      }
-
-      env.console.log("[HMR] @medux Updated model actionHandles: " + moduleName);
+      handlers.actions = MetaData.facadeMap[moduleName].actions;
+      injectActions(store, moduleName, handlers);
+      env.console.log("[HMR] @medux Updated model: " + moduleName);
     }
   }
 
@@ -2879,33 +2924,6 @@
       throw 'views cannot apply update for HMR.';
     }
   }
-  function exportActions(moduleGetter) {
-    if (!MetaData.actionCreatorMap) {
-      MetaData.moduleGetter = moduleGetter;
-      MetaData.actionCreatorMap = Object.keys(moduleGetter).reduce(function (maps, moduleName) {
-        maps[moduleName] = typeof Proxy === 'undefined' ? {} : new Proxy({}, {
-          get: function get(target, key) {
-            return function () {
-              for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-                payload[_key] = arguments[_key];
-              }
-
-              return {
-                type: moduleName + config.NSP + key,
-                payload: payload
-              };
-            };
-          },
-          set: function set() {
-            return true;
-          }
-        });
-        return maps;
-      }, {});
-    }
-
-    return MetaData.actionCreatorMap;
-  }
   function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
     return _renderApp.apply(this, arguments);
   }
@@ -2929,6 +2947,7 @@
               appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
               MetaData.appModuleName = appModuleName;
               MetaData.appViewName = appViewName;
+              MetaData.moduleGetter = moduleGetter;
 
               if (typeof appModuleOrName !== 'string') {
                 cacheModule(appModuleOrName);
@@ -2943,21 +2962,21 @@
 
               store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
               beforeRender(store);
-              _context.next = 13;
+              _context.next = 14;
               return getModuleByName(appModuleName, moduleGetter);
 
-            case 13:
+            case 14:
               appModule = _context.sent;
-              _context.next = 16;
+              _context.next = 17;
               return appModule.default.model(store);
 
-            case 16:
+            case 17:
               reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
               return _context.abrupt("return", {
                 store: store
               });
 
-            case 18:
+            case 19:
             case "end":
               return _context.stop();
           }
@@ -2984,10 +3003,11 @@
 
               MetaData.appModuleName = appModuleName;
               MetaData.appViewName = appViewName;
+              MetaData.moduleGetter = moduleGetter;
               ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
               store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
               preModuleNames = beforeRender(store);
-              _context2.next = 8;
+              _context2.next = 9;
               return Promise.all(preModuleNames.map(function (moduleName) {
                 if (moduleGetter[moduleName]) {
                   var module = moduleGetter[moduleName]();
@@ -3002,10 +3022,10 @@
                 return null;
               }));
 
-            case 8:
+            case 9:
               return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-            case 9:
+            case 10:
             case "end":
               return _context2.stop();
           }
@@ -3574,7 +3594,6 @@
 
   var routeConfig = {
     RSP: '|',
-    VSP: '.',
     escape: true,
     dateParse: false,
     splitKey: 'q',
@@ -3582,7 +3601,6 @@
     homeUrl: '/'
   };
   function setRouteConfig(conf) {
-    conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
     conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
     conf.escape !== undefined && (routeConfig.escape = conf.escape);
     conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
@@ -3922,7 +3940,7 @@
         if (match) {
           paths.push(_viewName);
 
-          var _moduleName = _viewName.split(routeConfig.VSP)[0];
+          var _moduleName = _viewName.split(config.VSP)[0];
 
           var params = match.params;
 
@@ -3942,7 +3960,7 @@
 
   function assignRouteData(paths, params, defaultRouteParams) {
     var views = paths.reduce(function (prev, cur) {
-      var _cur$split = cur.split(routeConfig.VSP),
+      var _cur$split = cur.split(config.VSP),
           moduleName = _cur$split[0],
           viewName = _cur$split[1];
 
@@ -4051,7 +4069,7 @@
     var pathname = '';
     var views = {};
     paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-      var _viewName$split = viewName.split(routeConfig.VSP),
+      var _viewName$split = viewName.split(config.VSP),
           moduleName = _viewName$split[0],
           view = _viewName$split[1];
 
@@ -4148,7 +4166,7 @@
 
     _proto.getModulePath = function getModulePath() {
       return this.getRouteState().paths.map(function (viewName) {
-        return viewName.split(routeConfig.VSP)[0];
+        return viewName.split(config.VSP)[0];
       });
     };
 
@@ -8260,10 +8278,16 @@
   }
 
   var appExports = {
-    loadView: loadView
+    loadView: loadView,
+    state: undefined,
+    store: undefined,
+    history: undefined
   };
   function exportApp() {
-    return appExports;
+    return {
+      App: appExports,
+      Modules: getRootModuleAPI()
+    };
   }
   function buildApp(moduleGetter, _ref) {
     var _ref$appModuleName = _ref.appModuleName,
@@ -8282,7 +8306,6 @@
         _ref$container = _ref.container,
         container = _ref$container === void 0 ? 'root' : _ref$container;
     appExports.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
-    appExports.actions = exportActions(moduleGetter);
 
     if (!storeOptions.middlewares) {
       storeOptions.middlewares = [];
@@ -8303,11 +8326,6 @@
     storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData);
     return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, function (store) {
       appExports.store = store;
-      Object.defineProperty(appExports, 'state', {
-        get: function get() {
-          return store.getState();
-        }
-      });
       appExports.history.setStore(store);
     });
   }
@@ -8327,7 +8345,6 @@
         _ref2$renderToStream = _ref2.renderToStream,
         renderToStream = _ref2$renderToStream === void 0 ? false : _ref2$renderToStream;
     appExports.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
-    appExports.actions = exportActions(moduleGetter);
 
     if (!storeOptions.initData) {
       storeOptions.initData = {};

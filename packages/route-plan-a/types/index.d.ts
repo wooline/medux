@@ -4,7 +4,7 @@ import { HistoryAction } from './basic';
 import assignDeep from './deep-extend';
 import type { RouteParams, Location, PaRouteData, PaLocation, RouteState, RoutePayload, RouteRule } from './basic';
 export declare const deepAssign: typeof assignDeep;
-export type { RootState, PaRouteData, PaLocation, RouteState, RoutePayload, Location, RouteRule, RouteParams, RootRouteParams } from './basic';
+export type { RootState, PaRouteData, PaLocation, RouteState, RoutePayload, Location, RouteRule, RouteParams } from './basic';
 export { setRouteConfig } from './basic';
 export declare function assignRouteData(paths: string[], params: {
     [moduleName: string]: any;
@@ -77,16 +77,16 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
 }
 export declare const routeMiddleware: Middleware;
 export declare const routeReducer: Reducer;
-export interface RouteModuleState<P extends Record<string, any> = {}> extends CoreModuleState {
-    routeParams?: P;
+export interface RouteModuleState<R extends Record<string, any> = {}> extends CoreModuleState {
+    routeParams?: R;
 }
-export declare type RouteRootState<P extends RouteParams = RouteParams> = {
+declare type RouteRootState = {
     [moduleName: string]: RouteModuleState;
 } & {
-    route: RouteState<P>;
+    route: RouteState;
 };
 export declare class RouteModuleHandlers<S extends RouteModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
-    protected Init(initState: S): S;
+    Init(initState: S): S;
     RouteParams(payload: {
         [key: string]: any;
     }): S;

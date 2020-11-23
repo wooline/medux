@@ -157,7 +157,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
       if (match) {
         paths.push(_viewName);
 
-        var _moduleName = _viewName.split(_basic.routeConfig.VSP)[0];
+        var _moduleName = _viewName.split(_core.config.VSP)[0];
 
         var params = match.params;
 
@@ -177,7 +177,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
 function assignRouteData(paths, params, defaultRouteParams) {
   var views = paths.reduce(function (prev, cur) {
-    var _cur$split = cur.split(_basic.routeConfig.VSP),
+    var _cur$split = cur.split(_core.config.VSP),
         moduleName = _cur$split[0],
         viewName = _cur$split[1];
 
@@ -286,7 +286,7 @@ function pathsToPathname(paths, params, viewToRule, ruleToKeys) {
   var pathname = '';
   var views = {};
   paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-    var _viewName$split = viewName.split(_basic.routeConfig.VSP),
+    var _viewName$split = viewName.split(_core.config.VSP),
         moduleName = _viewName$split[0],
         view = _viewName$split[1];
 
@@ -377,7 +377,7 @@ var BaseHistoryActions = function () {
 
   _proto.getModulePath = function getModulePath() {
     return this.getRouteState().paths.map(function (viewName) {
-      return viewName.split(_basic.routeConfig.VSP)[0];
+      return viewName.split(_core.config.VSP)[0];
     });
   };
 

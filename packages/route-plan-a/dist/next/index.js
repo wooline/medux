@@ -1,6 +1,6 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { CoreModuleHandlers, reducer } from '@medux/core';
+import { CoreModuleHandlers, config, reducer } from '@medux/core';
 import { compileToPath, matchPath } from './matchPath';
 import { RouteActionTypes, routeConfig, checkLocation, compileRule, urlToLocation, routeChangeAction, beforeRouteChangeAction, routeParamsAction } from './basic';
 import assignDeep from './deep-extend';
@@ -125,7 +125,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
       if (match) {
         paths.push(viewName);
-        const moduleName = viewName.split(routeConfig.VSP)[0];
+        const moduleName = viewName.split(config.VSP)[0];
         const {
           params
         } = match;
@@ -146,7 +146,7 @@ function pathnameParse(pathname, routeRule, paths, args) {
 
 export function assignRouteData(paths, params, defaultRouteParams) {
   const views = paths.reduce((prev, cur) => {
-    const [moduleName, viewName] = cur.split(routeConfig.VSP);
+    const [moduleName, viewName] = cur.split(config.VSP);
 
     if (moduleName && viewName) {
       if (!prev[moduleName]) {
@@ -241,7 +241,7 @@ function pathsToPathname(paths, params = {}, viewToRule, ruleToKeys) {
   let pathname = '';
   const views = {};
   paths.reduce((parentAbsoluteViewName, viewName, index) => {
-    const [moduleName, view] = viewName.split(routeConfig.VSP);
+    const [moduleName, view] = viewName.split(config.VSP);
     const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
     const rule = viewToRule[absoluteViewName];
     const keys = ruleToKeys[rule] || [];
@@ -332,7 +332,7 @@ export class BaseHistoryActions {
   }
 
   getModulePath() {
-    return this.getRouteState().paths.map(viewName => viewName.split(routeConfig.VSP)[0]);
+    return this.getRouteState().paths.map(viewName => viewName.split(config.VSP)[0]);
   }
 
   getCurKey() {

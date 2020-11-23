@@ -2,3 +2,4 @@ node_modules/
 *.log
 yarn.lock
 .eslintcache
+.DS_Store

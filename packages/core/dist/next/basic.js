@@ -16,9 +16,8 @@ export const ActionTypes = {
   Error: `medux${config.NSP}Error`
 };
 export const MetaData = {
-  viewNamesMap: null,
   appViewName: null,
-  actionCreatorMap: null,
+  facadeMap: null,
   clientStore: null,
   appModuleName: null,
   moduleGetter: null
@@ -41,7 +40,7 @@ export function setLoading(item, moduleName = MetaData.appModuleName, groupName 
       const store = MetaData.clientStore;
 
       if (store) {
-        const actions = MetaData.actionCreatorMap[moduleName][ActionTypes.MLoading];
+        const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({
           [groupName]: e.data
         });

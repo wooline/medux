@@ -1,7 +1,7 @@
 /// <reference path="../env/global.d.ts" />
 import * as core from '@medux/core';
 
-import {ExportModule, ModuleGetter, StoreOptions, env, getView, isPromise, ModuleStore} from '@medux/core';
+import {RootModuleFacade, ExportModule, ModuleGetter, StoreOptions, env, getView, isPromise, ModuleStore} from '@medux/core';
 import React, {ComponentType, FC, ReactElement, useEffect, useState} from 'react';
 
 import {renderToNodeStream, renderToString} from 'react-dom/server';
@@ -77,12 +77,12 @@ export function renderSSR(
   );
 }
 
-export type LoadView<T extends ModuleGetter> = core.LoadView<T, {forwardRef?: boolean}, ComponentType<any>>;
+export type LoadView<A extends RootModuleFacade = {}> = core.LoadView<A, {forwardRef?: boolean}, ComponentType<any>>;
 
 const LoadViewOnError: ComponentType<any> = () => {
   return <div>error</div>;
 };
-export const loadView: LoadView<any> = (moduleName, viewName, options, Loading, Error) => {
+export const loadView: LoadView = (moduleName, viewName, options, Loading, Error) => {
   const {forwardRef} = options || {};
   // Can't perform a React state update on an unmounted component.
   let active = true;

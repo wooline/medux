@@ -2,7 +2,6 @@ import { config } from '@medux/core';
 import { compilePath } from './matchPath';
 export var routeConfig = {
   RSP: '|',
-  VSP: '.',
   escape: true,
   dateParse: false,
   splitKey: 'q',
@@ -10,7 +9,6 @@ export var routeConfig = {
   homeUrl: '/'
 };
 export function setRouteConfig(conf) {
-  conf.VSP !== undefined && (routeConfig.VSP = conf.VSP);
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.escape !== undefined && (routeConfig.escape = conf.escape);
   conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
