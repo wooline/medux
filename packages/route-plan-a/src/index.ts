@@ -744,7 +744,7 @@ export class RouteModuleHandlers<S extends RouteModuleState, R extends Record<st
   }
 
   @reducer
-  public RouteParams(payload: {[key: string]: any}): S {
+  public RouteParams(payload: S['routeParams']): S {
     return {
       ...this.state,
       routeParams: payload,

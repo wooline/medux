@@ -89,7 +89,5 @@ declare type RouteRootState = {
 };
 export declare class RouteModuleHandlers<S extends RouteModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
     Init(initState: S): S;
-    RouteParams(payload: {
-        [key: string]: any;
-    }): S;
+    RouteParams(payload: S['routeParams']): S;
 }

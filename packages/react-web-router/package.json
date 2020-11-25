@@ -44,11 +44,10 @@
     "@types/react": "^16.8.0",
     "@types/react-dom": "^16.8.0",
     "react": "^16.8.0",
-    "react-dom": "^16.8.0",
-    "react-redux": "^7.0.0"
+    "react-dom": "^16.8.0"
   },
   "dependencies": {
-    "@babel/runtime": "~7.12.5",
+    "@types/react-redux": "~7.1.11",
     "@medux/core": "^1.1.1-alpha.11",
     "@medux/react": "^1.1.1-alpha.11",
     "@medux/route-plan-a": "^1.1.1-alpha.11",
