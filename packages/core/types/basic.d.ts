@@ -10,9 +10,9 @@ export declare function setConfig(_config: {
     VSP?: string;
     MSP?: string;
 }): void;
-export interface CommonModule {
+export interface CommonModule<ModuleName extends string = string> {
     default: {
-        moduleName: string;
+        moduleName: ModuleName;
         initState: CoreModuleState;
         model: (store: ModuleStore) => void | Promise<void>;
         views: {

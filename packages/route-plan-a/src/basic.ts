@@ -163,7 +163,7 @@ export interface RoutePayload<P extends RouteParams = RouteParams> {
   pathname?: string;
   search?: string;
   hash?: string;
-  paths?: string[];
+  viewName?: string;
   params?: DeepPartial<P>;
   extendParams?: DeepPartial<P> | true;
 }
@@ -218,7 +218,14 @@ export interface RouteRule {
 }
 
 // 预先编译routeConfig，得到viewToRule及ruleToKeys
-export function compileRule(routeRule: RouteRule, parentAbsoluteViewName = '', viewToRule: {[viewName: string]: string} = {}, ruleToKeys: {[rule: string]: (string | number)[]} = {}) {
+export function compileRule(
+  routeRule: RouteRule,
+  parentAbsoluteViewName = '',
+  parentPaths: string[] = [],
+  viewToPaths: {[viewName: string]: string[]} = {},
+  viewToRule: {[viewName: string]: string} = {},
+  ruleToKeys: {[rule: string]: (string | number)[]} = {}
+) {
   // ruleToKeys将每条rule中的params key解析出来
   for (const rule in routeRule) {
     if (routeRule.hasOwnProperty(rule)) {
@@ -233,10 +240,12 @@ export function compileRule(routeRule: RouteRule, parentAbsoluteViewName = '', v
       }
       const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       viewToRule[absoluteViewName] = rule;
+      const paths = [...parentPaths, viewName];
+      viewToPaths[viewName] = paths;
       if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
+        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
       }
     }
   }
-  return {viewToRule, ruleToKeys};
+  return {viewToRule, ruleToKeys, viewToPaths};
 }

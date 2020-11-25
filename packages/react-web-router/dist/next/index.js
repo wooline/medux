@@ -2068,6 +2068,9 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
     store
   };
 }
+
+const defFun = () => undefined;
+
 async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
@@ -2089,6 +2092,7 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
 
     return null;
   }));
+  store.dispatch = defFun;
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }
 
@@ -2673,7 +2677,7 @@ function urlToLocation(url) {
     hash: hash && `#${hash}`
   };
 }
-function compileRule(routeRule, parentAbsoluteViewName = '', viewToRule = {}, ruleToKeys = {}) {
+function compileRule(routeRule, parentAbsoluteViewName = '', parentPaths = [], viewToPaths = {}, viewToRule = {}, ruleToKeys = {}) {
   for (const rule in routeRule) {
     if (routeRule.hasOwnProperty(rule)) {
       const item = routeRule[rule];
@@ -2695,16 +2699,19 @@ function compileRule(routeRule, parentAbsoluteViewName = '', viewToRule = {}, ru
 
       const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       viewToRule[absoluteViewName] = rule;
+      const paths = [...parentPaths, viewName];
+      viewToPaths[viewName] = paths;
 
       if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
+        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
       }
     }
   }
 
   return {
     viewToRule,
-    ruleToKeys
+    ruleToKeys,
+    viewToPaths
   };
 }
 
@@ -3072,12 +3079,16 @@ class BaseHistoryActions {
 
     _defineProperty(this, "_ruleToKeys", void 0);
 
+    _defineProperty(this, "_viewToPaths", void 0);
+
     const {
       viewToRule,
-      ruleToKeys
+      ruleToKeys,
+      viewToPaths
     } = compileRule(routeRule);
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
+    this._viewToPaths = viewToPaths;
     const safeLocation = urlToLocation(initUrl);
 
     const routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
@@ -3192,11 +3203,19 @@ class BaseHistoryActions {
     }
 
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
 
     const params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
     return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
+  }
+
+  viewNameToPaths(viewName) {
+    return this._viewToPaths[viewName];
   }
 
   payloadToLocation(data) {
@@ -3222,7 +3241,11 @@ class BaseHistoryActions {
     }
 
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
 
     const params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;

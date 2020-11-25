@@ -79,7 +79,7 @@ type Handler<F> = F extends (...args: infer P) => any
     }
   : never;
 export type Actions<Ins> = {
-  [K in Exclude<keyof Ins, 'initState'>]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
+  [K in keyof Ins]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
 };
 
 /**

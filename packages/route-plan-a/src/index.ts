@@ -300,6 +300,10 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     [rule: string]: (string | number)[];
   };
 
+  private _viewToPaths: {
+    [viewName: string]: string[];
+  };
+
   constructor(
     protected nativeHistory: NativeHistory,
     protected defaultRouteParams: {[moduleName: string]: any},
@@ -307,9 +311,10 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     protected routeRule: RouteRule,
     protected locationMap?: LocationMap
   ) {
-    const {viewToRule, ruleToKeys} = compileRule(routeRule);
+    const {viewToRule, ruleToKeys, viewToPaths} = compileRule(routeRule);
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
+    this._viewToPaths = viewToPaths;
     const safeLocation = urlToLocation(initUrl);
     const routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
     this._routeState = routeState;
@@ -400,7 +405,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     if (data.pathname && !data.extendParams && !data.params) {
       return this.locationToRoute(checkLocation(data));
     }
-    const clone: RoutePayload = {...data};
+    const clone: RoutePayload & {paths?: string[]} = {...data};
     if (clone.extendParams === true) {
       clone.extendParams = this.getRouteState().params;
     }
@@ -411,10 +416,17 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
       assignDeep(clone.params, data.params);
     }
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
     const params: RouteParams | undefined = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
     return assignRouteData(clone.paths, params || {}, this.defaultRouteParams) as PaRouteData<P>;
+  }
+
+  viewNameToPaths(viewName: string): string[] | undefined {
+    return this._viewToPaths[viewName];
   }
 
   payloadToLocation(data: RoutePayload<P> | string): PaLocation {
@@ -424,7 +436,7 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     if (data.pathname && !data.extendParams && !data.params) {
       return checkLocation(data);
     }
-    const clone: RoutePayload = {...data};
+    const clone: RoutePayload & {paths?: string[]} = {...data};
     if (clone.extendParams === true) {
       clone.extendParams = this.getRouteState().params;
     }
@@ -435,7 +447,10 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
       assignDeep(clone.params, data.params);
     }
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
     const params: RouteParams | undefined = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
     return this.routeToLocation(clone.paths, params);

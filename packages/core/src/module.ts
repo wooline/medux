@@ -22,7 +22,11 @@ type ModuleFacade<M extends CommonModule> = {
   actions: M['default']['actions'];
   actionNames: {[key in keyof M['default']['actions']]: string};
 };
-export type RootModuleFacade<G extends ModuleGetter = ModuleGetter> = {[key in keyof G]: ModuleFacade<ReturnModule<ReturnType<G[key]>>>};
+export type RootModuleFacade<
+  G extends {
+    [N in Extract<keyof G, string>]: () => CommonModule<N> | Promise<CommonModule<N>>;
+  } = ModuleGetter
+> = {[K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>};
 
 export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames' | 'viewNames'>};
 
@@ -216,6 +220,7 @@ export async function renderApp<V>(
   reRender = render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
   return {store};
 }
+const defFun: any = () => undefined;
 /**
  * SSR时该方法用来创建并启动Server应用
  * - 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
@@ -252,5 +257,6 @@ export async function renderSSR<V>(
       return null;
     })
   );
+  store.dispatch = defFun;
   return render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
 }

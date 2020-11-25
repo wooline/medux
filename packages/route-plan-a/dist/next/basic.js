@@ -88,7 +88,7 @@ export function urlToLocation(url) {
     hash: hash && `#${hash}`
   };
 }
-export function compileRule(routeRule, parentAbsoluteViewName = '', viewToRule = {}, ruleToKeys = {}) {
+export function compileRule(routeRule, parentAbsoluteViewName = '', parentPaths = [], viewToPaths = {}, viewToRule = {}, ruleToKeys = {}) {
   for (const rule in routeRule) {
     if (routeRule.hasOwnProperty(rule)) {
       const item = routeRule[rule];
@@ -110,15 +110,18 @@ export function compileRule(routeRule, parentAbsoluteViewName = '', viewToRule =
 
       const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
       viewToRule[absoluteViewName] = rule;
+      const paths = [...parentPaths, viewName];
+      viewToPaths[viewName] = paths;
 
       if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
+        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
       }
     }
   }
 
   return {
     viewToRule,
-    ruleToKeys
+    ruleToKeys,
+    viewToPaths
   };
 }

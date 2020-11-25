@@ -96,7 +96,7 @@ export interface RoutePayload<P extends RouteParams = RouteParams> {
     pathname?: string;
     search?: string;
     hash?: string;
-    paths?: string[];
+    viewName?: string;
     params?: DeepPartial<P>;
     extendParams?: DeepPartial<P> | true;
 }
@@ -105,7 +105,9 @@ export declare function urlToLocation(url: string): PaLocation;
 export interface RouteRule {
     [path: string]: string | [string, RouteRule];
 }
-export declare function compileRule(routeRule: RouteRule, parentAbsoluteViewName?: string, viewToRule?: {
+export declare function compileRule(routeRule: RouteRule, parentAbsoluteViewName?: string, parentPaths?: string[], viewToPaths?: {
+    [viewName: string]: string[];
+}, viewToRule?: {
     [viewName: string]: string;
 }, ruleToKeys?: {
     [rule: string]: (string | number)[];
@@ -115,6 +117,9 @@ export declare function compileRule(routeRule: RouteRule, parentAbsoluteViewName
     };
     ruleToKeys: {
         [rule: string]: (string | number)[];
+    };
+    viewToPaths: {
+        [viewName: string]: string[];
     };
 };
 export {};

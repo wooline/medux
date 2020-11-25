@@ -323,12 +323,16 @@ export var BaseHistoryActions = function () {
 
     _defineProperty(this, "_ruleToKeys", void 0);
 
+    _defineProperty(this, "_viewToPaths", void 0);
+
     var _compileRule = compileRule(routeRule),
         viewToRule = _compileRule.viewToRule,
-        ruleToKeys = _compileRule.ruleToKeys;
+        ruleToKeys = _compileRule.ruleToKeys,
+        viewToPaths = _compileRule.viewToPaths;
 
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
+    this._viewToPaths = viewToPaths;
     var safeLocation = urlToLocation(initUrl);
 
     var routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
@@ -448,11 +452,19 @@ export var BaseHistoryActions = function () {
     }
 
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
 
     var params = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;
     return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
+  };
+
+  _proto.viewNameToPaths = function viewNameToPaths(viewName) {
+    return this._viewToPaths[viewName];
   };
 
   _proto.payloadToLocation = function payloadToLocation(data) {
@@ -478,7 +490,11 @@ export var BaseHistoryActions = function () {
     }
 
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
 
     var params = clone.extendParams ? assignDeep({}, clone.extendParams, clone.params) : clone.params;

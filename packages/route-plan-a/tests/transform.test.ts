@@ -2,7 +2,7 @@ import {historyActions, ViewNames} from './tools';
 
 describe('routeToLocation：', () => {
   test('/', () => {
-    const location = historyActions.payloadToLocation({paths: [ViewNames.appMain]});
+    const location = historyActions.payloadToLocation({viewName: ViewNames.appMain});
     expect(location).toEqual({
       pathname: '/',
       search: '',
@@ -10,7 +10,7 @@ describe('routeToLocation：', () => {
     });
   });
   test('/?q={"photos":{}}', () => {
-    const location = historyActions.payloadToLocation({paths: [ViewNames.appMain], params: {photos: {listSearch: {title: '', page: 1, pageSize: 10}}}});
+    const location = historyActions.payloadToLocation({viewName: ViewNames.appMain, params: {photos: {listSearch: {title: '', page: 1, pageSize: 10}}}});
     expect(location).toEqual({
       pathname: '/',
       search: '?q={"photos":{}}',
@@ -18,7 +18,7 @@ describe('routeToLocation：', () => {
     });
   });
   test('/?q={"photos":{"listSearch":{"page":2}}}', () => {
-    const location = historyActions.payloadToLocation({paths: [ViewNames.appMain], params: {photos: {listSearch: {title: '', page: 2, pageSize: 10}}}});
+    const location = historyActions.payloadToLocation({viewName: ViewNames.appMain, params: {photos: {listSearch: {title: '', page: 2, pageSize: 10}}}});
     expect(location).toEqual({
       pathname: '/',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
@@ -26,7 +26,7 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos?q={"photos":{"listSearch":{"page":2}}}', () => {
-    const location = historyActions.payloadToLocation({paths: [ViewNames.appMain, ViewNames.photosList], params: {photos: {listSearch: {title: '', page: 2, pageSize: 10}}}});
+    const location = historyActions.payloadToLocation({viewName: ViewNames.photosList, params: {photos: {listSearch: {title: '', page: 2, pageSize: 10}}}});
     expect(location).toEqual({
       pathname: '/photos',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
@@ -34,7 +34,7 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2', () => {
-    const location = historyActions.payloadToLocation({paths: [ViewNames.appMain, ViewNames.photosDetails], params: {photos: {itemId: '2'}}});
+    const location = historyActions.payloadToLocation({viewName: ViewNames.photosDetails, params: {photos: {itemId: '2'}}});
     expect(location).toEqual({
       pathname: '/photos/2',
       search: '',
@@ -42,7 +42,7 @@ describe('routeToLocation：', () => {
     });
   });
   test('/photos/2?q={"photos":{"listSearch":{"page":2}}}', () => {
-    const location = historyActions.payloadToLocation({paths: [ViewNames.appMain, ViewNames.photosDetails], params: {photos: {listSearch: {page: 2}, itemId: '2'}}});
+    const location = historyActions.payloadToLocation({viewName: ViewNames.photosDetails, params: {photos: {listSearch: {page: 2}, itemId: '2'}}});
     expect(location).toEqual({
       pathname: '/photos/2',
       search: '?q={"photos":{"listSearch":{"page":2}}}',
@@ -51,7 +51,7 @@ describe('routeToLocation：', () => {
   });
   test('/photos/2/comments', () => {
     const location = historyActions.payloadToLocation({
-      paths: [ViewNames.appMain, ViewNames.photosDetails, ViewNames.commentsMain, ViewNames.commentsList],
+      viewName: ViewNames.commentsList,
       params: {
         photos: {itemId: '2'},
         comments: {articleType: 'photos', articleId: '2'},
@@ -65,7 +65,7 @@ describe('routeToLocation：', () => {
   });
   test('/photos/2/comments?q={"photos":{"listSearch":{"page":2}},"comments":{"listSearch":{"page":3}}}', () => {
     const location = historyActions.payloadToLocation({
-      paths: [ViewNames.appMain, ViewNames.photosDetails, ViewNames.commentsMain, ViewNames.commentsList],
+      viewName: ViewNames.commentsList,
       params: {
         photos: {itemId: '2', listSearch: {page: 2, title: ''}},
         comments: {articleType: 'photos', articleId: '2', listSearch: {page: 3}},
@@ -79,7 +79,7 @@ describe('routeToLocation：', () => {
   });
   test('/photos/2/comments/8', () => {
     const location = historyActions.payloadToLocation({
-      paths: [ViewNames.appMain, ViewNames.photosDetails, ViewNames.commentsMain, ViewNames.commentsDetails],
+      viewName: ViewNames.commentsDetails,
       params: {
         photos: {itemId: '2'},
         comments: {articleType: 'photos', articleId: '2', itemId: '8'},
@@ -93,7 +93,7 @@ describe('routeToLocation：', () => {
   });
   test('/photos/2/comments/9?q={"photos":{"listSearch":{"pageSize":2}}}#q={"photos":{"_listKey":"sdk"},"comments":{"_listKey":"dba"}}', () => {
     const location = historyActions.payloadToLocation({
-      paths: [ViewNames.appMain, ViewNames.photosDetails, ViewNames.commentsMain, ViewNames.commentsDetails],
+      viewName: ViewNames.commentsDetails,
       params: {
         photos: {_listKey: 'sdk', itemId: '2', listSearch: {pageSize: 2}},
         comments: {_listKey: 'dba', articleType: 'photos', articleId: '2', itemId: '9'},
@@ -107,7 +107,7 @@ describe('routeToLocation：', () => {
   });
   test('/photos/2/comments/8/99', () => {
     const location = historyActions.payloadToLocation({
-      paths: [ViewNames.appMain, ViewNames.photosDetails, ViewNames.commentsMain, ViewNames.commentsDetailsList],
+      viewName: ViewNames.commentsDetailsList,
       params: {
         app: {},
         photos: {_detailKey: '', _listKey: '', itemId: '2', listSearch: {title: '', page: 1, pageSize: 10}},

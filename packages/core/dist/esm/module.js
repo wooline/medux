@@ -202,6 +202,10 @@ function _renderApp() {
   return _renderApp.apply(this, arguments);
 }
 
+var defFun = function defFun() {
+  return undefined;
+};
+
 export function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
   return _renderSSR.apply(this, arguments);
 }
@@ -239,9 +243,10 @@ function _renderSSR() {
             }));
 
           case 9:
+            store.dispatch = defFun;
             return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 10:
+          case 11:
           case "end":
             return _context2.stop();
         }

@@ -6,7 +6,7 @@ declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => 
     type: string;
 } : never;
 export declare type Actions<Ins> = {
-    [K in Exclude<keyof Ins, 'initState'>]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
+    [K in keyof Ins]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
 };
 export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModuleStore): void | Promise<void>;
 export declare abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> {

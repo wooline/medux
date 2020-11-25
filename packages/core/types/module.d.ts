@@ -18,8 +18,10 @@ declare type ModuleFacade<M extends CommonModule> = {
         [key in keyof M['default']['actions']]: string;
     };
 };
-export declare type RootModuleFacade<G extends ModuleGetter = ModuleGetter> = {
-    [key in keyof G]: ModuleFacade<ReturnModule<ReturnType<G[key]>>>;
+export declare type RootModuleFacade<G extends {
+    [N in Extract<keyof G, string>]: () => CommonModule<N> | Promise<CommonModule<N>>;
+} = ModuleGetter> = {
+    [K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>;
 };
 export declare type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {
     [key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames' | 'viewNames'>;

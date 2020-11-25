@@ -160,6 +160,9 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
     store
   };
 }
+
+const defFun = () => undefined;
+
 export async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
@@ -181,5 +184,6 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
 
     return null;
   }));
+  store.dispatch = defFun;
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }

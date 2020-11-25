@@ -41,6 +41,7 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     protected store: Store | undefined;
     private _viewToRule;
     private _ruleToKeys;
+    private _viewToPaths;
     constructor(nativeHistory: NativeHistory, defaultRouteParams: {
         [moduleName: string]: any;
     }, initUrl: string, routeRule: RouteRule, locationMap?: LocationMap | undefined);
@@ -53,6 +54,7 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     protected locationToRoute(safeLocation: PaLocation): PaRouteData<P>;
     protected routeToLocation(paths: string[], params?: RouteParams): PaLocation;
     payloadToRoute(data: RoutePayload<P> | string): PaRouteData<P>;
+    viewNameToPaths(viewName: string): string[] | undefined;
     payloadToLocation(data: RoutePayload<P> | string): PaLocation;
     private _createKey;
     private _getEfficientLocation;

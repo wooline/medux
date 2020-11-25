@@ -92,9 +92,17 @@ export function urlToLocation(url) {
     hash: hash && "#" + hash
   };
 }
-export function compileRule(routeRule, parentAbsoluteViewName, viewToRule, ruleToKeys) {
+export function compileRule(routeRule, parentAbsoluteViewName, parentPaths, viewToPaths, viewToRule, ruleToKeys) {
   if (parentAbsoluteViewName === void 0) {
     parentAbsoluteViewName = '';
+  }
+
+  if (parentPaths === void 0) {
+    parentPaths = [];
+  }
+
+  if (viewToPaths === void 0) {
+    viewToPaths = {};
   }
 
   if (viewToRule === void 0) {
@@ -129,15 +137,18 @@ export function compileRule(routeRule, parentAbsoluteViewName, viewToRule, ruleT
 
       var absoluteViewName = parentAbsoluteViewName + "/" + _viewName;
       viewToRule[absoluteViewName] = _rule;
+      var paths = [].concat(parentPaths, [_viewName]);
+      viewToPaths[_viewName] = paths;
 
       if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
+        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
       }
     }
   }
 
   return {
     viewToRule: viewToRule,
-    ruleToKeys: ruleToKeys
+    ruleToKeys: ruleToKeys,
+    viewToPaths: viewToPaths
   };
 }

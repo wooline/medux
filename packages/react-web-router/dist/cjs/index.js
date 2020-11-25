@@ -2988,6 +2988,10 @@ function _renderApp() {
   return _renderApp.apply(this, arguments);
 }
 
+var defFun = function defFun() {
+  return undefined;
+};
+
 function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
   return _renderSSR.apply(this, arguments);
 }
@@ -3025,9 +3029,10 @@ function _renderSSR() {
             }));
 
           case 9:
+            store.dispatch = defFun;
             return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 10:
+          case 11:
           case "end":
             return _context2.stop();
         }
@@ -3686,9 +3691,17 @@ function urlToLocation(url) {
     hash: hash && "#" + hash
   };
 }
-function compileRule(routeRule, parentAbsoluteViewName, viewToRule, ruleToKeys) {
+function compileRule(routeRule, parentAbsoluteViewName, parentPaths, viewToPaths, viewToRule, ruleToKeys) {
   if (parentAbsoluteViewName === void 0) {
     parentAbsoluteViewName = '';
+  }
+
+  if (parentPaths === void 0) {
+    parentPaths = [];
+  }
+
+  if (viewToPaths === void 0) {
+    viewToPaths = {};
   }
 
   if (viewToRule === void 0) {
@@ -3723,16 +3736,19 @@ function compileRule(routeRule, parentAbsoluteViewName, viewToRule, ruleToKeys) 
 
       var absoluteViewName = parentAbsoluteViewName + "/" + _viewName;
       viewToRule[absoluteViewName] = _rule;
+      var paths = [].concat(parentPaths, [_viewName]);
+      viewToPaths[_viewName] = paths;
 
       if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, viewToRule, ruleToKeys);
+        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
       }
     }
   }
 
   return {
     viewToRule: viewToRule,
-    ruleToKeys: ruleToKeys
+    ruleToKeys: ruleToKeys,
+    viewToPaths: viewToPaths
   };
 }
 
@@ -4128,12 +4144,16 @@ var BaseHistoryActions = function () {
 
     _defineProperty(this, "_ruleToKeys", void 0);
 
+    _defineProperty(this, "_viewToPaths", void 0);
+
     var _compileRule = compileRule(routeRule),
         viewToRule = _compileRule.viewToRule,
-        ruleToKeys = _compileRule.ruleToKeys;
+        ruleToKeys = _compileRule.ruleToKeys,
+        viewToPaths = _compileRule.viewToPaths;
 
     this._viewToRule = viewToRule;
     this._ruleToKeys = ruleToKeys;
+    this._viewToPaths = viewToPaths;
     var safeLocation = urlToLocation(initUrl);
 
     var routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
@@ -4253,11 +4273,19 @@ var BaseHistoryActions = function () {
     }
 
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
 
     var params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
     return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
+  };
+
+  _proto.viewNameToPaths = function viewNameToPaths(viewName) {
+    return this._viewToPaths[viewName];
   };
 
   _proto.payloadToLocation = function payloadToLocation(data) {
@@ -4283,7 +4311,11 @@ var BaseHistoryActions = function () {
     }
 
     if (!clone.paths) {
-      clone.paths = this.getRouteState().paths;
+      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
+    }
+
+    if (!clone.paths) {
+      throw 'Route Paths Not Found!';
     }
 
     var params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;

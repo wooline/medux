@@ -29,9 +29,9 @@ export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
   _config.MSP && (config.MSP = _config.MSP);
 }
 
-export interface CommonModule {
+export interface CommonModule<ModuleName extends string = string> {
   default: {
-    moduleName: string;
+    moduleName: ModuleName;
     initState: CoreModuleState;
     model: (store: ModuleStore) => void | Promise<void>;
     views: {
