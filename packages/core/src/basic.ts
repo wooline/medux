@@ -137,6 +137,8 @@ export interface Action {
   payload?: any[];
 }
 
+export type Dispatch = (action: Action) => any;
+
 interface Store {
   dispatch(action: Action): Action | Promise<void>;
   getState(): {[key: string]: any};

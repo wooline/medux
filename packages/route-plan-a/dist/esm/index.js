@@ -544,7 +544,7 @@ export var BaseHistoryActions = function () {
 
     if (action === 'RELAUNCH') {
       historyList = [uri];
-      stackList = [pathname];
+      stackList = [uri];
     } else if (action === 'PUSH') {
       historyList.unshift(uri);
 
@@ -552,30 +552,25 @@ export var BaseHistoryActions = function () {
         historyList.length = maxLength;
       }
 
-      if (stackList[0] !== pathname) {
-        stackList.unshift(pathname);
-      }
-
-      if (stackList.length > maxLength) {
-        stackList.length = maxLength;
-      }
-    } else if (action === 'REPLACE') {
-      historyList[0] = uri;
-
-      if (stackList[0] !== pathname) {
-        var cpathname = this._uriToPathname(historyList[1]);
-
-        if (cpathname !== stackList[0]) {
-          stackList.shift();
-        }
-
-        if (stackList[0] !== pathname) {
-          stackList.unshift(pathname);
-        }
+      if (this._uriToPathname(stackList[0]) !== pathname) {
+        stackList.unshift(uri);
 
         if (stackList.length > maxLength) {
           stackList.length = maxLength;
         }
+      } else {
+        stackList[0] = uri;
+      }
+    } else if (action === 'REPLACE') {
+      historyList[0] = uri;
+      stackList[0] = uri;
+
+      if (pathname === this._uriToPathname(stackList[1])) {
+        stackList.splice(1, 1);
+      }
+
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
       }
     } else if (action.startsWith('POP')) {
       var _n = parseInt(action.replace('POP', ''), 10) || 1;
@@ -594,10 +589,10 @@ export var BaseHistoryActions = function () {
         arr.pop();
       }
 
-      stackList.splice(0, arr.length, pathname);
+      stackList.splice(0, arr.length, uri);
 
-      if (stackList[0] === stackList[1]) {
-        stackList.shift();
+      if (pathname === this._uriToPathname(stackList[1])) {
+        stackList.splice(1, 1);
       }
     }
 
@@ -746,7 +741,7 @@ export var BaseHistoryActions = function () {
     return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
   };
 
-  _proto.pop = function pop(n, root, disableNative) {
+  _proto.pop = function pop(n, root, disableNative, useStack) {
     if (n === void 0) {
       n = 1;
     }
@@ -756,7 +751,7 @@ export var BaseHistoryActions = function () {
     }
 
     n = n || 1;
-    var uri = this._routeState.history[n];
+    var uri = useStack ? this._routeState.stack[n] : this._routeState.history[n];
 
     if (uri) {
       var _url = this._uriToUrl(uri);
@@ -764,7 +759,8 @@ export var BaseHistoryActions = function () {
       var _key2 = this._uriToKey(uri);
 
       var paLocation = urlToLocation(_url);
-      return this.dispatch(paLocation, "POP" + n, _key2, disableNative ? '' : n);
+      var k = useStack ? 10000 + n : n;
+      return this.dispatch(paLocation, "POP" + k, _key2, disableNative ? '' : k);
     }
 
     var url = root;
@@ -780,6 +776,18 @@ export var BaseHistoryActions = function () {
     }
 
     return this.relaunch(url, disableNative);
+  };
+
+  _proto.back = function back(n, root, disableNative) {
+    if (n === void 0) {
+      n = 1;
+    }
+
+    if (root === void 0) {
+      root = 'FIRST';
+    }
+
+    return this.pop(n, root, disableNative, true);
   };
 
   _proto.home = function home(root, disableNative) {

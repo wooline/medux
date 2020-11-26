@@ -480,31 +480,28 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     let stackList: string[] = [...stack];
     if (action === 'RELAUNCH') {
       historyList = [uri];
-      stackList = [pathname];
+      stackList = [uri];
     } else if (action === 'PUSH') {
       historyList.unshift(uri);
       if (historyList.length > maxLength) {
         historyList.length = maxLength;
       }
-      if (stackList[0] !== pathname) {
-        stackList.unshift(pathname);
-      }
-      if (stackList.length > maxLength) {
-        stackList.length = maxLength;
-      }
-    } else if (action === 'REPLACE') {
-      historyList[0] = uri;
-      if (stackList[0] !== pathname) {
-        const cpathname = this._uriToPathname(historyList[1]);
-        if (cpathname !== stackList[0]) {
-          stackList.shift();
-        }
-        if (stackList[0] !== pathname) {
-          stackList.unshift(pathname);
-        }
+      if (this._uriToPathname(stackList[0]) !== pathname) {
+        stackList.unshift(uri);
         if (stackList.length > maxLength) {
           stackList.length = maxLength;
         }
+      } else {
+        stackList[0] = uri;
+      }
+    } else if (action === 'REPLACE') {
+      historyList[0] = uri;
+      stackList[0] = uri;
+      if (pathname === this._uriToPathname(stackList[1])) {
+        stackList.splice(1, 1);
+      }
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
       }
     } else if (action.startsWith('POP')) {
       const n = parseInt(action.replace('POP', ''), 10) || 1;
@@ -518,9 +515,9 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
       if (arr[arr.length - 1] === this._uriToPathname(historyList[1])) {
         arr.pop();
       }
-      stackList.splice(0, arr.length, pathname);
-      if (stackList[0] === stackList[1]) {
-        stackList.shift();
+      stackList.splice(0, arr.length, uri);
+      if (pathname === this._uriToPathname(stackList[1])) {
+        stackList.splice(1, 1);
       }
     }
     return {history: historyList, stack: stackList};
@@ -652,14 +649,15 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
     return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
   }
 
-  pop(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean): Promise<Location> {
+  pop(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean, useStack?: boolean): Promise<Location> {
     n = n || 1;
-    const uri = this._routeState.history[n];
+    const uri = useStack ? this._routeState.stack[n] : this._routeState.history[n];
     if (uri) {
       const url = this._uriToUrl(uri);
       const key = this._uriToKey(uri);
       const paLocation = urlToLocation(url);
-      return this.dispatch(paLocation, `POP${n}` as any, key, disableNative ? '' : n);
+      const k = useStack ? 10000 + n : n;
+      return this.dispatch(paLocation, `POP${k}` as any, key, disableNative ? '' : k);
     }
     let url: string = root;
     if (root === 'HOME') {
@@ -671,6 +669,10 @@ export abstract class BaseHistoryActions<P extends RouteParams = RouteParams> {
       return Promise.reject(1);
     }
     return this.relaunch(url, disableNative);
+  }
+
+  back(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean): Promise<Location> {
+    return this.pop(n, root, disableNative, true);
   }
 
   home(root: 'HOME' | 'FIRST' = 'FIRST', disableNative?: boolean): Promise<Location> {

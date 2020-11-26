@@ -105,7 +105,11 @@ var WebNativeHistory = function () {
   };
 
   _proto.pop = function pop(location, n) {
-    this.history.go(-n);
+    if (n < 1000) {
+      this.history.go(-n);
+    } else {
+      this.history.push(locationToUrl(location), location.key);
+    }
   };
 
   return WebNativeHistory;

@@ -3,14 +3,14 @@ import React, { ReactElement, ComponentType, FunctionComponent, ComponentClass }
 import { LoadView } from '@medux/react';
 import { HistoryActions } from '@medux/web';
 import { Options as ReactReduxOptions } from 'react-redux';
-import type { RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions } from '@medux/core';
-import type { Dispatch, Store } from 'redux';
+import type { RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispatch } from '@medux/core';
+import type { Store } from 'redux';
 import type { LocationMap, RouteRule, RootState } from '@medux/route-plan-a';
 export { exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
 export { setRouteConfig, RouteModuleHandlers as BaseModuleHandlers } from '@medux/route-plan-a';
-export type { RootModuleFacade } from '@medux/core';
-export type { Dispatch, Store } from 'redux';
+export type { RootModuleFacade, Dispatch } from '@medux/core';
+export type { Store } from 'redux';
 export type { RouteRule, RouteState, RootState, LocationMap, RouteModuleState as BaseModuleState } from '@medux/route-plan-a';
 export type { HistoryActions } from '@medux/web';
 export declare type FacadeExports<APP extends RootModuleFacade> = {
@@ -19,6 +19,9 @@ export declare type FacadeExports<APP extends RootModuleFacade> = {
         state: RootState<APP>;
         loadView: LoadView<APP>;
         history: HistoryActions<RootState<APP>['route']['params']>;
+        getActions<N extends keyof APP>(...args: N[]): {
+            [K in N]: APP[K]['actions'];
+        };
     };
     Modules: RootModuleAPI<APP>;
 };

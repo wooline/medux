@@ -6,16 +6,16 @@ import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
 import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux';
 
-import type {RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions} from '@medux/core';
-import type {Dispatch, Store} from 'redux';
+import type {RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispatch} from '@medux/core';
+import type {Store} from 'redux';
 import type {LocationMap, RouteRule, RootState} from '@medux/route-plan-a';
 
 export {exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime} from '@medux/core';
 export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers} from '@medux/route-plan-a';
 
-export type {RootModuleFacade} from '@medux/core';
-export type {Dispatch, Store} from 'redux';
+export type {RootModuleFacade, Dispatch} from '@medux/core';
+export type {Store} from 'redux';
 export type {RouteRule, RouteState, RootState, LocationMap, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
 export type {HistoryActions} from '@medux/web';
 
@@ -25,15 +25,29 @@ export type FacadeExports<APP extends RootModuleFacade> = {
     state: RootState<APP>;
     loadView: LoadView<APP>;
     history: HistoryActions<RootState<APP>['route']['params']>;
+    getActions<N extends keyof APP>(...args: N[]): {[K in N]: APP[K]['actions']};
   };
   Modules: RootModuleAPI<APP>;
 };
-const appExports: {store: any; state: any; loadView: any; history: any} = {loadView, state: undefined, store: undefined, history: undefined};
+const appExports: {store: any; state: any; loadView: any; getActions: any; history: any} = {
+  loadView,
+  getActions: undefined,
+  state: undefined,
+  store: undefined,
+  history: undefined,
+};
 
 export function exportApp(): FacadeExports<any> {
+  const modules = getRootModuleAPI();
+  appExports.getActions = (...args: string[]) => {
+    return args.reduce((prev, moduleName) => {
+      prev[moduleName] = modules[moduleName].actions;
+      return prev;
+    }, {});
+  };
   return {
     App: appExports as any,
-    Modules: getRootModuleAPI(),
+    Modules: modules,
   };
 }
 

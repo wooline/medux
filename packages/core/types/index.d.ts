@@ -6,6 +6,6 @@ export { LoadingState } from './sprite';
 export { getRootModuleAPI, renderApp, renderSSR, modelHotReplacement, viewHotReplacement } from './module';
 export { env, client, isServerEnv, isDevelopmentEnv } from './env';
 export type { Actions, ExportModule } from './inject';
-export type { Action, CoreModuleState, CommonModule, ModuleGetter, ModuleModel, ModuleStore } from './basic';
+export type { Action, CoreModuleState, CommonModule, Dispatch, ModuleGetter, ModuleModel, ModuleStore } from './basic';
 export type { StoreOptions } from './store';
 export type { RootModuleAPI, RootModuleState, RootModuleFacade, LoadView, ReturnModule } from './module';

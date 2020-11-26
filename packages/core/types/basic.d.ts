@@ -57,6 +57,7 @@ export interface Action {
     priority?: string[];
     payload?: any[];
 }
+export declare type Dispatch = (action: Action) => any;
 interface Store {
     dispatch(action: Action): Action | Promise<void>;
     getState(): {

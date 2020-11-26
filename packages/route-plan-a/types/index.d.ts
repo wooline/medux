@@ -73,7 +73,8 @@ export declare abstract class BaseHistoryActions<P extends RouteParams = RoutePa
     relaunch(data: RoutePayload<P> | string, disableNative?: boolean): Promise<Location>;
     push(data: RoutePayload<P> | string, disableNative?: boolean): Promise<Location>;
     replace(data: RoutePayload<P> | string, disableNative?: boolean): Promise<Location>;
-    pop(n?: number, root?: 'HOME' | 'FIRST' | '', disableNative?: boolean): Promise<Location>;
+    pop(n?: number, root?: 'HOME' | 'FIRST' | '', disableNative?: boolean, useStack?: boolean): Promise<Location>;
+    back(n?: number, root?: 'HOME' | 'FIRST' | '', disableNative?: boolean): Promise<Location>;
     home(root?: 'HOME' | 'FIRST', disableNative?: boolean): Promise<Location>;
     abstract destroy(): void;
 }

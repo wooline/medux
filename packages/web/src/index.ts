@@ -74,7 +74,11 @@ export class WebNativeHistory implements NativeHistory {
   }
 
   pop(location: Location, n: number): void {
-    this.history.go(-n);
+    if (n < 1000) {
+      this.history.go(-n);
+    } else {
+      this.history.push(locationToUrl(location), location.key as any);
+    }
   }
 }
 export class HistoryActions<P extends RouteParams = RouteParams> extends BaseHistoryActions<P> {

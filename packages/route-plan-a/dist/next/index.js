@@ -511,7 +511,7 @@ export class BaseHistoryActions {
 
     if (action === 'RELAUNCH') {
       historyList = [uri];
-      stackList = [pathname];
+      stackList = [uri];
     } else if (action === 'PUSH') {
       historyList.unshift(uri);
 
@@ -519,30 +519,25 @@ export class BaseHistoryActions {
         historyList.length = maxLength;
       }
 
-      if (stackList[0] !== pathname) {
-        stackList.unshift(pathname);
-      }
-
-      if (stackList.length > maxLength) {
-        stackList.length = maxLength;
-      }
-    } else if (action === 'REPLACE') {
-      historyList[0] = uri;
-
-      if (stackList[0] !== pathname) {
-        const cpathname = this._uriToPathname(historyList[1]);
-
-        if (cpathname !== stackList[0]) {
-          stackList.shift();
-        }
-
-        if (stackList[0] !== pathname) {
-          stackList.unshift(pathname);
-        }
+      if (this._uriToPathname(stackList[0]) !== pathname) {
+        stackList.unshift(uri);
 
         if (stackList.length > maxLength) {
           stackList.length = maxLength;
         }
+      } else {
+        stackList[0] = uri;
+      }
+    } else if (action === 'REPLACE') {
+      historyList[0] = uri;
+      stackList[0] = uri;
+
+      if (pathname === this._uriToPathname(stackList[1])) {
+        stackList.splice(1, 1);
+      }
+
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
       }
     } else if (action.startsWith('POP')) {
       const n = parseInt(action.replace('POP', ''), 10) || 1;
@@ -560,10 +555,10 @@ export class BaseHistoryActions {
         arr.pop();
       }
 
-      stackList.splice(0, arr.length, pathname);
+      stackList.splice(0, arr.length, uri);
 
-      if (stackList[0] === stackList[1]) {
-        stackList.shift();
+      if (pathname === this._uriToPathname(stackList[1])) {
+        stackList.splice(1, 1);
       }
     }
 
@@ -673,9 +668,9 @@ export class BaseHistoryActions {
     return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
   }
 
-  pop(n = 1, root = 'FIRST', disableNative) {
+  pop(n = 1, root = 'FIRST', disableNative, useStack) {
     n = n || 1;
-    const uri = this._routeState.history[n];
+    const uri = useStack ? this._routeState.stack[n] : this._routeState.history[n];
 
     if (uri) {
       const url = this._uriToUrl(uri);
@@ -683,7 +678,8 @@ export class BaseHistoryActions {
       const key = this._uriToKey(uri);
 
       const paLocation = urlToLocation(url);
-      return this.dispatch(paLocation, `POP${n}`, key, disableNative ? '' : n);
+      const k = useStack ? 10000 + n : n;
+      return this.dispatch(paLocation, `POP${k}`, key, disableNative ? '' : k);
     }
 
     let url = root;
@@ -699,6 +695,10 @@ export class BaseHistoryActions {
     }
 
     return this.relaunch(url, disableNative);
+  }
+
+  back(n = 1, root = 'FIRST', disableNative) {
+    return this.pop(n, root, disableNative, true);
   }
 
   home(root = 'FIRST', disableNative) {
