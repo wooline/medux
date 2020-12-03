@@ -3,8 +3,6 @@ import {getView, renderApp, ModuleStore} from 'src/index';
 
 import {App, moduleGetter} from './modules';
 
-declare const console: any;
-
 describe('init', () => {
   let mockStore: ModuleStore;
   const actionLogs: string[] = [];

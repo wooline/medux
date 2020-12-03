@@ -1,127 +1,117 @@
-import { config } from '@medux/core';
-import { compilePath } from './matchPath';
 export const routeConfig = {
   RSP: '|',
-  escape: true,
-  dateParse: false,
-  splitKey: 'q',
   historyMax: 10,
-  homeUrl: '/'
+  homeUri: '|home|{app:{}}'
 };
 export function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.escape !== undefined && (routeConfig.escape = conf.escape);
-  conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
-  conf.splitKey && (routeConfig.splitKey = conf.splitKey);
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUrl && (routeConfig.homeUrl = conf.homeUrl);
+  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
-export const RouteActionTypes = {
-  MRouteParams: 'RouteParams',
-  RouteChange: `medux${config.NSP}RouteChange`,
-  BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`
-};
-export function beforeRouteChangeAction(routeState) {
+export function locationToUri(location, key) {
+  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
+}
+
+function splitUri(...args) {
+  const [uri, name] = args;
+  const arr = uri.split(routeConfig.RSP, 3);
+  const index = {
+    key: 0,
+    tag: 1,
+    query: 2
+  };
+
+  if (name) {
+    return arr[index[name]];
+  }
+
+  return arr;
+}
+
+export function uriToLocation(uri) {
+  const [key, tag, query] = splitUri(uri);
+  const location = {
+    tag,
+    params: JSON.parse(query)
+  };
   return {
-    type: RouteActionTypes.BeforeRouteChange,
-    payload: [routeState]
+    key,
+    location
   };
 }
-export function routeChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
-export function routeParamsAction(moduleName, params, action) {
-  return {
-    type: `${moduleName}${config.NSP}${RouteActionTypes.MRouteParams}`,
-    payload: [params, action]
-  };
-}
-export function checkLocation(location) {
-  const data = {
-    pathname: location.pathname || '',
-    search: location.search || '',
-    hash: location.hash || ''
-  };
-  data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
+export function buildHistoryStack(location, action, key, curData) {
+  const maxLength = routeConfig.historyMax;
+  const tag = location.tag;
+  const uri = locationToUri(location, key);
+  const {
+    history,
+    stack
+  } = curData;
+  let historyList = [...history];
+  let stackList = [...stack];
 
-  if (data.pathname !== '/') {
-    data.pathname = data.pathname.replace(/\/$/, '');
-  }
+  if (action === 'RELAUNCH') {
+    historyList = [uri];
+    stackList = [uri];
+  } else if (action === 'PUSH') {
+    historyList.unshift(uri);
 
-  data.search = `?${data.search}`.replace('??', '?');
-  data.hash = `#${data.hash}`.replace('##', '#');
+    if (historyList.length > maxLength) {
+      historyList.length = maxLength;
+    }
 
-  if (data.search === '?') {
-    data.search = '';
-  }
+    if (splitUri(stackList[0], 'tag') !== tag) {
+      stackList.unshift(uri);
 
-  if (data.hash === '#') {
-    data.hash = '';
-  }
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
+      }
+    } else {
+      stackList[0] = uri;
+    }
+  } else if (action === 'REPLACE') {
+    historyList[0] = uri;
+    stackList[0] = uri;
 
-  return data;
-}
-export function urlToLocation(url) {
-  url = `/${url}`.replace(/\/+/g, '/');
+    if (tag === splitUri(stackList[1], 'tag')) {
+      stackList.splice(1, 1);
+    }
 
-  if (!url) {
-    return {
-      pathname: '/',
-      search: '',
-      hash: ''
-    };
-  }
+    if (stackList.length > maxLength) {
+      stackList.length = maxLength;
+    }
+  } else if (action.startsWith('POP')) {
+    const n = parseInt(action.replace('POP', ''), 10) || 1;
+    const useStack = n > 1000;
 
-  const arr = url.split(/[?#]/);
+    if (useStack) {
+      historyList = [];
+      stackList.splice(0, n - 1000);
+    } else {
+      const arr = historyList.splice(0, n + 1, uri).reduce((pre, curUri) => {
+        const ctag = splitUri(curUri, 'tag');
 
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
+        if (pre[pre.length - 1] !== ctag) {
+          pre.push(ctag);
+        }
 
-  const [pathname, search = '', hash = ''] = arr;
-  return {
-    pathname,
-    search: search && `?${search}`,
-    hash: hash && `#${hash}`
-  };
-}
-export function compileRule(routeRule, parentAbsoluteViewName = '', parentPaths = [], viewToPaths = {}, viewToRule = {}, ruleToKeys = {}) {
-  for (const rule in routeRule) {
-    if (routeRule.hasOwnProperty(rule)) {
-      const item = routeRule[rule];
-      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
+        return pre;
+      }, []);
 
-      if (!ruleToKeys[rule]) {
-        const {
-          keys
-        } = compilePath(rule, {
-          end: true,
-          strict: false,
-          sensitive: false
-        });
-        ruleToKeys[rule] = keys.reduce((prev, cur) => {
-          prev.push(cur.name);
-          return prev;
-        }, []);
+      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
+        arr.pop();
       }
 
-      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
-      viewToRule[absoluteViewName] = rule;
-      const paths = [...parentPaths, viewName];
-      viewToPaths[viewName] = paths;
+      stackList.splice(0, arr.length, uri);
 
-      if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
+      if (tag === splitUri(stackList[1], 'tag')) {
+        stackList.splice(1, 1);
       }
     }
   }
 
   return {
-    viewToRule,
-    ruleToKeys,
-    viewToPaths
+    history: historyList,
+    stack: stackList
   };
 }

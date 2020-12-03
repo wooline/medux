@@ -1,125 +1,64 @@
-import { RootModuleFacade } from '@medux/core';
+import { CoreRootState, RootModuleFacade } from '@medux/core';
+export declare const routeConfig: {
+    RSP: string;
+    historyMax: number;
+    homeUri: string;
+};
+export declare function setRouteConfig(conf: {
+    RSP?: string;
+    historyMax?: number;
+    homeUri?: string;
+}): void;
 export declare type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
-export interface Location {
-    url: string;
+export declare type Params = {
+    [moduleName: string]: {
+        [key: string]: any;
+    } | undefined;
+};
+export interface NativeLocation {
+    pathname: string;
+    search: string;
+    hash: string;
+}
+export interface Location<P extends Params = Params> {
+    tag: string;
+    params: P;
+}
+export declare type RouteState<P extends Params = Params> = Location<P> & {
     pathname: string;
     search: string;
     hash: string;
     action: HistoryAction;
     key: string;
-}
-export declare type RouteParams = {
-    [moduleName: string]: {
-        [key: string]: any;
-    } | undefined;
-};
-export interface DisplayViews {
-    [moduleName: string]: {
-        [viewName: string]: boolean | undefined;
-    } | undefined;
-}
-export declare type RouteState<P extends RouteParams = RouteParams> = Location & {
-    paths: string[];
-    views: DisplayViews;
-    params: P;
     history: string[];
     stack: string[];
 };
-export declare type RootState<A extends RootModuleFacade> = {
-    route: {
-        history: string[];
-        stack: string[];
-        url: string;
-        pathname: string;
-        search: string;
-        hash: string;
-        views: {
-            [M in keyof A]?: A[M]['viewMounted'];
-        };
-        params: {
-            [M in keyof A]?: A[M]['state']['routeParams'];
-        };
-        paths: string[];
-        key: string;
-        action: HistoryAction;
-    };
+export declare type RouteRootState<P extends Params = Params> = CoreRootState & {
+    route: RouteState<P>;
+};
+export declare type RootState<A extends RootModuleFacade, P extends Params> = {
+    route: RouteState<P>;
 } & {
     [M in keyof A]?: A[M]['state'];
 };
-export declare const routeConfig: {
-    RSP: string;
-    escape: boolean;
-    dateParse: boolean;
-    splitKey: string;
-    historyMax: number;
-    homeUrl: string;
-};
-export declare function setRouteConfig(conf: {
-    RSP?: string;
-    escape?: boolean;
-    dateParse?: boolean;
-    splitKey?: string;
-    historyMax?: number;
-    homeUrl?: string;
-}): void;
-export declare const RouteActionTypes: {
-    MRouteParams: string;
-    RouteChange: string;
-    BeforeRouteChange: string;
-};
-export declare function beforeRouteChangeAction(routeState: RouteState): {
-    type: string;
-    payload: RouteState<RouteParams>[];
-};
-export declare function routeChangeAction(routeState: RouteState): {
-    type: string;
-    payload: RouteState<RouteParams>[];
-};
-export declare function routeParamsAction(moduleName: string, params: any, action: HistoryAction): {
-    type: string;
-    payload: any[];
-};
-export interface PaRouteData<P extends RouteParams = RouteParams> {
-    views: DisplayViews;
-    params: P;
-    paths: string[];
-}
-export interface PaLocation {
-    pathname: string;
-    search: string;
-    hash: string;
-}
 declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
-export interface RoutePayload<P extends RouteParams = RouteParams> {
-    pathname?: string;
-    search?: string;
-    hash?: string;
-    viewName?: string;
+export interface RoutePayload<P extends Params = Params> {
+    tag?: string;
     params?: DeepPartial<P>;
-    extendParams?: DeepPartial<P> | true;
+    extendParams?: P | true;
 }
-export declare function checkLocation(location: RoutePayload): PaLocation;
-export declare function urlToLocation(url: string): PaLocation;
-export interface RouteRule {
-    [path: string]: string | [string, RouteRule];
-}
-export declare function compileRule(routeRule: RouteRule, parentAbsoluteViewName?: string, parentPaths?: string[], viewToPaths?: {
-    [viewName: string]: string[];
-}, viewToRule?: {
-    [viewName: string]: string;
-}, ruleToKeys?: {
-    [rule: string]: (string | number)[];
+export declare function locationToUri(location: Location, key: string): string;
+export declare function uriToLocation<P extends Params = Params>(uri: string): {
+    key: string;
+    location: Location<P>;
+};
+export declare function buildHistoryStack(location: Location, action: HistoryAction, key: string, curData: {
+    history: string[];
+    stack: string[];
 }): {
-    viewToRule: {
-        [viewName: string]: string;
-    };
-    ruleToKeys: {
-        [rule: string]: (string | number)[];
-    };
-    viewToPaths: {
-        [viewName: string]: string[];
-    };
+    history: string[];
+    stack: string[];
 };
 export {};

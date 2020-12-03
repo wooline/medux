@@ -1,103 +1,9 @@
-import {config, RootModuleFacade} from '@medux/core';
-import {compilePath} from './matchPath';
-
-export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
-export interface Location {
-  url: string;
-  pathname: string;
-  search: string;
-  hash: string;
-  action: HistoryAction;
-  key: string;
-}
-export type RouteParams = {[moduleName: string]: {[key: string]: any} | undefined};
-/**
- * 描述当前路由展示了哪些模块的哪些view，例如：
- * ```
- * {
- *    app: {
- *        Main: true,
- *        List: true
- *    },
- *    article: {
- *        Details: true
- *    }
- * }
- * ```
- */
-export interface DisplayViews {
-  [moduleName: string]: {[viewName: string]: boolean | undefined} | undefined;
-}
-// export interface RouteData<P extends RouteParams = any> {
-//   /**
-//    * 表示当前路由下加载了哪些views
-//    */
-//   views: DisplayViews;
-//   /**
-//    * 表示当前路由传递了哪些参数
-//    */
-//   params: P;
-//   /**
-//    * 表示当前路由下加载views的父子嵌套关系
-//    */
-//   paths: string[];
-//   /**
-//    * 路由的打开方式
-//    */
-//   action: HistoryAction;
-//   key: string;
-// }
-/**
- * Redux中保存的路由数据结构
- */
-
-export type RouteState<P extends RouteParams = RouteParams> = Location & {
-  paths: string[];
-  views: DisplayViews;
-  params: P;
-  /**
-   * 路由记录
-   */
-  history: string[];
-  /**
-   * pathname记录
-   */
-  stack: string[];
-};
-
-// type ModuleParams<M extends CommonModule<RouteModuleState>> = M['default']['initState']['routeParams'];
-
-// export type RootRouteParams<G extends ModuleGetter> = {[key in keyof G]?: ModuleParams<ReturnModule<ReturnType<G[key]>>>};
-// export type RouteViews<G extends ModuleGetter> = {[key in keyof G]?: MountViews<ReturnModule<G[key]>>};
-/**
- * 整个Store的数据结构模型，主要分为三部分
- * - route，路由数据
- * - modules，各个模块的数据，可通过isModule辨别
- * - otherReducers，其他第三方reducers生成的数据
- */
-export type RootState<A extends RootModuleFacade> = {
-  route: {
-    history: string[];
-    stack: string[];
-    url: string;
-    pathname: string;
-    search: string;
-    hash: string;
-    views: {[M in keyof A]?: A[M]['viewMounted']};
-    params: {[M in keyof A]?: A[M]['state']['routeParams']};
-    paths: string[];
-    key: string;
-    action: HistoryAction;
-  };
-} & {[M in keyof A]?: A[M]['state']};
+import {CoreRootState, RootModuleFacade} from '@medux/core';
 
 export const routeConfig = {
   RSP: '|',
-  escape: true,
-  dateParse: false,
-  splitKey: 'q',
   historyMax: 10,
-  homeUrl: '/',
+  homeUri: '|home|{app:{}}',
 };
 
 /**
@@ -107,145 +13,131 @@ export const routeConfig = {
  * - splitKey 使用一个key来作为数据的载体
  * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
  */
-export function setRouteConfig(conf: {RSP?: string; escape?: boolean; dateParse?: boolean; splitKey?: string; historyMax?: number; homeUrl?: string}) {
+export function setRouteConfig(conf: {RSP?: string; historyMax?: number; homeUri?: string}) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.escape !== undefined && (routeConfig.escape = conf.escape);
-  conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
-  conf.splitKey && (routeConfig.splitKey = conf.splitKey);
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUrl && (routeConfig.homeUrl = conf.homeUrl);
+  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
 
-export const RouteActionTypes = {
-  MRouteParams: 'RouteParams',
-  RouteChange: `medux${config.NSP}RouteChange`,
-  BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`,
-};
+export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
 
-export function beforeRouteChangeAction(routeState: RouteState) {
-  return {
-    type: RouteActionTypes.BeforeRouteChange,
-    payload: [routeState],
-  };
-}
+export type Params = {[moduleName: string]: {[key: string]: any} | undefined};
 
-export function routeChangeAction(routeState: RouteState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState],
-  };
-}
+// export interface BaseLocation {
+//   pathname: string;
+//   search: string;
+// }
 
-export function routeParamsAction(moduleName: string, params: any, action: HistoryAction) {
-  return {
-    type: `${moduleName}${config.NSP}${RouteActionTypes.MRouteParams}`,
-    payload: [params, action],
-  };
-}
-export interface PaRouteData<P extends RouteParams = RouteParams> {
-  views: DisplayViews;
-  params: P;
-  paths: string[];
-}
-export interface PaLocation {
+export interface NativeLocation {
   pathname: string;
   search: string;
   hash: string;
 }
-// export interface LocationPayload {
-//   pathname: string;
-//   search?: string;
-//   hash?: string;
-// }
+
+export interface Location<P extends Params = Params> {
+  tag: string;
+  params: P;
+}
+
+export type RouteState<P extends Params = Params> = Location<P> & {
+  pathname: string;
+  search: string;
+  hash: string;
+  action: HistoryAction;
+  key: string;
+  history: string[];
+  stack: string[];
+};
+
+export type RouteRootState<P extends Params = Params> = CoreRootState & {
+  route: RouteState<P>;
+};
+
+export type RootState<A extends RootModuleFacade, P extends Params> = {
+  route: RouteState<P>;
+} & {[M in keyof A]?: A[M]['state']};
+
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
-export interface RoutePayload<P extends RouteParams = RouteParams> {
-  pathname?: string;
-  search?: string;
-  hash?: string;
-  viewName?: string;
+export interface RoutePayload<P extends Params = Params> {
+  tag?: string;
   params?: DeepPartial<P>;
-  extendParams?: DeepPartial<P> | true;
+  extendParams?: P | true;
 }
 
-// export function dataIsLocation(data: RoutePayload | LocationPayload): data is LocationPayload {
-//   return !!data['pathname'];
-// }
-export function checkLocation(location: RoutePayload): PaLocation {
-  const data: PaLocation = {pathname: location.pathname || '', search: location.search || '', hash: location.hash || ''};
-  data.pathname = `/${data.pathname}`.replace(/\/+/g, '/');
-  if (data.pathname !== '/') {
-    data.pathname = data.pathname.replace(/\/$/, '');
-  }
-
-  data.search = `?${data.search}`.replace('??', '?');
-  data.hash = `#${data.hash}`.replace('##', '#');
-  if (data.search === '?') {
-    data.search = '';
-  }
-  if (data.hash === '#') {
-    data.hash = '';
-  }
-  return data;
+export function locationToUri(location: Location, key: string): string {
+  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
 }
-export function urlToLocation(url: string): PaLocation {
-  url = `/${url}`.replace(/\/+/g, '/');
-  if (!url) {
-    return {
-      pathname: '/',
-      search: '',
-      hash: '',
-    };
+function splitUri(uri: string): [string, string, string];
+function splitUri(uri: string, name: 'key' | 'tag' | 'query'): string;
+function splitUri(...args: any): [string, string, string] | string {
+  const [uri, name] = args;
+  const arr = uri.split(routeConfig.RSP, 3);
+  const index = {key: 0, tag: 1, query: 2};
+  if (name) {
+    return arr[index[name]];
   }
-  const arr = url.split(/[?#]/);
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-  const [pathname, search = '', hash = ''] = arr;
-
-  return {
-    pathname,
-    search: search && `?${search}`,
-    hash: hash && `#${hash}`,
-  };
+  return arr as any;
 }
-
-/**
- * 定义一个路由配置文件的结构
- */
-export interface RouteRule {
-  [path: string]: string | [string, RouteRule];
+export function uriToLocation<P extends Params = Params>(uri: string): {key: string; location: Location<P>} {
+  const [key, tag, query] = splitUri(uri);
+  const location: Location<P> = {tag, params: JSON.parse(query)};
+  return {key, location};
 }
-
-// 预先编译routeConfig，得到viewToRule及ruleToKeys
-export function compileRule(
-  routeRule: RouteRule,
-  parentAbsoluteViewName = '',
-  parentPaths: string[] = [],
-  viewToPaths: {[viewName: string]: string[]} = {},
-  viewToRule: {[viewName: string]: string} = {},
-  ruleToKeys: {[rule: string]: (string | number)[]} = {}
-) {
-  // ruleToKeys将每条rule中的params key解析出来
-  for (const rule in routeRule) {
-    if (routeRule.hasOwnProperty(rule)) {
-      const item = routeRule[rule];
-      const [viewName, pathConfig] = typeof item === 'string' ? [item, null] : item;
-      if (!ruleToKeys[rule]) {
-        const {keys} = compilePath(rule, {end: true, strict: false, sensitive: false});
-        ruleToKeys[rule] = keys.reduce((prev: (string | number)[], cur) => {
-          prev.push(cur.name);
-          return prev;
-        }, []);
+export function buildHistoryStack(location: Location, action: HistoryAction, key: string, curData: {history: string[]; stack: string[]}): {history: string[]; stack: string[]} {
+  const maxLength = routeConfig.historyMax;
+  const tag = location.tag;
+  const uri = locationToUri(location, key);
+  const {history, stack} = curData;
+  let historyList: string[] = [...history];
+  let stackList: string[] = [...stack];
+  if (action === 'RELAUNCH') {
+    historyList = [uri];
+    stackList = [uri];
+  } else if (action === 'PUSH') {
+    historyList.unshift(uri);
+    if (historyList.length > maxLength) {
+      historyList.length = maxLength;
+    }
+    if (splitUri(stackList[0], 'tag') !== tag) {
+      stackList.unshift(uri);
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
       }
-      const absoluteViewName = `${parentAbsoluteViewName}/${viewName}`;
-      viewToRule[absoluteViewName] = rule;
-      const paths = [...parentPaths, viewName];
-      viewToPaths[viewName] = paths;
-      if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
+    } else {
+      stackList[0] = uri;
+    }
+  } else if (action === 'REPLACE') {
+    historyList[0] = uri;
+    stackList[0] = uri;
+    if (tag === splitUri(stackList[1], 'tag')) {
+      stackList.splice(1, 1);
+    }
+    if (stackList.length > maxLength) {
+      stackList.length = maxLength;
+    }
+  } else if (action.startsWith('POP')) {
+    const n = parseInt(action.replace('POP', ''), 10) || 1;
+    const useStack = n > 1000;
+    if (useStack) {
+      historyList = [];
+      stackList.splice(0, n - 1000);
+    } else {
+      const arr = historyList.splice(0, n + 1, uri).reduce((pre: string[], curUri) => {
+        const ctag = splitUri(curUri, 'tag');
+        if (pre[pre.length - 1] !== ctag) {
+          pre.push(ctag);
+        }
+        return pre;
+      }, []);
+      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
+        arr.pop();
+      }
+      stackList.splice(0, arr.length, uri);
+      if (tag === splitUri(stackList[1], 'tag')) {
+        stackList.splice(1, 1);
       }
     }
   }
-  return {viewToRule, ruleToKeys, viewToPaths};
+  return {history: historyList, stack: stackList};
 }

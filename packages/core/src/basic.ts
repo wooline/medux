@@ -196,7 +196,6 @@ export interface CoreModuleState {
    * 如果已经初始化(如：SSR)，该值为true
    */
   initialized?: boolean;
-  routeParams?: any;
   /**
    * 该模块的各种loading状态，执行effect时会自动注入loading状态
    */
@@ -205,7 +204,7 @@ export interface CoreModuleState {
   };
 }
 
-type CoreRootState = {
+export type CoreRootState = {
   [moduleName: string]: CoreModuleState;
 };
 

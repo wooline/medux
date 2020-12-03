@@ -18,13 +18,8 @@ var _history = require("history");
 
 var _core = require("@medux/core");
 
-function locationToUrl(loaction) {
-  return loaction.pathname + loaction.search + loaction.hash;
-}
-
 var WebNativeHistory = function () {
-  function WebNativeHistory(createHistory, locationMap) {
-    this.locationMap = locationMap;
+  function WebNativeHistory(createHistory) {
     (0, _defineProperty2.default)(this, "history", void 0);
 
     if (createHistory === 'Hash') {
@@ -71,44 +66,98 @@ var WebNativeHistory = function () {
 
   var _proto = WebNativeHistory.prototype;
 
+  _proto.getLocation = function getLocation() {
+    var _this$history$locatio = this.history.location,
+        _this$history$locatio2 = _this$history$locatio.pathname,
+        pathname = _this$history$locatio2 === void 0 ? '' : _this$history$locatio2,
+        _this$history$locatio3 = _this$history$locatio.search,
+        search = _this$history$locatio3 === void 0 ? '' : _this$history$locatio3,
+        _this$history$locatio4 = _this$history$locatio.hash,
+        hash = _this$history$locatio4 === void 0 ? '' : _this$history$locatio4;
+    return {
+      pathname: pathname,
+      search: search.replace('?', ''),
+      hash: hash.replace('#', '')
+    };
+  };
+
+  _proto.getUrl = function getUrl() {
+    var _this$history$locatio5 = this.history.location,
+        _this$history$locatio6 = _this$history$locatio5.pathname,
+        pathname = _this$history$locatio6 === void 0 ? '' : _this$history$locatio6,
+        _this$history$locatio7 = _this$history$locatio5.search,
+        search = _this$history$locatio7 === void 0 ? '' : _this$history$locatio7,
+        _this$history$locatio8 = _this$history$locatio5.hash,
+        hash = _this$history$locatio8 === void 0 ? '' : _this$history$locatio8;
+    return [pathname, search, hash].join('');
+  };
+
+  _proto.parseUrl = function parseUrl(url) {
+    if (!url) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: ''
+      };
+    }
+
+    var arr = url.split(/[?#]/);
+
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+
+    var pathname = arr[0],
+        _arr$ = arr[1],
+        search = _arr$ === void 0 ? '' : _arr$,
+        _arr$2 = arr[2],
+        hash = _arr$2 === void 0 ? '' : _arr$2;
+    return {
+      pathname: pathname,
+      search: search,
+      hash: hash
+    };
+  };
+
+  _proto.toUrl = function toUrl(location) {
+    return [location.pathname, location.search && "?" + encodeURIComponent(location.search), location.hash && "#" + encodeURIComponent(location.hash)].join('');
+  };
+
   _proto.block = function block(blocker) {
     var _this = this;
 
     return this.history.block(function (location, action) {
-      return blocker({
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash
-      }, _this.getKey(location), action);
+      var _location$pathname = location.pathname,
+          pathname = _location$pathname === void 0 ? '' : _location$pathname,
+          _location$search = location.search,
+          search = _location$search === void 0 ? '' : _location$search,
+          _location$hash = location.hash,
+          hash = _location$hash === void 0 ? '' : _location$hash;
+      return blocker([pathname, search, hash].join(''), _this.getKey(location), action);
     });
-  };
-
-  _proto.getUrl = function getUrl() {
-    var location = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
-    return locationToUrl(location);
   };
 
   _proto.getKey = function getKey(location) {
     return location.state || '';
   };
 
-  _proto.push = function push(location) {
-    this.history.push(locationToUrl(location), location.key);
+  _proto.push = function push(location, key) {
+    this.history.push(this.toUrl(location), key);
   };
 
-  _proto.replace = function replace(location) {
-    this.history.replace(locationToUrl(location), location.key);
+  _proto.replace = function replace(location, key) {
+    this.history.replace(this.toUrl(location), key);
   };
 
-  _proto.relaunch = function relaunch(location) {
-    this.history.push(locationToUrl(location), location.key);
+  _proto.relaunch = function relaunch(location, key) {
+    this.history.push(this.toUrl(location), key);
   };
 
-  _proto.pop = function pop(location, n) {
-    if (n < 1000) {
+  _proto.pop = function pop(location, n, key) {
+    if (n < 500) {
       this.history.go(-n);
     } else {
-      this.history.push(locationToUrl(location), location.key);
+      this.history.push(this.toUrl(location), key);
     }
   };
 
@@ -120,23 +169,20 @@ exports.WebNativeHistory = WebNativeHistory;
 var HistoryActions = function (_BaseHistoryActions) {
   (0, _inheritsLoose2.default)(HistoryActions, _BaseHistoryActions);
 
-  function HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap) {
+  function HistoryActions(nativeHistory, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, defaultRouteParams, nativeHistory.getUrl(), routeRule, locationMap) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
     _this2.nativeHistory = nativeHistory;
-    _this2.defaultRouteParams = defaultRouteParams;
-    _this2.routeRule = routeRule;
-    _this2.locationMap = locationMap;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_unlistenHistory", void 0);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_timer", 0);
-    _this2._unlistenHistory = _this2.nativeHistory.block(function (location, key, action) {
+    _this2._unlistenHistory = _this2.nativeHistory.block(function (url, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;
         var index = 0;
 
         if (action === 'POP') {
-          index = _this2.findHistoryByKey(key).index;
+          index = _this2.findHistoryByKey(key);
         }
 
         if (index > 0) {
@@ -145,28 +191,24 @@ var HistoryActions = function (_BaseHistoryActions) {
 
             _this2.pop(index);
           };
+        } else if (action === 'REPLACE') {
+          callback = function callback() {
+            _this2._timer = 0;
+
+            _this2.replace(url);
+          };
+        } else if (action === 'PUSH') {
+          callback = function callback() {
+            _this2._timer = 0;
+
+            _this2.push(url);
+          };
         } else {
-          var paLocation = _this2.locationMap ? _this2.locationMap.in(location) : location;
+          callback = function callback() {
+            _this2._timer = 0;
 
-          if (action === 'REPLACE') {
-            callback = function callback() {
-              _this2._timer = 0;
-
-              _this2.replace(paLocation);
-            };
-          } else if (action === 'PUSH') {
-            callback = function callback() {
-              _this2._timer = 0;
-
-              _this2.push(paLocation);
-            };
-          } else {
-            callback = function callback() {
-              _this2._timer = 0;
-
-              _this2.relaunch(paLocation);
-            };
-          }
+            _this2.relaunch(url);
+          };
         }
 
         if (callback && !_this2._timer) {
@@ -200,8 +242,8 @@ var HistoryActions = function (_BaseHistoryActions) {
 
 exports.HistoryActions = HistoryActions;
 
-function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {
+function createRouter(createHistory, locationTransform) {
   var nativeHistory = new WebNativeHistory(createHistory);
-  var historyActions = new HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap);
+  var historyActions = new HistoryActions(nativeHistory, locationTransform);
   return historyActions;
 }

@@ -1,28 +1,14 @@
-/* eslint-disable prefer-rest-params */
-/* eslint-disable @typescript-eslint/no-use-before-define */
-function isSpecificValue(val: Date | RegExp) {
-  return !!(val instanceof Date || val instanceof RegExp);
-}
-
-function cloneSpecificValue(val: Date | RegExp) {
-  if (val instanceof Date) {
-    return new Date(val.getTime());
-  }
-  if (val instanceof RegExp) {
-    return new RegExp(val);
-  }
-  throw new Error('Unexpected situation');
-}
-
+/**
+ * Recursive cloning array.
+ */
 function deepCloneArray(arr: any[]) {
   const clone: any[] = [];
   arr.forEach(function (item, index) {
     if (typeof item === 'object' && item !== null) {
       if (Array.isArray(item)) {
         clone[index] = deepCloneArray(item);
-      } else if (isSpecificValue(item)) {
-        clone[index] = cloneSpecificValue(item);
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
         clone[index] = deepExtend({}, item);
       }
     } else {
@@ -32,23 +18,19 @@ function deepCloneArray(arr: any[]) {
   return clone;
 }
 
-function safeGetProperty(object: any, property: string) {
-  return property === '__proto__' ? undefined : object[property];
-}
-
-function deepExtend(...datas: any[]) {
-  if (arguments.length < 1 || typeof arguments[0] !== 'object') {
+function deepExtend(...rest: any[]) {
+  if (rest.length < 1 || typeof rest[0] !== 'object') {
     return false;
   }
 
-  if (arguments.length < 2) {
-    return arguments[0];
+  if (rest.length < 2) {
+    return rest[0];
   }
 
-  const target = arguments[0];
+  const target = rest[0];
 
   // convert arguments to array and cut off target object
-  const args = Array.prototype.slice.call(arguments, 1);
+  const args = rest.slice(1);
 
   let val;
   let src;
@@ -60,8 +42,8 @@ function deepExtend(...datas: any[]) {
     }
 
     Object.keys(obj).forEach(function (key) {
-      src = safeGetProperty(target, key); // source value
-      val = safeGetProperty(obj, key); // new value
+      src = target[key]; // source value
+      val = obj[key]; // new value
 
       // recursion prevention
       if (val === target) {
@@ -77,10 +59,6 @@ function deepExtend(...datas: any[]) {
         target[key] = deepCloneArray(val);
 
         // custom cloning and overwrite for specific objects
-      } else if (isSpecificValue(val)) {
-        target[key] = cloneSpecificValue(val);
-
-        // overwrite by new value if source isn't object or array
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
         target[key] = deepExtend({}, val);
 

@@ -35,484 +35,6 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   return target;
 }
 
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-function _inheritsLoose(subClass, superClass) {
-  subClass.prototype = Object.create(superClass.prototype);
-  subClass.prototype.constructor = subClass;
-  subClass.__proto__ = superClass;
-}
-
-function _arrayWithHoles(arr) {
-  if (Array.isArray(arr)) return arr;
-}
-
-function _iterableToArray(iter) {
-  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
-}
-
-function _arrayLikeToArray(arr, len) {
-  if (len == null || len > arr.length) len = arr.length;
-
-  for (var i = 0, arr2 = new Array(len); i < len; i++) {
-    arr2[i] = arr[i];
-  }
-
-  return arr2;
-}
-
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n = Object.prototype.toString.call(o).slice(8, -1);
-  if (n === "Object" && o.constructor) n = o.constructor.name;
-  if (n === "Map" || n === "Set") return Array.from(o);
-  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-}
-
-function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-}
-
-function _toArray(arr) {
-  return _arrayWithHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableRest();
-}
-
-function _typeof(obj) {
-  "@babel/helpers - typeof";
-
-  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-    _typeof = function _typeof(obj) {
-      return typeof obj;
-    };
-  } else {
-    _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-  }
-
-  return _typeof(obj);
-}
-
-function _toPrimitive(input, hint) {
-  if (_typeof(input) !== "object" || input === null) return input;
-  var prim = input[Symbol.toPrimitive];
-
-  if (prim !== undefined) {
-    var res = prim.call(input, hint || "default");
-    if (_typeof(res) !== "object") return res;
-    throw new TypeError("@@toPrimitive must return a primitive value.");
-  }
-
-  return (hint === "string" ? String : Number)(input);
-}
-
-function _toPropertyKey(arg) {
-  var key = _toPrimitive(arg, "string");
-  return _typeof(key) === "symbol" ? key : String(key);
-}
-
-function _decorate(decorators, factory, superClass, mixins) {
-  var api = _getDecoratorsApi();
-
-  if (mixins) {
-    for (var i = 0; i < mixins.length; i++) {
-      api = mixins[i](api);
-    }
-  }
-
-  var r = factory(function initialize(O) {
-    api.initializeInstanceElements(O, decorated.elements);
-  }, superClass);
-  var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators);
-  api.initializeClassElements(r.F, decorated.elements);
-  return api.runClassFinishers(r.F, decorated.finishers);
-}
-
-function _getDecoratorsApi() {
-  _getDecoratorsApi = function _getDecoratorsApi() {
-    return api;
-  };
-
-  var api = {
-    elementsDefinitionOrder: [["method"], ["field"]],
-    initializeInstanceElements: function initializeInstanceElements(O, elements) {
-      ["method", "field"].forEach(function (kind) {
-        elements.forEach(function (element) {
-          if (element.kind === kind && element.placement === "own") {
-            this.defineClassElement(O, element);
-          }
-        }, this);
-      }, this);
-    },
-    initializeClassElements: function initializeClassElements(F, elements) {
-      var proto = F.prototype;
-      ["method", "field"].forEach(function (kind) {
-        elements.forEach(function (element) {
-          var placement = element.placement;
-
-          if (element.kind === kind && (placement === "static" || placement === "prototype")) {
-            var receiver = placement === "static" ? F : proto;
-            this.defineClassElement(receiver, element);
-          }
-        }, this);
-      }, this);
-    },
-    defineClassElement: function defineClassElement(receiver, element) {
-      var descriptor = element.descriptor;
-
-      if (element.kind === "field") {
-        var initializer = element.initializer;
-        descriptor = {
-          enumerable: descriptor.enumerable,
-          writable: descriptor.writable,
-          configurable: descriptor.configurable,
-          value: initializer === void 0 ? void 0 : initializer.call(receiver)
-        };
-      }
-
-      Object.defineProperty(receiver, element.key, descriptor);
-    },
-    decorateClass: function decorateClass(elements, decorators) {
-      var newElements = [];
-      var finishers = [];
-      var placements = {
-        "static": [],
-        prototype: [],
-        own: []
-      };
-      elements.forEach(function (element) {
-        this.addElementPlacement(element, placements);
-      }, this);
-      elements.forEach(function (element) {
-        if (!_hasDecorators(element)) return newElements.push(element);
-        var elementFinishersExtras = this.decorateElement(element, placements);
-        newElements.push(elementFinishersExtras.element);
-        newElements.push.apply(newElements, elementFinishersExtras.extras);
-        finishers.push.apply(finishers, elementFinishersExtras.finishers);
-      }, this);
-
-      if (!decorators) {
-        return {
-          elements: newElements,
-          finishers: finishers
-        };
-      }
-
-      var result = this.decorateConstructor(newElements, decorators);
-      finishers.push.apply(finishers, result.finishers);
-      result.finishers = finishers;
-      return result;
-    },
-    addElementPlacement: function addElementPlacement(element, placements, silent) {
-      var keys = placements[element.placement];
-
-      if (!silent && keys.indexOf(element.key) !== -1) {
-        throw new TypeError("Duplicated element (" + element.key + ")");
-      }
-
-      keys.push(element.key);
-    },
-    decorateElement: function decorateElement(element, placements) {
-      var extras = [];
-      var finishers = [];
-
-      for (var decorators = element.decorators, i = decorators.length - 1; i >= 0; i--) {
-        var keys = placements[element.placement];
-        keys.splice(keys.indexOf(element.key), 1);
-        var elementObject = this.fromElementDescriptor(element);
-        var elementFinisherExtras = this.toElementFinisherExtras((0, decorators[i])(elementObject) || elementObject);
-        element = elementFinisherExtras.element;
-        this.addElementPlacement(element, placements);
-
-        if (elementFinisherExtras.finisher) {
-          finishers.push(elementFinisherExtras.finisher);
-        }
-
-        var newExtras = elementFinisherExtras.extras;
-
-        if (newExtras) {
-          for (var j = 0; j < newExtras.length; j++) {
-            this.addElementPlacement(newExtras[j], placements);
-          }
-
-          extras.push.apply(extras, newExtras);
-        }
-      }
-
-      return {
-        element: element,
-        finishers: finishers,
-        extras: extras
-      };
-    },
-    decorateConstructor: function decorateConstructor(elements, decorators) {
-      var finishers = [];
-
-      for (var i = decorators.length - 1; i >= 0; i--) {
-        var obj = this.fromClassDescriptor(elements);
-        var elementsAndFinisher = this.toClassDescriptor((0, decorators[i])(obj) || obj);
-
-        if (elementsAndFinisher.finisher !== undefined) {
-          finishers.push(elementsAndFinisher.finisher);
-        }
-
-        if (elementsAndFinisher.elements !== undefined) {
-          elements = elementsAndFinisher.elements;
-
-          for (var j = 0; j < elements.length - 1; j++) {
-            for (var k = j + 1; k < elements.length; k++) {
-              if (elements[j].key === elements[k].key && elements[j].placement === elements[k].placement) {
-                throw new TypeError("Duplicated element (" + elements[j].key + ")");
-              }
-            }
-          }
-        }
-      }
-
-      return {
-        elements: elements,
-        finishers: finishers
-      };
-    },
-    fromElementDescriptor: function fromElementDescriptor(element) {
-      var obj = {
-        kind: element.kind,
-        key: element.key,
-        placement: element.placement,
-        descriptor: element.descriptor
-      };
-      var desc = {
-        value: "Descriptor",
-        configurable: true
-      };
-      Object.defineProperty(obj, Symbol.toStringTag, desc);
-      if (element.kind === "field") obj.initializer = element.initializer;
-      return obj;
-    },
-    toElementDescriptors: function toElementDescriptors(elementObjects) {
-      if (elementObjects === undefined) return;
-      return _toArray(elementObjects).map(function (elementObject) {
-        var element = this.toElementDescriptor(elementObject);
-        this.disallowProperty(elementObject, "finisher", "An element descriptor");
-        this.disallowProperty(elementObject, "extras", "An element descriptor");
-        return element;
-      }, this);
-    },
-    toElementDescriptor: function toElementDescriptor(elementObject) {
-      var kind = String(elementObject.kind);
-
-      if (kind !== "method" && kind !== "field") {
-        throw new TypeError('An element descriptor\'s .kind property must be either "method" or' + ' "field", but a decorator created an element descriptor with' + ' .kind "' + kind + '"');
-      }
-
-      var key = _toPropertyKey(elementObject.key);
-      var placement = String(elementObject.placement);
-
-      if (placement !== "static" && placement !== "prototype" && placement !== "own") {
-        throw new TypeError('An element descriptor\'s .placement property must be one of "static",' + ' "prototype" or "own", but a decorator created an element descriptor' + ' with .placement "' + placement + '"');
-      }
-
-      var descriptor = elementObject.descriptor;
-      this.disallowProperty(elementObject, "elements", "An element descriptor");
-      var element = {
-        kind: kind,
-        key: key,
-        placement: placement,
-        descriptor: Object.assign({}, descriptor)
-      };
-
-      if (kind !== "field") {
-        this.disallowProperty(elementObject, "initializer", "A method descriptor");
-      } else {
-        this.disallowProperty(descriptor, "get", "The property descriptor of a field descriptor");
-        this.disallowProperty(descriptor, "set", "The property descriptor of a field descriptor");
-        this.disallowProperty(descriptor, "value", "The property descriptor of a field descriptor");
-        element.initializer = elementObject.initializer;
-      }
-
-      return element;
-    },
-    toElementFinisherExtras: function toElementFinisherExtras(elementObject) {
-      var element = this.toElementDescriptor(elementObject);
-
-      var finisher = _optionalCallableProperty(elementObject, "finisher");
-
-      var extras = this.toElementDescriptors(elementObject.extras);
-      return {
-        element: element,
-        finisher: finisher,
-        extras: extras
-      };
-    },
-    fromClassDescriptor: function fromClassDescriptor(elements) {
-      var obj = {
-        kind: "class",
-        elements: elements.map(this.fromElementDescriptor, this)
-      };
-      var desc = {
-        value: "Descriptor",
-        configurable: true
-      };
-      Object.defineProperty(obj, Symbol.toStringTag, desc);
-      return obj;
-    },
-    toClassDescriptor: function toClassDescriptor(obj) {
-      var kind = String(obj.kind);
-
-      if (kind !== "class") {
-        throw new TypeError('A class descriptor\'s .kind property must be "class", but a decorator' + ' created a class descriptor with .kind "' + kind + '"');
-      }
-
-      this.disallowProperty(obj, "key", "A class descriptor");
-      this.disallowProperty(obj, "placement", "A class descriptor");
-      this.disallowProperty(obj, "descriptor", "A class descriptor");
-      this.disallowProperty(obj, "initializer", "A class descriptor");
-      this.disallowProperty(obj, "extras", "A class descriptor");
-
-      var finisher = _optionalCallableProperty(obj, "finisher");
-
-      var elements = this.toElementDescriptors(obj.elements);
-      return {
-        elements: elements,
-        finisher: finisher
-      };
-    },
-    runClassFinishers: function runClassFinishers(constructor, finishers) {
-      for (var i = 0; i < finishers.length; i++) {
-        var newConstructor = (0, finishers[i])(constructor);
-
-        if (newConstructor !== undefined) {
-          if (typeof newConstructor !== "function") {
-            throw new TypeError("Finishers must return a constructor.");
-          }
-
-          constructor = newConstructor;
-        }
-      }
-
-      return constructor;
-    },
-    disallowProperty: function disallowProperty(obj, name, objectType) {
-      if (obj[name] !== undefined) {
-        throw new TypeError(objectType + " can't have a ." + name + " property.");
-      }
-    }
-  };
-  return api;
-}
-
-function _createElementDescriptor(def) {
-  var key = _toPropertyKey(def.key);
-  var descriptor;
-
-  if (def.kind === "method") {
-    descriptor = {
-      value: def.value,
-      writable: true,
-      configurable: true,
-      enumerable: false
-    };
-  } else if (def.kind === "get") {
-    descriptor = {
-      get: def.value,
-      configurable: true,
-      enumerable: false
-    };
-  } else if (def.kind === "set") {
-    descriptor = {
-      set: def.value,
-      configurable: true,
-      enumerable: false
-    };
-  } else if (def.kind === "field") {
-    descriptor = {
-      configurable: true,
-      writable: true,
-      enumerable: true
-    };
-  }
-
-  var element = {
-    kind: def.kind === "field" ? "field" : "method",
-    key: key,
-    placement: def["static"] ? "static" : def.kind === "field" ? "own" : "prototype",
-    descriptor: descriptor
-  };
-  if (def.decorators) element.decorators = def.decorators;
-  if (def.kind === "field") element.initializer = def.value;
-  return element;
-}
-
-function _coalesceGetterSetter(element, other) {
-  if (element.descriptor.get !== undefined) {
-    other.descriptor.get = element.descriptor.get;
-  } else {
-    other.descriptor.set = element.descriptor.set;
-  }
-}
-
-function _coalesceClassElements(elements) {
-  var newElements = [];
-
-  var isSameElement = function isSameElement(other) {
-    return other.kind === "method" && other.key === element.key && other.placement === element.placement;
-  };
-
-  for (var i = 0; i < elements.length; i++) {
-    var element = elements[i];
-    var other;
-
-    if (element.kind === "method" && (other = newElements.find(isSameElement))) {
-      if (_isDataDescriptor(element.descriptor) || _isDataDescriptor(other.descriptor)) {
-        if (_hasDecorators(element) || _hasDecorators(other)) {
-          throw new ReferenceError("Duplicated methods (" + element.key + ") can't be decorated.");
-        }
-
-        other.descriptor = element.descriptor;
-      } else {
-        if (_hasDecorators(element)) {
-          if (_hasDecorators(other)) {
-            throw new ReferenceError("Decorators can't be placed on different accessors with for " + "the same property (" + element.key + ").");
-          }
-
-          other.decorators = element.decorators;
-        }
-
-        _coalesceGetterSetter(element, other);
-      }
-    } else {
-      newElements.push(element);
-    }
-  }
-
-  return newElements;
-}
-
-function _hasDecorators(element) {
-  return element.decorators && element.decorators.length;
-}
-
-function _isDataDescriptor(desc) {
-  return desc !== undefined && !(desc.value === undefined && desc.writable === undefined);
-}
-
-function _optionalCallableProperty(obj, name) {
-  var value = obj[name];
-
-  if (value !== undefined && typeof value !== "function") {
-    throw new TypeError("Expected '" + name + "' to be a function");
-  }
-
-  return value;
-}
-
 function createCommonjsModule(fn, basedir, module) {
 	return module = {
 		path: basedir,
@@ -1302,6 +824,484 @@ function _defineProperty(obj, key, value) {
   }
 
   return obj;
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _inheritsLoose(subClass, superClass) {
+  subClass.prototype = Object.create(superClass.prototype);
+  subClass.prototype.constructor = subClass;
+  subClass.__proto__ = superClass;
+}
+
+function _arrayWithHoles(arr) {
+  if (Array.isArray(arr)) return arr;
+}
+
+function _iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+}
+
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) {
+    arr2[i] = arr[i];
+  }
+
+  return arr2;
+}
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(o);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+}
+
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+
+function _toArray(arr) {
+  return _arrayWithHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableRest();
+}
+
+function _typeof(obj) {
+  "@babel/helpers - typeof";
+
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    _typeof = function _typeof(obj) {
+      return typeof obj;
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+  }
+
+  return _typeof(obj);
+}
+
+function _toPrimitive(input, hint) {
+  if (_typeof(input) !== "object" || input === null) return input;
+  var prim = input[Symbol.toPrimitive];
+
+  if (prim !== undefined) {
+    var res = prim.call(input, hint || "default");
+    if (_typeof(res) !== "object") return res;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+
+  return (hint === "string" ? String : Number)(input);
+}
+
+function _toPropertyKey(arg) {
+  var key = _toPrimitive(arg, "string");
+  return _typeof(key) === "symbol" ? key : String(key);
+}
+
+function _decorate(decorators, factory, superClass, mixins) {
+  var api = _getDecoratorsApi();
+
+  if (mixins) {
+    for (var i = 0; i < mixins.length; i++) {
+      api = mixins[i](api);
+    }
+  }
+
+  var r = factory(function initialize(O) {
+    api.initializeInstanceElements(O, decorated.elements);
+  }, superClass);
+  var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators);
+  api.initializeClassElements(r.F, decorated.elements);
+  return api.runClassFinishers(r.F, decorated.finishers);
+}
+
+function _getDecoratorsApi() {
+  _getDecoratorsApi = function _getDecoratorsApi() {
+    return api;
+  };
+
+  var api = {
+    elementsDefinitionOrder: [["method"], ["field"]],
+    initializeInstanceElements: function initializeInstanceElements(O, elements) {
+      ["method", "field"].forEach(function (kind) {
+        elements.forEach(function (element) {
+          if (element.kind === kind && element.placement === "own") {
+            this.defineClassElement(O, element);
+          }
+        }, this);
+      }, this);
+    },
+    initializeClassElements: function initializeClassElements(F, elements) {
+      var proto = F.prototype;
+      ["method", "field"].forEach(function (kind) {
+        elements.forEach(function (element) {
+          var placement = element.placement;
+
+          if (element.kind === kind && (placement === "static" || placement === "prototype")) {
+            var receiver = placement === "static" ? F : proto;
+            this.defineClassElement(receiver, element);
+          }
+        }, this);
+      }, this);
+    },
+    defineClassElement: function defineClassElement(receiver, element) {
+      var descriptor = element.descriptor;
+
+      if (element.kind === "field") {
+        var initializer = element.initializer;
+        descriptor = {
+          enumerable: descriptor.enumerable,
+          writable: descriptor.writable,
+          configurable: descriptor.configurable,
+          value: initializer === void 0 ? void 0 : initializer.call(receiver)
+        };
+      }
+
+      Object.defineProperty(receiver, element.key, descriptor);
+    },
+    decorateClass: function decorateClass(elements, decorators) {
+      var newElements = [];
+      var finishers = [];
+      var placements = {
+        "static": [],
+        prototype: [],
+        own: []
+      };
+      elements.forEach(function (element) {
+        this.addElementPlacement(element, placements);
+      }, this);
+      elements.forEach(function (element) {
+        if (!_hasDecorators(element)) return newElements.push(element);
+        var elementFinishersExtras = this.decorateElement(element, placements);
+        newElements.push(elementFinishersExtras.element);
+        newElements.push.apply(newElements, elementFinishersExtras.extras);
+        finishers.push.apply(finishers, elementFinishersExtras.finishers);
+      }, this);
+
+      if (!decorators) {
+        return {
+          elements: newElements,
+          finishers: finishers
+        };
+      }
+
+      var result = this.decorateConstructor(newElements, decorators);
+      finishers.push.apply(finishers, result.finishers);
+      result.finishers = finishers;
+      return result;
+    },
+    addElementPlacement: function addElementPlacement(element, placements, silent) {
+      var keys = placements[element.placement];
+
+      if (!silent && keys.indexOf(element.key) !== -1) {
+        throw new TypeError("Duplicated element (" + element.key + ")");
+      }
+
+      keys.push(element.key);
+    },
+    decorateElement: function decorateElement(element, placements) {
+      var extras = [];
+      var finishers = [];
+
+      for (var decorators = element.decorators, i = decorators.length - 1; i >= 0; i--) {
+        var keys = placements[element.placement];
+        keys.splice(keys.indexOf(element.key), 1);
+        var elementObject = this.fromElementDescriptor(element);
+        var elementFinisherExtras = this.toElementFinisherExtras((0, decorators[i])(elementObject) || elementObject);
+        element = elementFinisherExtras.element;
+        this.addElementPlacement(element, placements);
+
+        if (elementFinisherExtras.finisher) {
+          finishers.push(elementFinisherExtras.finisher);
+        }
+
+        var newExtras = elementFinisherExtras.extras;
+
+        if (newExtras) {
+          for (var j = 0; j < newExtras.length; j++) {
+            this.addElementPlacement(newExtras[j], placements);
+          }
+
+          extras.push.apply(extras, newExtras);
+        }
+      }
+
+      return {
+        element: element,
+        finishers: finishers,
+        extras: extras
+      };
+    },
+    decorateConstructor: function decorateConstructor(elements, decorators) {
+      var finishers = [];
+
+      for (var i = decorators.length - 1; i >= 0; i--) {
+        var obj = this.fromClassDescriptor(elements);
+        var elementsAndFinisher = this.toClassDescriptor((0, decorators[i])(obj) || obj);
+
+        if (elementsAndFinisher.finisher !== undefined) {
+          finishers.push(elementsAndFinisher.finisher);
+        }
+
+        if (elementsAndFinisher.elements !== undefined) {
+          elements = elementsAndFinisher.elements;
+
+          for (var j = 0; j < elements.length - 1; j++) {
+            for (var k = j + 1; k < elements.length; k++) {
+              if (elements[j].key === elements[k].key && elements[j].placement === elements[k].placement) {
+                throw new TypeError("Duplicated element (" + elements[j].key + ")");
+              }
+            }
+          }
+        }
+      }
+
+      return {
+        elements: elements,
+        finishers: finishers
+      };
+    },
+    fromElementDescriptor: function fromElementDescriptor(element) {
+      var obj = {
+        kind: element.kind,
+        key: element.key,
+        placement: element.placement,
+        descriptor: element.descriptor
+      };
+      var desc = {
+        value: "Descriptor",
+        configurable: true
+      };
+      Object.defineProperty(obj, Symbol.toStringTag, desc);
+      if (element.kind === "field") obj.initializer = element.initializer;
+      return obj;
+    },
+    toElementDescriptors: function toElementDescriptors(elementObjects) {
+      if (elementObjects === undefined) return;
+      return _toArray(elementObjects).map(function (elementObject) {
+        var element = this.toElementDescriptor(elementObject);
+        this.disallowProperty(elementObject, "finisher", "An element descriptor");
+        this.disallowProperty(elementObject, "extras", "An element descriptor");
+        return element;
+      }, this);
+    },
+    toElementDescriptor: function toElementDescriptor(elementObject) {
+      var kind = String(elementObject.kind);
+
+      if (kind !== "method" && kind !== "field") {
+        throw new TypeError('An element descriptor\'s .kind property must be either "method" or' + ' "field", but a decorator created an element descriptor with' + ' .kind "' + kind + '"');
+      }
+
+      var key = _toPropertyKey(elementObject.key);
+      var placement = String(elementObject.placement);
+
+      if (placement !== "static" && placement !== "prototype" && placement !== "own") {
+        throw new TypeError('An element descriptor\'s .placement property must be one of "static",' + ' "prototype" or "own", but a decorator created an element descriptor' + ' with .placement "' + placement + '"');
+      }
+
+      var descriptor = elementObject.descriptor;
+      this.disallowProperty(elementObject, "elements", "An element descriptor");
+      var element = {
+        kind: kind,
+        key: key,
+        placement: placement,
+        descriptor: Object.assign({}, descriptor)
+      };
+
+      if (kind !== "field") {
+        this.disallowProperty(elementObject, "initializer", "A method descriptor");
+      } else {
+        this.disallowProperty(descriptor, "get", "The property descriptor of a field descriptor");
+        this.disallowProperty(descriptor, "set", "The property descriptor of a field descriptor");
+        this.disallowProperty(descriptor, "value", "The property descriptor of a field descriptor");
+        element.initializer = elementObject.initializer;
+      }
+
+      return element;
+    },
+    toElementFinisherExtras: function toElementFinisherExtras(elementObject) {
+      var element = this.toElementDescriptor(elementObject);
+
+      var finisher = _optionalCallableProperty(elementObject, "finisher");
+
+      var extras = this.toElementDescriptors(elementObject.extras);
+      return {
+        element: element,
+        finisher: finisher,
+        extras: extras
+      };
+    },
+    fromClassDescriptor: function fromClassDescriptor(elements) {
+      var obj = {
+        kind: "class",
+        elements: elements.map(this.fromElementDescriptor, this)
+      };
+      var desc = {
+        value: "Descriptor",
+        configurable: true
+      };
+      Object.defineProperty(obj, Symbol.toStringTag, desc);
+      return obj;
+    },
+    toClassDescriptor: function toClassDescriptor(obj) {
+      var kind = String(obj.kind);
+
+      if (kind !== "class") {
+        throw new TypeError('A class descriptor\'s .kind property must be "class", but a decorator' + ' created a class descriptor with .kind "' + kind + '"');
+      }
+
+      this.disallowProperty(obj, "key", "A class descriptor");
+      this.disallowProperty(obj, "placement", "A class descriptor");
+      this.disallowProperty(obj, "descriptor", "A class descriptor");
+      this.disallowProperty(obj, "initializer", "A class descriptor");
+      this.disallowProperty(obj, "extras", "A class descriptor");
+
+      var finisher = _optionalCallableProperty(obj, "finisher");
+
+      var elements = this.toElementDescriptors(obj.elements);
+      return {
+        elements: elements,
+        finisher: finisher
+      };
+    },
+    runClassFinishers: function runClassFinishers(constructor, finishers) {
+      for (var i = 0; i < finishers.length; i++) {
+        var newConstructor = (0, finishers[i])(constructor);
+
+        if (newConstructor !== undefined) {
+          if (typeof newConstructor !== "function") {
+            throw new TypeError("Finishers must return a constructor.");
+          }
+
+          constructor = newConstructor;
+        }
+      }
+
+      return constructor;
+    },
+    disallowProperty: function disallowProperty(obj, name, objectType) {
+      if (obj[name] !== undefined) {
+        throw new TypeError(objectType + " can't have a ." + name + " property.");
+      }
+    }
+  };
+  return api;
+}
+
+function _createElementDescriptor(def) {
+  var key = _toPropertyKey(def.key);
+  var descriptor;
+
+  if (def.kind === "method") {
+    descriptor = {
+      value: def.value,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    };
+  } else if (def.kind === "get") {
+    descriptor = {
+      get: def.value,
+      configurable: true,
+      enumerable: false
+    };
+  } else if (def.kind === "set") {
+    descriptor = {
+      set: def.value,
+      configurable: true,
+      enumerable: false
+    };
+  } else if (def.kind === "field") {
+    descriptor = {
+      configurable: true,
+      writable: true,
+      enumerable: true
+    };
+  }
+
+  var element = {
+    kind: def.kind === "field" ? "field" : "method",
+    key: key,
+    placement: def["static"] ? "static" : def.kind === "field" ? "own" : "prototype",
+    descriptor: descriptor
+  };
+  if (def.decorators) element.decorators = def.decorators;
+  if (def.kind === "field") element.initializer = def.value;
+  return element;
+}
+
+function _coalesceGetterSetter(element, other) {
+  if (element.descriptor.get !== undefined) {
+    other.descriptor.get = element.descriptor.get;
+  } else {
+    other.descriptor.set = element.descriptor.set;
+  }
+}
+
+function _coalesceClassElements(elements) {
+  var newElements = [];
+
+  var isSameElement = function isSameElement(other) {
+    return other.kind === "method" && other.key === element.key && other.placement === element.placement;
+  };
+
+  for (var i = 0; i < elements.length; i++) {
+    var element = elements[i];
+    var other;
+
+    if (element.kind === "method" && (other = newElements.find(isSameElement))) {
+      if (_isDataDescriptor(element.descriptor) || _isDataDescriptor(other.descriptor)) {
+        if (_hasDecorators(element) || _hasDecorators(other)) {
+          throw new ReferenceError("Duplicated methods (" + element.key + ") can't be decorated.");
+        }
+
+        other.descriptor = element.descriptor;
+      } else {
+        if (_hasDecorators(element)) {
+          if (_hasDecorators(other)) {
+            throw new ReferenceError("Decorators can't be placed on different accessors with for " + "the same property (" + element.key + ").");
+          }
+
+          other.decorators = element.decorators;
+        }
+
+        _coalesceGetterSetter(element, other);
+      }
+    } else {
+      newElements.push(element);
+    }
+  }
+
+  return newElements;
+}
+
+function _hasDecorators(element) {
+  return element.decorators && element.decorators.length;
+}
+
+function _isDataDescriptor(desc) {
+  return desc !== undefined && !(desc.value === undefined && desc.writable === undefined);
+}
+
+function _optionalCallableProperty(obj, name) {
+  var value = obj[name];
+
+  if (value !== undefined && typeof value !== "function") {
+    throw new TypeError("Expected '" + name + "' to be a function");
+  }
+
+  return value;
 }
 
 var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
@@ -3034,579 +3034,400 @@ function _renderSSR() {
   return _renderSSR.apply(this, arguments);
 }
 
-function _createForOfIteratorHelperLoose(o, allowArrayLike) {
-  var it;
-
-  if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
-    if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
-      if (it) o = it;
-      var i = 0;
-      return function () {
-        if (i >= o.length) return {
-          done: true
-        };
-        return {
-          done: false,
-          value: o[i++]
-        };
-      };
-    }
-
-    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-  }
-
-  it = o[Symbol.iterator]();
-  return it.next.bind(it);
-}
-
-function lexer(str) {
-  var tokens = [];
-  var i = 0;
-
-  while (i < str.length) {
-    var char = str[i];
-
-    if (char === '*' || char === '+' || char === '?') {
-      tokens.push({
-        type: 'MODIFIER',
-        index: i,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === '\\') {
-      tokens.push({
-        type: 'ESCAPED_CHAR',
-        index: i++,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === '{') {
-      tokens.push({
-        type: 'OPEN',
-        index: i,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === '}') {
-      tokens.push({
-        type: 'CLOSE',
-        index: i,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === ':') {
-      var name = '';
-      var j = i + 1;
-
-      while (j < str.length) {
-        var code = str.charCodeAt(j);
-
-        if (code >= 48 && code <= 57 || code >= 65 && code <= 90 || code >= 97 && code <= 122 || code === 95 || code === 46) {
-          name += str[j++];
-          continue;
-        }
-
-        break;
-      }
-
-      if (!name) throw new TypeError("Missing parameter name at " + i);
-      tokens.push({
-        type: 'NAME',
-        index: i,
-        value: name
-      });
-      i = j;
-      continue;
-    }
-
-    if (char === '(') {
-      var count = 1;
-      var pattern = '';
-
-      var _j = i + 1;
-
-      if (str[_j] === '?') {
-        throw new TypeError("Pattern cannot start with \"?\" at " + _j);
-      }
-
-      while (_j < str.length) {
-        if (str[_j] === '\\') {
-          pattern += str[_j++] + str[_j++];
-          continue;
-        }
-
-        if (str[_j] === ')') {
-          count--;
-
-          if (count === 0) {
-            _j++;
-            break;
-          }
-        } else if (str[_j] === '(') {
-          count++;
-
-          if (str[_j + 1] !== '?') {
-            throw new TypeError("Capturing groups are not allowed at " + _j);
-          }
-        }
-
-        pattern += str[_j++];
-      }
-
-      if (count) throw new TypeError("Unbalanced pattern at " + i);
-      if (!pattern) throw new TypeError("Missing pattern at " + i);
-      tokens.push({
-        type: 'PATTERN',
-        index: i,
-        value: pattern
-      });
-      i = _j;
-      continue;
-    }
-
-    tokens.push({
-      type: 'CHAR',
-      index: i,
-      value: str[i++]
-    });
-  }
-
-  tokens.push({
-    type: 'END',
-    index: i,
-    value: ''
-  });
-  return tokens;
-}
-
-function parse(str, options) {
-  if (options === void 0) {
-    options = {};
-  }
-
-  var tokens = lexer(str);
-  var _options = options,
-      _options$prefixes = _options.prefixes,
-      prefixes = _options$prefixes === void 0 ? './' : _options$prefixes;
-  var defaultPattern = "[^" + escapeString(options.delimiter || '/#?') + "]+?";
-  var result = [];
-  var key = 0;
-  var i = 0;
-  var path = '';
-
-  var tryConsume = function tryConsume(type) {
-    if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
-    return undefined;
-  };
-
-  var mustConsume = function mustConsume(type) {
-    var value = tryConsume(type);
-    if (value !== undefined) return value;
-    var _tokens$i = tokens[i],
-        nextType = _tokens$i.type,
-        index = _tokens$i.index;
-    throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
-  };
-
-  var consumeText = function consumeText() {
-    var result = '';
-    var value;
-
-    while (value = tryConsume('CHAR') || tryConsume('ESCAPED_CHAR')) {
-      result += value;
-    }
-
-    return result;
-  };
-
-  while (i < tokens.length) {
-    var char = tryConsume('CHAR');
-    var name = tryConsume('NAME');
-    var pattern = tryConsume('PATTERN');
-
-    if (name || pattern) {
-      var prefix = char || '';
-
-      if (prefixes.indexOf(prefix) === -1) {
-        path += prefix;
-        prefix = '';
-      }
-
-      if (path) {
-        result.push(path);
-        path = '';
-      }
-
-      result.push({
-        name: name || key++,
-        prefix: prefix,
-        suffix: '',
-        pattern: pattern || defaultPattern,
-        modifier: tryConsume('MODIFIER') || ''
-      });
-      continue;
-    }
-
-    var _value = char || tryConsume('ESCAPED_CHAR');
-
-    if (_value) {
-      path += _value;
-      continue;
-    }
-
-    if (path) {
-      result.push(path);
-      path = '';
-    }
-
-    var open = tryConsume('OPEN');
-
-    if (open) {
-      var _prefix = consumeText();
-
-      var _name = tryConsume('NAME') || '';
-
-      var _pattern = tryConsume('PATTERN') || '';
-
-      var suffix = consumeText();
-      mustConsume('CLOSE');
-      result.push({
-        name: _name || (_pattern ? key++ : ''),
-        pattern: _name && !_pattern ? defaultPattern : _pattern,
-        prefix: _prefix,
-        suffix: suffix,
-        modifier: tryConsume('MODIFIER') || ''
-      });
-      continue;
-    }
-
-    mustConsume('END');
-  }
-
-  return result;
-}
-function compile(str, options) {
-  return tokensToFunction(parse(str, options), options);
-}
-function tokensToFunction(tokens, options) {
-  if (options === void 0) {
-    options = {};
-  }
-
-  var reFlags = flags(options);
-  var _options2 = options,
-      _options2$encode = _options2.encode,
-      encode = _options2$encode === void 0 ? function (x) {
-    return x;
-  } : _options2$encode,
-      _options2$validate = _options2.validate,
-      validate = _options2$validate === void 0 ? true : _options2$validate;
-  var matches = tokens.map(function (token) {
-    if (typeof token === 'object') {
-      return new RegExp("^(?:" + token.pattern + ")$", reFlags);
-    }
-
-    return undefined;
-  });
-  return function (data) {
-    var path = '';
-
-    for (var i = 0; i < tokens.length; i++) {
-      var _token = tokens[i];
-
-      if (typeof _token === 'string') {
-        path += _token;
-        continue;
-      }
-
-      var _value2 = data ? data[_token.name] : undefined;
-
-      var optional = _token.modifier === '?' || _token.modifier === '*';
-      var repeat = _token.modifier === '*' || _token.modifier === '+';
-
-      if (Array.isArray(_value2)) {
-        if (!repeat) {
-          throw new TypeError("Expected \"" + _token.name + "\" to not repeat, but got an array");
-        }
-
-        if (_value2.length === 0) {
-          if (optional) continue;
-          throw new TypeError("Expected \"" + _token.name + "\" to not be empty");
-        }
-
-        for (var j = 0; j < _value2.length; j++) {
-          var segment = encode(_value2[j], _token);
-
-          if (validate && !matches[i].test(segment)) {
-            throw new TypeError("Expected all \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + segment + "\"");
-          }
-
-          path += _token.prefix + segment + _token.suffix;
-        }
-
-        continue;
-      }
-
-      if (typeof _value2 === 'string' || typeof _value2 === 'number') {
-        var _segment = encode(String(_value2), _token);
-
-        if (validate && !matches[i].test(_segment)) {
-          throw new TypeError("Expected \"" + _token.name + "\" to match \"" + _token.pattern + "\", but got \"" + _segment + "\"");
-        }
-
-        path += _token.prefix + _segment + _token.suffix;
-        continue;
-      }
-
-      if (optional) continue;
-      var typeOfMessage = repeat ? 'an array' : 'a string';
-      throw new TypeError("Expected \"" + _token.name + "\" to be " + typeOfMessage);
-    }
-
-    return path;
-  };
-}
-
-function escapeString(str) {
-  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
-}
-
-function flags(options) {
-  return options && options.sensitive ? '' : 'i';
-}
-
-function regexpToRegexp(path, keys) {
-  if (!keys) return path;
-  var groups = path.source.match(/\((?!\?)/g);
-
-  if (groups) {
-    for (var i = 0; i < groups.length; i++) {
-      keys.push({
-        name: i,
-        prefix: '',
-        suffix: '',
-        modifier: '',
-        pattern: ''
-      });
-    }
-  }
-
-  return path;
-}
-
-function arrayToRegexp(paths, keys, options) {
-  var parts = paths.map(function (path) {
-    return pathToRegexp(path, keys, options).source;
-  });
-  return new RegExp("(?:" + parts.join('|') + ")", flags(options));
-}
-
-function stringToRegexp(path, keys, options) {
-  return tokensToRegexp(parse(path, options), keys, options);
-}
-
-function tokensToRegexp(tokens, keys, options) {
-  if (options === void 0) {
-    options = {};
-  }
-
-  var _options4 = options,
-      _options4$strict = _options4.strict,
-      strict = _options4$strict === void 0 ? false : _options4$strict,
-      _options4$start = _options4.start,
-      start = _options4$start === void 0 ? true : _options4$start,
-      _options4$end = _options4.end,
-      end = _options4$end === void 0 ? true : _options4$end,
-      _options4$encode = _options4.encode,
-      encode = _options4$encode === void 0 ? function (x) {
-    return x;
-  } : _options4$encode;
-  var endsWith = "[" + escapeString(options.endsWith || '') + "]|$";
-  var delimiter = "[" + escapeString(options.delimiter || '/#?') + "]";
-  var route = start ? '^' : '';
-
-  for (var _iterator = _createForOfIteratorHelperLoose(tokens), _step; !(_step = _iterator()).done;) {
-    var _token2 = _step.value;
-
-    if (typeof _token2 === 'string') {
-      route += escapeString(encode(_token2));
-    } else {
-      var prefix = escapeString(encode(_token2.prefix));
-      var suffix = escapeString(encode(_token2.suffix));
-
-      if (_token2.pattern) {
-        if (keys) keys.push(_token2);
-
-        if (prefix || suffix) {
-          if (_token2.modifier === '+' || _token2.modifier === '*') {
-            var mod = _token2.modifier === '*' ? '?' : '';
-            route += "(?:" + prefix + "((?:" + _token2.pattern + ")(?:" + suffix + prefix + "(?:" + _token2.pattern + "))*)" + suffix + ")" + mod;
-          } else {
-            route += "(?:" + prefix + "(" + _token2.pattern + ")" + suffix + ")" + _token2.modifier;
-          }
-        } else {
-          route += "(" + _token2.pattern + ")" + _token2.modifier;
-        }
+function deepCloneArray(arr) {
+  var clone = [];
+  arr.forEach(function (item, index) {
+    if (typeof item === 'object' && item !== null) {
+      if (Array.isArray(item)) {
+        clone[index] = deepCloneArray(item);
       } else {
-        route += "(?:" + prefix + suffix + ")" + _token2.modifier;
+        clone[index] = deepExtend({}, item);
       }
+    } else {
+      clone[index] = item;
     }
-  }
-
-  if (end) {
-    if (!strict) route += delimiter + "?";
-    route += !options.endsWith ? '$' : "(?=" + endsWith + ")";
-  } else {
-    var endToken = tokens[tokens.length - 1];
-    var isEndDelimited = typeof endToken === 'string' ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : endToken === undefined;
-
-    if (!strict) {
-      route += "(?:" + delimiter + "(?=" + endsWith + "))?";
-    }
-
-    if (!isEndDelimited) {
-      route += "(?=" + delimiter + "|" + endsWith + ")";
-    }
-  }
-
-  return new RegExp(route, flags(options));
-}
-function pathToRegexp(path, keys, options) {
-  if (path instanceof RegExp) return regexpToRegexp(path, keys);
-  if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
-  return stringToRegexp(path, keys, options);
+  });
+  return clone;
 }
 
-var cache = {};
-var cacheLimit = 10000;
-var cacheCount = 0;
-function compileToPath(rule) {
-  if (cache[rule]) {
-    return cache[rule];
+function deepExtend() {
+  for (var _len = arguments.length, rest = new Array(_len), _key = 0; _key < _len; _key++) {
+    rest[_key] = arguments[_key];
   }
 
-  var result = compile(rule);
-
-  if (cacheCount < cacheLimit) {
-    cache[rule] = result;
-    cacheCount++;
+  if (rest.length < 1 || typeof rest[0] !== 'object') {
+    return false;
   }
 
-  return result;
-}
-function compilePath(path, options) {
-  if (options === void 0) {
-    options = {
-      end: false,
-      strict: false,
-      sensitive: false
-    };
+  if (rest.length < 2) {
+    return rest[0];
   }
 
-  var cacheKey = "" + options.end + options.strict + options.sensitive;
-  var pathCache = cache[cacheKey] || (cache[cacheKey] = {});
-
-  if (pathCache[path]) {
-    return pathCache[path];
-  }
-
-  var keys = [];
-  var regexp = pathToRegexp(path, keys, options);
-  var result = {
-    regexp: regexp,
-    keys: keys
-  };
-
-  if (cacheCount < cacheLimit) {
-    pathCache[path] = result;
-    cacheCount++;
-  }
-
-  return result;
-}
-function matchPath(pathname, options) {
-  if (options === void 0) {
-    options = {};
-  }
-
-  if (typeof options === 'string' || Array.isArray(options)) {
-    options = {
-      path: options
-    };
-  }
-
-  var _options = options,
-      pathStr = _options.path,
-      _options$exact = _options.exact,
-      exact = _options$exact === void 0 ? false : _options$exact,
-      _options$strict = _options.strict,
-      strict = _options$strict === void 0 ? false : _options$strict,
-      _options$sensitive = _options.sensitive,
-      sensitive = _options$sensitive === void 0 ? false : _options$sensitive;
-  var paths = [].concat(pathStr);
-  return paths.reduce(function (matched, path) {
-    if (!path) return null;
-    if (matched) return matched;
-
-    if (path === '*') {
-      return {
-        path: path,
-        url: pathname,
-        isExact: true,
-        params: {}
-      };
+  var target = rest[0];
+  var args = rest.slice(1);
+  var val;
+  var src;
+  args.forEach(function (obj) {
+    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+      return;
     }
 
-    var _compilePath = compilePath(path, {
-      end: exact,
-      strict: strict,
-      sensitive: sensitive
-    }),
-        regexp = _compilePath.regexp,
-        keys = _compilePath.keys;
+    Object.keys(obj).forEach(function (key) {
+      src = target[key];
+      val = obj[key];
 
-    var match = regexp.exec(pathname);
-    if (!match) return null;
-    var url = match[0],
-        values = match.slice(1);
-    var isExact = pathname === url;
-    if (exact && !isExact) return null;
-    return {
-      path: path,
-      url: path === '/' && url === '' ? '/' : url,
-      isExact: isExact,
-      params: keys.reduce(function (memo, key, index) {
-        memo[key.name] = values[index];
-        return memo;
-      }, {})
-    };
-  }, null);
+      if (val === target) ; else if (typeof val !== 'object' || val === null) {
+        target[key] = val;
+      } else if (Array.isArray(val)) {
+        target[key] = deepCloneArray(val);
+      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
+        target[key] = deepExtend({}, val);
+      } else {
+        target[key] = deepExtend(src, val);
+      }
+    });
+  });
+  return target;
 }
 
 var routeConfig = {
   RSP: '|',
-  escape: true,
-  dateParse: false,
-  splitKey: 'q',
   historyMax: 10,
-  homeUrl: '/'
+  homeUri: '|home|{app:{}}'
 };
 function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.escape !== undefined && (routeConfig.escape = conf.escape);
-  conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
-  conf.splitKey && (routeConfig.splitKey = conf.splitKey);
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUrl && (routeConfig.homeUrl = conf.homeUrl);
+  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
+function locationToUri(location, key) {
+  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
+}
+
+function splitUri() {
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  var uri = args[0],
+      name = args[1];
+  var arr = uri.split(routeConfig.RSP, 3);
+  var index = {
+    key: 0,
+    tag: 1,
+    query: 2
+  };
+
+  if (name) {
+    return arr[index[name]];
+  }
+
+  return arr;
+}
+
+function uriToLocation(uri) {
+  var _splitUri = splitUri(uri),
+      key = _splitUri[0],
+      tag = _splitUri[1],
+      query = _splitUri[2];
+
+  var location = {
+    tag: tag,
+    params: JSON.parse(query)
+  };
+  return {
+    key: key,
+    location: location
+  };
+}
+
+function buildHistoryStack(location, action, key, curData) {
+  var maxLength = routeConfig.historyMax;
+  var tag = location.tag;
+  var uri = locationToUri(location, key);
+  var history = curData.history,
+      stack = curData.stack;
+  var historyList = [].concat(history);
+  var stackList = [].concat(stack);
+
+  if (action === 'RELAUNCH') {
+    historyList = [uri];
+    stackList = [uri];
+  } else if (action === 'PUSH') {
+    historyList.unshift(uri);
+
+    if (historyList.length > maxLength) {
+      historyList.length = maxLength;
+    }
+
+    if (splitUri(stackList[0], 'tag') !== tag) {
+      stackList.unshift(uri);
+
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
+      }
+    } else {
+      stackList[0] = uri;
+    }
+  } else if (action === 'REPLACE') {
+    historyList[0] = uri;
+    stackList[0] = uri;
+
+    if (tag === splitUri(stackList[1], 'tag')) {
+      stackList.splice(1, 1);
+    }
+
+    if (stackList.length > maxLength) {
+      stackList.length = maxLength;
+    }
+  } else if (action.startsWith('POP')) {
+    var n = parseInt(action.replace('POP', ''), 10) || 1;
+    var useStack = n > 1000;
+
+    if (useStack) {
+      historyList = [];
+      stackList.splice(0, n - 1000);
+    } else {
+      var arr = historyList.splice(0, n + 1, uri).reduce(function (pre, curUri) {
+        var ctag = splitUri(curUri, 'tag');
+
+        if (pre[pre.length - 1] !== ctag) {
+          pre.push(ctag);
+        }
+
+        return pre;
+      }, []);
+
+      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
+        arr.pop();
+      }
+
+      stackList.splice(0, arr.length, uri);
+
+      if (tag === splitUri(stackList[1], 'tag')) {
+        stackList.splice(1, 1);
+      }
+    }
+  }
+
+  return {
+    history: historyList,
+    stack: stackList
+  };
+}
+
+function locationToRouteState(location, action, key, curData) {
+  var _buildHistoryStack = buildHistoryStack(location, action, key, curData),
+      history = _buildHistoryStack.history,
+      stack = _buildHistoryStack.stack;
+
+  return Object.assign({}, location, {
+    action: action,
+    key: key,
+    history: history,
+    stack: stack
+  });
+}
+
+function ruleToPathname(rule, data) {
+  if (/:\w/.test(rule)) {
+    return {
+      pathname: rule,
+      params: data
+    };
+  }
+
+  return {
+    pathname: rule,
+    params: data
+  };
+}
+
+function extractHashData(params) {
+  var moduleNames = Object.keys(params);
+
+  if (moduleNames.length > 0) {
+    var searchParams = {};
+    var hashParams;
+    moduleNames.forEach(function (moduleName) {
+      var data = params[moduleName];
+      var keys = Object.keys(data);
+
+      if (keys.length > 0) {
+        if (("," + keys.join(',')).indexOf(',_') > -1) {
+          keys.forEach(function (key) {
+            if (key.startsWith('_')) {
+              if (!hashParams) {
+                hashParams = {};
+              }
+
+              if (!hashParams[moduleName]) {
+                hashParams[moduleName] = {};
+              }
+
+              hashParams[moduleName][key] = data[key];
+            } else {
+              if (!searchParams[moduleName]) {
+                searchParams[moduleName] = {};
+              }
+
+              searchParams[moduleName][key] = data[key];
+            }
+          });
+        } else {
+          searchParams[moduleName] = data;
+        }
+      } else {
+        searchParams[moduleName] = {};
+      }
+    });
+    return {
+      search: searchParams,
+      hash: hashParams
+    };
+  }
+
+  return {
+    search: undefined,
+    hash: undefined
+  };
+}
+
+function splitSearch(search, key) {
+  var reg = new RegExp("[?&#]" + key + "=([^&]+)");
+  var arr = search.match(reg);
+  return arr ? arr[1] : '';
+}
+
+function excludeDefaultData(data, def, filterEmpty) {
+  var result = {};
+  Object.keys(data).forEach(function (moduleName) {
+    var value = data[moduleName];
+    var defaultValue = def[moduleName];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
+        value = excludeDefaultData(value, defaultValue, true);
+      }
+
+      if (value !== undefined) {
+        result[moduleName] = value;
+      }
+    }
+  });
+
+  if (Object.keys(result).length === 0 && filterEmpty) {
+    return undefined;
+  }
+
+  return result;
+}
+
+function assignDefaultData(data, def) {
+  return Object.keys(data).reduce(function (params, moduleName) {
+    params[moduleName] = def[moduleName] ? deepExtend({}, def[moduleName], data[moduleName]) : data[moduleName];
+    return params;
+  }, {});
+}
+
+function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
+  var search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
+  var hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
+  var params = Object.assign({}, search ? JSON.parse(search) : undefined, hash ? JSON.parse(hash) : undefined);
+  var pathname = ("/" + nativeLocation.pathname).replace(/\/+/g, '/');
+  return {
+    tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
+    params: assignDefaultData(params, defaultData)
+  };
+}
+
+function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
+  var _extractHashData = extractHashData(excludeDefaultData(meduxLocation.params, defaultData)),
+      search = _extractHashData.search,
+      hash = _extractHashData.hash;
+
+  var searchStr = search ? JSON.stringify(search) : '';
+  var hashStr = hash ? JSON.stringify(hash) : '';
+  var pathname = ("/" + meduxLocation.tag).replace(/\/+/g, '/');
+  return {
+    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
+    search: key ? key + "=" + searchStr : searchStr,
+    hash: key ? key + "=" + hashStr : hashStr
+  };
+}
+
+function createLocationTransform(defaultData, locationMap, key) {
+  if (defaultData === void 0) {
+    defaultData = {};
+  }
+
+  return {
+    in: function _in(nativeLocation) {
+      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData, key);
+      return locationMap ? locationMap.in(data) : data;
+    },
+    out: function out(meduxLocation) {
+      var data = meduxLocation;
+
+      if (locationMap) {
+        var location = locationMap.out(meduxLocation);
+
+        var _ruleToPathname = ruleToPathname(location.tag, location.params),
+            pathname = _ruleToPathname.pathname,
+            params = _ruleToPathname.params;
+
+        data = {
+          tag: pathname,
+          params: params
+        };
+      }
+
+      return meduxLocationToNativeLocation(data, defaultData, key);
+    }
+  };
+}
+
+var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
+  var RouteModuleHandlers = function (_CoreModuleHandlers2) {
+    _inheritsLoose(RouteModuleHandlers, _CoreModuleHandlers2);
+
+    function RouteModuleHandlers() {
+      var _this;
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
+
+      _initialize(_assertThisInitialized(_this));
+
+      return _this;
+    }
+
+    return RouteModuleHandlers;
+  }(_CoreModuleHandlers);
+
+  return {
+    F: RouteModuleHandlers,
+    d: [{
+      kind: "method",
+      decorators: [reducer],
+      key: "Init",
+      value: function Init(initState) {
+        var routeParams = this.rootState.route.params[this.moduleName];
+        return routeParams ? Object.assign({}, initState, routeParams) : initState;
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
+      key: "RouteParams",
+      value: function RouteParams(payload) {
+        return Object.assign({}, this.state, payload);
+      }
+    }]
+  };
+}, CoreModuleHandlers);
 var RouteActionTypes = {
   MRouteParams: 'RouteParams',
   RouteChange: "medux" + config.NSP + "RouteChange",
@@ -3618,700 +3439,91 @@ function beforeRouteChangeAction(routeState) {
     payload: [routeState]
   };
 }
-function routeChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
 function routeParamsAction(moduleName, params, action) {
   return {
     type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
     payload: [params, action]
   };
 }
-function checkLocation(location) {
-  var data = {
-    pathname: location.pathname || '',
-    search: location.search || '',
-    hash: location.hash || ''
-  };
-  data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
-
-  if (data.pathname !== '/') {
-    data.pathname = data.pathname.replace(/\/$/, '');
-  }
-
-  data.search = ("?" + data.search).replace('??', '?');
-  data.hash = ("#" + data.hash).replace('##', '#');
-
-  if (data.search === '?') {
-    data.search = '';
-  }
-
-  if (data.hash === '#') {
-    data.hash = '';
-  }
-
-  return data;
-}
-function urlToLocation(url) {
-  url = ("/" + url).replace(/\/+/g, '/');
-
-  if (!url) {
-    return {
-      pathname: '/',
-      search: '',
-      hash: ''
-    };
-  }
-
-  var arr = url.split(/[?#]/);
-
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-
-  var pathname = arr[0],
-      _arr$ = arr[1],
-      search = _arr$ === void 0 ? '' : _arr$,
-      _arr$2 = arr[2],
-      hash = _arr$2 === void 0 ? '' : _arr$2;
+function routeChangeAction(routeState) {
   return {
-    pathname: pathname,
-    search: search && "?" + search,
-    hash: hash && "#" + hash
+    type: RouteActionTypes.RouteChange,
+    payload: [routeState]
   };
 }
-function compileRule(routeRule, parentAbsoluteViewName, parentPaths, viewToPaths, viewToRule, ruleToKeys) {
-  if (parentAbsoluteViewName === void 0) {
-    parentAbsoluteViewName = '';
-  }
+var routeMiddleware = function routeMiddleware(_ref) {
+  var dispatch = _ref.dispatch,
+      getState = _ref.getState;
+  return function (next) {
+    return function (action) {
+      if (action.type === RouteActionTypes.RouteChange) {
+        var routeState = action.payload[0];
+        var rootRouteParams = routeState.params;
+        var rootState = getState();
+        Object.keys(rootRouteParams).forEach(function (moduleName) {
+          var routeParams = rootRouteParams[moduleName];
 
-  if (parentPaths === void 0) {
-    parentPaths = [];
-  }
+          if (routeParams) {
+            var _rootState$moduleName;
 
-  if (viewToPaths === void 0) {
-    viewToPaths = {};
-  }
-
-  if (viewToRule === void 0) {
-    viewToRule = {};
-  }
-
-  if (ruleToKeys === void 0) {
-    ruleToKeys = {};
-  }
-
-  for (var _rule in routeRule) {
-    if (routeRule.hasOwnProperty(_rule)) {
-      var item = routeRule[_rule];
-
-      var _ref = typeof item === 'string' ? [item, null] : item,
-          _viewName = _ref[0],
-          pathConfig = _ref[1];
-
-      if (!ruleToKeys[_rule]) {
-        var _compilePath = compilePath(_rule, {
-          end: true,
-          strict: false,
-          sensitive: false
-        }),
-            keys = _compilePath.keys;
-
-        ruleToKeys[_rule] = keys.reduce(function (prev, cur) {
-          prev.push(cur.name);
-          return prev;
-        }, []);
-      }
-
-      var absoluteViewName = parentAbsoluteViewName + "/" + _viewName;
-      viewToRule[absoluteViewName] = _rule;
-      var paths = [].concat(parentPaths, [_viewName]);
-      viewToPaths[_viewName] = paths;
-
-      if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
-      }
-    }
-  }
-
-  return {
-    viewToRule: viewToRule,
-    ruleToKeys: ruleToKeys,
-    viewToPaths: viewToPaths
-  };
-}
-
-function isSpecificValue(val) {
-  return !!(val instanceof Date || val instanceof RegExp);
-}
-
-function cloneSpecificValue(val) {
-  if (val instanceof Date) {
-    return new Date(val.getTime());
-  }
-
-  if (val instanceof RegExp) {
-    return new RegExp(val);
-  }
-
-  throw new Error('Unexpected situation');
-}
-
-function deepCloneArray(arr) {
-  var clone = [];
-  arr.forEach(function (item, index) {
-    if (typeof item === 'object' && item !== null) {
-      if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(item);
-      } else if (isSpecificValue(item)) {
-        clone[index] = cloneSpecificValue(item);
-      } else {
-        clone[index] = deepExtend({}, item);
-      }
-    } else {
-      clone[index] = item;
-    }
-  });
-  return clone;
-}
-
-function safeGetProperty(object, property) {
-  return property === '__proto__' ? undefined : object[property];
-}
-
-function deepExtend() {
-  for (var _len = arguments.length, datas = new Array(_len), _key = 0; _key < _len; _key++) {
-    datas[_key] = arguments[_key];
-  }
-
-  if (arguments.length < 1 || typeof arguments[0] !== 'object') {
-    return false;
-  }
-
-  if (arguments.length < 2) {
-    return arguments[0];
-  }
-
-  var target = arguments[0];
-  var args = Array.prototype.slice.call(arguments, 1);
-  var val;
-  var src;
-  args.forEach(function (obj) {
-    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
-      return;
-    }
-
-    Object.keys(obj).forEach(function (key) {
-      src = safeGetProperty(target, key);
-      val = safeGetProperty(obj, key);
-
-      if (val === target) ; else if (typeof val !== 'object' || val === null) {
-        target[key] = val;
-      } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(val);
-      } else if (isSpecificValue(val)) {
-        target[key] = cloneSpecificValue(val);
-      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = deepExtend({}, val);
-      } else {
-        target[key] = deepExtend(src, val);
-      }
-    });
-  });
-  return target;
-}
-
-function excludeDefaultData(data, def, holde, views) {
-  var result = {};
-  Object.keys(data).forEach(function (moduleName) {
-    var value = data[moduleName];
-    var defaultValue = def[moduleName];
-
-    if (value !== defaultValue) {
-      if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        value = excludeDefaultData(value, defaultValue, !!views && !views[moduleName]);
-      }
-
-      if (value !== undefined) {
-        result[moduleName] = value;
-      }
-    }
-  });
-
-  if (Object.keys(result).length === 0 && !holde) {
-    return undefined;
-  }
-
-  return result;
-}
-
-var ISO_DATE_FORMAT = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d+)?(Z|[+-][01]\d:[0-5]\d)$/;
-
-function dateParse(prop, value) {
-  if (typeof value === 'string' && ISO_DATE_FORMAT.test(value)) {
-    return new Date(value);
-  }
-
-  return value;
-}
-
-function searchParse(search) {
-  if (!search) {
-    return {};
-  }
-
-  if (routeConfig.escape) {
-    search = unescape(search);
-  }
-
-  try {
-    return JSON.parse(search, routeConfig.dateParse ? dateParse : undefined);
-  } catch (error) {
-    return {};
-  }
-}
-
-function searchStringify(searchData) {
-  if (typeof searchData !== 'object') {
-    return '';
-  }
-
-  var str = JSON.stringify(searchData);
-
-  if (str === '{}') {
-    return '';
-  }
-
-  if (routeConfig.escape) {
-    return escape(str);
-  }
-
-  return str;
-}
-
-function splitSearch(search) {
-  var reg = new RegExp("[?&#]" + routeConfig.splitKey + "=([^&]+)");
-  var arr = search.match(reg);
-
-  if (arr) {
-    return searchParse(arr[1]);
-  }
-
-  return {};
-}
-
-function checkPathArgs(params) {
-  var obj = {};
-
-  for (var _key in params) {
-    if (params.hasOwnProperty(_key)) {
-      (function () {
-        var val = params[_key];
-
-        var props = _key.split('.');
-
-        if (props.length > 1) {
-          props.reduce(function (prev, cur, index, arr) {
-            if (index === arr.length - 1) {
-              prev[cur] = val;
-            } else {
-              prev[cur] = {};
+            if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
+              dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
             }
-
-            return prev[cur];
-          }, obj);
-        } else {
-          obj[_key] = val;
-        }
-      })();
-    }
-  }
-
-  return obj;
-}
-
-function pathnameParse(pathname, routeRule, paths, args) {
-  for (var _rule in routeRule) {
-    if (routeRule.hasOwnProperty(_rule)) {
-      var item = routeRule[_rule];
-
-      var _ref = typeof item === 'string' ? [item, null] : item,
-          _viewName = _ref[0],
-          pathConfig = _ref[1];
-
-      var match = matchPath(pathname, {
-        path: _rule.replace(/\$$/, ''),
-        exact: !pathConfig
-      });
-
-      if (match) {
-        paths.push(_viewName);
-
-        var _moduleName = _viewName.split(config.VSP)[0];
-
-        var params = match.params;
-
-        if (params && Object.keys(params).length > 0) {
-          args[_moduleName] = Object.assign(args[_moduleName] || {}, checkPathArgs(params));
-        }
-
-        if (pathConfig) {
-          pathnameParse(pathname, pathConfig, paths, args);
-        }
-
-        return;
-      }
-    }
-  }
-}
-
-function assignRouteData(paths, params, defaultRouteParams) {
-  var views = paths.reduce(function (prev, cur) {
-    var _cur$split = cur.split(config.VSP),
-        moduleName = _cur$split[0],
-        viewName = _cur$split[1];
-
-    if (moduleName && viewName) {
-      if (!prev[moduleName]) {
-        prev[moduleName] = {};
-      }
-
-      prev[moduleName][viewName] = true;
-
-      if (!params[moduleName]) {
-        params[moduleName] = undefined;
-      }
-    }
-
-    return prev;
-  }, {});
-  Object.keys(params).forEach(function (moduleName) {
-    if (defaultRouteParams[moduleName]) {
-      params[moduleName] = deepExtend({}, defaultRouteParams[moduleName], params[moduleName]);
-    }
-  });
-  return {
-    views: views,
-    paths: paths,
-    params: params
-  };
-}
-
-function extractHashData(params) {
-  var searchParams = {};
-  var hashParams = {};
-
-  var _loop = function _loop(_moduleName2) {
-    if (params[_moduleName2] && params.hasOwnProperty(_moduleName2)) {
-      var data = params[_moduleName2];
-      var keys = Object.keys(data);
-
-      if (keys.length > 0) {
-        keys.forEach(function (key) {
-          if (key.startsWith('_')) {
-            if (!hashParams[_moduleName2]) {
-              hashParams[_moduleName2] = {};
-            }
-
-            hashParams[_moduleName2][key] = data[key];
-          } else {
-            if (!searchParams[_moduleName2]) {
-              searchParams[_moduleName2] = {};
-            }
-
-            searchParams[_moduleName2][key] = data[key];
           }
         });
-      } else {
-        searchParams[_moduleName2] = {};
-      }
-    }
-  };
-
-  for (var _moduleName2 in params) {
-    _loop(_moduleName2);
-  }
-
-  return {
-    search: searchStringify(searchParams),
-    hash: searchStringify(hashParams)
-  };
-}
-
-var cacheData = [];
-
-function getPathProps(pathprops, moduleParas, deleteIt) {
-  if (moduleParas === void 0) {
-    moduleParas = {};
-  }
-
-  var val;
-
-  if (typeof pathprops === 'string' && pathprops.indexOf('.') > -1) {
-    var props = pathprops.split('.');
-    var len = props.length - 1;
-    props.reduce(function (p, c, i) {
-      if (i === len) {
-        val = p[c];
-        deleteIt && delete p[c];
       }
 
-      return p[c] || {};
-    }, moduleParas);
-  } else {
-    val = moduleParas[pathprops];
-    deleteIt && delete moduleParas[pathprops];
-  }
-
-  return val;
-}
-
-function pathsToPathname(paths, params, viewToRule, ruleToKeys) {
-  if (params === void 0) {
-    params = {};
-  }
-
-  var len = paths.length - 1;
-  var paramsFilter = deepExtend({}, params);
-  var pathname = '';
-  var views = {};
-  paths.reduce(function (parentAbsoluteViewName, viewName, index) {
-    var _viewName$split = viewName.split(config.VSP),
-        moduleName = _viewName$split[0],
-        view = _viewName$split[1];
-
-    var absoluteViewName = parentAbsoluteViewName + "/" + viewName;
-    var rule = viewToRule[absoluteViewName];
-    var keys = ruleToKeys[rule] || [];
-
-    if (moduleName && view) {
-      if (!views[moduleName]) {
-        views[moduleName] = {};
-      }
-
-      views[moduleName][view] = true;
-    }
-
-    if (index === len) {
-      var toPath = compileToPath(rule);
-      var args = keys.reduce(function (prev, cur) {
-        prev[cur] = getPathProps(cur, params[moduleName]);
-        return prev;
-      }, {});
-      pathname = toPath(args);
-    }
-
-    keys.forEach(function (key) {
-      getPathProps(key, paramsFilter[moduleName], true);
-    });
-    return absoluteViewName;
-  }, '');
-  return {
-    pathname: pathname,
-    views: views,
-    params: paramsFilter
+      return next(action);
+    };
   };
-}
+};
+var routeReducer = function routeReducer(state, action) {
+  if (action.type === RouteActionTypes.RouteChange) {
+    return action.payload[0];
+  }
 
+  return state;
+};
 var BaseHistoryActions = function () {
-  function BaseHistoryActions(nativeHistory, defaultRouteParams, initUrl, routeRule, locationMap) {
+  function BaseHistoryActions(nativeHistory, locationTransform) {
     this.nativeHistory = nativeHistory;
-    this.defaultRouteParams = defaultRouteParams;
-    this.initUrl = initUrl;
-    this.routeRule = routeRule;
-    this.locationMap = locationMap;
 
     _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "_routeState", void 0);
 
-    _defineProperty(this, "_startupRouteState", void 0);
+    _defineProperty(this, "_startupUri", void 0);
+
+    _defineProperty(this, "locationTransform", void 0);
 
     _defineProperty(this, "store", void 0);
 
-    _defineProperty(this, "_viewToRule", void 0);
+    this.locationTransform = locationTransform || createLocationTransform();
+    var location = this.locationTransform.in(nativeHistory.getLocation());
 
-    _defineProperty(this, "_ruleToKeys", void 0);
+    var key = this._createKey();
 
-    _defineProperty(this, "_viewToPaths", void 0);
-
-    var _compileRule = compileRule(routeRule),
-        viewToRule = _compileRule.viewToRule,
-        ruleToKeys = _compileRule.ruleToKeys,
-        viewToPaths = _compileRule.viewToPaths;
-
-    this._viewToRule = viewToRule;
-    this._ruleToKeys = ruleToKeys;
-    this._viewToPaths = viewToPaths;
-    var safeLocation = urlToLocation(initUrl);
-
-    var routeState = this._createRouteState(safeLocation, 'RELAUNCH', '');
-
+    var routeState = locationToRouteState(location, 'RELAUNCH', key, {
+      history: [],
+      stack: []
+    });
     this._routeState = routeState;
-    this._startupRouteState = routeState;
-    nativeHistory.relaunch(routeState);
+    this._startupUri = locationToUri(location, key);
+    nativeHistory.relaunch(this.locationTransform.out(location), key);
   }
 
   var _proto = BaseHistoryActions.prototype;
-
-  _proto.setStore = function setStore(_store) {
-    this.store = _store;
-  };
-
-  _proto.mergeInitState = function mergeInitState(initState) {
-    var routeState = this.getRouteState();
-    var data = Object.assign({}, initState, {
-      route: routeState
-    });
-    Object.keys(routeState.views).forEach(function (moduleName) {
-      if (!data[moduleName]) {
-        data[moduleName] = {};
-      }
-
-      data[moduleName] = Object.assign({}, data[moduleName], {
-        routeParams: routeState.params[moduleName]
-      });
-    });
-    return data;
-  };
-
-  _proto.getModulePath = function getModulePath() {
-    return this.getRouteState().paths.map(function (viewName) {
-      return viewName.split(config.VSP)[0];
-    });
-  };
-
-  _proto.getCurKey = function getCurKey() {
-    return this._routeState.key;
-  };
 
   _proto.getRouteState = function getRouteState() {
     return this._routeState;
   };
 
-  _proto.locationToUrl = function locationToUrl(safeLocation) {
-    return safeLocation.pathname + safeLocation.search + safeLocation.hash;
+  _proto.setStore = function setStore(_store) {
+    this.store = _store;
   };
 
-  _proto.locationToRoute = function locationToRoute(safeLocation) {
-    var url = this.locationToUrl(safeLocation);
-    var item = cacheData.find(function (val) {
-      return val && val.url === url;
-    });
-
-    if (item) {
-      return item.routeData;
-    }
-
-    var pathname = safeLocation.pathname;
-    var paths = [];
-    var pathsArgs = {};
-    pathnameParse(pathname, this.routeRule, paths, pathsArgs);
-    var params = splitSearch(safeLocation.search);
-    var hashParams = splitSearch(safeLocation.hash);
-    deepExtend(params, hashParams);
-    var routeData = assignRouteData(paths, deepExtend(pathsArgs, params), this.defaultRouteParams);
-    cacheData.unshift({
-      url: url,
-      routeData: routeData
-    });
-    cacheData.length = 100;
-    return routeData;
-  };
-
-  _proto.routeToLocation = function routeToLocation(paths, params) {
-    params = params || {};
-    var views = {};
-    var data = pathsToPathname(paths, params, this._viewToRule, this._ruleToKeys);
-    var pathname = data.pathname;
-    params = data.params;
-    views = data.views;
-    var paramsFilter = excludeDefaultData(params, this.defaultRouteParams, false, views);
-
-    var _extractHashData = extractHashData(paramsFilter),
-        search = _extractHashData.search,
-        hash = _extractHashData.hash;
-
-    return {
-      pathname: pathname,
-      search: search ? "?" + routeConfig.splitKey + "=" + search : '',
-      hash: hash ? "#" + routeConfig.splitKey + "=" + hash : ''
-    };
-  };
-
-  _proto.payloadToRoute = function payloadToRoute(data) {
-    if (typeof data === 'string') {
-      return this.locationToRoute(urlToLocation(data));
-    }
-
-    if (data.pathname && !data.extendParams && !data.params) {
-      return this.locationToRoute(checkLocation(data));
-    }
-
-    var clone = Object.assign({}, data);
-
-    if (clone.extendParams === true) {
-      clone.extendParams = this.getRouteState().params;
-    }
-
-    if (clone.pathname) {
-      clone.paths = [];
-      clone.params = {};
-      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
-      deepExtend(clone.params, data.params);
-    }
-
-    if (!clone.paths) {
-      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
-    }
-
-    if (!clone.paths) {
-      throw 'Route Paths Not Found!';
-    }
-
-    var params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
-    return assignRouteData(clone.paths, params || {}, this.defaultRouteParams);
-  };
-
-  _proto.viewNameToPaths = function viewNameToPaths(viewName) {
-    return this._viewToPaths[viewName];
-  };
-
-  _proto.payloadToLocation = function payloadToLocation(data) {
-    if (typeof data === 'string') {
-      return urlToLocation(data);
-    }
-
-    if (data.pathname && !data.extendParams && !data.params) {
-      return checkLocation(data);
-    }
-
-    var clone = Object.assign({}, data);
-
-    if (clone.extendParams === true) {
-      clone.extendParams = this.getRouteState().params;
-    }
-
-    if (clone.pathname) {
-      clone.paths = [];
-      clone.params = {};
-      pathnameParse(clone.pathname, this.routeRule, clone.paths, clone.params);
-      deepExtend(clone.params, data.params);
-    }
-
-    if (!clone.paths) {
-      clone.paths = clone.viewName ? this._viewToPaths[clone.viewName] : this.getRouteState().paths;
-    }
-
-    if (!clone.paths) {
-      throw 'Route Paths Not Found!';
-    }
-
-    var params = clone.extendParams ? deepExtend({}, clone.extendParams, clone.params) : clone.params;
-    return this.routeToLocation(clone.paths, params);
+  _proto.getCurKey = function getCurKey() {
+    return this._routeState.key;
   };
 
   _proto._createKey = function _createKey() {
@@ -4319,180 +3531,43 @@ var BaseHistoryActions = function () {
     return "" + this._tid;
   };
 
-  _proto._getEfficientLocation = function _getEfficientLocation(safeLocation) {
-    var routeData = this.locationToRoute(safeLocation);
-
-    if (routeData.views['@']) {
-      var url = Object.keys(routeData.views['@'])[0];
-      var reLocation = urlToLocation(url);
-      return this._getEfficientLocation(reLocation);
-    }
-
-    return {
-      location: safeLocation,
-      routeData: routeData
-    };
-  };
-
-  _proto._buildHistory = function _buildHistory(location) {
-    var _this = this;
-
-    var maxLength = routeConfig.historyMax;
-    var action = location.action,
-        url = location.url,
-        pathname = location.pathname,
-        key = location.key;
-
-    var _ref2 = this._routeState || {
-      history: [],
-      stack: []
-    },
-        history = _ref2.history,
-        stack = _ref2.stack;
-
-    var uri = this._urlToUri(url, key);
-
-    var historyList = [].concat(history);
-    var stackList = [].concat(stack);
-
-    if (action === 'RELAUNCH') {
-      historyList = [uri];
-      stackList = [uri];
-    } else if (action === 'PUSH') {
-      historyList.unshift(uri);
-
-      if (historyList.length > maxLength) {
-        historyList.length = maxLength;
-      }
-
-      if (this._uriToPathname(stackList[0]) !== pathname) {
-        stackList.unshift(uri);
-
-        if (stackList.length > maxLength) {
-          stackList.length = maxLength;
-        }
-      } else {
-        stackList[0] = uri;
-      }
-    } else if (action === 'REPLACE') {
-      historyList[0] = uri;
-      stackList[0] = uri;
-
-      if (pathname === this._uriToPathname(stackList[1])) {
-        stackList.splice(1, 1);
-      }
-
-      if (stackList.length > maxLength) {
-        stackList.length = maxLength;
-      }
-    } else if (action.startsWith('POP')) {
-      var _n = parseInt(action.replace('POP', ''), 10) || 1;
-
-      var arr = historyList.splice(0, _n + 1, uri).reduce(function (pre, curUri) {
-        var cpathname = _this._uriToPathname(curUri);
-
-        if (pre[pre.length - 1] !== cpathname) {
-          pre.push(cpathname);
-        }
-
-        return pre;
-      }, []);
-
-      if (arr[arr.length - 1] === this._uriToPathname(historyList[1])) {
-        arr.pop();
-      }
-
-      stackList.splice(0, arr.length, uri);
-
-      if (pathname === this._uriToPathname(stackList[1])) {
-        stackList.splice(1, 1);
-      }
-    }
-
-    return {
-      history: historyList,
-      stack: stackList
-    };
-  };
-
-  _proto._urlToUri = function _urlToUri(url, key) {
-    return "" + key + routeConfig.RSP + url;
-  };
-
-  _proto._uriToUrl = function _uriToUrl(uri) {
-    if (uri === void 0) {
-      uri = '';
-    }
-
-    return uri.substr(uri.indexOf(routeConfig.RSP) + 1);
-  };
-
-  _proto._uriToPathname = function _uriToPathname(uri) {
-    if (uri === void 0) {
-      uri = '';
-    }
-
-    var url = this._uriToUrl(uri);
-
-    return url.split(/[?#]/)[0];
-  };
-
-  _proto._uriToKey = function _uriToKey(uri) {
-    if (uri === void 0) {
-      uri = '';
-    }
-
-    return uri.substr(0, uri.indexOf(routeConfig.RSP));
-  };
-
   _proto.findHistoryByKey = function findHistoryByKey(key) {
     var history = this._routeState.history;
-    var index = history.findIndex(function (uri) {
+    return history.findIndex(function (uri) {
       return uri.startsWith("" + key + routeConfig.RSP);
     });
+  };
+
+  _proto.payloadToLocation = function payloadToLocation(data) {
+    if (typeof data === 'string') {
+      var nativeLocation = this.nativeHistory.parseUrl(data);
+      return this.locationTransform.in(nativeLocation);
+    }
+
+    var _data$tag = data.tag,
+        tag = _data$tag === void 0 ? '/' : _data$tag,
+        extendParams = data.extendParams;
+    var params = deepExtend({}, extendParams === true ? this._routeState.params : extendParams, data.params);
     return {
-      index: index,
-      url: index > -1 ? this._uriToUrl(history[index]) : ''
+      tag: tag,
+      params: params
     };
   };
 
-  _proto._toNativeLocation = function _toNativeLocation(location) {
-    if (this.locationMap) {
-      var nLocation = checkLocation(this.locationMap.out(location));
-      return Object.assign({}, nLocation, {
-        action: location.action,
-        url: this.locationToUrl(nLocation),
-        key: location.key
-      });
-    }
-
-    return location;
-  };
-
-  _proto._createRouteState = function _createRouteState(safeLocation, action, key) {
-    key = key || this._createKey();
-
-    var data = this._getEfficientLocation(safeLocation);
-
-    var location = Object.assign({}, data.location, {
-      action: action,
-      url: this.locationToUrl(data.location),
-      key: key
+  _proto.locationToUrl = function locationToUrl(data) {
+    var _data$tag2 = data.tag,
+        tag = _data$tag2 === void 0 ? '' : _data$tag2,
+        extendParams = data.extendParams;
+    var params = deepExtend({}, extendParams === true ? this._routeState.params : extendParams, data.params);
+    var nativeLocation = this.locationTransform.out({
+      tag: tag,
+      params: params
     });
-
-    var _this$_buildHistory = this._buildHistory(location),
-        history = _this$_buildHistory.history,
-        stack = _this$_buildHistory.stack;
-
-    var routeState = Object.assign({}, location, data.routeData, {
-      history: history,
-      stack: stack
-    });
-    return routeState;
+    return this.nativeHistory.toUrl(nativeLocation);
   };
 
   _proto.dispatch = function () {
-    var _dispatch = _asyncToGenerator(regenerator.mark(function _callee(safeLocation, action, key, callNative) {
+    var _dispatch = _asyncToGenerator(regenerator.mark(function _callee(location, action, key, callNative) {
       var routeState, nativeLocation;
       return regenerator.wrap(function _callee$(_context) {
         while (1) {
@@ -4502,29 +3577,30 @@ var BaseHistoryActions = function () {
                 key = '';
               }
 
-              routeState = this._createRouteState(safeLocation, action, key);
-              _context.next = 4;
+              key = key || this._createKey();
+              routeState = locationToRouteState(location, action, key, this._routeState);
+              _context.next = 5;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-            case 4:
+            case 5:
               this._routeState = routeState;
-              _context.next = 7;
+              _context.next = 8;
               return this.store.dispatch(routeChangeAction(routeState));
 
-            case 7:
+            case 8:
               if (callNative) {
-                nativeLocation = this._toNativeLocation(routeState);
+                nativeLocation = this.locationTransform.out(location);
 
                 if (typeof callNative === 'number') {
-                  this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative);
+                  this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative, key);
                 } else {
-                  this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation);
+                  this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation, key);
                 }
               }
 
               return _context.abrupt("return", routeState);
 
-            case 9:
+            case 10:
             case "end":
               return _context.stop();
           }
@@ -4565,30 +3641,25 @@ var BaseHistoryActions = function () {
 
     n = n || 1;
     var uri = useStack ? this._routeState.stack[n] : this._routeState.history[n];
+    var k = useStack ? 1000 + n : n;
 
-    if (uri) {
-      var _url = this._uriToUrl(uri);
+    if (!uri) {
+      k = 1000000;
 
-      var _key2 = this._uriToKey(uri);
-
-      var paLocation = urlToLocation(_url);
-      var k = useStack ? 10000 + n : n;
-      return this.dispatch(paLocation, "POP" + k, _key2, disableNative ? '' : k);
+      if (root === 'HOME') {
+        uri = routeConfig.homeUri;
+      } else if (root === 'FIRST') {
+        uri = this._startupUri;
+      } else {
+        return Promise.reject(1);
+      }
     }
 
-    var url = root;
+    var _uriToLocation = uriToLocation(uri),
+        key = _uriToLocation.key,
+        location = _uriToLocation.location;
 
-    if (root === 'HOME') {
-      url = routeConfig.homeUrl;
-    } else if (root === 'FIRST') {
-      url = this._startupRouteState.url;
-    }
-
-    if (!url) {
-      return Promise.reject(1);
-    }
-
-    return this.relaunch(url, disableNative);
+    return this.dispatch(location, "POP" + k, key, disableNative ? '' : k);
   };
 
   _proto.back = function back(n, root, disableNative) {
@@ -4608,89 +3679,11 @@ var BaseHistoryActions = function () {
       root = 'FIRST';
     }
 
-    return this.relaunch(root === 'HOME' ? routeConfig.homeUrl : this._startupRouteState.url, disableNative);
+    return this.relaunch(root === 'HOME' ? routeConfig.homeUri : this._startupUri, disableNative);
   };
 
   return BaseHistoryActions;
 }();
-var routeMiddleware = function routeMiddleware(_ref3) {
-  var dispatch = _ref3.dispatch,
-      getState = _ref3.getState;
-  return function (next) {
-    return function (action) {
-      if (action.type === RouteActionTypes.RouteChange) {
-        var routeState = action.payload[0];
-        var rootRouteParams = routeState.params;
-        var rootState = getState();
-        Object.keys(rootRouteParams).forEach(function (moduleName) {
-          var routeParams = rootRouteParams[moduleName];
-
-          if (routeParams) {
-            var _rootState$moduleName;
-
-            if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
-              dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-            }
-          }
-        });
-      }
-
-      return next(action);
-    };
-  };
-};
-var routeReducer = function routeReducer(state, action) {
-  if (action.type === RouteActionTypes.RouteChange) {
-    return action.payload[0];
-  }
-
-  return state;
-};
-var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
-  var RouteModuleHandlers = function (_CoreModuleHandlers2) {
-    _inheritsLoose(RouteModuleHandlers, _CoreModuleHandlers2);
-
-    function RouteModuleHandlers() {
-      var _this2;
-
-      for (var _len = arguments.length, args = new Array(_len), _key3 = 0; _key3 < _len; _key3++) {
-        args[_key3] = arguments[_key3];
-      }
-
-      _this2 = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
-
-      _initialize(_assertThisInitialized(_this2));
-
-      return _this2;
-    }
-
-    return RouteModuleHandlers;
-  }(_CoreModuleHandlers);
-
-  return {
-    F: RouteModuleHandlers,
-    d: [{
-      kind: "method",
-      decorators: [reducer],
-      key: "Init",
-      value: function Init(initState) {
-        var routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? Object.assign({}, initState, {
-          routeParams: routeParams
-        }) : initState;
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "RouteParams",
-      value: function RouteParams(payload) {
-        return Object.assign({}, this.state, {
-          routeParams: payload
-        });
-      }
-    }]
-  };
-}, CoreModuleHandlers);
 
 /** @license React v16.13.1
  * react-is.production.min.js
@@ -8129,14 +7122,8 @@ function createMemoryHistory(props) {
   return history;
 }
 
-function locationToUrl(loaction) {
-  return loaction.pathname + loaction.search + loaction.hash;
-}
-
 var WebNativeHistory = function () {
-  function WebNativeHistory(createHistory, locationMap) {
-    this.locationMap = locationMap;
-
+  function WebNativeHistory(createHistory) {
     _defineProperty(this, "history", void 0);
 
     if (createHistory === 'Hash') {
@@ -8183,44 +7170,98 @@ var WebNativeHistory = function () {
 
   var _proto = WebNativeHistory.prototype;
 
+  _proto.getLocation = function getLocation() {
+    var _this$history$locatio = this.history.location,
+        _this$history$locatio2 = _this$history$locatio.pathname,
+        pathname = _this$history$locatio2 === void 0 ? '' : _this$history$locatio2,
+        _this$history$locatio3 = _this$history$locatio.search,
+        search = _this$history$locatio3 === void 0 ? '' : _this$history$locatio3,
+        _this$history$locatio4 = _this$history$locatio.hash,
+        hash = _this$history$locatio4 === void 0 ? '' : _this$history$locatio4;
+    return {
+      pathname: pathname,
+      search: search.replace('?', ''),
+      hash: hash.replace('#', '')
+    };
+  };
+
+  _proto.getUrl = function getUrl() {
+    var _this$history$locatio5 = this.history.location,
+        _this$history$locatio6 = _this$history$locatio5.pathname,
+        pathname = _this$history$locatio6 === void 0 ? '' : _this$history$locatio6,
+        _this$history$locatio7 = _this$history$locatio5.search,
+        search = _this$history$locatio7 === void 0 ? '' : _this$history$locatio7,
+        _this$history$locatio8 = _this$history$locatio5.hash,
+        hash = _this$history$locatio8 === void 0 ? '' : _this$history$locatio8;
+    return [pathname, search, hash].join('');
+  };
+
+  _proto.parseUrl = function parseUrl(url) {
+    if (!url) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: ''
+      };
+    }
+
+    var arr = url.split(/[?#]/);
+
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+
+    var pathname = arr[0],
+        _arr$ = arr[1],
+        search = _arr$ === void 0 ? '' : _arr$,
+        _arr$2 = arr[2],
+        hash = _arr$2 === void 0 ? '' : _arr$2;
+    return {
+      pathname: pathname,
+      search: search,
+      hash: hash
+    };
+  };
+
+  _proto.toUrl = function toUrl(location) {
+    return [location.pathname, location.search && "?" + encodeURIComponent(location.search), location.hash && "#" + encodeURIComponent(location.hash)].join('');
+  };
+
   _proto.block = function block(blocker) {
     var _this = this;
 
     return this.history.block(function (location, action) {
-      return blocker({
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash
-      }, _this.getKey(location), action);
+      var _location$pathname = location.pathname,
+          pathname = _location$pathname === void 0 ? '' : _location$pathname,
+          _location$search = location.search,
+          search = _location$search === void 0 ? '' : _location$search,
+          _location$hash = location.hash,
+          hash = _location$hash === void 0 ? '' : _location$hash;
+      return blocker([pathname, search, hash].join(''), _this.getKey(location), action);
     });
-  };
-
-  _proto.getUrl = function getUrl() {
-    var location = this.locationMap ? this.locationMap.in(this.history.location) : this.history.location;
-    return locationToUrl(location);
   };
 
   _proto.getKey = function getKey(location) {
     return location.state || '';
   };
 
-  _proto.push = function push(location) {
-    this.history.push(locationToUrl(location), location.key);
+  _proto.push = function push(location, key) {
+    this.history.push(this.toUrl(location), key);
   };
 
-  _proto.replace = function replace(location) {
-    this.history.replace(locationToUrl(location), location.key);
+  _proto.replace = function replace(location, key) {
+    this.history.replace(this.toUrl(location), key);
   };
 
-  _proto.relaunch = function relaunch(location) {
-    this.history.push(locationToUrl(location), location.key);
+  _proto.relaunch = function relaunch(location, key) {
+    this.history.push(this.toUrl(location), key);
   };
 
-  _proto.pop = function pop(location, n) {
-    if (n < 1000) {
+  _proto.pop = function pop(location, n, key) {
+    if (n < 500) {
       this.history.go(-n);
     } else {
-      this.history.push(locationToUrl(location), location.key);
+      this.history.push(this.toUrl(location), key);
     }
   };
 
@@ -8229,26 +7270,23 @@ var WebNativeHistory = function () {
 var HistoryActions = function (_BaseHistoryActions) {
   _inheritsLoose(HistoryActions, _BaseHistoryActions);
 
-  function HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap) {
+  function HistoryActions(nativeHistory, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, defaultRouteParams, nativeHistory.getUrl(), routeRule, locationMap) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
     _this2.nativeHistory = nativeHistory;
-    _this2.defaultRouteParams = defaultRouteParams;
-    _this2.routeRule = routeRule;
-    _this2.locationMap = locationMap;
 
     _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);
 
     _defineProperty(_assertThisInitialized(_this2), "_timer", 0);
 
-    _this2._unlistenHistory = _this2.nativeHistory.block(function (location, key, action) {
+    _this2._unlistenHistory = _this2.nativeHistory.block(function (url, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;
         var index = 0;
 
         if (action === 'POP') {
-          index = _this2.findHistoryByKey(key).index;
+          index = _this2.findHistoryByKey(key);
         }
 
         if (index > 0) {
@@ -8257,28 +7295,24 @@ var HistoryActions = function (_BaseHistoryActions) {
 
             _this2.pop(index);
           };
+        } else if (action === 'REPLACE') {
+          callback = function callback() {
+            _this2._timer = 0;
+
+            _this2.replace(url);
+          };
+        } else if (action === 'PUSH') {
+          callback = function callback() {
+            _this2._timer = 0;
+
+            _this2.push(url);
+          };
         } else {
-          var paLocation = _this2.locationMap ? _this2.locationMap.in(location) : location;
+          callback = function callback() {
+            _this2._timer = 0;
 
-          if (action === 'REPLACE') {
-            callback = function callback() {
-              _this2._timer = 0;
-
-              _this2.replace(paLocation);
-            };
-          } else if (action === 'PUSH') {
-            callback = function callback() {
-              _this2._timer = 0;
-
-              _this2.push(paLocation);
-            };
-          } else {
-            callback = function callback() {
-              _this2._timer = 0;
-
-              _this2.relaunch(paLocation);
-            };
-          }
+            _this2.relaunch(url);
+          };
         }
 
         if (callback && !_this2._timer) {
@@ -8309,9 +7343,9 @@ var HistoryActions = function (_BaseHistoryActions) {
 
   return HistoryActions;
 }(BaseHistoryActions);
-function createRouter(createHistory, defaultRouteParams, routeRule, locationMap) {
+function createRouter(createHistory, locationTransform) {
   var nativeHistory = new WebNativeHistory(createHistory);
-  var historyActions = new HistoryActions(nativeHistory, defaultRouteParams, routeRule, locationMap);
+  var historyActions = new HistoryActions(nativeHistory, locationTransform);
   return historyActions;
 }
 
@@ -8348,16 +7382,12 @@ function buildApp(moduleGetter, _ref) {
       appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
       _ref$historyType = _ref.historyType,
       historyType = _ref$historyType === void 0 ? 'Browser' : _ref$historyType,
-      _ref$routeRule = _ref.routeRule,
-      routeRule = _ref$routeRule === void 0 ? {} : _ref$routeRule,
-      locationMap = _ref.locationMap,
-      _ref$defaultRoutePara = _ref.defaultRouteParams,
-      defaultRouteParams = _ref$defaultRoutePara === void 0 ? {} : _ref$defaultRoutePara,
+      locationTransform = _ref.locationTransform,
       _ref$storeOptions = _ref.storeOptions,
       storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
       _ref$container = _ref.container,
       container = _ref$container === void 0 ? 'root' : _ref$container;
-  appExports.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+  appExports.history = createRouter(historyType, locationTransform);
 
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
@@ -8375,7 +7405,9 @@ function buildApp(moduleGetter, _ref) {
     storeOptions.initData = {};
   }
 
-  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData);
+  storeOptions.initData = Object.assign({}, storeOptions.initData, {
+    route: appExports.history.getRouteState()
+  });
   return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, function (store) {
     appExports.store = store;
     appExports.history.setStore(store);
@@ -8387,22 +7419,20 @@ function buildSSR(moduleGetter, _ref2) {
       _ref2$appViewName = _ref2.appViewName,
       appViewName = _ref2$appViewName === void 0 ? 'main' : _ref2$appViewName,
       location = _ref2.location,
-      _ref2$routeRule = _ref2.routeRule,
-      routeRule = _ref2$routeRule === void 0 ? {} : _ref2$routeRule,
-      locationMap = _ref2.locationMap,
-      _ref2$defaultRoutePar = _ref2.defaultRouteParams,
-      defaultRouteParams = _ref2$defaultRoutePar === void 0 ? {} : _ref2$defaultRoutePar,
+      locationTransform = _ref2.locationTransform,
       _ref2$storeOptions = _ref2.storeOptions,
       storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
       _ref2$renderToStream = _ref2.renderToStream,
       renderToStream = _ref2$renderToStream === void 0 ? false : _ref2$renderToStream;
-  appExports.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
+  appExports.history = createRouter(location, locationTransform);
 
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
 
-  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData);
+  storeOptions.initData = Object.assign({}, storeOptions.initData, {
+    route: appExports.history.getRouteState()
+  });
   return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, function (store) {
     appExports.store = store;
     Object.defineProperty(appExports, 'state', {
@@ -8414,7 +7444,7 @@ function buildSSR(moduleGetter, _ref2) {
     return appExports.history.getModulePath();
   });
 }
-var Switch = function Switch(_ref3) {
+var Else = function Else(_ref3) {
   var children = _ref3.children,
       elseView = _ref3.elseView;
 
@@ -8426,16 +7456,28 @@ var Switch = function Switch(_ref3) {
 
   return React.createElement(React.Fragment, null, children);
 };
+var Switch = function Switch(_ref4) {
+  var children = _ref4.children,
+      elseView = _ref4.elseView;
+
+  if (!children || Array.isArray(children) && children.every(function (item) {
+    return !item;
+  })) {
+    return React.createElement(React.Fragment, null, elseView);
+  }
+
+  return React.createElement(React.Fragment, null, Array.isArray(children) ? children[0] : children);
+};
 
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
 var connect = baseConnect;
-var Link = React.forwardRef(function (_ref4, ref) {
-  var _onClick = _ref4.onClick,
-      replace = _ref4.replace,
-      rest = _objectWithoutPropertiesLoose(_ref4, ["onClick", "replace"]);
+var Link = React.forwardRef(function (_ref5, ref) {
+  var _onClick = _ref5.onClick,
+      replace = _ref5.replace,
+      rest = _objectWithoutPropertiesLoose(_ref5, ["onClick", "replace"]);
 
   var target = rest.target;
   var props = Object.assign({}, rest, {
@@ -8458,4 +7500,4 @@ var Link = React.forwardRef(function (_ref4, ref) {
   }));
 });
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Link, LoadingState, Switch, buildApp, buildSSR, connect, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createLocationTransform, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };

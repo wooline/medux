@@ -113,12 +113,11 @@ export interface ModuleStore extends Store {
 }
 export interface CoreModuleState {
     initialized?: boolean;
-    routeParams?: any;
     loading?: {
         [key: string]: LoadingState;
     };
 }
-declare type CoreRootState = {
+export declare type CoreRootState = {
     [moduleName: string]: CoreModuleState;
 };
 export declare type ModuleModel = (store: ModuleStore) => void | Promise<void>;

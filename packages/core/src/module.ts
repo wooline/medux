@@ -17,7 +17,6 @@ type ModuleFacade<M extends CommonModule> = {
   views: M['default']['views'];
   viewName: keyof M['default']['views'];
   viewNames: {[key in keyof M['default']['views']]: string};
-  viewMounted: {[key in keyof M['default']['views']]?: boolean};
   state: M['default']['initState'];
   actions: M['default']['actions'];
   actionNames: {[key in keyof M['default']['actions']]: string};

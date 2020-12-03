@@ -8,23 +8,23 @@ import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux'
 
 import type {RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispatch} from '@medux/core';
 import type {Store} from 'redux';
-import type {LocationMap, RouteRule, RootState} from '@medux/route-plan-a';
+import type {RootState, LocationTransform} from '@medux/route-plan-a';
 
 export {exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime} from '@medux/core';
-export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers} from '@medux/route-plan-a';
+export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers, createLocationTransform} from '@medux/route-plan-a';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
-export type {RouteRule, RouteState, RootState, LocationMap, RouteModuleState as BaseModuleState} from '@medux/route-plan-a';
+export type {RouteState, RootState, RouteModuleState as BaseModuleState, LocationMap, LocationTransform, HistoryAction, NativeLocation, Location, Params} from '@medux/route-plan-a';
 export type {HistoryActions} from '@medux/web';
 
-export type FacadeExports<APP extends RootModuleFacade> = {
+export type FacadeExports<APP extends RootModuleFacade, RouteParams extends {[K in keyof APP]: any}> = {
   App: {
     store: Store;
-    state: RootState<APP>;
+    state: RootState<APP, Partial<RouteParams>>;
     loadView: LoadView<APP>;
-    history: HistoryActions<RootState<APP>['route']['params']>;
+    history: HistoryActions<Partial<RouteParams>>;
     getActions<N extends keyof APP>(...args: N[]): {[K in N]: APP[K]['actions']};
   };
   Modules: RootModuleAPI<APP>;
@@ -37,7 +37,7 @@ const appExports: {store: any; state: any; loadView: any; getActions: any; histo
   history: undefined,
 };
 
-export function exportApp(): FacadeExports<any> {
+export function exportApp(): FacadeExports<any, any> {
   const modules = getRootModuleAPI();
   appExports.getActions = (...args: string[]) => {
     return args.reduce((prev, moduleName) => {
@@ -57,23 +57,19 @@ export function buildApp(
     appModuleName = 'app',
     appViewName = 'main',
     historyType = 'Browser',
-    routeRule = {},
-    locationMap,
-    defaultRouteParams = {},
+    locationTransform,
     storeOptions = {},
     container = 'root',
   }: {
     appModuleName?: string;
     appViewName?: string;
     historyType?: 'Browser' | 'Hash' | 'Memory';
-    routeRule?: RouteRule;
-    locationMap?: LocationMap;
-    defaultRouteParams?: {[moduleName: string]: any};
+    locationTransform?: LocationTransform;
     storeOptions?: StoreOptions;
     container?: string | Element | ((component: ReactElement<any>) => void);
   }
 ) {
-  appExports.history = createRouter(historyType, defaultRouteParams, routeRule, locationMap);
+  appExports.history = createRouter(historyType, locationTransform);
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
   }
@@ -85,7 +81,8 @@ export function buildApp(
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
+  storeOptions.initData = {...storeOptions.initData, route: appExports.history.getRouteState()};
+  // storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
 
   return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
     appExports.store = store as any;
@@ -99,27 +96,24 @@ export function buildSSR(
     appModuleName = 'app',
     appViewName = 'main',
     location,
-    routeRule = {},
-    locationMap,
-    defaultRouteParams = {},
+    locationTransform,
     storeOptions = {},
     renderToStream = false,
   }: {
     appModuleName?: string;
     appViewName?: string;
     location: string;
-    routeRule?: RouteRule;
-    locationMap?: LocationMap;
-    defaultRouteParams?: {[moduleName: string]: any};
+    locationTransform?: LocationTransform;
     storeOptions?: StoreOptions;
     renderToStream?: boolean;
   }
 ): Promise<{html: string | meduxCore.ReadableStream; data: any; ssrInitStoreKey: string}> {
-  appExports.history = createRouter(location, defaultRouteParams, routeRule, locationMap);
+  appExports.history = createRouter(location, locationTransform);
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
+  storeOptions.initData = {...storeOptions.initData, route: appExports.history.getRouteState()};
+  // storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
   return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, (store) => {
     appExports.store = store as any;
     Object.defineProperty(appExports, 'state', {
@@ -132,6 +126,17 @@ export function buildSSR(
   });
 }
 
+interface ElseProps {
+  elseView?: React.ReactNode;
+  children: React.ReactNode;
+}
+export const Else: React.FC<ElseProps> = ({children, elseView}) => {
+  if (!children || (Array.isArray(children) && children.every((item) => !item))) {
+    return <>{elseView}</>;
+  }
+  return <>{children}</>;
+};
+
 interface SwitchProps {
   elseView?: React.ReactNode;
   children: React.ReactNode;
@@ -140,7 +145,7 @@ export const Switch: React.FC<SwitchProps> = ({children, elseView}) => {
   if (!children || (Array.isArray(children) && children.every((item) => !item))) {
     return <>{elseView}</>;
   }
-  return <>{children}</>;
+  return <>{Array.isArray(children) ? children[0] : children}</>;
 };
 
 export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {

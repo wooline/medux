@@ -1,45 +1,8 @@
-import {RouteRule, BaseHistoryActions, setRouteConfig} from 'src/index';
+import {BaseHistoryActions, NativeHistory} from 'src/index';
 
-export class HistoryActions extends BaseHistoryActions<RouteParams> {
-  destroy() {}
-}
-export const nativeHistory: any = {
-  relaunch() {},
-};
+import nativeHistoryMock from './nativeHistory';
 
-export enum ViewNames {
-  'appMain' = 'app.Main',
-  'photosList' = 'photos.List',
-  'photosDetails' = 'photos.Details',
-  'commentsMain' = 'comments.Main',
-  'commentsList' = 'comments.List',
-  'commentsDetails' = 'comments.Details',
-  'commentsDetailsList' = 'comments.DetailsList',
-}
-
-export const routeRule: RouteRule = {
-  '/$': '@./photos',
-  '/': [
-    ViewNames.appMain,
-    {
-      '/photos': ViewNames.photosList,
-      '/photos/:itemId': [
-        ViewNames.photosDetails,
-        {
-          '/:articleType/:articleId/comments': [
-            ViewNames.commentsMain,
-            {
-              '/:articleType/:articleId/comments': ViewNames.commentsList,
-              '/:articleType/:articleId/comments/:itemId': ViewNames.commentsDetails,
-              '/:articleType/:articleId/comments/:itemId/:listSearch.page': ViewNames.commentsDetailsList,
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
+jest.mock('./nativeHistory');
 export interface PhotosRouteParams {
   itemId: string;
   _detailKey: string;
@@ -94,11 +57,51 @@ export const defaultRouteParams = {
 
 type RouteParams = typeof defaultRouteParams;
 
-setRouteConfig({escape: false});
+export class HistoryActions extends BaseHistoryActions<RouteParams> {
+  destroy() {}
+}
 
-export const historyActions = new HistoryActions(nativeHistory, defaultRouteParams, '/', routeRule);
-historyActions.setStore({
-  dispatch() {
-    return undefined;
+export const nativeHistory: NativeHistory = {
+  getLocation() {
+    return {
+      pathname: '/',
+      search: '',
+      hash: '',
+    };
   },
-});
+  parseUrl(url: string) {
+    if (!url) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: '',
+      };
+    }
+    const arr = url.split(/[?#]/);
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+    const [pathname, search = '', hash = ''] = arr;
+
+    return {
+      pathname,
+      search,
+      hash,
+    };
+  },
+  toUrl(location) {
+    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
+  },
+  push(location, key) {
+    nativeHistoryMock.push(location, key);
+  },
+  replace(location, key) {
+    nativeHistoryMock.replace(location, key);
+  },
+  relaunch(location, key) {
+    nativeHistoryMock.relaunch(location, key);
+  },
+  pop(location, n, key) {
+    nativeHistoryMock.pop(location, n, key);
+  },
+};

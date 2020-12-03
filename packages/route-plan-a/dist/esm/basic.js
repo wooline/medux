@@ -1,154 +1,124 @@
-import { config } from '@medux/core';
-import { compilePath } from './matchPath';
 export var routeConfig = {
   RSP: '|',
-  escape: true,
-  dateParse: false,
-  splitKey: 'q',
   historyMax: 10,
-  homeUrl: '/'
+  homeUri: '|home|{app:{}}'
 };
 export function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.escape !== undefined && (routeConfig.escape = conf.escape);
-  conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
-  conf.splitKey && (routeConfig.splitKey = conf.splitKey);
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUrl && (routeConfig.homeUrl = conf.homeUrl);
+  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
-export var RouteActionTypes = {
-  MRouteParams: 'RouteParams',
-  RouteChange: "medux" + config.NSP + "RouteChange",
-  BeforeRouteChange: "medux" + config.NSP + "BeforeRouteChange"
-};
-export function beforeRouteChangeAction(routeState) {
+export function locationToUri(location, key) {
+  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
+}
+
+function splitUri() {
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  var uri = args[0],
+      name = args[1];
+  var arr = uri.split(routeConfig.RSP, 3);
+  var index = {
+    key: 0,
+    tag: 1,
+    query: 2
+  };
+
+  if (name) {
+    return arr[index[name]];
+  }
+
+  return arr;
+}
+
+export function uriToLocation(uri) {
+  var _splitUri = splitUri(uri),
+      key = _splitUri[0],
+      tag = _splitUri[1],
+      query = _splitUri[2];
+
+  var location = {
+    tag: tag,
+    params: JSON.parse(query)
+  };
   return {
-    type: RouteActionTypes.BeforeRouteChange,
-    payload: [routeState]
+    key: key,
+    location: location
   };
 }
-export function routeChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
-export function routeParamsAction(moduleName, params, action) {
-  return {
-    type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
-    payload: [params, action]
-  };
-}
-export function checkLocation(location) {
-  var data = {
-    pathname: location.pathname || '',
-    search: location.search || '',
-    hash: location.hash || ''
-  };
-  data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
+export function buildHistoryStack(location, action, key, curData) {
+  var maxLength = routeConfig.historyMax;
+  var tag = location.tag;
+  var uri = locationToUri(location, key);
+  var history = curData.history,
+      stack = curData.stack;
+  var historyList = [].concat(history);
+  var stackList = [].concat(stack);
 
-  if (data.pathname !== '/') {
-    data.pathname = data.pathname.replace(/\/$/, '');
-  }
+  if (action === 'RELAUNCH') {
+    historyList = [uri];
+    stackList = [uri];
+  } else if (action === 'PUSH') {
+    historyList.unshift(uri);
 
-  data.search = ("?" + data.search).replace('??', '?');
-  data.hash = ("#" + data.hash).replace('##', '#');
+    if (historyList.length > maxLength) {
+      historyList.length = maxLength;
+    }
 
-  if (data.search === '?') {
-    data.search = '';
-  }
+    if (splitUri(stackList[0], 'tag') !== tag) {
+      stackList.unshift(uri);
 
-  if (data.hash === '#') {
-    data.hash = '';
-  }
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
+      }
+    } else {
+      stackList[0] = uri;
+    }
+  } else if (action === 'REPLACE') {
+    historyList[0] = uri;
+    stackList[0] = uri;
 
-  return data;
-}
-export function urlToLocation(url) {
-  url = ("/" + url).replace(/\/+/g, '/');
+    if (tag === splitUri(stackList[1], 'tag')) {
+      stackList.splice(1, 1);
+    }
 
-  if (!url) {
-    return {
-      pathname: '/',
-      search: '',
-      hash: ''
-    };
-  }
+    if (stackList.length > maxLength) {
+      stackList.length = maxLength;
+    }
+  } else if (action.startsWith('POP')) {
+    var n = parseInt(action.replace('POP', ''), 10) || 1;
+    var useStack = n > 1000;
 
-  var arr = url.split(/[?#]/);
+    if (useStack) {
+      historyList = [];
+      stackList.splice(0, n - 1000);
+    } else {
+      var arr = historyList.splice(0, n + 1, uri).reduce(function (pre, curUri) {
+        var ctag = splitUri(curUri, 'tag');
 
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
+        if (pre[pre.length - 1] !== ctag) {
+          pre.push(ctag);
+        }
 
-  var pathname = arr[0],
-      _arr$ = arr[1],
-      search = _arr$ === void 0 ? '' : _arr$,
-      _arr$2 = arr[2],
-      hash = _arr$2 === void 0 ? '' : _arr$2;
-  return {
-    pathname: pathname,
-    search: search && "?" + search,
-    hash: hash && "#" + hash
-  };
-}
-export function compileRule(routeRule, parentAbsoluteViewName, parentPaths, viewToPaths, viewToRule, ruleToKeys) {
-  if (parentAbsoluteViewName === void 0) {
-    parentAbsoluteViewName = '';
-  }
+        return pre;
+      }, []);
 
-  if (parentPaths === void 0) {
-    parentPaths = [];
-  }
-
-  if (viewToPaths === void 0) {
-    viewToPaths = {};
-  }
-
-  if (viewToRule === void 0) {
-    viewToRule = {};
-  }
-
-  if (ruleToKeys === void 0) {
-    ruleToKeys = {};
-  }
-
-  for (var _rule in routeRule) {
-    if (routeRule.hasOwnProperty(_rule)) {
-      var item = routeRule[_rule];
-
-      var _ref = typeof item === 'string' ? [item, null] : item,
-          _viewName = _ref[0],
-          pathConfig = _ref[1];
-
-      if (!ruleToKeys[_rule]) {
-        var _compilePath = compilePath(_rule, {
-          end: true,
-          strict: false,
-          sensitive: false
-        }),
-            keys = _compilePath.keys;
-
-        ruleToKeys[_rule] = keys.reduce(function (prev, cur) {
-          prev.push(cur.name);
-          return prev;
-        }, []);
+      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
+        arr.pop();
       }
 
-      var absoluteViewName = parentAbsoluteViewName + "/" + _viewName;
-      viewToRule[absoluteViewName] = _rule;
-      var paths = [].concat(parentPaths, [_viewName]);
-      viewToPaths[_viewName] = paths;
+      stackList.splice(0, arr.length, uri);
 
-      if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
+      if (tag === splitUri(stackList[1], 'tag')) {
+        stackList.splice(1, 1);
       }
     }
   }
 
   return {
-    viewToRule: viewToRule,
-    ruleToKeys: ruleToKeys,
-    viewToPaths: viewToPaths
+    history: historyList,
+    stack: stackList
   };
 }

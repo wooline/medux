@@ -2,177 +2,135 @@
 
 exports.__esModule = true;
 exports.setRouteConfig = setRouteConfig;
-exports.beforeRouteChangeAction = beforeRouteChangeAction;
-exports.routeChangeAction = routeChangeAction;
-exports.routeParamsAction = routeParamsAction;
-exports.checkLocation = checkLocation;
-exports.urlToLocation = urlToLocation;
-exports.compileRule = compileRule;
-exports.RouteActionTypes = exports.routeConfig = void 0;
-
-var _core = require("@medux/core");
-
-var _matchPath = require("./matchPath");
-
+exports.locationToUri = locationToUri;
+exports.uriToLocation = uriToLocation;
+exports.buildHistoryStack = buildHistoryStack;
+exports.routeConfig = void 0;
 var routeConfig = {
   RSP: '|',
-  escape: true,
-  dateParse: false,
-  splitKey: 'q',
   historyMax: 10,
-  homeUrl: '/'
+  homeUri: '|home|{app:{}}'
 };
 exports.routeConfig = routeConfig;
 
 function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.escape !== undefined && (routeConfig.escape = conf.escape);
-  conf.dateParse !== undefined && (routeConfig.dateParse = conf.dateParse);
-  conf.splitKey && (routeConfig.splitKey = conf.splitKey);
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUrl && (routeConfig.homeUrl = conf.homeUrl);
+  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
 
-var RouteActionTypes = {
-  MRouteParams: 'RouteParams',
-  RouteChange: "medux" + _core.config.NSP + "RouteChange",
-  BeforeRouteChange: "medux" + _core.config.NSP + "BeforeRouteChange"
-};
-exports.RouteActionTypes = RouteActionTypes;
+function locationToUri(location, key) {
+  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
+}
 
-function beforeRouteChangeAction(routeState) {
+function splitUri() {
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  var uri = args[0],
+      name = args[1];
+  var arr = uri.split(routeConfig.RSP, 3);
+  var index = {
+    key: 0,
+    tag: 1,
+    query: 2
+  };
+
+  if (name) {
+    return arr[index[name]];
+  }
+
+  return arr;
+}
+
+function uriToLocation(uri) {
+  var _splitUri = splitUri(uri),
+      key = _splitUri[0],
+      tag = _splitUri[1],
+      query = _splitUri[2];
+
+  var location = {
+    tag: tag,
+    params: JSON.parse(query)
+  };
   return {
-    type: RouteActionTypes.BeforeRouteChange,
-    payload: [routeState]
+    key: key,
+    location: location
   };
 }
 
-function routeChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
+function buildHistoryStack(location, action, key, curData) {
+  var maxLength = routeConfig.historyMax;
+  var tag = location.tag;
+  var uri = locationToUri(location, key);
+  var history = curData.history,
+      stack = curData.stack;
+  var historyList = [].concat(history);
+  var stackList = [].concat(stack);
 
-function routeParamsAction(moduleName, params, action) {
-  return {
-    type: "" + moduleName + _core.config.NSP + RouteActionTypes.MRouteParams,
-    payload: [params, action]
-  };
-}
+  if (action === 'RELAUNCH') {
+    historyList = [uri];
+    stackList = [uri];
+  } else if (action === 'PUSH') {
+    historyList.unshift(uri);
 
-function checkLocation(location) {
-  var data = {
-    pathname: location.pathname || '',
-    search: location.search || '',
-    hash: location.hash || ''
-  };
-  data.pathname = ("/" + data.pathname).replace(/\/+/g, '/');
+    if (historyList.length > maxLength) {
+      historyList.length = maxLength;
+    }
 
-  if (data.pathname !== '/') {
-    data.pathname = data.pathname.replace(/\/$/, '');
-  }
+    if (splitUri(stackList[0], 'tag') !== tag) {
+      stackList.unshift(uri);
 
-  data.search = ("?" + data.search).replace('??', '?');
-  data.hash = ("#" + data.hash).replace('##', '#');
+      if (stackList.length > maxLength) {
+        stackList.length = maxLength;
+      }
+    } else {
+      stackList[0] = uri;
+    }
+  } else if (action === 'REPLACE') {
+    historyList[0] = uri;
+    stackList[0] = uri;
 
-  if (data.search === '?') {
-    data.search = '';
-  }
+    if (tag === splitUri(stackList[1], 'tag')) {
+      stackList.splice(1, 1);
+    }
 
-  if (data.hash === '#') {
-    data.hash = '';
-  }
+    if (stackList.length > maxLength) {
+      stackList.length = maxLength;
+    }
+  } else if (action.startsWith('POP')) {
+    var n = parseInt(action.replace('POP', ''), 10) || 1;
+    var useStack = n > 1000;
 
-  return data;
-}
+    if (useStack) {
+      historyList = [];
+      stackList.splice(0, n - 1000);
+    } else {
+      var arr = historyList.splice(0, n + 1, uri).reduce(function (pre, curUri) {
+        var ctag = splitUri(curUri, 'tag');
 
-function urlToLocation(url) {
-  url = ("/" + url).replace(/\/+/g, '/');
+        if (pre[pre.length - 1] !== ctag) {
+          pre.push(ctag);
+        }
 
-  if (!url) {
-    return {
-      pathname: '/',
-      search: '',
-      hash: ''
-    };
-  }
+        return pre;
+      }, []);
 
-  var arr = url.split(/[?#]/);
-
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-
-  var pathname = arr[0],
-      _arr$ = arr[1],
-      search = _arr$ === void 0 ? '' : _arr$,
-      _arr$2 = arr[2],
-      hash = _arr$2 === void 0 ? '' : _arr$2;
-  return {
-    pathname: pathname,
-    search: search && "?" + search,
-    hash: hash && "#" + hash
-  };
-}
-
-function compileRule(routeRule, parentAbsoluteViewName, parentPaths, viewToPaths, viewToRule, ruleToKeys) {
-  if (parentAbsoluteViewName === void 0) {
-    parentAbsoluteViewName = '';
-  }
-
-  if (parentPaths === void 0) {
-    parentPaths = [];
-  }
-
-  if (viewToPaths === void 0) {
-    viewToPaths = {};
-  }
-
-  if (viewToRule === void 0) {
-    viewToRule = {};
-  }
-
-  if (ruleToKeys === void 0) {
-    ruleToKeys = {};
-  }
-
-  for (var _rule in routeRule) {
-    if (routeRule.hasOwnProperty(_rule)) {
-      var item = routeRule[_rule];
-
-      var _ref = typeof item === 'string' ? [item, null] : item,
-          _viewName = _ref[0],
-          pathConfig = _ref[1];
-
-      if (!ruleToKeys[_rule]) {
-        var _compilePath = (0, _matchPath.compilePath)(_rule, {
-          end: true,
-          strict: false,
-          sensitive: false
-        }),
-            keys = _compilePath.keys;
-
-        ruleToKeys[_rule] = keys.reduce(function (prev, cur) {
-          prev.push(cur.name);
-          return prev;
-        }, []);
+      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
+        arr.pop();
       }
 
-      var absoluteViewName = parentAbsoluteViewName + "/" + _viewName;
-      viewToRule[absoluteViewName] = _rule;
-      var paths = [].concat(parentPaths, [_viewName]);
-      viewToPaths[_viewName] = paths;
+      stackList.splice(0, arr.length, uri);
 
-      if (pathConfig) {
-        compileRule(pathConfig, absoluteViewName, paths, viewToPaths, viewToRule, ruleToKeys);
+      if (tag === splitUri(stackList[1], 'tag')) {
+        stackList.splice(1, 1);
       }
     }
   }
 
   return {
-    viewToRule: viewToRule,
-    ruleToKeys: ruleToKeys,
-    viewToPaths: viewToPaths
+    history: historyList,
+    stack: stackList
   };
 }
