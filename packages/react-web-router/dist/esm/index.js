@@ -1503,12 +1503,10 @@ var TaskCounter = function (_PDispatcher) {
 }(PDispatcher);
 
 var config = {
-  VSP: '.',
   NSP: '.',
   MSP: ','
 };
 function setConfig(_config) {
-  _config.VSP && (config.VSP = _config.VSP);
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
@@ -2803,15 +2801,10 @@ function getRootModuleAPI(data) {
 
           actionNames[actionName] = moduleName + config.NSP + actionName;
         });
-        var viewNames = {};
-        Object.keys(obj.viewNames).forEach(function (viewName) {
-          viewNames[viewName] = moduleName + config.VSP + viewName;
-        });
         var moduleFacade = {
           name: moduleName,
           actions: actions,
-          actionNames: actionNames,
-          viewNames: viewNames
+          actionNames: actionNames
         };
         prev[moduleName] = moduleFacade;
         return prev;
@@ -2832,11 +2825,6 @@ function getRootModuleAPI(data) {
           if (!cacheData[moduleName]) {
             cacheData[moduleName] = {
               name: moduleName,
-              viewNames: new Proxy({}, {
-                get: function get(__, viewName) {
-                  return moduleName + config.VSP + viewName;
-                }
-              }),
               actionNames: new Proxy({}, {
                 get: function get(__, actionName) {
                   return moduleName + config.NSP + actionName;
@@ -3779,10 +3767,10 @@ function assignDefaultData(data, def) {
   }, {});
 }
 
-function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
+function nativeLocationToMeduxLocation(nativeLocation, defaultData, key, parse) {
   var search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
   var hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  var params = deepExtend(search ? JSON.parse(search) : {}, hash ? JSON.parse(hash) : undefined);
+  var params = deepExtend(search ? parse(search) : {}, hash ? parse(hash) : undefined);
   var pathname = ("/" + nativeLocation.pathname).replace(/\/+/g, '/');
   return {
     tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -3790,13 +3778,13 @@ function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
   };
 }
 
-function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
+function meduxLocationToNativeLocation(meduxLocation, defaultData, key, stringify) {
   var _extractHashData = extractHashData(excludeDefaultData(meduxLocation.params, defaultData)),
       search = _extractHashData.search,
       hash = _extractHashData.hash;
 
-  var searchStr = search ? JSON.stringify(search) : '';
-  var hashStr = hash ? JSON.stringify(hash) : '';
+  var searchStr = search ? stringify(search) : '';
+  var hashStr = hash ? stringify(hash) : '';
   var pathname = ("/" + meduxLocation.tag).replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -3806,7 +3794,15 @@ function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
 }
 
 var inCache = {};
-function createWebLocationTransform(defaultData, locationMap, key) {
+function createWebLocationTransform(defaultData, locationMap, serialization, key) {
+  if (serialization === void 0) {
+    serialization = JSON;
+  }
+
+  if (key === void 0) {
+    key = '';
+  }
+
   return {
     in: function _in(nativeLocation) {
       var pathname = nativeLocation.pathname,
@@ -3818,7 +3814,7 @@ function createWebLocationTransform(defaultData, locationMap, key) {
         return inCache[url];
       }
 
-      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key);
+      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key, serialization.parse);
       var location = locationMap ? locationMap.in(data) : data;
       var urls = Object.keys(inCache);
 
@@ -3845,7 +3841,7 @@ function createWebLocationTransform(defaultData, locationMap, key) {
         };
       }
 
-      return meduxLocationToNativeLocation(data, defaultData || {}, key);
+      return meduxLocationToNativeLocation(data, defaultData || {}, key, serialization.stringify);
     }
   };
 }

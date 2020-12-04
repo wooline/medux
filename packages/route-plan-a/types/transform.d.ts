@@ -7,4 +7,7 @@ export declare type LocationMap<P extends Params> = {
     in: (location: Location<any>) => Location<P>;
     out: (location: Location<P>) => Location<any>;
 };
-export declare function createWebLocationTransform<P extends Params>(defaultData?: P, locationMap?: LocationMap<P>, key?: string): LocationTransform<P, WebNativeLocation>;
+export declare function createWebLocationTransform<P extends Params>(defaultData?: P, locationMap?: LocationMap<P>, serialization?: {
+    parse(str: string): any;
+    stringify(data: any): string;
+}, key?: string): LocationTransform<P, WebNativeLocation>;

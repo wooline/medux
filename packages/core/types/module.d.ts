@@ -6,9 +6,6 @@ declare type ModuleFacade<M extends CommonModule> = {
     name: string;
     views: M['default']['views'];
     viewName: keyof M['default']['views'];
-    viewNames: {
-        [key in keyof M['default']['views']]: string;
-    };
     state: M['default']['initState'];
     actions: M['default']['actions'];
     actionNames: {
@@ -21,7 +18,7 @@ export declare type RootModuleFacade<G extends {
     [K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>;
 };
 export declare type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {
-    [key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames' | 'viewNames'>;
+    [key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames'>;
 };
 export declare type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {
     [key in keyof A]: A[key]['state'];
@@ -29,9 +26,6 @@ export declare type RootModuleState<A extends RootModuleFacade = RootModuleFacad
 export declare type LoadView<A extends RootModuleFacade = {}, Options = any, Comp = any> = <M extends keyof A, V extends A[M]['viewName']>(moduleName: M, viewName: V, options?: Options, loading?: Comp, error?: Comp) => A[M]['views'][V];
 export declare function getRootModuleAPI(data?: {
     [moduleName: string]: {
-        viewNames: {
-            [key: string]: string;
-        };
         actionNames: {
             [key: string]: string;
         };

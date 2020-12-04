@@ -9,11 +9,9 @@ import {env, isServerEnv} from './env';
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
 export const config: {
-  VSP: string;
   NSP: string;
   MSP: string;
 } = {
-  VSP: '.',
   NSP: '.',
   MSP: ',',
 };
@@ -23,8 +21,7 @@ export const config: {
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
-export function setConfig(_config: {NSP?: string; VSP?: string; MSP?: string}) {
-  _config.VSP && (config.VSP = _config.VSP);
+export function setConfig(_config: {NSP?: string; MSP?: string}) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
 }
@@ -68,7 +65,7 @@ export type ModuleGetter = {
   [moduleName: string]: () => CommonModule | Promise<CommonModule>;
 };
 export interface FacadeMap {
-  [moduleName: string]: {name: string; actions: ActionCreatorList; actionNames: {[key: string]: string}; viewNames: {[key: string]: string}};
+  [moduleName: string]: {name: string; actions: ActionCreatorList; actionNames: {[key: string]: string}};
 }
 export const MetaData: {
   facadeMap: FacadeMap;

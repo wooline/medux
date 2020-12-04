@@ -42,15 +42,10 @@ function getRootModuleAPI(data) {
 
           actionNames[actionName] = moduleName + _basic.config.NSP + actionName;
         });
-        var viewNames = {};
-        Object.keys(obj.viewNames).forEach(function (viewName) {
-          viewNames[viewName] = moduleName + _basic.config.VSP + viewName;
-        });
         var moduleFacade = {
           name: moduleName,
           actions: actions,
-          actionNames: actionNames,
-          viewNames: viewNames
+          actionNames: actionNames
         };
         prev[moduleName] = moduleFacade;
         return prev;
@@ -71,11 +66,6 @@ function getRootModuleAPI(data) {
           if (!cacheData[moduleName]) {
             cacheData[moduleName] = {
               name: moduleName,
-              viewNames: new Proxy({}, {
-                get: function get(__, viewName) {
-                  return moduleName + _basic.config.VSP + viewName;
-                }
-              }),
               actionNames: new Proxy({}, {
                 get: function get(__, actionName) {
                   return moduleName + _basic.config.NSP + actionName;

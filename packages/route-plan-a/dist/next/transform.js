@@ -88,10 +88,10 @@ function assignDefaultData(data, def) {
   }, {});
 }
 
-function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
+function nativeLocationToMeduxLocation(nativeLocation, defaultData, key, parse) {
   const search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
   const hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  const params = deepExtend(search ? JSON.parse(search) : {}, hash ? JSON.parse(hash) : undefined);
+  const params = deepExtend(search ? parse(search) : {}, hash ? parse(hash) : undefined);
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
   return {
     tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -99,13 +99,13 @@ function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
   };
 }
 
-function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
+function meduxLocationToNativeLocation(meduxLocation, defaultData, key, stringify) {
   const {
     search,
     hash
   } = extractHashData(excludeDefaultData(meduxLocation.params, defaultData));
-  const searchStr = search ? JSON.stringify(search) : '';
-  const hashStr = hash ? JSON.stringify(hash) : '';
+  const searchStr = search ? stringify(search) : '';
+  const hashStr = hash ? stringify(hash) : '';
   const pathname = `/${meduxLocation.tag}`.replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -115,7 +115,7 @@ function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
 }
 
 const inCache = {};
-export function createWebLocationTransform(defaultData, locationMap, key) {
+export function createWebLocationTransform(defaultData, locationMap, serialization = JSON, key = '') {
   return {
     in(nativeLocation) {
       const {
@@ -129,7 +129,7 @@ export function createWebLocationTransform(defaultData, locationMap, key) {
         return inCache[url];
       }
 
-      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key);
+      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key, serialization.parse);
       const location = locationMap ? locationMap.in(data) : data;
       const urls = Object.keys(inCache);
 
@@ -156,7 +156,7 @@ export function createWebLocationTransform(defaultData, locationMap, key) {
         };
       }
 
-      return meduxLocationToNativeLocation(data, defaultData || {}, key);
+      return meduxLocationToNativeLocation(data, defaultData || {}, key, serialization.stringify);
     }
 
   };

@@ -17,14 +17,12 @@ var _sprite = require("./sprite");
 var _env = require("./env");
 
 var config = {
-  VSP: '.',
   NSP: '.',
   MSP: ','
 };
 exports.config = config;
 
 function setConfig(_config) {
-  _config.VSP && (config.VSP = _config.VSP);
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
 }

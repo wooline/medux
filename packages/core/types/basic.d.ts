@@ -1,13 +1,11 @@
 import { Unsubscribe } from 'redux';
 import { LoadingState } from './sprite';
 export declare const config: {
-    VSP: string;
     NSP: string;
     MSP: string;
 };
 export declare function setConfig(_config: {
     NSP?: string;
-    VSP?: string;
     MSP?: string;
 }): void;
 export interface CommonModule<ModuleName extends string = string> {
@@ -36,9 +34,6 @@ export interface FacadeMap {
         name: string;
         actions: ActionCreatorList;
         actionNames: {
-            [key: string]: string;
-        };
-        viewNames: {
             [key: string]: string;
         };
     };

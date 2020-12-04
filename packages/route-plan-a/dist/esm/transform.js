@@ -88,10 +88,10 @@ function assignDefaultData(data, def) {
   }, {});
 }
 
-function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
+function nativeLocationToMeduxLocation(nativeLocation, defaultData, key, parse) {
   var search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
   var hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  var params = deepExtend(search ? JSON.parse(search) : {}, hash ? JSON.parse(hash) : undefined);
+  var params = deepExtend(search ? parse(search) : {}, hash ? parse(hash) : undefined);
   var pathname = ("/" + nativeLocation.pathname).replace(/\/+/g, '/');
   return {
     tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -99,13 +99,13 @@ function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
   };
 }
 
-function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
+function meduxLocationToNativeLocation(meduxLocation, defaultData, key, stringify) {
   var _extractHashData = extractHashData(excludeDefaultData(meduxLocation.params, defaultData)),
       search = _extractHashData.search,
       hash = _extractHashData.hash;
 
-  var searchStr = search ? JSON.stringify(search) : '';
-  var hashStr = hash ? JSON.stringify(hash) : '';
+  var searchStr = search ? stringify(search) : '';
+  var hashStr = hash ? stringify(hash) : '';
   var pathname = ("/" + meduxLocation.tag).replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -115,7 +115,15 @@ function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
 }
 
 var inCache = {};
-export function createWebLocationTransform(defaultData, locationMap, key) {
+export function createWebLocationTransform(defaultData, locationMap, serialization, key) {
+  if (serialization === void 0) {
+    serialization = JSON;
+  }
+
+  if (key === void 0) {
+    key = '';
+  }
+
   return {
     in: function _in(nativeLocation) {
       var pathname = nativeLocation.pathname,
@@ -127,7 +135,7 @@ export function createWebLocationTransform(defaultData, locationMap, key) {
         return inCache[url];
       }
 
-      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key);
+      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key, serialization.parse);
       var location = locationMap ? locationMap.in(data) : data;
       var urls = Object.keys(inCache);
 
@@ -154,7 +162,7 @@ export function createWebLocationTransform(defaultData, locationMap, key) {
         };
       }
 
-      return meduxLocationToNativeLocation(data, defaultData || {}, key);
+      return meduxLocationToNativeLocation(data, defaultData || {}, key, serialization.stringify);
     }
   };
 }

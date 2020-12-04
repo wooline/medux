@@ -16,7 +16,6 @@ type ModuleFacade<M extends CommonModule> = {
   name: string;
   views: M['default']['views'];
   viewName: keyof M['default']['views'];
-  viewNames: {[key in keyof M['default']['views']]: string};
   state: M['default']['initState'];
   actions: M['default']['actions'];
   actionNames: {[key in keyof M['default']['actions']]: string};
@@ -27,7 +26,7 @@ export type RootModuleFacade<
   } = ModuleGetter
 > = {[K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>};
 
-export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames' | 'viewNames'>};
+export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames'>};
 
 export type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: A[key]['state']};
 
@@ -39,7 +38,7 @@ export type LoadView<A extends RootModuleFacade = {}, Options = any, Comp = any>
   error?: Comp
 ) => A[M]['views'][V];
 
-export function getRootModuleAPI(data?: {[moduleName: string]: {viewNames: {[key: string]: string}; actionNames: {[key: string]: string}}}): RootModuleAPI<any> {
+export function getRootModuleAPI(data?: {[moduleName: string]: {actionNames: {[key: string]: string}}}): RootModuleAPI<any> {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
@@ -50,11 +49,7 @@ export function getRootModuleAPI(data?: {[moduleName: string]: {viewNames: {[key
           actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
           actionNames[actionName] = moduleName + config.NSP + actionName;
         });
-        const viewNames: {[viewName: string]: string} = {};
-        Object.keys(obj.viewNames).forEach((viewName) => {
-          viewNames[viewName] = moduleName + config.VSP + viewName;
-        });
-        const moduleFacade = {name: moduleName, actions, actionNames, viewNames};
+        const moduleFacade = {name: moduleName, actions, actionNames};
         prev[moduleName] = moduleFacade;
         return prev;
       }, {} as FacadeMap);
@@ -74,14 +69,6 @@ export function getRootModuleAPI(data?: {[moduleName: string]: {viewNames: {[key
             if (!cacheData[moduleName]) {
               cacheData[moduleName] = {
                 name: moduleName,
-                viewNames: new Proxy(
-                  {},
-                  {
-                    get(__, viewName: string) {
-                      return moduleName + config.VSP + viewName;
-                    },
-                  }
-                ),
                 actionNames: new Proxy(
                   {},
                   {
