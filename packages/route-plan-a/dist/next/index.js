@@ -1,10 +1,11 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer } from '@medux/core';
-import assignDeep from './deep-extend';
-import { buildHistoryStack, routeConfig, uriToLocation, locationToUri } from './basic';
-import { createLocationTransform } from './transform';
-export { createLocationTransform } from './transform';
+import { deepExtend } from './deep-extend';
+import { buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation } from './basic';
+export { deepExtend } from './deep-extend';
+export { createWebLocationTransform } from './transform';
+export { PathnameRules, compileRule } from './matchPath';
 export { setRouteConfig } from './basic';
 export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   class RouteModuleHandlers extends _CoreModuleHandlers {
@@ -24,14 +25,14 @@ export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreMod
       key: "Init",
       value: function Init(initState) {
         const routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? Object.assign({}, initState, routeParams) : initState;
+        return routeParams ? deepExtend({}, initState, routeParams) : initState;
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        return Object.assign({}, this.state, payload);
+        return deepExtend({}, this.state, payload);
       }
     }]
   };
@@ -92,6 +93,7 @@ export const routeReducer = (state, action) => {
 export class BaseHistoryActions {
   constructor(nativeHistory, locationTransform) {
     this.nativeHistory = nativeHistory;
+    this.locationTransform = locationTransform;
 
     _defineProperty(this, "_tid", 0);
 
@@ -99,11 +101,8 @@ export class BaseHistoryActions {
 
     _defineProperty(this, "_startupUri", void 0);
 
-    _defineProperty(this, "locationTransform", void 0);
-
     _defineProperty(this, "store", void 0);
 
-    this.locationTransform = locationTransform || createLocationTransform();
     const location = this.locationTransform.in(nativeHistory.getLocation());
 
     const key = this._createKey();
@@ -111,7 +110,8 @@ export class BaseHistoryActions {
     const routeState = this.locationToRouteState(location, 'RELAUNCH', key);
     this._routeState = routeState;
     this._startupUri = locationToUri(location, key);
-    nativeHistory.relaunch(this.locationTransform.out(location), key);
+    const nativeLocation = extractNativeLocation(routeState);
+    nativeHistory.relaunch(nativeLocation, key);
   }
 
   getRouteState() {
@@ -145,24 +145,24 @@ export class BaseHistoryActions {
     }
 
     const {
-      tag = '/',
-      extendParams
+      tag
     } = data;
-    const params = assignDeep({}, extendParams === true ? this._routeState.params : extendParams, data.params);
+    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
     return {
-      tag,
+      tag: tag || this._routeState.tag || '/',
       params
     };
   }
 
   locationToUrl(data) {
     const {
-      tag = '',
-      extendParams
+      tag
     } = data;
-    const params = assignDeep({}, extendParams === true ? this._routeState.params : extendParams, data.params);
+    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
     const nativeLocation = this.locationTransform.out({
-      tag,
+      tag: tag || this._routeState.tag || '/',
       params
     });
     return this.nativeHistory.toUrl(nativeLocation);
@@ -193,7 +193,7 @@ export class BaseHistoryActions {
     await this.store.dispatch(routeChangeAction(routeState));
 
     if (callNative) {
-      const nativeLocation = this.locationTransform.out(location);
+      const nativeLocation = extractNativeLocation(routeState);
 
       if (typeof callNative === 'number') {
         this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative, key);

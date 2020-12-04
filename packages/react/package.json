@@ -37,14 +37,14 @@
   "peerDependencies": {
     "@types/react": "^16.8.0",
     "@types/react-dom": "^16.8.0",
-    "@types/react-redux": "^7.0.0",
     "react": "^16.8.0",
-    "react-dom": "^16.8.0",
-    "react-redux": "^7.0.0"
+    "react-dom": "^16.8.0"
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^1.1.1-y.0"
+    "@medux/core": "^1.1.1-y.0",
+    "@types/react-redux": "^7.0.0",
+    "react-redux": "^7.0.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

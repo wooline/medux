@@ -1,7 +1,7 @@
 import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseHistoryActions } from '@medux/route-plan-a';
+import { BaseHistoryActions, createWebLocationTransform } from '@medux/route-plan-a';
 import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
 import { env } from '@medux/core';
 export var WebNativeHistory = function () {
@@ -62,8 +62,8 @@ export var WebNativeHistory = function () {
         hash = _this$history$locatio4 === void 0 ? '' : _this$history$locatio4;
     return {
       pathname: pathname,
-      search: search.replace('?', ''),
-      hash: hash.replace('#', '')
+      search: decodeURIComponent(search).replace('?', ''),
+      hash: decodeURIComponent(hash).replace('#', '')
     };
   };
 
@@ -106,7 +106,7 @@ export var WebNativeHistory = function () {
   };
 
   _proto.toUrl = function toUrl(location) {
-    return [location.pathname, location.search && "?" + encodeURIComponent(location.search), location.hash && "#" + encodeURIComponent(location.hash)].join('');
+    return [location.pathname, location.search && "?" + location.search, location.hash && "#" + location.hash].join('');
   };
 
   _proto.block = function block(blocker) {
@@ -155,7 +155,7 @@ export var HistoryActions = function (_BaseHistoryActions) {
   function HistoryActions(nativeHistory, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform || createWebLocationTransform()) || this;
     _this2.nativeHistory = nativeHistory;
 
     _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);

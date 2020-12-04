@@ -1,4 +1,4 @@
-import assignDeep from './deep-extend';
+import { deepExtend } from './deep-extend';
 import { ruleToPathname } from './matchPath';
 
 function extractHashData(params) {
@@ -83,7 +83,7 @@ function excludeDefaultData(data, def, filterEmpty) {
 
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce((params, moduleName) => {
-    params[moduleName] = def[moduleName] ? assignDeep({}, def[moduleName], data[moduleName]) : data[moduleName];
+    params[moduleName] = def[moduleName] ? deepExtend({}, def[moduleName], data[moduleName]) : data[moduleName];
     return params;
   }, {});
 }
@@ -91,7 +91,7 @@ function assignDefaultData(data, def) {
 function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
   const search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
   const hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  const params = Object.assign({}, search ? JSON.parse(search) : undefined, hash ? JSON.parse(hash) : undefined);
+  const params = deepExtend(search ? JSON.parse(search) : {}, hash ? JSON.parse(hash) : undefined);
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
   return {
     tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -114,11 +114,31 @@ function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
   };
 }
 
-export function createLocationTransform(defaultData = {}, locationMap, key) {
+const inCache = {};
+export function createWebLocationTransform(defaultData, locationMap, key) {
   return {
     in(nativeLocation) {
-      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData, key);
-      return locationMap ? locationMap.in(data) : data;
+      const {
+        pathname,
+        search,
+        hash
+      } = nativeLocation;
+      const url = `${pathname}?${search}#${hash}`;
+
+      if (inCache[url]) {
+        return inCache[url];
+      }
+
+      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key);
+      const location = locationMap ? locationMap.in(data) : data;
+      const urls = Object.keys(inCache);
+
+      if (urls.length > 1000) {
+        delete inCache[urls[0]];
+      }
+
+      inCache[url] = location;
+      return location;
     },
 
     out(meduxLocation) {
@@ -136,7 +156,7 @@ export function createLocationTransform(defaultData = {}, locationMap, key) {
         };
       }
 
-      return meduxLocationToNativeLocation(data, defaultData, key);
+      return meduxLocationToNativeLocation(data, defaultData || {}, key);
     }
 
   };

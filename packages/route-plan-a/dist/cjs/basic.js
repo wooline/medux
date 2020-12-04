@@ -2,6 +2,7 @@
 
 exports.__esModule = true;
 exports.setRouteConfig = setRouteConfig;
+exports.extractNativeLocation = extractNativeLocation;
 exports.locationToUri = locationToUri;
 exports.uriToLocation = uriToLocation;
 exports.buildHistoryStack = buildHistoryStack;
@@ -17,6 +18,14 @@ function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
   conf.homeUri && (routeConfig.homeUri = conf.homeUri);
+}
+
+function extractNativeLocation(routeState) {
+  var data = Object.assign({}, routeState);
+  ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach(function (key) {
+    delete data[key];
+  });
+  return data;
 }
 
 function locationToUri(location, key) {

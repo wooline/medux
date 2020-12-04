@@ -1,4 +1,4 @@
-import assignDeep from './deep-extend';
+import { deepExtend } from './deep-extend';
 import { ruleToPathname } from './matchPath';
 
 function extractHashData(params) {
@@ -83,7 +83,7 @@ function excludeDefaultData(data, def, filterEmpty) {
 
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce(function (params, moduleName) {
-    params[moduleName] = def[moduleName] ? assignDeep({}, def[moduleName], data[moduleName]) : data[moduleName];
+    params[moduleName] = def[moduleName] ? deepExtend({}, def[moduleName], data[moduleName]) : data[moduleName];
     return params;
   }, {});
 }
@@ -91,7 +91,7 @@ function assignDefaultData(data, def) {
 function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
   var search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
   var hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  var params = Object.assign({}, search ? JSON.parse(search) : undefined, hash ? JSON.parse(hash) : undefined);
+  var params = deepExtend(search ? JSON.parse(search) : {}, hash ? JSON.parse(hash) : undefined);
   var pathname = ("/" + nativeLocation.pathname).replace(/\/+/g, '/');
   return {
     tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -114,23 +114,37 @@ function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
   };
 }
 
-export function createLocationTransform(defaultData, locationMap, key) {
-  if (defaultData === void 0) {
-    defaultData = {};
-  }
-
+var inCache = {};
+export function createWebLocationTransform(defaultData, locationMap, key) {
   return {
     in: function _in(nativeLocation) {
-      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData, key);
-      return locationMap ? locationMap.in(data) : data;
+      var pathname = nativeLocation.pathname,
+          search = nativeLocation.search,
+          hash = nativeLocation.hash;
+      var url = pathname + "?" + search + "#" + hash;
+
+      if (inCache[url]) {
+        return inCache[url];
+      }
+
+      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key);
+      var location = locationMap ? locationMap.in(data) : data;
+      var urls = Object.keys(inCache);
+
+      if (urls.length > 1000) {
+        delete inCache[urls[0]];
+      }
+
+      inCache[url] = location;
+      return location;
     },
     out: function out(meduxLocation) {
       var data = meduxLocation;
 
       if (locationMap) {
-        var location = locationMap.out(meduxLocation);
+        var _location = locationMap.out(meduxLocation);
 
-        var _ruleToPathname = ruleToPathname(location.tag, location.params),
+        var _ruleToPathname = ruleToPathname(_location.tag, _location.params),
             pathname = _ruleToPathname.pathname,
             params = _ruleToPathname.params;
 
@@ -140,7 +154,7 @@ export function createLocationTransform(defaultData, locationMap, key) {
         };
       }
 
-      return meduxLocationToNativeLocation(data, defaultData, key);
+      return meduxLocationToNativeLocation(data, defaultData || {}, key);
     }
   };
 }

@@ -1,11 +1,11 @@
-function deepCloneArray(arr) {
+function deepCloneArray(optimize, arr) {
   const clone = [];
   arr.forEach(function (item, index) {
     if (typeof item === 'object' && item !== null) {
       if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(item);
+        clone[index] = deepCloneArray(optimize, item);
       } else {
-        clone[index] = deepExtend({}, item);
+        clone[index] = __deepExtend(optimize, {}, item);
       }
     } else {
       clone[index] = item;
@@ -14,20 +14,29 @@ function deepCloneArray(arr) {
   return clone;
 }
 
-function deepExtend(...rest) {
-  if (rest.length < 1 || typeof rest[0] !== 'object') {
+function __deepExtend(optimize, target, ...args) {
+  if (typeof target !== 'object') {
     return false;
   }
 
-  if (rest.length < 2) {
-    return rest[0];
+  if (args.length < 1) {
+    return target;
   }
 
-  const target = rest[0];
-  const args = rest.slice(1);
   let val;
   let src;
-  args.forEach(function (obj) {
+  args.forEach(function (obj, index) {
+    let lastArg = false;
+    let last2Arg = null;
+
+    if (optimize === null) {
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+    }
+
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
     }
@@ -39,15 +48,15 @@ function deepExtend(...rest) {
       if (val === target) {} else if (typeof val !== 'object' || val === null) {
         target[key] = val;
       } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(val);
+        target[key] = deepCloneArray(lastArg, val);
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = deepExtend({}, val);
+        target[key] = optimize || lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
       } else {
-        target[key] = deepExtend(src, val);
+        target[key] = __deepExtend(lastArg, src, val);
       }
     });
   });
   return target;
 }
 
-export default deepExtend;
+export const deepExtend = __deepExtend.bind(null, null);

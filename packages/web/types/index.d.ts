@@ -1,20 +1,25 @@
-import { BaseHistoryActions, NativeLocation, NativeHistory, LocationTransform, Params } from '@medux/route-plan-a';
+import { BaseHistoryActions, NativeHistory } from '@medux/route-plan-a';
 import { History, Location as HistoryLocation } from 'history';
-export declare class WebNativeHistory implements NativeHistory {
+import { RootModuleFacade } from '@medux/core';
+import type { RootState as BaseRootState, Params, RouteState as BaseRouteState, LocationTransform as BaseLocationTransform, WebNativeLocation } from '@medux/route-plan-a';
+export declare type RouteState<P extends Params> = BaseRouteState<P, WebNativeLocation>;
+export declare type RootState<A extends RootModuleFacade, P extends Params> = BaseRootState<A, P, WebNativeLocation>;
+export declare type LocationTransform<P extends Params> = BaseLocationTransform<P, WebNativeLocation>;
+export declare class WebNativeHistory implements NativeHistory<WebNativeLocation> {
     history: History<never>;
     constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string);
-    getLocation(): NativeLocation;
+    getLocation(): WebNativeLocation;
     getUrl(): string;
-    parseUrl(url: string): NativeLocation;
-    toUrl(location: NativeLocation): string;
+    parseUrl(url: string): WebNativeLocation;
+    toUrl(location: WebNativeLocation): string;
     block(blocker: (url: string, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void): import("history").UnregisterCallback;
     getKey(location: HistoryLocation): string;
-    push(location: NativeLocation, key: string): void;
-    replace(location: NativeLocation, key: string): void;
-    relaunch(location: NativeLocation, key: string): void;
-    pop(location: NativeLocation, n: number, key: string): void;
+    push(location: WebNativeLocation, key: string): void;
+    replace(location: WebNativeLocation, key: string): void;
+    relaunch(location: WebNativeLocation, key: string): void;
+    pop(location: WebNativeLocation, n: number, key: string): void;
 }
-export declare class HistoryActions<P extends Params = Params> extends BaseHistoryActions<P> {
+export declare class HistoryActions<P extends Params = Params> extends BaseHistoryActions<P, WebNativeLocation> {
     protected nativeHistory: WebNativeHistory;
     private _unlistenHistory;
     private _timer;

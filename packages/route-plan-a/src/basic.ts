@@ -28,37 +28,43 @@ export type Params = {[moduleName: string]: {[key: string]: any} | undefined};
 //   search: string;
 // }
 
-export interface NativeLocation {
+export interface NativeLocation {}
+
+export interface WebNativeLocation extends NativeLocation {
   pathname: string;
   search: string;
   hash: string;
 }
-
 export interface Location<P extends Params = Params> {
   tag: string;
   params: P;
 }
 
-export type RouteState<P extends Params = Params> = Location<P> & {
-  pathname: string;
-  search: string;
-  hash: string;
-  action: HistoryAction;
-  key: string;
-  history: string[];
-  stack: string[];
+export type RouteState<P extends Params, NL extends NativeLocation> = Location<P> &
+  NL & {
+    action: HistoryAction;
+    key: string;
+    history: string[];
+    stack: string[];
+  };
+
+export type RouteRootState<P extends Params, NL extends NativeLocation> = CoreRootState & {
+  route: RouteState<P, NL>;
 };
 
-export type RouteRootState<P extends Params = Params> = CoreRootState & {
-  route: RouteState<P>;
-};
-
-export type RootState<A extends RootModuleFacade, P extends Params> = {
-  route: RouteState<P>;
+export type RootState<A extends RootModuleFacade, P extends Params, NL extends NativeLocation> = {
+  route: RouteState<P, NL>;
 } & {[M in keyof A]?: A[M]['state']};
 
 type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
+export function extractNativeLocation<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>): NL {
+  const data = {...routeState};
+  ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach((key) => {
+    delete data[key];
+  });
+  return data;
+}
 export interface RoutePayload<P extends Params = Params> {
   tag?: string;
   params?: DeepPartial<P>;

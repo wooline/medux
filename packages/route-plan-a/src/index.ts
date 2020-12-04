@@ -1,16 +1,17 @@
 import {Middleware, Reducer} from 'redux';
 import {CoreModuleHandlers, CoreModuleState, config, reducer} from '@medux/core';
-import assignDeep from './deep-extend';
-import {buildHistoryStack, routeConfig, uriToLocation, locationToUri} from './basic';
-import {createLocationTransform} from './transform';
+import {deepExtend} from './deep-extend';
+import {buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation} from './basic';
 
 import type {LocationTransform} from './transform';
-import type {Params, Location, NativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
+import type {Params, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
 
-export {createLocationTransform} from './transform';
+export {deepExtend} from './deep-extend';
+export {createWebLocationTransform} from './transform';
+export {PathnameRules, compileRule} from './matchPath';
 export {setRouteConfig} from './basic';
 export type {LocationMap, LocationTransform} from './transform';
-export type {Params, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload} from './basic';
+export type {Params, Location, NativeLocation, WebNativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload} from './basic';
 
 interface Store {
   dispatch(action: {type: string}): any;
@@ -20,15 +21,12 @@ export class RouteModuleHandlers<S extends CoreModuleState, R extends Record<str
   @reducer
   public Init(initState: S): S {
     const routeParams = this.rootState.route.params[this.moduleName];
-    return routeParams ? {...initState, ...routeParams} : initState;
+    return routeParams ? deepExtend({}, initState, routeParams) : initState;
   }
 
   @reducer
   public RouteParams(payload: Partial<S>): S {
-    return {
-      ...this.state,
-      ...payload,
-    };
+    return deepExtend({}, this.state, payload);
   }
 }
 export const RouteActionTypes = {
@@ -37,7 +35,7 @@ export const RouteActionTypes = {
   BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`,
 };
 
-export function beforeRouteChangeAction(routeState: RouteState) {
+export function beforeRouteChangeAction<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
   return {
     type: RouteActionTypes.BeforeRouteChange,
     payload: [routeState],
@@ -51,7 +49,7 @@ export function routeParamsAction(moduleName: string, params: any, action: Histo
   };
 }
 
-export function routeChangeAction(routeState: RouteState) {
+export function routeChangeAction<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
   return {
     type: RouteActionTypes.RouteChange,
     payload: [routeState],
@@ -60,7 +58,7 @@ export function routeChangeAction(routeState: RouteState) {
 
 export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (action) => {
   if (action.type === RouteActionTypes.RouteChange) {
-    const routeState: RouteState = action.payload[0];
+    const routeState: RouteState<any, any> = action.payload[0];
     const rootRouteParams = routeState.params;
     const rootState = getState();
     Object.keys(rootRouteParams).forEach((moduleName) => {
@@ -74,45 +72,43 @@ export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (
   }
   return next(action);
 };
-export const routeReducer: Reducer = (state: RouteState, action) => {
+export const routeReducer: Reducer = (state: RouteState<any, any>, action) => {
   if (action.type === RouteActionTypes.RouteChange) {
     return action.payload[0];
   }
   return state;
 };
 
-export interface NativeHistory {
-  getLocation(): NativeLocation;
-  parseUrl(url: string): NativeLocation;
-  toUrl(location: NativeLocation): string;
-  push(location: NativeLocation, key: string): void;
-  replace(location: NativeLocation, key: string): void;
-  relaunch(location: NativeLocation, key: string): void;
-  pop(location: NativeLocation, n: number, key: string): void;
+export interface NativeHistory<NL extends NativeLocation = WebNativeLocation> {
+  getLocation(): NL;
+  parseUrl(url: string): NL;
+  toUrl(location: NL): string;
+  push(location: NL, key: string): void;
+  replace(location: NL, key: string): void;
+  relaunch(location: NL, key: string): void;
+  pop(location: NL, n: number, key: string): void;
 }
 
-export abstract class BaseHistoryActions<P extends Params = Params> {
+export abstract class BaseHistoryActions<P extends Params, NL extends NativeLocation = WebNativeLocation> {
   private _tid = 0;
 
-  private _routeState: RouteState<P>;
+  private _routeState: RouteState<P, NL>;
 
   private _startupUri: string;
 
-  protected locationTransform: LocationTransform<P>;
-
   protected store: Store | undefined;
 
-  constructor(protected nativeHistory: NativeHistory, locationTransform?: LocationTransform<P>) {
-    this.locationTransform = locationTransform || createLocationTransform();
+  constructor(protected nativeHistory: NativeHistory<NL>, protected locationTransform: LocationTransform<P, NL>) {
     const location = this.locationTransform.in(nativeHistory.getLocation());
     const key = this._createKey();
-    const routeState: RouteState<P> = this.locationToRouteState(location, 'RELAUNCH', key);
+    const routeState: RouteState<P, NL> = this.locationToRouteState(location, 'RELAUNCH', key);
     this._routeState = routeState;
     this._startupUri = locationToUri(location, key);
-    nativeHistory.relaunch(this.locationTransform.out(location), key);
+    const nativeLocation = extractNativeLocation(routeState);
+    nativeHistory.relaunch(nativeLocation, key);
   }
 
-  getRouteState(): RouteState<P> {
+  getRouteState(): RouteState<P, NL> {
     return this._routeState;
   }
 
@@ -148,35 +144,37 @@ export abstract class BaseHistoryActions<P extends Params = Params> {
 
   payloadToLocation(data: RoutePayload<P> | string): Location<P> {
     if (typeof data === 'string') {
-      const nativeLocation: NativeLocation = this.nativeHistory.parseUrl(data);
+      const nativeLocation = this.nativeHistory.parseUrl(data);
       return this.locationTransform.in(nativeLocation);
     }
-    const {tag = '/', extendParams} = data;
-    const params: P = assignDeep({}, extendParams === true ? this._routeState.params : extendParams, data.params);
-    return {tag, params};
+    const {tag} = data;
+    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const params: P = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    return {tag: tag || this._routeState.tag || '/', params};
   }
 
   locationToUrl(data: RoutePayload<P>): string {
-    const {tag = '', extendParams} = data;
-    const params: P = assignDeep({}, extendParams === true ? this._routeState.params : extendParams, data.params);
-    const nativeLocation = this.locationTransform.out({tag, params});
+    const {tag} = data;
+    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const params: P = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    const nativeLocation = this.locationTransform.out({tag: tag || this._routeState.tag || '/', params});
     return this.nativeHistory.toUrl(nativeLocation);
   }
 
-  locationToRouteState(location: Location<P>, action: HistoryAction, key: string): RouteState<P> {
+  locationToRouteState(location: Location<P>, action: HistoryAction, key: string): RouteState<P, NL> {
     const {history, stack} = buildHistoryStack(location, action, key, this._routeState || {history: [], stack: []});
     const natvieLocation = this.locationTransform.out(location);
     return {...location, action, key, history, stack, ...natvieLocation};
   }
 
-  protected async dispatch(location: Location<P>, action: HistoryAction, key: string = '', callNative?: string | number): Promise<RouteState<P>> {
+  protected async dispatch(location: Location<P>, action: HistoryAction, key: string = '', callNative?: string | number): Promise<RouteState<P, NL>> {
     key = key || this._createKey();
     const routeState = this.locationToRouteState(location, action, key);
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     this._routeState = routeState;
     await this.store!.dispatch(routeChangeAction(routeState));
     if (callNative) {
-      const nativeLocation = this.locationTransform.out(location);
+      const nativeLocation = extractNativeLocation(routeState);
       if (typeof callNative === 'number') {
         this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative, key);
       } else {
@@ -186,22 +184,22 @@ export abstract class BaseHistoryActions<P extends Params = Params> {
     return routeState;
   }
 
-  relaunch(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P>> {
+  relaunch(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P, NL>> {
     const paLocation = this.payloadToLocation(data);
     return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
   }
 
-  push(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P>> {
+  push(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P, NL>> {
     const paLocation = this.payloadToLocation(data);
     return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
   }
 
-  replace(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P>> {
+  replace(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P, NL>> {
     const paLocation = this.payloadToLocation(data);
     return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
   }
 
-  pop(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean, useStack?: boolean): Promise<RouteState<P>> {
+  pop(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean, useStack?: boolean): Promise<RouteState<P, NL>> {
     n = n || 1;
     let uri = useStack ? this._routeState.stack[n] : this._routeState.history[n];
     let k = useStack ? 1000 + n : n;
@@ -219,11 +217,11 @@ export abstract class BaseHistoryActions<P extends Params = Params> {
     return this.dispatch(location, `POP${k}` as any, key, disableNative ? '' : k);
   }
 
-  back(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean): Promise<RouteState<P>> {
+  back(n = 1, root: 'HOME' | 'FIRST' | '' = 'FIRST', disableNative?: boolean): Promise<RouteState<P, NL>> {
     return this.pop(n, root, disableNative, true);
   }
 
-  home(root: 'HOME' | 'FIRST' = 'FIRST', disableNative?: boolean): Promise<RouteState<P>> {
+  home(root: 'HOME' | 'FIRST' = 'FIRST', disableNative?: boolean): Promise<RouteState<P, NL>> {
     return this.relaunch(root === 'HOME' ? routeConfig.homeUri : this._startupUri, disableNative);
   }
 

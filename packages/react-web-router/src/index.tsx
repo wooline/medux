@@ -8,16 +8,16 @@ import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux'
 
 import type {RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispatch} from '@medux/core';
 import type {Store} from 'redux';
-import type {RootState, LocationTransform} from '@medux/route-plan-a';
+import type {RootState, LocationTransform} from '@medux/web';
 
 export {exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime} from '@medux/core';
-export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers, createLocationTransform} from '@medux/route-plan-a';
+export {setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform, compileRule} from '@medux/route-plan-a';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
-export type {RouteState, RootState, RouteModuleState as BaseModuleState, LocationMap, LocationTransform, HistoryAction, NativeLocation, Location, Params} from '@medux/route-plan-a';
-export type {HistoryActions} from '@medux/web';
+export type {RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules} from '@medux/route-plan-a';
+export type {RootState, RouteState, LocationTransform} from '@medux/web';
 
 export type FacadeExports<APP extends RootModuleFacade, RouteParams extends {[K in keyof APP]: any}> = {
   App: {
@@ -64,10 +64,10 @@ export function buildApp(
     appModuleName?: string;
     appViewName?: string;
     historyType?: 'Browser' | 'Hash' | 'Memory';
-    locationTransform?: LocationTransform;
+    locationTransform?: LocationTransform<any>;
     storeOptions?: StoreOptions;
     container?: string | Element | ((component: ReactElement<any>) => void);
-  }
+  } = {}
 ) {
   appExports.history = createRouter(historyType, locationTransform);
   if (!storeOptions.middlewares) {
@@ -103,7 +103,7 @@ export function buildSSR(
     appModuleName?: string;
     appViewName?: string;
     location: string;
-    locationTransform?: LocationTransform;
+    locationTransform?: LocationTransform<any>;
     storeOptions?: StoreOptions;
     renderToStream?: boolean;
   }

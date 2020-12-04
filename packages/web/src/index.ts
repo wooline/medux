@@ -1,14 +1,20 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {BaseHistoryActions, NativeLocation, NativeHistory, LocationTransform, Params} from '@medux/route-plan-a';
+import {BaseHistoryActions, NativeHistory, createWebLocationTransform} from '@medux/route-plan-a';
 import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
-import {env} from '@medux/core';
+import {env, RootModuleFacade} from '@medux/core';
+
+import type {RootState as BaseRootState, Params, RouteState as BaseRouteState, LocationTransform as BaseLocationTransform, WebNativeLocation} from '@medux/route-plan-a';
+
+export type RouteState<P extends Params> = BaseRouteState<P, WebNativeLocation>;
+export type RootState<A extends RootModuleFacade, P extends Params> = BaseRootState<A, P, WebNativeLocation>;
+export type LocationTransform<P extends Params> = BaseLocationTransform<P, WebNativeLocation>;
 
 type UnregisterCallback = () => void;
 
 // function locationToUrl(loaction: PaLocation): string {
 //   return loaction.pathname + loaction.search + loaction.hash;
 // }
-export class WebNativeHistory implements NativeHistory {
+export class WebNativeHistory implements NativeHistory<WebNativeLocation> {
   public history: History<never>;
 
   constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string) {
@@ -46,9 +52,9 @@ export class WebNativeHistory implements NativeHistory {
     }
   }
 
-  getLocation(): NativeLocation {
+  getLocation(): WebNativeLocation {
     const {pathname = '', search = '', hash = ''} = this.history.location;
-    return {pathname, search: search.replace('?', ''), hash: hash.replace('#', '')};
+    return {pathname, search: decodeURIComponent(search).replace('?', ''), hash: decodeURIComponent(hash).replace('#', '')};
   }
 
   getUrl() {
@@ -56,7 +62,7 @@ export class WebNativeHistory implements NativeHistory {
     return [pathname, search, hash].join('');
   }
 
-  parseUrl(url: string): NativeLocation {
+  parseUrl(url: string): WebNativeLocation {
     if (!url) {
       return {
         pathname: '/',
@@ -77,8 +83,8 @@ export class WebNativeHistory implements NativeHistory {
     };
   }
 
-  toUrl(location: NativeLocation): string {
-    return [location.pathname, location.search && `?${encodeURIComponent(location.search)}`, location.hash && `#${encodeURIComponent(location.hash)}`].join('');
+  toUrl(location: WebNativeLocation): string {
+    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
   }
 
   block(blocker: (url: string, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void) {
@@ -92,19 +98,19 @@ export class WebNativeHistory implements NativeHistory {
     return (location.state || '') as string;
   }
 
-  push(location: NativeLocation, key: string): void {
+  push(location: WebNativeLocation, key: string): void {
     this.history.push(this.toUrl(location), key as any);
   }
 
-  replace(location: NativeLocation, key: string): void {
+  replace(location: WebNativeLocation, key: string): void {
     this.history.replace(this.toUrl(location), key as any);
   }
 
-  relaunch(location: NativeLocation, key: string): void {
+  relaunch(location: WebNativeLocation, key: string): void {
     this.history.push(this.toUrl(location), key as any);
   }
 
-  pop(location: NativeLocation, n: number, key: string): void {
+  pop(location: WebNativeLocation, n: number, key: string): void {
     if (n < 500) {
       this.history.go(-n);
     } else {
@@ -112,13 +118,13 @@ export class WebNativeHistory implements NativeHistory {
     }
   }
 }
-export class HistoryActions<P extends Params = Params> extends BaseHistoryActions<P> {
+export class HistoryActions<P extends Params = Params> extends BaseHistoryActions<P, WebNativeLocation> {
   private _unlistenHistory: UnregisterCallback;
 
   private _timer: number = 0;
 
   constructor(protected nativeHistory: WebNativeHistory, locationTransform?: LocationTransform<P>) {
-    super(nativeHistory, locationTransform);
+    super(nativeHistory, locationTransform || createWebLocationTransform());
     this._unlistenHistory = this.nativeHistory.block((url, key, action) => {
       if (key !== this.getCurKey()) {
         let callback: (() => void) | undefined;

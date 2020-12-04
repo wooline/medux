@@ -1,7 +1,59 @@
 "use strict";
 
 exports.__esModule = true;
+exports.compilePath = compilePath;
+exports.parseRule = parseRule;
 exports.ruleToPathname = ruleToPathname;
+exports.compileRule = compileRule;
+
+var _pathToRegexp = require("path-to-regexp");
+
+var cache = {};
+
+function compilePath(rule) {
+  if (cache[rule]) {
+    return cache[rule];
+  }
+
+  var keys = [];
+  var regexp = (0, _pathToRegexp.pathToRegexp)(rule.replace(/\$$/, ''), keys, {
+    end: rule.endsWith('$'),
+    strict: false,
+    sensitive: false
+  });
+  var result = {
+    regexp: regexp,
+    keys: keys
+  };
+  var cachedRules = Object.keys(cache);
+
+  if (cachedRules.length > 1000) {
+    delete cache[cachedRules[0]];
+  }
+
+  cache[rule] = result;
+  return result;
+}
+
+function parseRule(rule, pathname) {
+  var _compilePath = compilePath(rule),
+      regexp = _compilePath.regexp,
+      keys = _compilePath.keys;
+
+  pathname = ("/" + pathname + "/").replace(/\/+/g, '/');
+  var match = regexp.exec(pathname);
+  if (!match) return null;
+  var matchedPathname = match[0],
+      values = match.slice(1);
+  var args = keys.reduce(function (memo, key, index) {
+    memo[key.name] = values[index];
+    return memo;
+  }, {});
+  return {
+    args: args,
+    subPathname: pathname.replace(matchedPathname, '')
+  };
+}
 
 function ruleToPathname(rule, data) {
   if (/:\w/.test(rule)) {
@@ -15,4 +67,23 @@ function ruleToPathname(rule, data) {
     pathname: rule,
     params: data
   };
+}
+
+function compileRule(rules, pathname, pathArgs) {
+  Object.keys(rules).forEach(function (rule) {
+    var result = parseRule(rule, pathname);
+
+    if (result) {
+      var _args = result.args,
+          subPathname = result.subPathname;
+      var config = rules[rule];
+
+      var _ref = Array.isArray(config) ? config : [config, undefined],
+          callback = _ref[0],
+          subRules = _ref[1];
+
+      callback(_args, pathArgs);
+      subRules && subPathname && compileRule(subRules, subPathname, pathArgs);
+    }
+  });
 }

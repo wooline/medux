@@ -1,9 +1,9 @@
-import {createLocationTransform} from 'src/index';
+import {createWebLocationTransform} from 'src/index';
 import {HistoryActions, nativeHistory, defaultRouteParams} from './tools';
 import nativeHistoryMock from './nativeHistory';
 
 describe('actions', () => {
-  const historyActions = new HistoryActions(nativeHistory, createLocationTransform(defaultRouteParams));
+  const historyActions = new HistoryActions(nativeHistory, createWebLocationTransform(defaultRouteParams));
   historyActions.setStore({
     dispatch() {
       return undefined;

@@ -76,8 +76,8 @@ var WebNativeHistory = function () {
         hash = _this$history$locatio4 === void 0 ? '' : _this$history$locatio4;
     return {
       pathname: pathname,
-      search: search.replace('?', ''),
-      hash: hash.replace('#', '')
+      search: decodeURIComponent(search).replace('?', ''),
+      hash: decodeURIComponent(hash).replace('#', '')
     };
   };
 
@@ -120,7 +120,7 @@ var WebNativeHistory = function () {
   };
 
   _proto.toUrl = function toUrl(location) {
-    return [location.pathname, location.search && "?" + encodeURIComponent(location.search), location.hash && "#" + encodeURIComponent(location.hash)].join('');
+    return [location.pathname, location.search && "?" + location.search, location.hash && "#" + location.hash].join('');
   };
 
   _proto.block = function block(blocker) {
@@ -172,7 +172,7 @@ var HistoryActions = function (_BaseHistoryActions) {
   function HistoryActions(nativeHistory, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform || (0, _routePlanA.createWebLocationTransform)()) || this;
     _this2.nativeHistory = nativeHistory;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_unlistenHistory", void 0);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_timer", 0);

@@ -1,16 +1,16 @@
 "use strict";
 
 exports.__esModule = true;
-exports.default = void 0;
+exports.deepExtend = void 0;
 
-function deepCloneArray(arr) {
+function deepCloneArray(optimize, arr) {
   var clone = [];
   arr.forEach(function (item, index) {
     if (typeof item === 'object' && item !== null) {
       if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(item);
+        clone[index] = deepCloneArray(optimize, item);
       } else {
-        clone[index] = deepExtend({}, item);
+        clone[index] = __deepExtend(optimize, {}, item);
       }
     } else {
       clone[index] = item;
@@ -19,24 +19,33 @@ function deepCloneArray(arr) {
   return clone;
 }
 
-function deepExtend() {
-  for (var _len = arguments.length, rest = new Array(_len), _key = 0; _key < _len; _key++) {
-    rest[_key] = arguments[_key];
+function __deepExtend(optimize, target) {
+  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    args[_key - 2] = arguments[_key];
   }
 
-  if (rest.length < 1 || typeof rest[0] !== 'object') {
+  if (typeof target !== 'object') {
     return false;
   }
 
-  if (rest.length < 2) {
-    return rest[0];
+  if (args.length < 1) {
+    return target;
   }
 
-  var target = rest[0];
-  var args = rest.slice(1);
   var val;
   var src;
-  args.forEach(function (obj) {
+  args.forEach(function (obj, index) {
+    var lastArg = false;
+    var last2Arg = null;
+
+    if (optimize === null) {
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+    }
+
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
     }
@@ -48,16 +57,17 @@ function deepExtend() {
       if (val === target) {} else if (typeof val !== 'object' || val === null) {
         target[key] = val;
       } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(val);
+        target[key] = deepCloneArray(lastArg, val);
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = deepExtend({}, val);
+        target[key] = optimize || lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
       } else {
-        target[key] = deepExtend(src, val);
+        target[key] = __deepExtend(lastArg, src, val);
       }
     });
   });
   return target;
 }
 
-var _default = deepExtend;
-exports.default = _default;
+var deepExtend = __deepExtend.bind(null, null);
+
+exports.deepExtend = deepExtend;

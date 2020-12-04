@@ -5,10 +5,11 @@ import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitial
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer } from '@medux/core';
-import assignDeep from './deep-extend';
-import { buildHistoryStack, routeConfig, uriToLocation, locationToUri } from './basic';
-import { createLocationTransform } from './transform';
-export { createLocationTransform } from './transform';
+import { deepExtend } from './deep-extend';
+import { buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation } from './basic';
+export { deepExtend } from './deep-extend';
+export { createWebLocationTransform } from './transform';
+export { PathnameRules, compileRule } from './matchPath';
 export { setRouteConfig } from './basic';
 export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   var RouteModuleHandlers = function (_CoreModuleHandlers2) {
@@ -39,14 +40,14 @@ export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreMod
       key: "Init",
       value: function Init(initState) {
         var routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? Object.assign({}, initState, routeParams) : initState;
+        return routeParams ? deepExtend({}, initState, routeParams) : initState;
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        return Object.assign({}, this.state, payload);
+        return deepExtend({}, this.state, payload);
       }
     }]
   };
@@ -110,6 +111,7 @@ export var routeReducer = function routeReducer(state, action) {
 export var BaseHistoryActions = function () {
   function BaseHistoryActions(nativeHistory, locationTransform) {
     this.nativeHistory = nativeHistory;
+    this.locationTransform = locationTransform;
 
     _defineProperty(this, "_tid", 0);
 
@@ -117,11 +119,8 @@ export var BaseHistoryActions = function () {
 
     _defineProperty(this, "_startupUri", void 0);
 
-    _defineProperty(this, "locationTransform", void 0);
-
     _defineProperty(this, "store", void 0);
 
-    this.locationTransform = locationTransform || createLocationTransform();
     var location = this.locationTransform.in(nativeHistory.getLocation());
 
     var key = this._createKey();
@@ -129,7 +128,8 @@ export var BaseHistoryActions = function () {
     var routeState = this.locationToRouteState(location, 'RELAUNCH', key);
     this._routeState = routeState;
     this._startupUri = locationToUri(location, key);
-    nativeHistory.relaunch(this.locationTransform.out(location), key);
+    var nativeLocation = extractNativeLocation(routeState);
+    nativeHistory.relaunch(nativeLocation, key);
   }
 
   var _proto = BaseHistoryActions.prototype;
@@ -164,23 +164,21 @@ export var BaseHistoryActions = function () {
       return this.locationTransform.in(nativeLocation);
     }
 
-    var _data$tag = data.tag,
-        tag = _data$tag === void 0 ? '/' : _data$tag,
-        extendParams = data.extendParams;
-    var params = assignDeep({}, extendParams === true ? this._routeState.params : extendParams, data.params);
+    var tag = data.tag;
+    var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    var params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
     return {
-      tag: tag,
+      tag: tag || this._routeState.tag || '/',
       params: params
     };
   };
 
   _proto.locationToUrl = function locationToUrl(data) {
-    var _data$tag2 = data.tag,
-        tag = _data$tag2 === void 0 ? '' : _data$tag2,
-        extendParams = data.extendParams;
-    var params = assignDeep({}, extendParams === true ? this._routeState.params : extendParams, data.params);
+    var tag = data.tag;
+    var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    var params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
     var nativeLocation = this.locationTransform.out({
-      tag: tag,
+      tag: tag || this._routeState.tag || '/',
       params: params
     });
     return this.nativeHistory.toUrl(nativeLocation);
@@ -226,7 +224,7 @@ export var BaseHistoryActions = function () {
 
             case 8:
               if (callNative) {
-                nativeLocation = this.locationTransform.out(location);
+                nativeLocation = extractNativeLocation(routeState);
 
                 if (typeof callNative === 'number') {
                   this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative, key);

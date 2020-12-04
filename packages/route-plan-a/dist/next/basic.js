@@ -8,6 +8,13 @@ export function setRouteConfig(conf) {
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
   conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
+export function extractNativeLocation(routeState) {
+  const data = Object.assign({}, routeState);
+  ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach(key => {
+    delete data[key];
+  });
+  return data;
+}
 export function locationToUri(location, key) {
   return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
 }

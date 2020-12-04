@@ -2096,14 +2096,14 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }
 
-function deepCloneArray(arr) {
+function deepCloneArray(optimize, arr) {
   const clone = [];
   arr.forEach(function (item, index) {
     if (typeof item === 'object' && item !== null) {
       if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(item);
+        clone[index] = deepCloneArray(optimize, item);
       } else {
-        clone[index] = deepExtend({}, item);
+        clone[index] = __deepExtend(optimize, {}, item);
       }
     } else {
       clone[index] = item;
@@ -2112,20 +2112,29 @@ function deepCloneArray(arr) {
   return clone;
 }
 
-function deepExtend(...rest) {
-  if (rest.length < 1 || typeof rest[0] !== 'object') {
+function __deepExtend(optimize, target, ...args) {
+  if (typeof target !== 'object') {
     return false;
   }
 
-  if (rest.length < 2) {
-    return rest[0];
+  if (args.length < 1) {
+    return target;
   }
 
-  const target = rest[0];
-  const args = rest.slice(1);
   let val;
   let src;
-  args.forEach(function (obj) {
+  args.forEach(function (obj, index) {
+    let lastArg = false;
+    let last2Arg = null;
+
+    if (optimize === null) {
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+    }
+
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
     }
@@ -2137,16 +2146,18 @@ function deepExtend(...rest) {
       if (val === target) ; else if (typeof val !== 'object' || val === null) {
         target[key] = val;
       } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(val);
+        target[key] = deepCloneArray(lastArg, val);
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = deepExtend({}, val);
+        target[key] = optimize || lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
       } else {
-        target[key] = deepExtend(src, val);
+        target[key] = __deepExtend(lastArg, src, val);
       }
     });
   });
   return target;
 }
+
+const deepExtend = __deepExtend.bind(null, null);
 
 const routeConfig = {
   RSP: '|',
@@ -2157,6 +2168,13 @@ function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
   conf.homeUri && (routeConfig.homeUri = conf.homeUri);
+}
+function extractNativeLocation(routeState) {
+  const data = Object.assign({}, routeState);
+  ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach(key => {
+    delete data[key];
+  });
+  return data;
 }
 function locationToUri(location, key) {
   return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
@@ -2189,7 +2207,6 @@ function uriToLocation(uri) {
     location
   };
 }
-
 function buildHistoryStack(location, action, key, curData) {
   const maxLength = routeConfig.historyMax;
   const tag = location.tag;
@@ -2267,19 +2284,432 @@ function buildHistoryStack(location, action, key, curData) {
   };
 }
 
-function locationToRouteState(location, action, key, curData) {
-  const {
-    history,
-    stack
-  } = buildHistoryStack(location, action, key, curData);
-  return Object.assign({}, location, {
-    action,
-    key,
-    history,
-    stack
+/**
+ * Tokenize input string.
+ */
+function lexer(str) {
+  var tokens = [];
+  var i = 0;
+
+  while (i < str.length) {
+    var char = str[i];
+
+    if (char === "*" || char === "+" || char === "?") {
+      tokens.push({
+        type: "MODIFIER",
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === "\\") {
+      tokens.push({
+        type: "ESCAPED_CHAR",
+        index: i++,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === "{") {
+      tokens.push({
+        type: "OPEN",
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === "}") {
+      tokens.push({
+        type: "CLOSE",
+        index: i,
+        value: str[i++]
+      });
+      continue;
+    }
+
+    if (char === ":") {
+      var name = "";
+      var j = i + 1;
+
+      while (j < str.length) {
+        var code = str.charCodeAt(j);
+
+        if ( // `0-9`
+        code >= 48 && code <= 57 || // `A-Z`
+        code >= 65 && code <= 90 || // `a-z`
+        code >= 97 && code <= 122 || // `_`
+        code === 95) {
+          name += str[j++];
+          continue;
+        }
+
+        break;
+      }
+
+      if (!name) throw new TypeError("Missing parameter name at " + i);
+      tokens.push({
+        type: "NAME",
+        index: i,
+        value: name
+      });
+      i = j;
+      continue;
+    }
+
+    if (char === "(") {
+      var count = 1;
+      var pattern = "";
+      var j = i + 1;
+
+      if (str[j] === "?") {
+        throw new TypeError("Pattern cannot start with \"?\" at " + j);
+      }
+
+      while (j < str.length) {
+        if (str[j] === "\\") {
+          pattern += str[j++] + str[j++];
+          continue;
+        }
+
+        if (str[j] === ")") {
+          count--;
+
+          if (count === 0) {
+            j++;
+            break;
+          }
+        } else if (str[j] === "(") {
+          count++;
+
+          if (str[j + 1] !== "?") {
+            throw new TypeError("Capturing groups are not allowed at " + j);
+          }
+        }
+
+        pattern += str[j++];
+      }
+
+      if (count) throw new TypeError("Unbalanced pattern at " + i);
+      if (!pattern) throw new TypeError("Missing pattern at " + i);
+      tokens.push({
+        type: "PATTERN",
+        index: i,
+        value: pattern
+      });
+      i = j;
+      continue;
+    }
+
+    tokens.push({
+      type: "CHAR",
+      index: i,
+      value: str[i++]
+    });
+  }
+
+  tokens.push({
+    type: "END",
+    index: i,
+    value: ""
   });
+  return tokens;
+}
+/**
+ * Parse a string for the raw tokens.
+ */
+
+
+function parse(str, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  var tokens = lexer(str);
+  var _a = options.prefixes,
+      prefixes = _a === void 0 ? "./" : _a;
+  var defaultPattern = "[^" + escapeString(options.delimiter || "/#?") + "]+?";
+  var result = [];
+  var key = 0;
+  var i = 0;
+  var path = "";
+
+  var tryConsume = function (type) {
+    if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
+  };
+
+  var mustConsume = function (type) {
+    var value = tryConsume(type);
+    if (value !== undefined) return value;
+    var _a = tokens[i],
+        nextType = _a.type,
+        index = _a.index;
+    throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
+  };
+
+  var consumeText = function () {
+    var result = "";
+    var value; // tslint:disable-next-line
+
+    while (value = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
+      result += value;
+    }
+
+    return result;
+  };
+
+  while (i < tokens.length) {
+    var char = tryConsume("CHAR");
+    var name = tryConsume("NAME");
+    var pattern = tryConsume("PATTERN");
+
+    if (name || pattern) {
+      var prefix = char || "";
+
+      if (prefixes.indexOf(prefix) === -1) {
+        path += prefix;
+        prefix = "";
+      }
+
+      if (path) {
+        result.push(path);
+        path = "";
+      }
+
+      result.push({
+        name: name || key++,
+        prefix: prefix,
+        suffix: "",
+        pattern: pattern || defaultPattern,
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+
+    var value = char || tryConsume("ESCAPED_CHAR");
+
+    if (value) {
+      path += value;
+      continue;
+    }
+
+    if (path) {
+      result.push(path);
+      path = "";
+    }
+
+    var open = tryConsume("OPEN");
+
+    if (open) {
+      var prefix = consumeText();
+      var name_1 = tryConsume("NAME") || "";
+      var pattern_1 = tryConsume("PATTERN") || "";
+      var suffix = consumeText();
+      mustConsume("CLOSE");
+      result.push({
+        name: name_1 || (pattern_1 ? key++ : ""),
+        pattern: name_1 && !pattern_1 ? defaultPattern : pattern_1,
+        prefix: prefix,
+        suffix: suffix,
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+
+    mustConsume("END");
+  }
+
+  return result;
+}
+/**
+ * Escape a regular expression string.
+ */
+
+function escapeString(str) {
+  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+}
+/**
+ * Get the flags for a regexp from the options.
+ */
+
+
+function flags(options) {
+  return options && options.sensitive ? "" : "i";
+}
+/**
+ * Pull out keys from a regexp.
+ */
+
+
+function regexpToRegexp(path, keys) {
+  if (!keys) return path;
+  var groupsRegex = /\((?:\?<(.*?)>)?(?!\?)/g;
+  var index = 0;
+  var execResult = groupsRegex.exec(path.source);
+
+  while (execResult) {
+    keys.push({
+      // Use parenthesized substring match if available, index otherwise
+      name: execResult[1] || index++,
+      prefix: "",
+      suffix: "",
+      modifier: "",
+      pattern: ""
+    });
+    execResult = groupsRegex.exec(path.source);
+  }
+
+  return path;
+}
+/**
+ * Transform an array into a regexp.
+ */
+
+
+function arrayToRegexp(paths, keys, options) {
+  var parts = paths.map(function (path) {
+    return pathToRegexp(path, keys, options).source;
+  });
+  return new RegExp("(?:" + parts.join("|") + ")", flags(options));
+}
+/**
+ * Create a path regexp from string input.
+ */
+
+
+function stringToRegexp(path, keys, options) {
+  return tokensToRegexp(parse(path, options), keys, options);
+}
+/**
+ * Expose a function for taking tokens and returning a RegExp.
+ */
+
+
+function tokensToRegexp(tokens, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+
+  var _a = options.strict,
+      strict = _a === void 0 ? false : _a,
+      _b = options.start,
+      start = _b === void 0 ? true : _b,
+      _c = options.end,
+      end = _c === void 0 ? true : _c,
+      _d = options.encode,
+      encode = _d === void 0 ? function (x) {
+    return x;
+  } : _d;
+  var endsWith = "[" + escapeString(options.endsWith || "") + "]|$";
+  var delimiter = "[" + escapeString(options.delimiter || "/#?") + "]";
+  var route = start ? "^" : ""; // Iterate over the tokens and create our regexp string.
+
+  for (var _i = 0, tokens_1 = tokens; _i < tokens_1.length; _i++) {
+    var token = tokens_1[_i];
+
+    if (typeof token === "string") {
+      route += escapeString(encode(token));
+    } else {
+      var prefix = escapeString(encode(token.prefix));
+      var suffix = escapeString(encode(token.suffix));
+
+      if (token.pattern) {
+        if (keys) keys.push(token);
+
+        if (prefix || suffix) {
+          if (token.modifier === "+" || token.modifier === "*") {
+            var mod = token.modifier === "*" ? "?" : "";
+            route += "(?:" + prefix + "((?:" + token.pattern + ")(?:" + suffix + prefix + "(?:" + token.pattern + "))*)" + suffix + ")" + mod;
+          } else {
+            route += "(?:" + prefix + "(" + token.pattern + ")" + suffix + ")" + token.modifier;
+          }
+        } else {
+          route += "(" + token.pattern + ")" + token.modifier;
+        }
+      } else {
+        route += "(?:" + prefix + suffix + ")" + token.modifier;
+      }
+    }
+  }
+
+  if (end) {
+    if (!strict) route += delimiter + "?";
+    route += !options.endsWith ? "$" : "(?=" + endsWith + ")";
+  } else {
+    var endToken = tokens[tokens.length - 1];
+    var isEndDelimited = typeof endToken === "string" ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : // tslint:disable-next-line
+    endToken === undefined;
+
+    if (!strict) {
+      route += "(?:" + delimiter + "(?=" + endsWith + "))?";
+    }
+
+    if (!isEndDelimited) {
+      route += "(?=" + delimiter + "|" + endsWith + ")";
+    }
+  }
+
+  return new RegExp(route, flags(options));
+}
+/**
+ * Normalize the given path string, returning a regular expression.
+ *
+ * An empty array can be passed in for the keys, which will hold the
+ * placeholder key descriptions. For example, using `/user/:id`, `keys` will
+ * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
+ */
+
+function pathToRegexp(path, keys, options) {
+  if (path instanceof RegExp) return regexpToRegexp(path, keys);
+  if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
+  return stringToRegexp(path, keys, options);
 }
 
+const cache = {};
+function compilePath(rule) {
+  if (cache[rule]) {
+    return cache[rule];
+  }
+
+  const keys = [];
+  const regexp = pathToRegexp(rule.replace(/\$$/, ''), keys, {
+    end: rule.endsWith('$'),
+    strict: false,
+    sensitive: false
+  });
+  const result = {
+    regexp,
+    keys
+  };
+  const cachedRules = Object.keys(cache);
+
+  if (cachedRules.length > 1000) {
+    delete cache[cachedRules[0]];
+  }
+
+  cache[rule] = result;
+  return result;
+}
+function parseRule(rule, pathname) {
+  const {
+    regexp,
+    keys
+  } = compilePath(rule);
+  pathname = `/${pathname}/`.replace(/\/+/g, '/');
+  const match = regexp.exec(pathname);
+  if (!match) return null;
+  const [matchedPathname, ...values] = match;
+  const args = keys.reduce((memo, key, index) => {
+    memo[key.name] = values[index];
+    return memo;
+  }, {});
+  return {
+    args,
+    subPathname: pathname.replace(matchedPathname, '')
+  };
+}
 function ruleToPathname(rule, data) {
   if (/:\w/.test(rule)) {
     return {
@@ -2292,6 +2722,22 @@ function ruleToPathname(rule, data) {
     pathname: rule,
     params: data
   };
+}
+function compileRule(rules, pathname, pathArgs) {
+  Object.keys(rules).forEach(rule => {
+    const result = parseRule(rule, pathname);
+
+    if (result) {
+      const {
+        args,
+        subPathname
+      } = result;
+      const config = rules[rule];
+      const [callback, subRules] = Array.isArray(config) ? config : [config, undefined];
+      callback(args, pathArgs);
+      subRules && subPathname && compileRule(subRules, subPathname, pathArgs);
+    }
+  });
 }
 
 function extractHashData(params) {
@@ -2384,7 +2830,7 @@ function assignDefaultData(data, def) {
 function nativeLocationToMeduxLocation(nativeLocation, defaultData, key) {
   const search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
   const hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  const params = Object.assign({}, search ? JSON.parse(search) : undefined, hash ? JSON.parse(hash) : undefined);
+  const params = deepExtend(search ? JSON.parse(search) : {}, hash ? JSON.parse(hash) : undefined);
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
   return {
     tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
@@ -2407,11 +2853,31 @@ function meduxLocationToNativeLocation(meduxLocation, defaultData, key) {
   };
 }
 
-function createLocationTransform(defaultData = {}, locationMap, key) {
+const inCache = {};
+function createWebLocationTransform(defaultData, locationMap, key) {
   return {
     in(nativeLocation) {
-      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData, key);
-      return locationMap ? locationMap.in(data) : data;
+      const {
+        pathname,
+        search,
+        hash
+      } = nativeLocation;
+      const url = `${pathname}?${search}#${hash}`;
+
+      if (inCache[url]) {
+        return inCache[url];
+      }
+
+      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key);
+      const location = locationMap ? locationMap.in(data) : data;
+      const urls = Object.keys(inCache);
+
+      if (urls.length > 1000) {
+        delete inCache[urls[0]];
+      }
+
+      inCache[url] = location;
+      return location;
     },
 
     out(meduxLocation) {
@@ -2429,7 +2895,7 @@ function createLocationTransform(defaultData = {}, locationMap, key) {
         };
       }
 
-      return meduxLocationToNativeLocation(data, defaultData, key);
+      return meduxLocationToNativeLocation(data, defaultData || {}, key);
     }
 
   };
@@ -2453,14 +2919,14 @@ let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHand
       key: "Init",
       value: function Init(initState) {
         const routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? Object.assign({}, initState, routeParams) : initState;
+        return routeParams ? deepExtend({}, initState, routeParams) : initState;
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        return Object.assign({}, this.state, payload);
+        return deepExtend({}, this.state, payload);
       }
     }]
   };
@@ -2521,6 +2987,7 @@ const routeReducer = (state, action) => {
 class BaseHistoryActions {
   constructor(nativeHistory, locationTransform) {
     this.nativeHistory = nativeHistory;
+    this.locationTransform = locationTransform;
 
     _defineProperty(this, "_tid", 0);
 
@@ -2528,22 +2995,17 @@ class BaseHistoryActions {
 
     _defineProperty(this, "_startupUri", void 0);
 
-    _defineProperty(this, "locationTransform", void 0);
-
     _defineProperty(this, "store", void 0);
 
-    this.locationTransform = locationTransform || createLocationTransform();
     const location = this.locationTransform.in(nativeHistory.getLocation());
 
     const key = this._createKey();
 
-    const routeState = locationToRouteState(location, 'RELAUNCH', key, {
-      history: [],
-      stack: []
-    });
+    const routeState = this.locationToRouteState(location, 'RELAUNCH', key);
     this._routeState = routeState;
     this._startupUri = locationToUri(location, key);
-    nativeHistory.relaunch(this.locationTransform.out(location), key);
+    const nativeLocation = extractNativeLocation(routeState);
+    nativeHistory.relaunch(nativeLocation, key);
   }
 
   getRouteState() {
@@ -2577,38 +3039,55 @@ class BaseHistoryActions {
     }
 
     const {
-      tag = '/',
-      extendParams
+      tag
     } = data;
-    const params = deepExtend({}, extendParams === true ? this._routeState.params : extendParams, data.params);
+    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
     return {
-      tag,
+      tag: tag || this._routeState.tag || '/',
       params
     };
   }
 
   locationToUrl(data) {
     const {
-      tag = '',
-      extendParams
+      tag
     } = data;
-    const params = deepExtend({}, extendParams === true ? this._routeState.params : extendParams, data.params);
+    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
     const nativeLocation = this.locationTransform.out({
-      tag,
+      tag: tag || this._routeState.tag || '/',
       params
     });
     return this.nativeHistory.toUrl(nativeLocation);
   }
 
+  locationToRouteState(location, action, key) {
+    const {
+      history,
+      stack
+    } = buildHistoryStack(location, action, key, this._routeState || {
+      history: [],
+      stack: []
+    });
+    const natvieLocation = this.locationTransform.out(location);
+    return Object.assign({}, location, {
+      action,
+      key,
+      history,
+      stack
+    }, natvieLocation);
+  }
+
   async dispatch(location, action, key = '', callNative) {
     key = key || this._createKey();
-    const routeState = locationToRouteState(location, action, key, this._routeState);
+    const routeState = this.locationToRouteState(location, action, key);
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this._routeState = routeState;
     await this.store.dispatch(routeChangeAction(routeState));
 
     if (callNative) {
-      const nativeLocation = this.locationTransform.out(location);
+      const nativeLocation = extractNativeLocation(routeState);
 
       if (typeof callNative === 'number') {
         this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative, key);
@@ -6160,8 +6639,8 @@ class WebNativeHistory {
     } = this.history.location;
     return {
       pathname,
-      search: search.replace('?', ''),
-      hash: hash.replace('#', '')
+      search: decodeURIComponent(search).replace('?', ''),
+      hash: decodeURIComponent(hash).replace('#', '')
     };
   }
 
@@ -6198,7 +6677,7 @@ class WebNativeHistory {
   }
 
   toUrl(location) {
-    return [location.pathname, location.search && `?${encodeURIComponent(location.search)}`, location.hash && `#${encodeURIComponent(location.hash)}`].join('');
+    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
   }
 
   block(blocker) {
@@ -6239,7 +6718,7 @@ class WebNativeHistory {
 }
 class HistoryActions extends BaseHistoryActions {
   constructor(nativeHistory, locationTransform) {
-    super(nativeHistory, locationTransform);
+    super(nativeHistory, locationTransform || createWebLocationTransform());
     this.nativeHistory = nativeHistory;
 
     _defineProperty(this, "_unlistenHistory", void 0);
@@ -6336,7 +6815,7 @@ function buildApp(moduleGetter, {
   locationTransform,
   storeOptions = {},
   container = 'root'
-}) {
+} = {}) {
   appExports.history = createRouter(historyType, locationTransform);
 
   if (!storeOptions.middlewares) {
@@ -6447,4 +6926,4 @@ const Link = React.forwardRef((_ref, ref) => {
   }));
 });
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createLocationTransform, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, compileRule, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };

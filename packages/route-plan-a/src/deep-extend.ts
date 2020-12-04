@@ -1,15 +1,15 @@
 /**
  * Recursive cloning array.
  */
-function deepCloneArray(arr: any[]) {
+function deepCloneArray(optimize: boolean, arr: any[]) {
   const clone: any[] = [];
   arr.forEach(function (item, index) {
     if (typeof item === 'object' && item !== null) {
       if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(item);
+        clone[index] = deepCloneArray(optimize, item);
       } else {
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        clone[index] = deepExtend({}, item);
+        clone[index] = __deepExtend(optimize, {}, item);
       }
     } else {
       clone[index] = item;
@@ -18,24 +18,28 @@ function deepCloneArray(arr: any[]) {
   return clone;
 }
 
-function deepExtend(...rest: any[]) {
-  if (rest.length < 1 || typeof rest[0] !== 'object') {
+function __deepExtend(optimize: boolean, target: any, ...args: any[]) {
+  if (typeof target !== 'object') {
     return false;
   }
 
-  if (rest.length < 2) {
-    return rest[0];
+  if (args.length < 1) {
+    return target;
   }
-
-  const target = rest[0];
-
-  // convert arguments to array and cut off target object
-  const args = rest.slice(1);
 
   let val;
   let src;
 
-  args.forEach(function (obj) {
+  args.forEach(function (obj, index) {
+    let lastArg = false;
+    let last2Arg: any = null;
+    if (optimize === null) {
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+    }
     // skip argument if isn't an object, is null, or is an array
     if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
       return;
@@ -56,15 +60,16 @@ function deepExtend(...rest: any[]) {
 
         // just clone arrays (and recursive clone objects inside)
       } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(val);
+        target[key] = deepCloneArray(lastArg, val);
 
         // custom cloning and overwrite for specific objects
       } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = deepExtend({}, val);
+        target[key] = optimize || lastArg || (last2Arg && !last2Arg[key]) ? val : __deepExtend(lastArg, {}, val);
+        // target[key] = __deepExtend({}, val);
 
         // source value and new value is objects both, extending...
       } else {
-        target[key] = deepExtend(src, val);
+        target[key] = __deepExtend(lastArg, src, val);
       }
     });
   });
@@ -72,4 +77,4 @@ function deepExtend(...rest: any[]) {
   return target;
 }
 
-export default deepExtend;
+export const deepExtend = __deepExtend.bind(null, null as any);
