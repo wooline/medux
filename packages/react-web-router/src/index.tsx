@@ -12,7 +12,7 @@ import type {RootState, LocationTransform} from '@medux/web';
 
 export {exportModule} from '@medux/react';
 export {ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime} from '@medux/core';
-export {setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform, compileRule} from '@medux/route-plan-a';
+export {setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
@@ -22,9 +22,9 @@ export type {RootState, RouteState, LocationTransform} from '@medux/web';
 export type FacadeExports<APP extends RootModuleFacade, RouteParams extends {[K in keyof APP]: any}> = {
   App: {
     store: Store;
-    state: RootState<APP, Partial<RouteParams>>;
+    state: RootState<APP, RouteParams>;
     loadView: LoadView<APP>;
-    history: HistoryActions<Partial<RouteParams>>;
+    history: HistoryActions<RouteParams>;
     getActions<N extends keyof APP>(...args: N[]): {[K in N]: APP[K]['actions']};
   };
   Modules: RootModuleAPI<APP>;
@@ -64,10 +64,10 @@ export function buildApp(
     appModuleName?: string;
     appViewName?: string;
     historyType?: 'Browser' | 'Hash' | 'Memory';
-    locationTransform?: LocationTransform<any>;
+    locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     container?: string | Element | ((component: ReactElement<any>) => void);
-  } = {}
+  }
 ) {
   appExports.history = createRouter(historyType, locationTransform);
   if (!storeOptions.middlewares) {
@@ -103,7 +103,7 @@ export function buildSSR(
     appModuleName?: string;
     appViewName?: string;
     location: string;
-    locationTransform?: LocationTransform<any>;
+    locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     renderToStream?: boolean;
   }

@@ -2083,68 +2083,221 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }
 
-function deepCloneArray(optimize, arr) {
-  const clone = [];
-  arr.forEach(function (item, index) {
-    if (typeof item === 'object' && item !== null) {
-      if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(optimize, item);
-      } else {
-        clone[index] = __deepExtend(optimize, {}, item);
-      }
-    } else {
-      clone[index] = item;
-    }
-  });
-  return clone;
+function isPlainObject$1(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
-function __deepExtend(optimize, target, ...args) {
-  if (typeof target !== 'object') {
-    return false;
+function __deepExtend(optimize, target, inject) {
+  Object.keys(inject).forEach(function (key) {
+    const src = target[key];
+    const val = inject[key];
+
+    if (isPlainObject$1(val)) {
+      if (isPlainObject$1(src)) {
+        target[key] = __deepExtend(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
+
+function deepExtend(target, ...args) {
+  if (!isPlainObject$1(target)) {
+    target = {};
   }
 
   if (args.length < 1) {
     return target;
   }
 
-  let val;
-  let src;
-  args.forEach(function (obj, index) {
-    let lastArg = false;
-    let last2Arg = null;
+  args.forEach(function (inject, index) {
+    if (isPlainObject$1(inject)) {
+      let lastArg = false;
+      let last2Arg = null;
 
-    if (optimize === null) {
       if (index === args.length - 1) {
         lastArg = true;
       } else if (index === args.length - 2) {
         last2Arg = args[index + 1];
       }
+
+      Object.keys(inject).forEach(function (key) {
+        const src = target[key];
+        const val = inject[key];
+
+        if (isPlainObject$1(val)) {
+          if (isPlainObject$1(src)) {
+            target[key] = __deepExtend(lastArg, src, val);
+          } else {
+            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
     }
-
-    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
-      return;
-    }
-
-    Object.keys(obj).forEach(function (key) {
-      src = target[key];
-      val = obj[key];
-
-      if (val === target) ; else if (typeof val !== 'object' || val === null) {
-        target[key] = val;
-      } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(lastArg, val);
-      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = optimize || lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
-      } else {
-        target[key] = __deepExtend(lastArg, src, val);
-      }
-    });
   });
   return target;
 }
 
-const deepExtend = __deepExtend.bind(null, null);
+function __extendDefault(target, def) {
+  const clone = {};
+  Object.keys(def).forEach(function (key) {
+    if (!target.hasOwnProperty(key)) {
+      clone[key] = def[key];
+    } else {
+      const tval = target[key];
+      const dval = def[key];
+
+      if (isPlainObject$1(tval) && isPlainObject$1(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+
+function extendDefault(target, def) {
+  if (!isPlainObject$1(target)) {
+    target = {};
+  }
+
+  if (!isPlainObject$1(def)) {
+    def = {};
+  }
+
+  return __extendDefault(target, def);
+}
+
+function __excludeDefault(data, def) {
+  const result = {};
+  let hasSub = false;
+  Object.keys(data).forEach(key => {
+    let value = data[key];
+    const defaultValue = def[key];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject$1(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+
+  return undefined;
+}
+
+function excludeDefault(data, def, keepTopLevel) {
+  if (!isPlainObject$1(data)) {
+    return {};
+  }
+
+  if (!isPlainObject$1(def)) {
+    return data;
+  }
+
+  const filtered = __excludeDefault(data, def);
+
+  if (keepTopLevel) {
+    const result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+
+  return filtered || {};
+}
+
+function __splitPrivate(data) {
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  let publicData;
+  let privateData;
+  keys.forEach(key => {
+    const value = data[key];
+
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+
+      privateData[key] = value;
+    } else if (isPlainObject$1(value)) {
+      const [subPublicData, subPrivateData] = __splitPrivate(value);
+
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+
+        publicData[key] = subPublicData;
+      }
+
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+
+function splitPrivate(data, deleteTopLevel) {
+  if (!isPlainObject$1(data)) {
+    return [undefined, undefined];
+  }
+
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  const result = __splitPrivate(data);
+
+  let publicData = result[0];
+  const privateData = result[1];
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
+}
 
 const routeConfig = {
   RSP: '|',
@@ -2684,7 +2837,6 @@ function parseRule(rule, pathname) {
     regexp,
     keys
   } = compilePath(rule);
-  pathname = `/${pathname}/`.replace(/\/+/g, '/');
   const match = regexp.exec(pathname);
   if (!match) return null;
   const [matchedPathname, ...values] = match;
@@ -2694,87 +2846,35 @@ function parseRule(rule, pathname) {
   }, {});
   return {
     args,
+    matchPathame: matchedPathname,
     subPathname: pathname.replace(matchedPathname, '')
   };
 }
-function ruleToPathname(rule, data) {
-  if (/:\w/.test(rule)) {
-    return {
-      pathname: rule,
-      params: data
-    };
-  }
+function extractPathParams(rules, pathname, pathParams) {
+  for (const rule in rules) {
+    if (rules.hasOwnProperty(rule)) {
+      const data = parseRule(rule, pathname);
 
-  return {
-    pathname: rule,
-    params: data
-  };
-}
-function compileRule(rules, pathname, pathArgs) {
-  Object.keys(rules).forEach(rule => {
-    const result = parseRule(rule, pathname);
+      if (data) {
+        const {
+          args,
+          matchPathame,
+          subPathname
+        } = data;
+        const result = rules[rule](args, pathParams);
 
-    if (result) {
-      const {
-        args,
-        subPathname
-      } = result;
-      const config = rules[rule];
-      const [callback, subRules] = Array.isArray(config) ? config : [config, undefined];
-      callback(args, pathArgs);
-      subRules && subPathname && compileRule(subRules, subPathname, pathArgs);
-    }
-  });
-}
-
-function extractHashData(params) {
-  const moduleNames = Object.keys(params);
-
-  if (moduleNames.length > 0) {
-    const searchParams = {};
-    let hashParams;
-    moduleNames.forEach(moduleName => {
-      const data = params[moduleName];
-      const keys = Object.keys(data);
-
-      if (keys.length > 0) {
-        if (`,${keys.join(',')}`.indexOf(',_') > -1) {
-          keys.forEach(key => {
-            if (key.startsWith('_')) {
-              if (!hashParams) {
-                hashParams = {};
-              }
-
-              if (!hashParams[moduleName]) {
-                hashParams[moduleName] = {};
-              }
-
-              hashParams[moduleName][key] = data[key];
-            } else {
-              if (!searchParams[moduleName]) {
-                searchParams[moduleName] = {};
-              }
-
-              searchParams[moduleName][key] = data[key];
-            }
-          });
+        if (typeof result === 'string') {
+          pathname = result;
+        } else if (result && subPathname) {
+          return matchPathame + extractPathParams(result, subPathname, pathParams);
         } else {
-          searchParams[moduleName] = data;
+          return pathname;
         }
-      } else {
-        searchParams[moduleName] = {};
       }
-    });
-    return {
-      search: searchParams,
-      hash: hashParams
-    };
+    }
   }
 
-  return {
-    search: undefined,
-    hash: undefined
-  };
+  return pathname;
 }
 
 function splitSearch(search, key) {
@@ -2783,106 +2883,147 @@ function splitSearch(search, key) {
   return arr ? arr[1] : '';
 }
 
-function excludeDefaultData(data, def, filterEmpty) {
-  const result = {};
-  Object.keys(data).forEach(moduleName => {
-    let value = data[moduleName];
-    const defaultValue = def[moduleName];
-
-    if (value !== defaultValue) {
-      if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        value = excludeDefaultData(value, defaultValue, true);
-      }
-
-      if (value !== undefined) {
-        result[moduleName] = value;
-      }
-    }
-  });
-
-  if (Object.keys(result).length === 0 && filterEmpty) {
-    return undefined;
-  }
-
-  return result;
-}
-
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce((params, moduleName) => {
-    params[moduleName] = def[moduleName] ? deepExtend({}, def[moduleName], data[moduleName]) : data[moduleName];
+    if (def.hasOwnProperty(moduleName)) {
+      params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
+    }
+
     return params;
   }, {});
 }
 
-function nativeLocationToMeduxLocation(nativeLocation, defaultData, key, parse) {
-  const search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
-  const hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  const params = deepExtend(search ? parse(search) : {}, hash ? parse(hash) : undefined);
+function encodeBas64(str) {
+  return btoa ? btoa(str) : Buffer ? Buffer.from(str).toString('base64') : str;
+}
+
+function decodeBas64(str) {
+  return atob ? atob(str) : Buffer ? Buffer.from(str, 'base64').toString() : str;
+}
+
+function parseWebNativeLocation(nativeLocation, key, base64, parse) {
+  let search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
+  let hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
+
+  if (base64) {
+    search = search && decodeBas64(search);
+    hash = hash && decodeBas64(hash);
+  }
+
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
   return {
-    tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    params: assignDefaultData(params, defaultData)
+    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
+    search: search ? parse(search) : undefined,
+    hash: hash ? parse(hash) : undefined
   };
 }
 
-function meduxLocationToNativeLocation(meduxLocation, defaultData, key, stringify) {
-  const {
-    search,
-    hash
-  } = extractHashData(excludeDefaultData(meduxLocation.params, defaultData));
-  const searchStr = search ? stringify(search) : '';
-  const hashStr = hash ? stringify(hash) : '';
-  const pathname = `/${meduxLocation.tag}`.replace(/\/+/g, '/');
+function toNativeLocation(tag, search, hash, key, base64, stringify) {
+  let searchStr = search ? stringify(search) : '';
+  let hashStr = hash ? stringify(hash) : '';
+
+  if (base64) {
+    searchStr = searchStr && encodeBas64(searchStr);
+    hashStr = hashStr && encodeBas64(hashStr);
+  }
+
+  const pathname = `/${tag}`.replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
     search: key ? `${key}=${searchStr}` : searchStr,
     hash: key ? `${key}=${hashStr}` : hashStr
   };
 }
+function createWebLocationTransform(defaultData, pathnameRules, base64 = false, serialization = JSON, key = '') {
+  const matchCache = {
+    _cache: {},
 
-const inCache = {};
-function createWebLocationTransform(defaultData, locationMap, serialization = JSON, key = '') {
+    get(pathname) {
+      if (this._cache[pathname]) {
+        const {
+          tag,
+          pathParams
+        } = this._cache[pathname];
+        return {
+          tag,
+          pathParams: JSON.parse(pathParams)
+        };
+      }
+
+      return undefined;
+    },
+
+    set(pathname, tag, pathParams) {
+      const keys = Object.keys(this._cache);
+
+      if (keys.length > 100) {
+        delete this._cache[keys[0]];
+      }
+
+      this._cache[pathname] = {
+        tag,
+        pathParams: JSON.stringify(pathParams)
+      };
+    }
+
+  };
   return {
     in(nativeLocation) {
       const {
         pathname,
         search,
         hash
-      } = nativeLocation;
-      const url = `${pathname}?${search}#${hash}`;
+      } = parseWebNativeLocation(nativeLocation, key, base64, serialization.parse);
+      const data = {
+        tag: pathname,
+        params: {}
+      };
 
-      if (inCache[url]) {
-        return inCache[url];
+      if (pathnameRules) {
+        let {
+          pathParams,
+          tag
+        } = matchCache.get(pathname) || {};
+
+        if (!tag || !pathParams) {
+          pathParams = {};
+          tag = extractPathParams(pathnameRules, pathname, pathParams);
+          matchCache.set(pathname, tag, pathParams);
+        }
+
+        data.tag = tag;
+        data.params = deepExtend(pathParams, search, hash);
+      } else {
+        data.params = deepExtend(search, hash);
       }
 
-      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key, serialization.parse);
-      const location = locationMap ? locationMap.in(data) : data;
-      const urls = Object.keys(inCache);
-
-      if (urls.length > 1000) {
-        delete inCache[urls[0]];
-      }
-
-      inCache[url] = location;
-      return location;
+      data.params = assignDefaultData(data.params, defaultData);
+      return data;
     },
 
     out(meduxLocation) {
-      let data = meduxLocation;
+      let params = excludeDefault(meduxLocation.params, defaultData, true);
+      let result;
 
-      if (locationMap) {
-        const location = locationMap.out(meduxLocation);
-        const {
-          pathname,
-          params
-        } = ruleToPathname(location.tag, location.params);
-        data = {
-          tag: pathname,
-          params
-        };
+      if (pathnameRules) {
+        let {
+          pathParams,
+          tag
+        } = matchCache.get(meduxLocation.tag) || {};
+
+        if (!tag || !pathParams) {
+          pathParams = {};
+          tag = extractPathParams(pathnameRules, meduxLocation.tag, pathParams);
+          matchCache.set(meduxLocation.tag, tag, pathParams);
+        }
+
+        params = excludeDefault(params, pathParams, false);
+        result = splitPrivate(params, pathParams);
+      } else {
+        result = splitPrivate(params, {});
       }
 
-      return meduxLocationToNativeLocation(data, defaultData || {}, key, serialization.stringify);
+      return toNativeLocation(meduxLocation.tag, result[0], result[1], key, base64, serialization.stringify);
     }
 
   };
@@ -3029,7 +3170,7 @@ class BaseHistoryActions {
       tag
     } = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    const params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params
@@ -3041,7 +3182,7 @@ class BaseHistoryActions {
       tag
     } = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    const params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
     const nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params
@@ -5095,7 +5236,7 @@ function shallowEqual(objA, objB) {
  * @param {any} obj The object to inspect.
  * @returns {boolean} True if the argument appears to be a plain object.
  */
-function isPlainObject$1(obj) {
+function isPlainObject$2(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   var proto = Object.getPrototypeOf(obj);
   if (proto === null) return true;
@@ -5134,7 +5275,7 @@ function warning$1(message) {
 }
 
 function verifyPlainObject(value, displayName, methodName) {
-  if (!isPlainObject$1(value)) {
+  if (!isPlainObject$2(value)) {
     warning$1(methodName + "() in " + displayName + " must return a plain object. Instead received " + value + ".");
   }
 }
@@ -6705,7 +6846,7 @@ class WebNativeHistory {
 }
 class HistoryActions extends BaseHistoryActions {
   constructor(nativeHistory, locationTransform) {
-    super(nativeHistory, locationTransform || createWebLocationTransform());
+    super(nativeHistory, locationTransform);
     this.nativeHistory = nativeHistory;
 
     _defineProperty(this, "_unlistenHistory", void 0);
@@ -6802,7 +6943,7 @@ function buildApp(moduleGetter, {
   locationTransform,
   storeOptions = {},
   container = 'root'
-} = {}) {
+}) {
   appExports.history = createRouter(historyType, locationTransform);
 
   if (!storeOptions.middlewares) {
@@ -6913,4 +7054,4 @@ const Link = React.forwardRef((_ref, ref) => {
   }));
 });
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, compileRule, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };

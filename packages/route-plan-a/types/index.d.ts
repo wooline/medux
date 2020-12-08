@@ -1,13 +1,13 @@
 import { Middleware, Reducer } from 'redux';
 import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
 import type { LocationTransform } from './transform';
-import type { Params, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload } from './basic';
+import type { RootParams, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload } from './basic';
 export { deepExtend } from './deep-extend';
 export { createWebLocationTransform } from './transform';
-export { PathnameRules, compileRule } from './matchPath';
+export { PathnameRules, extractPathParams } from './matchPath';
 export { setRouteConfig } from './basic';
 export type { LocationMap, LocationTransform } from './transform';
-export type { Params, Location, NativeLocation, WebNativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload } from './basic';
+export type { RootParams, Location, NativeLocation, WebNativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload } from './basic';
 interface Store {
     dispatch(action: {
         type: string;
@@ -25,7 +25,7 @@ export declare const RouteActionTypes: {
     RouteChange: string;
     BeforeRouteChange: string;
 };
-export declare function beforeRouteChangeAction<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>): {
+export declare function beforeRouteChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>): {
     type: string;
     payload: RouteState<P, NL>[];
 };
@@ -33,7 +33,7 @@ export declare function routeParamsAction(moduleName: string, params: any, actio
     type: string;
     payload: any[];
 };
-export declare function routeChangeAction<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>): {
+export declare function routeChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>): {
     type: string;
     payload: RouteState<P, NL>[];
 };
@@ -48,7 +48,7 @@ export interface NativeHistory<NL extends NativeLocation = WebNativeLocation> {
     relaunch(location: NL, key: string): void;
     pop(location: NL, n: number, key: string): void;
 }
-export declare abstract class BaseHistoryActions<P extends Params, NL extends NativeLocation = WebNativeLocation> {
+export declare abstract class BaseHistoryActions<P extends RootParams, NL extends NativeLocation = WebNativeLocation> {
     protected nativeHistory: NativeHistory<NL>;
     protected locationTransform: LocationTransform<P, NL>;
     private _tid;

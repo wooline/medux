@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.getActionData = exports.isPromise = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
+exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -20,6 +20,7 @@ exports.setLoading = _basic.setLoading;
 exports.setLoadingDepthTime = _basic.setLoadingDepthTime;
 exports.isServer = _basic.isServer;
 exports.isPromise = _basic.isPromise;
+exports.getAppModuleName = _basic.getAppModuleName;
 
 var _store = require("./store");
 

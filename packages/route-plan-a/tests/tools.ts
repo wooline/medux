@@ -1,62 +1,81 @@
-import {BaseHistoryActions, NativeHistory} from 'src/index';
+import {BaseHistoryActions, NativeHistory, PathnameRules, createWebLocationTransform} from 'src/index';
 
 import nativeHistoryMock from './nativeHistory';
 
 jest.mock('./nativeHistory');
-export interface PhotosRouteParams {
-  itemId: string;
-  _detailKey: string;
-  _listKey: string;
-  listSearch: {
-    title: string;
-    page: number;
-    pageSize: number;
-  };
-}
-export const photoDefaultParams: PhotosRouteParams = {
-  _detailKey: '',
-  _listKey: '',
-  itemId: '',
-  listSearch: {
-    title: '',
-    page: 1,
-    pageSize: 10,
-  },
-};
-export interface CommentsRouteParams {
-  itemId: string;
-  articleType: 'videos' | 'photos';
-  articleId: string;
-  _detailKey: string;
-  _listKey: string;
-  // 将搜索条件中的articleType和articleId放在path路径中传递
-  listSearch: {
-    isNewest: boolean;
-    page: number;
-    pageSize: number;
-  };
+
+interface MemberRouteParams {
+  listParams: {pageSize: number; pageCurrent: number; term?: string};
+  listView: string;
+  _listVer: number;
+  id: string;
+  itemView: string;
+  _itemVer: number;
 }
 
-export const commentsDefaultParams: CommentsRouteParams = {
-  _detailKey: '',
-  _listKey: '',
-  itemId: '',
-  articleType: 'photos',
-  articleId: '',
-  listSearch: {
-    isNewest: false,
-    page: 1,
+const defaultMemberRouteParams: MemberRouteParams = {
+  listParams: {
     pageSize: 10,
+    pageCurrent: 1,
+    term: undefined,
   },
+  listView: '',
+  _listVer: 0,
+  id: '',
+  itemView: '',
+  _itemVer: 0,
+};
+interface ArticleRouteParams {
+  listParams: {pageSize: number; pageCurrent: number; term?: string};
+  listView: string;
+  _listVer: number;
+  id: string;
+  itemView: string;
+  _itemVer: number;
+}
+const defaultArticleRouteParams: ArticleRouteParams = {
+  listParams: {
+    pageSize: 10,
+    pageCurrent: 1,
+    term: undefined,
+  },
+  listView: '',
+  _listVer: 0,
+  id: '',
+  itemView: '',
+  _itemVer: 0,
 };
 export const defaultRouteParams = {
-  app: {},
-  photos: photoDefaultParams,
-  comments: commentsDefaultParams,
+  admin: {},
+  member: defaultMemberRouteParams,
+  article: defaultArticleRouteParams,
 };
 
 type RouteParams = typeof defaultRouteParams;
 
+const pathnameRules: PathnameRules<RouteParams> = {
+  '/$': () => {
+    return '/admin/member';
+  },
+  '/:layoutModule$': ({layoutModule}: {layoutModule: string}) => {
+    return `/${layoutModule}/${layoutModule}Home`;
+  },
+  '/:layoutModule/:module': ({layoutModule, module}: {layoutModule: string; module: string}, params) => {
+    params[layoutModule] = {};
+    params[module] = {};
+    return {
+      '/:listView$': ({listView}: {listView: string}) => {
+        params[module].listView = listView;
+      },
+      '/:itemView/:id': ({itemView, id}: {itemView: string; id: string}) => {
+        params[module].itemView = itemView;
+        params[module].id = id;
+      },
+    };
+  },
+};
+
+export const locationTransform = createWebLocationTransform(defaultRouteParams, pathnameRules);
 export class HistoryActions extends BaseHistoryActions<RouteParams> {
   destroy() {}
 }

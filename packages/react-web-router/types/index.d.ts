@@ -8,7 +8,7 @@ import type { Store } from 'redux';
 import type { RootState, LocationTransform } from '@medux/web';
 export { exportModule } from '@medux/react';
 export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
-export { setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform, compileRule } from '@medux/route-plan-a';
+export { setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
 export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
 export type { RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules } from '@medux/route-plan-a';
@@ -18,9 +18,9 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
 }> = {
     App: {
         store: Store;
-        state: RootState<APP, Partial<RouteParams>>;
+        state: RootState<APP, RouteParams>;
         loadView: LoadView<APP>;
-        history: HistoryActions<Partial<RouteParams>>;
+        history: HistoryActions<RouteParams>;
         getActions<N extends keyof APP>(...args: N[]): {
             [K in N]: APP[K]['actions'];
         };
@@ -28,11 +28,11 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
     Modules: RootModuleAPI<APP>;
 };
 export declare function exportApp(): FacadeExports<any, any>;
-export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, locationTransform, storeOptions, container, }?: {
+export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, locationTransform, storeOptions, container, }: {
     appModuleName?: string;
     appViewName?: string;
     historyType?: 'Browser' | 'Hash' | 'Memory';
-    locationTransform?: LocationTransform<any>;
+    locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     container?: string | Element | ((component: ReactElement<any>) => void);
 }): Promise<{
@@ -42,7 +42,7 @@ export declare function buildSSR(moduleGetter: ModuleGetter, { appModuleName, ap
     appModuleName?: string;
     appViewName?: string;
     location: string;
-    locationTransform?: LocationTransform<any>;
+    locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     renderToStream?: boolean;
 }): Promise<{

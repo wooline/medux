@@ -3022,72 +3022,227 @@ function _renderSSR() {
   return _renderSSR.apply(this, arguments);
 }
 
-function deepCloneArray(optimize, arr) {
-  var clone = [];
-  arr.forEach(function (item, index) {
-    if (typeof item === 'object' && item !== null) {
-      if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(optimize, item);
-      } else {
-        clone[index] = __deepExtend(optimize, {}, item);
-      }
-    } else {
-      clone[index] = item;
-    }
-  });
-  return clone;
+function isPlainObject$1(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
-function __deepExtend(optimize, target) {
-  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-    args[_key - 2] = arguments[_key];
+function __deepExtend(optimize, target, inject) {
+  Object.keys(inject).forEach(function (key) {
+    var src = target[key];
+    var val = inject[key];
+
+    if (isPlainObject$1(val)) {
+      if (isPlainObject$1(src)) {
+        target[key] = __deepExtend(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
+
+function deepExtend(target) {
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
   }
 
-  if (typeof target !== 'object') {
-    return false;
+  if (!isPlainObject$1(target)) {
+    target = {};
   }
 
   if (args.length < 1) {
     return target;
   }
 
-  var val;
-  var src;
-  args.forEach(function (obj, index) {
-    var lastArg = false;
-    var last2Arg = null;
+  args.forEach(function (inject, index) {
+    if (isPlainObject$1(inject)) {
+      var lastArg = false;
+      var last2Arg = null;
 
-    if (optimize === null) {
       if (index === args.length - 1) {
         lastArg = true;
       } else if (index === args.length - 2) {
         last2Arg = args[index + 1];
       }
+
+      Object.keys(inject).forEach(function (key) {
+        var src = target[key];
+        var val = inject[key];
+
+        if (isPlainObject$1(val)) {
+          if (isPlainObject$1(src)) {
+            target[key] = __deepExtend(lastArg, src, val);
+          } else {
+            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
     }
-
-    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
-      return;
-    }
-
-    Object.keys(obj).forEach(function (key) {
-      src = target[key];
-      val = obj[key];
-
-      if (val === target) ; else if (typeof val !== 'object' || val === null) {
-        target[key] = val;
-      } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(lastArg, val);
-      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = optimize || lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
-      } else {
-        target[key] = __deepExtend(lastArg, src, val);
-      }
-    });
   });
   return target;
 }
 
-var deepExtend = __deepExtend.bind(null, null);
+function __extendDefault(target, def) {
+  var clone = {};
+  Object.keys(def).forEach(function (key) {
+    if (!target.hasOwnProperty(key)) {
+      clone[key] = def[key];
+    } else {
+      var tval = target[key];
+      var dval = def[key];
+
+      if (isPlainObject$1(tval) && isPlainObject$1(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+
+function extendDefault(target, def) {
+  if (!isPlainObject$1(target)) {
+    target = {};
+  }
+
+  if (!isPlainObject$1(def)) {
+    def = {};
+  }
+
+  return __extendDefault(target, def);
+}
+
+function __excludeDefault(data, def) {
+  var result = {};
+  var hasSub = false;
+  Object.keys(data).forEach(function (key) {
+    var value = data[key];
+    var defaultValue = def[key];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject$1(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+
+  return undefined;
+}
+
+function excludeDefault(data, def, keepTopLevel) {
+  if (!isPlainObject$1(data)) {
+    return {};
+  }
+
+  if (!isPlainObject$1(def)) {
+    return data;
+  }
+
+  var filtered = __excludeDefault(data, def);
+
+  if (keepTopLevel) {
+    var result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+
+  return filtered || {};
+}
+
+function __splitPrivate(data) {
+  var keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  var publicData;
+  var privateData;
+  keys.forEach(function (key) {
+    var value = data[key];
+
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+
+      privateData[key] = value;
+    } else if (isPlainObject$1(value)) {
+      var _splitPrivate = __splitPrivate(value),
+          subPublicData = _splitPrivate[0],
+          subPrivateData = _splitPrivate[1];
+
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+
+        publicData[key] = subPublicData;
+      }
+
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+
+function splitPrivate(data, deleteTopLevel) {
+  if (!isPlainObject$1(data)) {
+    return [undefined, undefined];
+  }
+
+  var keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  var result = __splitPrivate(data);
+
+  var publicData = result[0];
+  var privateData = result[1];
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
+}
 
 var routeConfig = {
   RSP: '|',
@@ -3634,7 +3789,6 @@ function parseRule(rule, pathname) {
       regexp = _compilePath.regexp,
       keys = _compilePath.keys;
 
-  pathname = ("/" + pathname + "/").replace(/\/+/g, '/');
   var match = regexp.exec(pathname);
   if (!match) return null;
   var matchedPathname = match[0],
@@ -3645,89 +3799,34 @@ function parseRule(rule, pathname) {
   }, {});
   return {
     args: args,
+    matchPathame: matchedPathname,
     subPathname: pathname.replace(matchedPathname, '')
   };
 }
-function ruleToPathname(rule, data) {
-  if (/:\w/.test(rule)) {
-    return {
-      pathname: rule,
-      params: data
-    };
-  }
+function extractPathParams(rules, pathname, pathParams) {
+  for (var _rule in rules) {
+    if (rules.hasOwnProperty(_rule)) {
+      var data = parseRule(_rule, pathname);
 
-  return {
-    pathname: rule,
-    params: data
-  };
-}
-function compileRule(rules, pathname, pathArgs) {
-  Object.keys(rules).forEach(function (rule) {
-    var result = parseRule(rule, pathname);
+      if (data) {
+        var _args = data.args,
+            matchPathame = data.matchPathame,
+            subPathname = data.subPathname;
 
-    if (result) {
-      var _args = result.args,
-          subPathname = result.subPathname;
-      var config = rules[rule];
+        var result = rules[_rule](_args, pathParams);
 
-      var _ref = Array.isArray(config) ? config : [config, undefined],
-          callback = _ref[0],
-          subRules = _ref[1];
-
-      callback(_args, pathArgs);
-      subRules && subPathname && compileRule(subRules, subPathname, pathArgs);
-    }
-  });
-}
-
-function extractHashData(params) {
-  var moduleNames = Object.keys(params);
-
-  if (moduleNames.length > 0) {
-    var searchParams = {};
-    var hashParams;
-    moduleNames.forEach(function (moduleName) {
-      var data = params[moduleName];
-      var keys = Object.keys(data);
-
-      if (keys.length > 0) {
-        if (("," + keys.join(',')).indexOf(',_') > -1) {
-          keys.forEach(function (key) {
-            if (key.startsWith('_')) {
-              if (!hashParams) {
-                hashParams = {};
-              }
-
-              if (!hashParams[moduleName]) {
-                hashParams[moduleName] = {};
-              }
-
-              hashParams[moduleName][key] = data[key];
-            } else {
-              if (!searchParams[moduleName]) {
-                searchParams[moduleName] = {};
-              }
-
-              searchParams[moduleName][key] = data[key];
-            }
-          });
+        if (typeof result === 'string') {
+          pathname = result;
+        } else if (result && subPathname) {
+          return matchPathame + extractPathParams(result, subPathname, pathParams);
         } else {
-          searchParams[moduleName] = data;
+          return pathname;
         }
-      } else {
-        searchParams[moduleName] = {};
       }
-    });
-    return {
-      search: searchParams,
-      hash: hashParams
-    };
+    }
   }
 
-  return {
-    search: undefined,
-    hash: undefined
-  };
+  return pathname;
 }
 
 function splitSearch(search, key) {
@@ -3736,65 +3835,62 @@ function splitSearch(search, key) {
   return arr ? arr[1] : '';
 }
 
-function excludeDefaultData(data, def, filterEmpty) {
-  var result = {};
-  Object.keys(data).forEach(function (moduleName) {
-    var value = data[moduleName];
-    var defaultValue = def[moduleName];
-
-    if (value !== defaultValue) {
-      if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        value = excludeDefaultData(value, defaultValue, true);
-      }
-
-      if (value !== undefined) {
-        result[moduleName] = value;
-      }
-    }
-  });
-
-  if (Object.keys(result).length === 0 && filterEmpty) {
-    return undefined;
-  }
-
-  return result;
-}
-
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce(function (params, moduleName) {
-    params[moduleName] = def[moduleName] ? deepExtend({}, def[moduleName], data[moduleName]) : data[moduleName];
+    if (def.hasOwnProperty(moduleName)) {
+      params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
+    }
+
     return params;
   }, {});
 }
 
-function nativeLocationToMeduxLocation(nativeLocation, defaultData, key, parse) {
+function encodeBas64(str) {
+  return btoa ? btoa(str) : Buffer ? Buffer.from(str).toString('base64') : str;
+}
+
+function decodeBas64(str) {
+  return atob ? atob(str) : Buffer ? Buffer.from(str, 'base64').toString() : str;
+}
+
+function parseWebNativeLocation(nativeLocation, key, base64, parse) {
   var search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
   var hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  var params = deepExtend(search ? parse(search) : {}, hash ? parse(hash) : undefined);
+
+  if (base64) {
+    search = search && decodeBas64(search);
+    hash = hash && decodeBas64(hash);
+  }
+
   var pathname = ("/" + nativeLocation.pathname).replace(/\/+/g, '/');
   return {
-    tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    params: assignDefaultData(params, defaultData)
+    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
+    search: search ? parse(search) : undefined,
+    hash: hash ? parse(hash) : undefined
   };
 }
 
-function meduxLocationToNativeLocation(meduxLocation, defaultData, key, stringify) {
-  var _extractHashData = extractHashData(excludeDefaultData(meduxLocation.params, defaultData)),
-      search = _extractHashData.search,
-      hash = _extractHashData.hash;
-
+function toNativeLocation(tag, search, hash, key, base64, stringify) {
   var searchStr = search ? stringify(search) : '';
   var hashStr = hash ? stringify(hash) : '';
-  var pathname = ("/" + meduxLocation.tag).replace(/\/+/g, '/');
+
+  if (base64) {
+    searchStr = searchStr && encodeBas64(searchStr);
+    hashStr = hashStr && encodeBas64(hashStr);
+  }
+
+  var pathname = ("/" + tag).replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
     search: key ? key + "=" + searchStr : searchStr,
     hash: key ? key + "=" + hashStr : hashStr
   };
 }
+function createWebLocationTransform(defaultData, pathnameRules, base64, serialization, key) {
+  if (base64 === void 0) {
+    base64 = false;
+  }
 
-var inCache = {};
-function createWebLocationTransform(defaultData, locationMap, serialization, key) {
   if (serialization === void 0) {
     serialization = JSON;
   }
@@ -3803,45 +3899,88 @@ function createWebLocationTransform(defaultData, locationMap, serialization, key
     key = '';
   }
 
-  return {
-    in: function _in(nativeLocation) {
-      var pathname = nativeLocation.pathname,
-          search = nativeLocation.search,
-          hash = nativeLocation.hash;
-      var url = pathname + "?" + search + "#" + hash;
-
-      if (inCache[url]) {
-        return inCache[url];
-      }
-
-      var data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key, serialization.parse);
-      var location = locationMap ? locationMap.in(data) : data;
-      var urls = Object.keys(inCache);
-
-      if (urls.length > 1000) {
-        delete inCache[urls[0]];
-      }
-
-      inCache[url] = location;
-      return location;
-    },
-    out: function out(meduxLocation) {
-      var data = meduxLocation;
-
-      if (locationMap) {
-        var _location = locationMap.out(meduxLocation);
-
-        var _ruleToPathname = ruleToPathname(_location.tag, _location.params),
-            pathname = _ruleToPathname.pathname,
-            params = _ruleToPathname.params;
-
-        data = {
-          tag: pathname,
-          params: params
+  var matchCache = {
+    _cache: {},
+    get: function get(pathname) {
+      if (this._cache[pathname]) {
+        var _this$_cache$pathname = this._cache[pathname],
+            tag = _this$_cache$pathname.tag,
+            pathParams = _this$_cache$pathname.pathParams;
+        return {
+          tag: tag,
+          pathParams: JSON.parse(pathParams)
         };
       }
 
-      return meduxLocationToNativeLocation(data, defaultData || {}, key, serialization.stringify);
+      return undefined;
+    },
+    set: function set(pathname, tag, pathParams) {
+      var keys = Object.keys(this._cache);
+
+      if (keys.length > 100) {
+        delete this._cache[keys[0]];
+      }
+
+      this._cache[pathname] = {
+        tag: tag,
+        pathParams: JSON.stringify(pathParams)
+      };
+    }
+  };
+  return {
+    in: function _in(nativeLocation) {
+      var _parseWebNativeLocati = parseWebNativeLocation(nativeLocation, key, base64, serialization.parse),
+          pathname = _parseWebNativeLocati.pathname,
+          search = _parseWebNativeLocati.search,
+          hash = _parseWebNativeLocati.hash;
+
+      var data = {
+        tag: pathname,
+        params: {}
+      };
+
+      if (pathnameRules) {
+        var _ref = matchCache.get(pathname) || {},
+            pathParams = _ref.pathParams,
+            tag = _ref.tag;
+
+        if (!tag || !pathParams) {
+          pathParams = {};
+          tag = extractPathParams(pathnameRules, pathname, pathParams);
+          matchCache.set(pathname, tag, pathParams);
+        }
+
+        data.tag = tag;
+        data.params = deepExtend(pathParams, search, hash);
+      } else {
+        data.params = deepExtend(search, hash);
+      }
+
+      data.params = assignDefaultData(data.params, defaultData);
+      return data;
+    },
+    out: function out(meduxLocation) {
+      var params = excludeDefault(meduxLocation.params, defaultData, true);
+      var result;
+
+      if (pathnameRules) {
+        var _ref2 = matchCache.get(meduxLocation.tag) || {},
+            pathParams = _ref2.pathParams,
+            tag = _ref2.tag;
+
+        if (!tag || !pathParams) {
+          pathParams = {};
+          tag = extractPathParams(pathnameRules, meduxLocation.tag, pathParams);
+          matchCache.set(meduxLocation.tag, tag, pathParams);
+        }
+
+        params = excludeDefault(params, pathParams, false);
+        result = splitPrivate(params, pathParams);
+      } else {
+        result = splitPrivate(params, {});
+      }
+
+      return toNativeLocation(meduxLocation.tag, result[0], result[1], key, base64, serialization.stringify);
     }
   };
 }
@@ -4001,7 +4140,7 @@ var BaseHistoryActions = function () {
 
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params: params
@@ -4011,7 +4150,7 @@ var BaseHistoryActions = function () {
   _proto.locationToUrl = function locationToUrl(data) {
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
     var nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params: params
@@ -6101,7 +6240,7 @@ function shallowEqual(objA, objB) {
  * @param {any} obj The object to inspect.
  * @returns {boolean} True if the argument appears to be a plain object.
  */
-function isPlainObject$1(obj) {
+function isPlainObject$2(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   var proto = Object.getPrototypeOf(obj);
   if (proto === null) return true;
@@ -6140,7 +6279,7 @@ function warning$1(message) {
 }
 
 function verifyPlainObject(value, displayName, methodName) {
-  if (!isPlainObject$1(value)) {
+  if (!isPlainObject$2(value)) {
     warning$1(methodName + "() in " + displayName + " must return a plain object. Instead received " + value + ".");
   }
 }
@@ -7743,7 +7882,7 @@ var HistoryActions = function (_BaseHistoryActions) {
   function HistoryActions(nativeHistory, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform || createWebLocationTransform()) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
     _this2.nativeHistory = nativeHistory;
 
     _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);
@@ -7845,9 +7984,8 @@ function exportApp() {
     Modules: modules
   };
 }
-function buildApp(moduleGetter, _temp) {
-  var _ref = _temp === void 0 ? {} : _temp,
-      _ref$appModuleName = _ref.appModuleName,
+function buildApp(moduleGetter, _ref) {
+  var _ref$appModuleName = _ref.appModuleName,
       appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
       _ref$appViewName = _ref.appViewName,
       appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
@@ -7858,7 +7996,6 @@ function buildApp(moduleGetter, _temp) {
       storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
       _ref$container = _ref.container,
       container = _ref$container === void 0 ? 'root' : _ref$container;
-
   appExports.history = createRouter(historyType, locationTransform);
 
   if (!storeOptions.middlewares) {
@@ -7972,4 +8109,4 @@ var Link = React.forwardRef(function (_ref5, ref) {
   }));
 });
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, compileRule, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };

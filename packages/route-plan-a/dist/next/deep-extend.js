@@ -1,62 +1,215 @@
-function deepCloneArray(optimize, arr) {
-  const clone = [];
-  arr.forEach(function (item, index) {
-    if (typeof item === 'object' && item !== null) {
-      if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(optimize, item);
-      } else {
-        clone[index] = __deepExtend(optimize, {}, item);
-      }
-    } else {
-      clone[index] = item;
-    }
-  });
-  return clone;
+export function isPlainObject(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
-function __deepExtend(optimize, target, ...args) {
-  if (typeof target !== 'object') {
-    return false;
+function __deepExtend(optimize, target, inject) {
+  Object.keys(inject).forEach(function (key) {
+    const src = target[key];
+    const val = inject[key];
+
+    if (isPlainObject(val)) {
+      if (isPlainObject(src)) {
+        target[key] = __deepExtend(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
+
+export function deepExtend(target, ...args) {
+  if (!isPlainObject(target)) {
+    target = {};
   }
 
   if (args.length < 1) {
     return target;
   }
 
-  let val;
-  let src;
-  args.forEach(function (obj, index) {
-    let lastArg = false;
-    let last2Arg = null;
+  args.forEach(function (inject, index) {
+    if (isPlainObject(inject)) {
+      let lastArg = false;
+      let last2Arg = null;
 
-    if (optimize === null) {
       if (index === args.length - 1) {
         lastArg = true;
       } else if (index === args.length - 2) {
         last2Arg = args[index + 1];
       }
+
+      Object.keys(inject).forEach(function (key) {
+        const src = target[key];
+        const val = inject[key];
+
+        if (isPlainObject(val)) {
+          if (isPlainObject(src)) {
+            target[key] = __deepExtend(lastArg, src, val);
+          } else {
+            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
     }
-
-    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
-      return;
-    }
-
-    Object.keys(obj).forEach(function (key) {
-      src = target[key];
-      val = obj[key];
-
-      if (val === target) {} else if (typeof val !== 'object' || val === null) {
-        target[key] = val;
-      } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(lastArg, val);
-      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = optimize || lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
-      } else {
-        target[key] = __deepExtend(lastArg, src, val);
-      }
-    });
   });
   return target;
 }
 
-export const deepExtend = __deepExtend.bind(null, null);
+function __extendDefault(target, def) {
+  const clone = {};
+  Object.keys(def).forEach(function (key) {
+    if (!target.hasOwnProperty(key)) {
+      clone[key] = def[key];
+    } else {
+      const tval = target[key];
+      const dval = def[key];
+
+      if (isPlainObject(tval) && isPlainObject(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+
+export function extendDefault(target, def) {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+
+  if (!isPlainObject(def)) {
+    def = {};
+  }
+
+  return __extendDefault(target, def);
+}
+
+function __excludeDefault(data, def) {
+  const result = {};
+  let hasSub = false;
+  Object.keys(data).forEach(key => {
+    let value = data[key];
+    const defaultValue = def[key];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+
+  return undefined;
+}
+
+export function excludeDefault(data, def, keepTopLevel) {
+  if (!isPlainObject(data)) {
+    return {};
+  }
+
+  if (!isPlainObject(def)) {
+    return data;
+  }
+
+  const filtered = __excludeDefault(data, def);
+
+  if (keepTopLevel) {
+    const result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+
+  return filtered || {};
+}
+
+function __splitPrivate(data) {
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  let publicData;
+  let privateData;
+  keys.forEach(key => {
+    const value = data[key];
+
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+
+      privateData[key] = value;
+    } else if (isPlainObject(value)) {
+      const [subPublicData, subPrivateData] = __splitPrivate(value);
+
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+
+        publicData[key] = subPublicData;
+      }
+
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+
+export function splitPrivate(data, deleteTopLevel) {
+  if (!isPlainObject(data)) {
+    return [undefined, undefined];
+  }
+
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  const result = __splitPrivate(data);
+
+  let publicData = result[0];
+  const privateData = result[1];
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
+}

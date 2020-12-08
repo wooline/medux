@@ -4,14 +4,14 @@ import {deepExtend} from './deep-extend';
 import {buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation} from './basic';
 
 import type {LocationTransform} from './transform';
-import type {Params, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
+import type {RootParams, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
 
 export {deepExtend} from './deep-extend';
 export {createWebLocationTransform} from './transform';
-export {PathnameRules, compileRule} from './matchPath';
+export {PathnameRules, extractPathParams} from './matchPath';
 export {setRouteConfig} from './basic';
 export type {LocationMap, LocationTransform} from './transform';
-export type {Params, Location, NativeLocation, WebNativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload} from './basic';
+export type {RootParams, Location, NativeLocation, WebNativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload} from './basic';
 
 interface Store {
   dispatch(action: {type: string}): any;
@@ -21,12 +21,12 @@ export class RouteModuleHandlers<S extends CoreModuleState, R extends Record<str
   @reducer
   public Init(initState: S): S {
     const routeParams = this.rootState.route.params[this.moduleName];
-    return routeParams ? deepExtend({}, initState, routeParams) : initState;
+    return routeParams ? (deepExtend({}, initState, routeParams) as any) : initState;
   }
 
   @reducer
   public RouteParams(payload: Partial<S>): S {
-    return deepExtend({}, this.state, payload);
+    return deepExtend({}, this.state, payload) as any;
   }
 }
 export const RouteActionTypes = {
@@ -35,7 +35,7 @@ export const RouteActionTypes = {
   BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`,
 };
 
-export function beforeRouteChangeAction<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
+export function beforeRouteChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
   return {
     type: RouteActionTypes.BeforeRouteChange,
     payload: [routeState],
@@ -49,7 +49,7 @@ export function routeParamsAction(moduleName: string, params: any, action: Histo
   };
 }
 
-export function routeChangeAction<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
+export function routeChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
   return {
     type: RouteActionTypes.RouteChange,
     payload: [routeState],
@@ -89,7 +89,7 @@ export interface NativeHistory<NL extends NativeLocation = WebNativeLocation> {
   pop(location: NL, n: number, key: string): void;
 }
 
-export abstract class BaseHistoryActions<P extends Params, NL extends NativeLocation = WebNativeLocation> {
+export abstract class BaseHistoryActions<P extends RootParams, NL extends NativeLocation = WebNativeLocation> {
   private _tid = 0;
 
   private _routeState: RouteState<P, NL>;
@@ -149,14 +149,14 @@ export abstract class BaseHistoryActions<P extends Params, NL extends NativeLoca
     }
     const {tag} = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params: P = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    const params: P = extendParams && data.params ? (deepExtend({}, extendParams, data.params) as any) : data.params;
     return {tag: tag || this._routeState.tag || '/', params};
   }
 
   locationToUrl(data: RoutePayload<P>): string {
     const {tag} = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params: P = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    const params: P = extendParams && data.params ? (deepExtend({}, extendParams, data.params) as any) : data.params;
     const nativeLocation = this.locationTransform.out({tag: tag || this._routeState.tag || '/', params});
     return this.nativeHistory.toUrl(nativeLocation);
   }

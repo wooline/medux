@@ -81,6 +81,9 @@ export const MetaData: {
   moduleGetter: null as any,
 };
 
+export function getAppModuleName(): string {
+  return MetaData.appModuleName;
+}
 const loadings: {[moduleName: string]: TaskCounter} = {};
 
 let depthTime = 2;

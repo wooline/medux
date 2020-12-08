@@ -21,7 +21,8 @@ export function setRouteConfig(conf: {RSP?: string; historyMax?: number; homeUri
 
 export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
 
-export type Params = {[moduleName: string]: {[key: string]: any} | undefined};
+export type ModuleParams = {[key: string]: any};
+export type RootParams = {[moduleName: string]: ModuleParams};
 
 // export interface BaseLocation {
 //   pathname: string;
@@ -35,12 +36,12 @@ export interface WebNativeLocation extends NativeLocation {
   search: string;
   hash: string;
 }
-export interface Location<P extends Params = Params> {
+export interface Location<P extends RootParams = RootParams> {
   tag: string;
-  params: P;
+  params: Partial<P>;
 }
 
-export type RouteState<P extends Params, NL extends NativeLocation> = Location<P> &
+export type RouteState<P extends RootParams, NL extends NativeLocation> = Location<P> &
   NL & {
     action: HistoryAction;
     key: string;
@@ -48,24 +49,24 @@ export type RouteState<P extends Params, NL extends NativeLocation> = Location<P
     stack: string[];
   };
 
-export type RouteRootState<P extends Params, NL extends NativeLocation> = CoreRootState & {
+export type RouteRootState<P extends RootParams, NL extends NativeLocation> = CoreRootState & {
   route: RouteState<P, NL>;
 };
 
-export type RootState<A extends RootModuleFacade, P extends Params, NL extends NativeLocation> = {
+export type RootState<A extends RootModuleFacade, P extends RootParams, NL extends NativeLocation> = {
   route: RouteState<P, NL>;
 } & {[M in keyof A]?: A[M]['state']};
 
-type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
+export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
-export function extractNativeLocation<P extends Params, NL extends NativeLocation>(routeState: RouteState<P, NL>): NL {
+export function extractNativeLocation<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>): NL {
   const data = {...routeState};
   ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach((key) => {
     delete data[key];
   });
   return data;
 }
-export interface RoutePayload<P extends Params = Params> {
+export interface RoutePayload<P extends RootParams = RootParams> {
   tag?: string;
   params?: DeepPartial<P>;
   extendParams?: P | true;
@@ -85,7 +86,7 @@ function splitUri(...args: any): [string, string, string] | string {
   }
   return arr as any;
 }
-export function uriToLocation<P extends Params = Params>(uri: string): {key: string; location: Location<P>} {
+export function uriToLocation<P extends RootParams>(uri: string): {key: string; location: Location<P>} {
   const [key, tag, query] = splitUri(uri);
   const location: Location<P> = {tag, params: JSON.parse(query)};
   return {key, location};

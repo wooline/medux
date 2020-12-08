@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {BaseHistoryActions, NativeHistory, createWebLocationTransform} from '@medux/route-plan-a';
+import {BaseHistoryActions, NativeHistory} from '@medux/route-plan-a';
 import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
 import {env, RootModuleFacade} from '@medux/core';
 
-import type {RootState as BaseRootState, Params, RouteState as BaseRouteState, LocationTransform as BaseLocationTransform, WebNativeLocation} from '@medux/route-plan-a';
+import type {RootState as BaseRootState, RootParams, RouteState as BaseRouteState, LocationTransform as BaseLocationTransform, WebNativeLocation} from '@medux/route-plan-a';
 
-export type RouteState<P extends Params> = BaseRouteState<P, WebNativeLocation>;
-export type RootState<A extends RootModuleFacade, P extends Params> = BaseRootState<A, P, WebNativeLocation>;
-export type LocationTransform<P extends Params> = BaseLocationTransform<P, WebNativeLocation>;
+export type RouteState<P extends RootParams> = BaseRouteState<P, WebNativeLocation>;
+export type RootState<A extends RootModuleFacade, P extends RootParams> = BaseRootState<A, P, WebNativeLocation>;
+export type LocationTransform<P extends RootParams> = BaseLocationTransform<P, WebNativeLocation>;
 
 type UnregisterCallback = () => void;
 
@@ -118,13 +118,13 @@ export class WebNativeHistory implements NativeHistory<WebNativeLocation> {
     }
   }
 }
-export class HistoryActions<P extends Params = Params> extends BaseHistoryActions<P, WebNativeLocation> {
+export class HistoryActions<P extends RootParams = RootParams> extends BaseHistoryActions<P, WebNativeLocation> {
   private _unlistenHistory: UnregisterCallback;
 
   private _timer: number = 0;
 
-  constructor(protected nativeHistory: WebNativeHistory, locationTransform?: LocationTransform<P>) {
-    super(nativeHistory, locationTransform || createWebLocationTransform());
+  constructor(protected nativeHistory: WebNativeHistory, locationTransform: LocationTransform<P>) {
+    super(nativeHistory, locationTransform);
     this._unlistenHistory = this.nativeHistory.block((url, key, action) => {
       if (key !== this.getCurKey()) {
         let callback: (() => void) | undefined;
@@ -175,7 +175,7 @@ export class HistoryActions<P extends Params = Params> extends BaseHistoryAction
   }
 }
 
-export function createRouter<P extends Params = Params>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform?: LocationTransform<P>) {
+export function createRouter<P extends RootParams = RootParams>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>) {
   const nativeHistory = new WebNativeHistory(createHistory);
   const historyActions = new HistoryActions(nativeHistory, locationTransform);
   return historyActions;

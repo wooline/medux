@@ -29,7 +29,6 @@ export function parseRule(rule, pathname) {
       regexp = _compilePath.regexp,
       keys = _compilePath.keys;
 
-  pathname = ("/" + pathname + "/").replace(/\/+/g, '/');
   var match = regexp.exec(pathname);
   if (!match) return null;
   var matchedPathname = match[0],
@@ -40,37 +39,32 @@ export function parseRule(rule, pathname) {
   }, {});
   return {
     args: args,
+    matchPathame: matchedPathname,
     subPathname: pathname.replace(matchedPathname, '')
   };
 }
-export function ruleToPathname(rule, data) {
-  if (/:\w/.test(rule)) {
-    return {
-      pathname: rule,
-      params: data
-    };
+export function extractPathParams(rules, pathname, pathParams) {
+  for (var _rule in rules) {
+    if (rules.hasOwnProperty(_rule)) {
+      var data = parseRule(_rule, pathname);
+
+      if (data) {
+        var _args = data.args,
+            matchPathame = data.matchPathame,
+            subPathname = data.subPathname;
+
+        var result = rules[_rule](_args, pathParams);
+
+        if (typeof result === 'string') {
+          pathname = result;
+        } else if (result && subPathname) {
+          return matchPathame + extractPathParams(result, subPathname, pathParams);
+        } else {
+          return pathname;
+        }
+      }
+    }
   }
 
-  return {
-    pathname: rule,
-    params: data
-  };
-}
-export function compileRule(rules, pathname, pathArgs) {
-  Object.keys(rules).forEach(function (rule) {
-    var result = parseRule(rule, pathname);
-
-    if (result) {
-      var _args = result.args,
-          subPathname = result.subPathname;
-      var config = rules[rule];
-
-      var _ref = Array.isArray(config) ? config : [config, undefined],
-          callback = _ref[0],
-          subRules = _ref[1];
-
-      callback(_args, pathArgs);
-      subRules && subPathname && compileRule(subRules, subPathname, pathArgs);
-    }
-  });
+  return pathname;
 }

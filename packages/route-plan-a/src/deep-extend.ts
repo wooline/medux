@@ -1,80 +1,188 @@
-/**
- * Recursive cloning array.
- */
-function deepCloneArray(optimize: boolean, arr: any[]) {
-  const clone: any[] = [];
-  arr.forEach(function (item, index) {
-    if (typeof item === 'object' && item !== null) {
-      if (Array.isArray(item)) {
-        clone[index] = deepCloneArray(optimize, item);
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        clone[index] = __deepExtend(optimize, {}, item);
-      }
-    } else {
-      clone[index] = item;
-    }
-  });
-  return clone;
+export function isPlainObject(obj: any) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
-function __deepExtend(optimize: boolean, target: any, ...args: any[]) {
-  if (typeof target !== 'object') {
-    return false;
-  }
+function __deepExtend(optimize: boolean | null, target: {[key: string]: any}, inject: {[key: string]: any}[]) {
+  Object.keys(inject).forEach(function (key) {
+    const src = target[key];
+    const val = inject[key];
+    if (isPlainObject(val)) {
+      if (isPlainObject(src)) {
+        target[key] = __deepExtend(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
 
+export function deepExtend(target: {[key: string]: any}, ...args: {[key: string]: any}[]): {[key: string]: any} {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
   if (args.length < 1) {
     return target;
   }
-
-  let val;
-  let src;
-
-  args.forEach(function (obj, index) {
-    let lastArg = false;
-    let last2Arg: any = null;
-    if (optimize === null) {
+  args.forEach(function (inject, index) {
+    if (isPlainObject(inject)) {
+      let lastArg = false;
+      let last2Arg: any = null;
       if (index === args.length - 1) {
         lastArg = true;
       } else if (index === args.length - 2) {
         last2Arg = args[index + 1];
       }
+      Object.keys(inject).forEach(function (key) {
+        const src = target[key];
+        const val = inject[key];
+        if (isPlainObject(val)) {
+          if (isPlainObject(src)) {
+            target[key] = __deepExtend(lastArg, src, val);
+          } else {
+            target[key] = lastArg || (last2Arg && !last2Arg[key]) ? val : __deepExtend(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
     }
-    // skip argument if isn't an object, is null, or is an array
-    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
-      return;
-    }
-
-    Object.keys(obj).forEach(function (key) {
-      src = target[key]; // source value
-      val = obj[key]; // new value
-
-      // recursion prevention
-      if (val === target) {
-        /**
-         * if new value isn't object then just overwrite by new value
-         * instead of extending.
-         */
-      } else if (typeof val !== 'object' || val === null) {
-        target[key] = val;
-
-        // just clone arrays (and recursive clone objects inside)
-      } else if (Array.isArray(val)) {
-        target[key] = deepCloneArray(lastArg, val);
-
-        // custom cloning and overwrite for specific objects
-      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
-        target[key] = optimize || lastArg || (last2Arg && !last2Arg[key]) ? val : __deepExtend(lastArg, {}, val);
-        // target[key] = __deepExtend({}, val);
-
-        // source value and new value is objects both, extending...
-      } else {
-        target[key] = __deepExtend(lastArg, src, val);
-      }
-    });
   });
-
   return target;
 }
 
-export const deepExtend = __deepExtend.bind(null, null as any);
+function __extendDefault(target: Object, def: Object): Object {
+  const clone: any = {};
+  Object.keys(def).forEach(function (key) {
+    if (!target.hasOwnProperty(key)) {
+      clone[key] = def[key];
+    } else {
+      const tval = target[key];
+      const dval = def[key];
+      if (isPlainObject(tval) && isPlainObject(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+export function extendDefault(target: {[key: string]: any}, def: {[key: string]: any}): {[key: string]: any} {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+  if (!isPlainObject(def)) {
+    def = {};
+  }
+  return __extendDefault(target, def);
+}
+
+// 排除默认参数
+
+function __excludeDefault(data: {[key: string]: any}, def: {[key: string]: any}) {
+  const result: any = {};
+  let hasSub = false;
+  Object.keys(data).forEach((key) => {
+    let value = data[key];
+    const defaultValue = def[key];
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+  return undefined;
+}
+
+// 主要用来排除默认值，keepTopLevel：不能把顶级module省略，否则无法还原
+export function excludeDefault(data: {[key: string]: any}, def: {[key: string]: any}, keepTopLevel: boolean): {[key: string]: any} {
+  if (!isPlainObject(data)) {
+    return {};
+  }
+  if (!isPlainObject(def)) {
+    return data;
+  }
+  const filtered = __excludeDefault(data, def);
+  if (keepTopLevel) {
+    const result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+  return filtered || {};
+}
+
+function __splitPrivate(data: {[key: string]: any}): [{[key: string]: any} | undefined, {[key: string]: any} | undefined] {
+  const keys = Object.keys(data);
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+  let publicData: {[key: string]: any} | undefined;
+  let privateData: {[key: string]: any} | undefined;
+  keys.forEach((key) => {
+    const value = data[key];
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+      privateData[key] = value;
+    } else if (isPlainObject(value)) {
+      const [subPublicData, subPrivateData] = __splitPrivate(value);
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+        publicData[key] = subPublicData;
+      }
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+// 主要用来分离search与hash，注意：1.不能把顶级module省略，否则无法还原。2.由于服务器只能接收search，所以search不能把顶级module省略
+export function splitPrivate(data: {[key: string]: any}, deleteTopLevel: {[key: string]: boolean}): [{[key: string]: any} | undefined, {[key: string]: any} | undefined] {
+  if (!isPlainObject(data)) {
+    return [undefined, undefined];
+  }
+  const keys = Object.keys(data);
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+  const result = __splitPrivate(data);
+  let publicData = result[0];
+  const privateData = result[1];
+
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
+}

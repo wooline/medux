@@ -20,6 +20,9 @@ export var MetaData = {
   appModuleName: null,
   moduleGetter: null
 };
+export function getAppModuleName() {
+  return MetaData.appModuleName;
+}
 var loadings = {};
 var depthTime = 2;
 export function setLoadingDepthTime(second) {

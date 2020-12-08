@@ -1,5 +1,5 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseHistoryActions, createWebLocationTransform } from '@medux/route-plan-a';
+import { BaseHistoryActions } from '@medux/route-plan-a';
 import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
 import { env } from '@medux/core';
 export class WebNativeHistory {
@@ -136,7 +136,7 @@ export class WebNativeHistory {
 }
 export class HistoryActions extends BaseHistoryActions {
   constructor(nativeHistory, locationTransform) {
-    super(nativeHistory, locationTransform || createWebLocationTransform());
+    super(nativeHistory, locationTransform);
     this.nativeHistory = nativeHistory;
 
     _defineProperty(this, "_unlistenHistory", void 0);

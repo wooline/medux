@@ -9,7 +9,7 @@ import { deepExtend } from './deep-extend';
 import { buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation } from './basic';
 export { deepExtend } from './deep-extend';
 export { createWebLocationTransform } from './transform';
-export { PathnameRules, compileRule } from './matchPath';
+export { PathnameRules, extractPathParams } from './matchPath';
 export { setRouteConfig } from './basic';
 export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   var RouteModuleHandlers = function (_CoreModuleHandlers2) {
@@ -166,7 +166,7 @@ export var BaseHistoryActions = function () {
 
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params: params
@@ -176,7 +176,7 @@ export var BaseHistoryActions = function () {
   _proto.locationToUrl = function locationToUrl(data) {
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams ? deepExtend({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
     var nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params: params

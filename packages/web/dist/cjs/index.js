@@ -172,7 +172,7 @@ var HistoryActions = function (_BaseHistoryActions) {
   function HistoryActions(nativeHistory, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform || (0, _routePlanA.createWebLocationTransform)()) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
     _this2.nativeHistory = nativeHistory;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_unlistenHistory", void 0);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_timer", 0);

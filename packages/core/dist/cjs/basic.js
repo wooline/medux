@@ -2,6 +2,7 @@
 
 exports.__esModule = true;
 exports.setConfig = setConfig;
+exports.getAppModuleName = getAppModuleName;
 exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
 exports.reducer = reducer;
@@ -41,6 +42,11 @@ var MetaData = {
   moduleGetter: null
 };
 exports.MetaData = MetaData;
+
+function getAppModuleName() {
+  return MetaData.appModuleName;
+}
+
 var loadings = {};
 var depthTime = 2;
 

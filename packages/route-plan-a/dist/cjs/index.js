@@ -6,7 +6,7 @@ exports.__esModule = true;
 exports.beforeRouteChangeAction = beforeRouteChangeAction;
 exports.routeParamsAction = routeParamsAction;
 exports.routeChangeAction = routeChangeAction;
-exports.BaseHistoryActions = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.setRouteConfig = exports.compileRule = exports.PathnameRules = exports.createWebLocationTransform = void 0;
+exports.BaseHistoryActions = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.setRouteConfig = exports.extractPathParams = exports.PathnameRules = exports.createWebLocationTransform = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
@@ -37,7 +37,7 @@ exports.createWebLocationTransform = _transform.createWebLocationTransform;
 var _matchPath = require("./matchPath");
 
 exports.PathnameRules = _matchPath.PathnameRules;
-exports.compileRule = _matchPath.compileRule;
+exports.extractPathParams = _matchPath.extractPathParams;
 var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _CoreModuleHandlers) {
   var RouteModuleHandlers = function (_CoreModuleHandlers2) {
     (0, _inheritsLoose2.default)(RouteModuleHandlers, _CoreModuleHandlers2);
@@ -200,7 +200,7 @@ var BaseHistoryActions = function () {
 
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams ? (0, _deepExtend.deepExtend)({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? (0, _deepExtend.deepExtend)({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params: params
@@ -210,7 +210,7 @@ var BaseHistoryActions = function () {
   _proto.locationToUrl = function locationToUrl(data) {
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams ? (0, _deepExtend.deepExtend)({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? (0, _deepExtend.deepExtend)({}, extendParams, data.params) : data.params;
     var nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params: params

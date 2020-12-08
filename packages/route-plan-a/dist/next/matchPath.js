@@ -29,7 +29,6 @@ export function parseRule(rule, pathname) {
     regexp,
     keys
   } = compilePath(rule);
-  pathname = `/${pathname}/`.replace(/\/+/g, '/');
   const match = regexp.exec(pathname);
   if (!match) return null;
   const [matchedPathname, ...values] = match;
@@ -39,35 +38,33 @@ export function parseRule(rule, pathname) {
   }, {});
   return {
     args,
+    matchPathame: matchedPathname,
     subPathname: pathname.replace(matchedPathname, '')
   };
 }
-export function ruleToPathname(rule, data) {
-  if (/:\w/.test(rule)) {
-    return {
-      pathname: rule,
-      params: data
-    };
+export function extractPathParams(rules, pathname, pathParams) {
+  for (const rule in rules) {
+    if (rules.hasOwnProperty(rule)) {
+      const data = parseRule(rule, pathname);
+
+      if (data) {
+        const {
+          args,
+          matchPathame,
+          subPathname
+        } = data;
+        const result = rules[rule](args, pathParams);
+
+        if (typeof result === 'string') {
+          pathname = result;
+        } else if (result && subPathname) {
+          return matchPathame + extractPathParams(result, subPathname, pathParams);
+        } else {
+          return pathname;
+        }
+      }
+    }
   }
 
-  return {
-    pathname: rule,
-    params: data
-  };
-}
-export function compileRule(rules, pathname, pathArgs) {
-  Object.keys(rules).forEach(rule => {
-    const result = parseRule(rule, pathname);
-
-    if (result) {
-      const {
-        args,
-        subPathname
-      } = result;
-      const config = rules[rule];
-      const [callback, subRules] = Array.isArray(config) ? config : [config, undefined];
-      callback(args, pathArgs);
-      subRules && subPathname && compileRule(subRules, subPathname, pathArgs);
-    }
-  });
+  return pathname;
 }

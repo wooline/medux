@@ -1,8 +1,21 @@
 import {createWebLocationTransform} from 'src/index';
-import {HistoryActions, nativeHistory, defaultRouteParams} from './tools';
+import {HistoryActions, nativeHistory} from './tools';
 import nativeHistoryMock from './nativeHistory';
 
 describe('actions', () => {
+  const photoDefaultParams = {
+    _detailKey: '',
+    _listKey: '',
+    itemId: '',
+    listSearch: {
+      title: '',
+      page: 1,
+      pageSize: 10,
+    },
+  };
+  const defaultRouteParams: any = {
+    photos: photoDefaultParams,
+  };
   const historyActions = new HistoryActions(nativeHistory, createWebLocationTransform(defaultRouteParams));
   historyActions.setStore({
     dispatch() {

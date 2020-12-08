@@ -1,7 +1,7 @@
 import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseHistoryActions, createWebLocationTransform } from '@medux/route-plan-a';
+import { BaseHistoryActions } from '@medux/route-plan-a';
 import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
 import { env } from '@medux/core';
 export var WebNativeHistory = function () {
@@ -155,7 +155,7 @@ export var HistoryActions = function (_BaseHistoryActions) {
   function HistoryActions(nativeHistory, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform || createWebLocationTransform()) || this;
+    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
     _this2.nativeHistory = nativeHistory;
 
     _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);

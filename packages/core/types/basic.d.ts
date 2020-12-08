@@ -45,6 +45,7 @@ export declare const MetaData: {
     appViewName: string;
     moduleGetter: ModuleGetter;
 };
+export declare function getAppModuleName(): string;
 export declare function setLoadingDepthTime(second: number): void;
 export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, groupName?: string): T;
 export interface Action {

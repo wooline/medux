@@ -1,55 +1,5 @@
-import { deepExtend } from './deep-extend';
-import { ruleToPathname } from './matchPath';
-
-function extractHashData(params) {
-  const moduleNames = Object.keys(params);
-
-  if (moduleNames.length > 0) {
-    const searchParams = {};
-    let hashParams;
-    moduleNames.forEach(moduleName => {
-      const data = params[moduleName];
-      const keys = Object.keys(data);
-
-      if (keys.length > 0) {
-        if (`,${keys.join(',')}`.indexOf(',_') > -1) {
-          keys.forEach(key => {
-            if (key.startsWith('_')) {
-              if (!hashParams) {
-                hashParams = {};
-              }
-
-              if (!hashParams[moduleName]) {
-                hashParams[moduleName] = {};
-              }
-
-              hashParams[moduleName][key] = data[key];
-            } else {
-              if (!searchParams[moduleName]) {
-                searchParams[moduleName] = {};
-              }
-
-              searchParams[moduleName][key] = data[key];
-            }
-          });
-        } else {
-          searchParams[moduleName] = data;
-        }
-      } else {
-        searchParams[moduleName] = {};
-      }
-    });
-    return {
-      search: searchParams,
-      hash: hashParams
-    };
-  }
-
-  return {
-    search: undefined,
-    hash: undefined
-  };
-}
+import { deepExtend, extendDefault, excludeDefault, splitPrivate } from './deep-extend';
+import { extractPathParams } from './matchPath';
 
 function splitSearch(search, key) {
   const reg = new RegExp(`[?&#]${key}=([^&]+)`);
@@ -57,56 +7,51 @@ function splitSearch(search, key) {
   return arr ? arr[1] : '';
 }
 
-function excludeDefaultData(data, def, filterEmpty) {
-  const result = {};
-  Object.keys(data).forEach(moduleName => {
-    let value = data[moduleName];
-    const defaultValue = def[moduleName];
-
-    if (value !== defaultValue) {
-      if (typeof value === typeof defaultValue && typeof value === 'object' && !Array.isArray(value)) {
-        value = excludeDefaultData(value, defaultValue, true);
-      }
-
-      if (value !== undefined) {
-        result[moduleName] = value;
-      }
-    }
-  });
-
-  if (Object.keys(result).length === 0 && filterEmpty) {
-    return undefined;
-  }
-
-  return result;
-}
-
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce((params, moduleName) => {
-    params[moduleName] = def[moduleName] ? deepExtend({}, def[moduleName], data[moduleName]) : data[moduleName];
+    if (def.hasOwnProperty(moduleName)) {
+      params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
+    }
+
     return params;
   }, {});
 }
 
-function nativeLocationToMeduxLocation(nativeLocation, defaultData, key, parse) {
-  const search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
-  const hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
-  const params = deepExtend(search ? parse(search) : {}, hash ? parse(hash) : undefined);
+function encodeBas64(str) {
+  return btoa ? btoa(str) : Buffer ? Buffer.from(str).toString('base64') : str;
+}
+
+function decodeBas64(str) {
+  return atob ? atob(str) : Buffer ? Buffer.from(str, 'base64').toString() : str;
+}
+
+function parseWebNativeLocation(nativeLocation, key, base64, parse) {
+  let search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
+  let hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
+
+  if (base64) {
+    search = search && decodeBas64(search);
+    hash = hash && decodeBas64(hash);
+  }
+
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
   return {
-    tag: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    params: assignDefaultData(params, defaultData)
+    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
+    search: search ? parse(search) : undefined,
+    hash: hash ? parse(hash) : undefined
   };
 }
 
-function meduxLocationToNativeLocation(meduxLocation, defaultData, key, stringify) {
-  const {
-    search,
-    hash
-  } = extractHashData(excludeDefaultData(meduxLocation.params, defaultData));
-  const searchStr = search ? stringify(search) : '';
-  const hashStr = hash ? stringify(hash) : '';
-  const pathname = `/${meduxLocation.tag}`.replace(/\/+/g, '/');
+function toNativeLocation(tag, search, hash, key, base64, stringify) {
+  let searchStr = search ? stringify(search) : '';
+  let hashStr = hash ? stringify(hash) : '';
+
+  if (base64) {
+    searchStr = searchStr && encodeBas64(searchStr);
+    hashStr = hashStr && encodeBas64(hashStr);
+  }
+
+  const pathname = `/${tag}`.replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
     search: key ? `${key}=${searchStr}` : searchStr,
@@ -114,49 +59,103 @@ function meduxLocationToNativeLocation(meduxLocation, defaultData, key, stringif
   };
 }
 
-const inCache = {};
-export function createWebLocationTransform(defaultData, locationMap, serialization = JSON, key = '') {
+export function isLocationMap(data) {
+  if (typeof data.in === 'function' && typeof data.out === 'function') {
+    return true;
+  }
+
+  return false;
+}
+export function createWebLocationTransform(defaultData, pathnameRules, base64 = false, serialization = JSON, key = '') {
+  const matchCache = {
+    _cache: {},
+
+    get(pathname) {
+      if (this._cache[pathname]) {
+        const {
+          tag,
+          pathParams
+        } = this._cache[pathname];
+        return {
+          tag,
+          pathParams: JSON.parse(pathParams)
+        };
+      }
+
+      return undefined;
+    },
+
+    set(pathname, tag, pathParams) {
+      const keys = Object.keys(this._cache);
+
+      if (keys.length > 100) {
+        delete this._cache[keys[0]];
+      }
+
+      this._cache[pathname] = {
+        tag,
+        pathParams: JSON.stringify(pathParams)
+      };
+    }
+
+  };
   return {
     in(nativeLocation) {
       const {
         pathname,
         search,
         hash
-      } = nativeLocation;
-      const url = `${pathname}?${search}#${hash}`;
+      } = parseWebNativeLocation(nativeLocation, key, base64, serialization.parse);
+      const data = {
+        tag: pathname,
+        params: {}
+      };
 
-      if (inCache[url]) {
-        return inCache[url];
+      if (pathnameRules) {
+        let {
+          pathParams,
+          tag
+        } = matchCache.get(pathname) || {};
+
+        if (!tag || !pathParams) {
+          pathParams = {};
+          tag = extractPathParams(pathnameRules, pathname, pathParams);
+          matchCache.set(pathname, tag, pathParams);
+        }
+
+        data.tag = tag;
+        data.params = deepExtend(pathParams, search, hash);
+      } else {
+        data.params = deepExtend(search, hash);
       }
 
-      const data = nativeLocationToMeduxLocation(nativeLocation, defaultData || {}, key, serialization.parse);
-      const location = locationMap ? locationMap.in(data) : data;
-      const urls = Object.keys(inCache);
-
-      if (urls.length > 1000) {
-        delete inCache[urls[0]];
-      }
-
-      inCache[url] = location;
-      return location;
+      data.params = assignDefaultData(data.params, defaultData);
+      return data;
     },
 
     out(meduxLocation) {
-      let data = meduxLocation;
+      let params = excludeDefault(meduxLocation.params, defaultData, true);
+      let result;
 
-      if (locationMap) {
-        const location = locationMap.out(meduxLocation);
-        const {
-          pathname,
-          params
-        } = ruleToPathname(location.tag, location.params);
-        data = {
-          tag: pathname,
-          params
-        };
+      if (pathnameRules) {
+        let {
+          pathParams,
+          tag
+        } = matchCache.get(meduxLocation.tag) || {};
+
+        if (!tag || !pathParams) {
+          pathParams = {};
+          tag = extractPathParams(pathnameRules, meduxLocation.tag, pathParams);
+          matchCache.set(meduxLocation.tag, tag, pathParams);
+        }
+
+        params = excludeDefault(params, pathParams, false);
+        result = splitPrivate(params, pathParams);
+      } else {
+        result = splitPrivate(params, {});
       }
 
-      return meduxLocationToNativeLocation(data, defaultData || {}, key, serialization.stringify);
+      return toNativeLocation(meduxLocation.tag, result[0], result[1], key, base64, serialization.stringify);
     }
 
   };
