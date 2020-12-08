@@ -1,6 +1,6 @@
 {
   "name": "@medux/wechat",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "description": "The practice of @medux/core in wechat.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/wechat",
   "author": "wooline <wooline@qq.com>",
@@ -32,8 +32,8 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-alpha.2",
-    "@medux/mini-program": "^2.0.0-alpha.2"
+    "@medux/core": "^2.0.0-alpha.3",
+    "@medux/mini-program": "^2.0.0-alpha.3"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
