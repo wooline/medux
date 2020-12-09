@@ -2065,12 +2065,17 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);
+  preModuleNames.unshift(appModuleName);
   let appModule;
   await Promise.all(preModuleNames.map(moduleName => {
+    if (moduleName === appModuleName && appModule) {
+      return null;
+    }
+
     if (moduleGetter[moduleName]) {
       const module = moduleGetter[moduleName]();
 
-      if (module.default.moduleName === appModuleName) {
+      if (moduleName === appModuleName) {
         appModule = module;
       }
 
@@ -6995,7 +7000,8 @@ function buildSSR(moduleGetter, {
       }
     });
     appExports.history.setStore(store);
-    return appExports.history.getModulePath();
+    const routeState = appExports.history.getRouteState();
+    return Object.keys(routeState.params);
   });
 }
 const Else = ({
