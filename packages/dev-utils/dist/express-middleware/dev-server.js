@@ -39,13 +39,7 @@ module.exports = function middleware(enableSSR, proxyMap, replaceTpl) {
         }
         else {
             Promise.all([ajax.get(`${req.protocol}://${req.headers.host}/server/js/main.js`), ajax.get(`${req.protocol}://${req.headers.host}/index.html`)]).then(([main, tpl]) => {
-                let htmlTpl = tpl.data;
-                const arr = htmlTpl.match(/<!--\s*{server-script}\s*-->\s*<script[^>]*>([\s\S]+?)<\/script>/m);
-                if (arr) {
-                    htmlTpl = htmlTpl.replace(arr[0], '');
-                    const scripts = arr[1].trim();
-                    scripts && eval(scripts);
-                }
+                const htmlTpl = tpl.data;
                 const errorHandler = (err) => {
                     if (err.code === '301' || err.code === '302') {
                         if (res.headersSent) {
@@ -96,8 +90,7 @@ module.exports = function middleware(enableSSR, proxyMap, replaceTpl) {
                 catch (err) {
                     return errorHandler(err);
                 }
-                const htmlStr = replaceTpl ? replaceTpl(req, htmlTpl) : htmlTpl;
-                const htmlChunks = htmlStr.split(/<!--\s*{response-chunk}\s*-->/);
+                const htmlChunks = htmlTpl.split(/<!--\s*{response-chunk}\s*-->/);
                 if (htmlChunks[1]) {
                     res.write(htmlChunks[0]);
                 }

@@ -30,9 +30,9 @@
     "express": "^4.0.0",
     "http-proxy-middleware": "^0.20.0",
     "json-format": "^1.0.0",
-    "loader-utils": "*",
+    "loader-utils": "^2.0.0",
     "micromatch": "^4.0.0",
-    "schema-utils": "*"
+    "schema-utils": "^3.0.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

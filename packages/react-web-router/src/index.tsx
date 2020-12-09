@@ -29,12 +29,12 @@ export type FacadeExports<APP extends RootModuleFacade, RouteParams extends {[K 
   };
   Modules: RootModuleAPI<APP>;
 };
-const appExports: {store: any; state: any; loadView: any; getActions: any; history: any} = {
+const appExports: {store: any; state: any; loadView: any; getActions: any; history: HistoryActions} = {
   loadView,
   getActions: undefined,
   state: undefined,
   store: undefined,
-  history: undefined,
+  history: undefined as any,
 };
 
 export function exportApp(): FacadeExports<any, any> {
@@ -122,7 +122,8 @@ export function buildSSR(
       },
     });
     appExports.history.setStore(store);
-    return appExports.history.getModulePath();
+    const routeState = appExports.history.getRouteState();
+    return Object.keys(routeState.params);
   });
 }
 

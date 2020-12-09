@@ -217,12 +217,17 @@ function _renderSSR() {
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             preModuleNames = beforeRender(store);
-            _context2.next = 9;
+            preModuleNames.unshift(appModuleName);
+            _context2.next = 10;
             return Promise.all(preModuleNames.map(function (moduleName) {
+              if (moduleName === appModuleName && appModule) {
+                return null;
+              }
+
               if (moduleGetter[moduleName]) {
                 var module = moduleGetter[moduleName]();
 
-                if (module.default.moduleName === appModuleName) {
+                if (moduleName === appModuleName) {
                   appModule = module;
                 }
 
@@ -232,11 +237,11 @@ function _renderSSR() {
               return null;
             }));
 
-          case 9:
+          case 10:
             store.dispatch = defFun;
             return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-          case 11:
+          case 12:
           case "end":
             return _context2.stop();
         }

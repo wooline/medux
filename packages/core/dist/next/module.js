@@ -159,12 +159,17 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);
+  preModuleNames.unshift(appModuleName);
   let appModule;
   await Promise.all(preModuleNames.map(moduleName => {
+    if (moduleName === appModuleName && appModule) {
+      return null;
+    }
+
     if (moduleGetter[moduleName]) {
       const module = moduleGetter[moduleName]();
 
-      if (module.default.moduleName === appModuleName) {
+      if (moduleName === appModuleName) {
         appModule = module;
       }
 
