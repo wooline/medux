@@ -2912,7 +2912,7 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 
 function _renderApp() {
   _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-    var appModuleName, ssrInitStoreKey, initData, store, appModule;
+    var appModuleName, ssrInitStoreKey, initData, store, preModuleNames, appModule;
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -2943,22 +2943,35 @@ function _renderApp() {
             }
 
             store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            beforeRender(store);
-            _context.next = 14;
+            preModuleNames = beforeRender(store);
+            preModuleNames.filter(function (name) {
+              return name !== appModuleName;
+            }).unshift(appModuleName);
+            _context.next = 15;
+            return Promise.all(preModuleNames.map(function (moduleName) {
+              if (moduleGetter[moduleName]) {
+                return getModuleByName(moduleName, moduleGetter);
+              }
+
+              return null;
+            }));
+
+          case 15:
+            _context.next = 17;
             return getModuleByName(appModuleName, moduleGetter);
 
-          case 14:
+          case 17:
             appModule = _context.sent;
-            _context.next = 17;
+            _context.next = 20;
             return appModule.default.model(store);
 
-          case 17:
+          case 20:
             reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
             return _context.abrupt("return", {
               store: store
             });
 
-          case 19:
+          case 22:
           case "end":
             return _context.stop();
         }
@@ -2993,13 +3006,11 @@ function _renderSSR() {
             ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
             store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             preModuleNames = beforeRender(store);
-            preModuleNames.unshift(appModuleName);
+            preModuleNames.filter(function (name) {
+              return name !== appModuleName;
+            }).unshift(appModuleName);
             _context2.next = 10;
             return Promise.all(preModuleNames.map(function (moduleName) {
-              if (moduleName === appModuleName && appModule) {
-                return null;
-              }
-
               if (moduleGetter[moduleName]) {
                 var module = moduleGetter[moduleName]();
 
@@ -8025,6 +8036,8 @@ function buildApp(moduleGetter, _ref) {
   return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, function (store) {
     appExports.store = store;
     appExports.history.setStore(store);
+    var routeState = appExports.history.getRouteState();
+    return Object.keys(routeState.params);
   });
 }
 function buildSSR(moduleGetter, _ref2) {

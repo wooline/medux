@@ -15,7 +15,7 @@ export function renderApp(
   appViewName: string,
   storeOptions: StoreOptions,
   container: string | Element | ((component: ReactElement<any>) => void) = 'root',
-  beforeRender: (store: ModuleStore) => void
+  beforeRender: (store: ModuleStore) => string[]
 ) {
   return core.renderApp<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {

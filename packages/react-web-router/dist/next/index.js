@@ -2047,7 +2047,17 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
   }
 
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  beforeRender(store);
+  const preModuleNames = beforeRender(store);
+  preModuleNames.filter(name => {
+    return name !== appModuleName;
+  }).unshift(appModuleName);
+  await Promise.all(preModuleNames.map(moduleName => {
+    if (moduleGetter[moduleName]) {
+      return getModuleByName(moduleName, moduleGetter);
+    }
+
+    return null;
+  }));
   const appModule = await getModuleByName(appModuleName, moduleGetter);
   await appModule.default.model(store);
   reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
@@ -2065,13 +2075,11 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);
-  preModuleNames.unshift(appModuleName);
+  preModuleNames.filter(name => {
+    return name !== appModuleName;
+  }).unshift(appModuleName);
   let appModule;
   await Promise.all(preModuleNames.map(moduleName => {
-    if (moduleName === appModuleName && appModule) {
-      return null;
-    }
-
     if (moduleGetter[moduleName]) {
       const module = moduleGetter[moduleName]();
 
@@ -6973,6 +6981,8 @@ function buildApp(moduleGetter, {
   return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, store => {
     appExports.store = store;
     appExports.history.setStore(store);
+    const routeState = appExports.history.getRouteState();
+    return Object.keys(routeState.params);
   });
 }
 function buildSSR(moduleGetter, {

@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-pkg",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
   "author": "wooline <wooline@qq.com>",
@@ -25,7 +25,7 @@
     "@babel/preset-react": "~7.12.5",
     "@babel/preset-typescript": "~7.12.1",
     "@babel/runtime": "~7.12.5",
-    "@medux/dev-utils": "~2.0.0",
+    "@medux/dev-utils": "~2.0.0-alpha.4",
     "@medux/eslint-plugin-recommended": "~1.0.7",
     "@medux/stylelint-config-recommended": "~1.0.0",
     "@pmmmwh/react-refresh-webpack-plugin": "~0.4.3",

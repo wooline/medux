@@ -181,7 +181,7 @@ export async function renderApp<V>(
   appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender: (store: ModuleStore) => void
+  beforeRender: (store: ModuleStore) => string[]
 ): Promise<{store: ModuleStore}> {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
@@ -200,7 +200,21 @@ export async function renderApp<V>(
     initData = {...initData, ...client![ssrInitStoreKey]};
   }
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  beforeRender(store);
+  const preModuleNames = beforeRender(store);
+  preModuleNames
+    .filter((name) => {
+      return name !== appModuleName;
+    })
+    .unshift(appModuleName);
+  // 预加载模块，以防止loading与SSR不一致
+  await Promise.all(
+    preModuleNames.map((moduleName) => {
+      if (moduleGetter[moduleName]) {
+        return getModuleByName(moduleName, moduleGetter);
+      }
+      return null;
+    })
+  );
   const appModule = await getModuleByName(appModuleName, moduleGetter);
   await appModule.default.model(store);
   reRender = render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
@@ -230,13 +244,16 @@ export async function renderSSR<V>(
   const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);
-  preModuleNames.unshift(appModuleName);
+  preModuleNames
+    .filter((name) => {
+      return name !== appModuleName;
+    })
+    .unshift(appModuleName);
+
   let appModule: Module | undefined;
+
   await Promise.all(
     preModuleNames.map((moduleName) => {
-      if (moduleName === appModuleName && appModule) {
-        return null;
-      }
       if (moduleGetter[moduleName]) {
         const module = moduleGetter[moduleName]() as Module;
         if (moduleName === appModuleName) {

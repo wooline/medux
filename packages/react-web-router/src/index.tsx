@@ -87,6 +87,8 @@ export function buildApp(
   return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
     appExports.store = store as any;
     appExports.history.setStore(store);
+    const routeState = appExports.history.getRouteState();
+    return Object.keys(routeState.params);
   });
 }
 
