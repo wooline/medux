@@ -1,6 +1,6 @@
 {
   "name": "@medux/react",
-  "version": "2.0.0-alpha.5",
+  "version": "2.0.0-y.0",
   "description": "The practice of @medux/core in react.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react",
   "author": "wooline <wooline@qq.com>",
@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-alpha.5",
+    "@medux/core": "^2.0.0-y.0",
     "@types/react-redux": "^7.0.0",
     "react-redux": "^7.0.0"
   },
