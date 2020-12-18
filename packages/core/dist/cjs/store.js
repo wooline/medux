@@ -59,6 +59,8 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     _basic.MetaData.clientStore.destroy();
   }
 
+  var store;
+
   var combineReducers = function combineReducers(rootState, action) {
     if (!store) {
       return rootState;
@@ -278,7 +280,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     enhancers.push(_env.client.__REDUX_DEVTOOLS_EXTENSION__(_env.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  var store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
+  store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
 
   store.destroy = function () {
     return undefined;

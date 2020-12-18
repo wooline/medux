@@ -48,6 +48,8 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     MetaData.clientStore.destroy();
   }
 
+  var store;
+
   var combineReducers = function combineReducers(rootState, action) {
     if (!store) {
       return rootState;
@@ -267,7 +269,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
+  store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
 
   store.destroy = function () {
     return undefined;

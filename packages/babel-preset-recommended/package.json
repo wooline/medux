@@ -1,0 +1,42 @@
+{
+  "name": "@medux/babel-preset-recommended",
+  "version": "1.0.2",
+  "main": "dist/index.js",
+  "description": "Common development tools",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/babel-preset-recommended",
+  "author": "wooline <wooline@qq.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "eslintSrc": "../../node_modules/.bin/eslint --cache ./src",
+    "clearDist": "../../node_modules/.bin/rimraf ./dist",
+    "prebuild": "yarn eslintSrc && yarn clearDist",
+    "build": "tsc -P ./src"
+  },
+  "dependencies": {
+    "@babel/cli": "~7.12.1",
+    "@babel/core": "~7.12.3",
+    "@babel/plugin-proposal-class-properties": "~7.12.1",
+    "@babel/plugin-proposal-decorators": "~7.12.1",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "~7.12.1",
+    "@babel/plugin-proposal-object-rest-spread": "~7.12.1",
+    "@babel/plugin-proposal-optional-chaining": "~7.12.1",
+    "@babel/plugin-syntax-dynamic-import": "~7.8.3",
+    "@babel/plugin-transform-runtime": "7.12.1",
+    "@babel/preset-env": "~7.12.1",
+    "@babel/preset-react": "~7.12.5",
+    "@babel/preset-typescript": "~7.12.1",
+    "@babel/runtime": "~7.12.5",
+    "babel-plugin-module-resolver": "~4.0.0",
+    "babel-plugin-root-import": "~6.6.0"
+  },
+  "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
+}

@@ -32,6 +32,8 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     MetaData.clientStore.destroy();
   }
 
+  let store;
+
   const combineReducers = (rootState, action) => {
     if (!store) {
       return rootState;
@@ -236,7 +238,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  const store = createStore(combineReducers, preloadedState, compose(...enhancers));
+  store = createStore(combineReducers, preloadedState, compose(...enhancers));
 
   store.destroy = () => undefined;
 

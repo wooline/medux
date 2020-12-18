@@ -66,7 +66,7 @@ export function buildStore(
   if (MetaData.clientStore) {
     MetaData.clientStore.destroy();
   }
-
+  let store: ModuleStore;
   const combineReducers = (rootState: Record<string, any>, action: Action) => {
     if (!store) {
       return rootState;
@@ -250,7 +250,7 @@ export function buildStore(
   if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
-  const store: ModuleStore = createStore(combineReducers as any, preloadedState, compose(...enhancers));
+  store = createStore(combineReducers as any, preloadedState, compose(...enhancers));
   store.destroy = () => undefined;
   if (!isServerEnv) {
     MetaData.clientStore = store;
