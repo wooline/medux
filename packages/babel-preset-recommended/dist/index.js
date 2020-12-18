@@ -1,3 +1,4 @@
+"use strict";
 const runtimeVersion = require('@babel/runtime/package.json').version;
 module.exports = function (api, options = {}) {
     if (process.env.NODE_ENV === 'test') {
