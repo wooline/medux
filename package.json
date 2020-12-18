@@ -13,14 +13,10 @@
   "keywords": [],
   "workspaces": [
     "packages/core",
-    "packages/mini-program",
     "packages/react",
     "packages/react-web-router",
     "packages/route-plan-a",
-    "packages/web",
-    "packages/wechat",
-    "packages/react-taro",
-    "packages/dev-utils"
+    "packages/web"
   ],
   "scripts": {
     "lerna": "lerna publish",
