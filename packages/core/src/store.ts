@@ -10,11 +10,6 @@ import {errorAction} from './actions';
  */
 export interface StoreOptions {
   /**
-   * ssr时使用的全局key，用来保存server输出的初始Data
-   * - 默认为'meduxInitStore'
-   */
-  ssrInitStoreKey?: string;
-  /**
    * 如果你需要独立的第三方reducers可以通过此注入
    * - store根节点下reducers数据和module数据，可通过isModule来区分
    */

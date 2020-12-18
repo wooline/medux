@@ -133,7 +133,7 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
     cacheModule(appModuleOrName);
   }
 
-  const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+  const ssrInitStoreKey = config.SSRKey;
   let initData = storeOptions.initData || {};
 
   if (client[ssrInitStoreKey]) {
@@ -166,7 +166,7 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   MetaData.moduleGetter = moduleGetter;
-  const ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+  const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const preModuleNames = beforeRender(store);
   preModuleNames.filter(name => {

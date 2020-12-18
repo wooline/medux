@@ -2,11 +2,13 @@ import { TaskCountEvent, TaskCounter } from './sprite';
 import { env, isServerEnv } from './env';
 export var config = {
   NSP: '.',
-  MSP: ','
+  MSP: ',',
+  SSRKey: 'meduxInitStore'
 };
 export function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
+  _config.SSRKey && (config.SSRKey = _config.SSRKey);
 }
 export var ActionTypes = {
   MLoading: 'Loading',

@@ -3,10 +3,12 @@ import { LoadingState } from './sprite';
 export declare const config: {
     NSP: string;
     MSP: string;
+    SSRKey: string;
 };
 export declare function setConfig(_config: {
     NSP?: string;
     MSP?: string;
+    SSRKey?: string;
 }): void;
 export interface CommonModule<ModuleName extends string = string> {
     default: {

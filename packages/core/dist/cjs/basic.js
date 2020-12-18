@@ -19,13 +19,15 @@ var _env = require("./env");
 
 var config = {
   NSP: '.',
-  MSP: ','
+  MSP: ',',
+  SSRKey: 'meduxInitStore'
 };
 exports.config = config;
 
 function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
+  _config.SSRKey && (config.SSRKey = _config.SSRKey);
 }
 
 var ActionTypes = {

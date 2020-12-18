@@ -4,16 +4,18 @@ import {env, isServerEnv} from './env';
 
 /**
  * 可供设置的全局参数，参见setConfig
- * - VSP 默认为. ModuleName${VSP}ViewName 用于标记View
+ * - SSRKey 默认为 meduxInitStore 用于SSR同构时传递data
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
 export const config: {
   NSP: string;
   MSP: string;
+  SSRKey: string;
 } = {
   NSP: '.',
   MSP: ',',
+  SSRKey: 'meduxInitStore',
 };
 /**
  * 可供设置的全局参数
@@ -21,9 +23,10 @@ export const config: {
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
-export function setConfig(_config: {NSP?: string; MSP?: string}) {
+export function setConfig(_config: {NSP?: string; MSP?: string; SSRKey?: string}) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
+  _config.SSRKey && (config.SSRKey = _config.SSRKey);
 }
 
 export interface CommonModule<ModuleName extends string = string> {

@@ -1,7 +1,6 @@
 import { Middleware, ReducersMapObject, StoreEnhancer } from 'redux';
 import { Action, ModuleStore } from './basic';
 export interface StoreOptions {
-    ssrInitStoreKey?: string;
     reducers?: ReducersMapObject;
     middlewares?: Middleware[];
     enhancers?: StoreEnhancer[];

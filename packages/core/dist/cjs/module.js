@@ -183,7 +183,7 @@ function _renderApp() {
               (0, _inject.cacheModule)(appModuleOrName);
             }
 
-            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            ssrInitStoreKey = _basic.config.SSRKey;
             initData = storeOptions.initData || {};
 
             if (_env.client[ssrInitStoreKey]) {
@@ -251,7 +251,7 @@ function _renderSSR() {
             _basic.MetaData.appModuleName = appModuleName;
             _basic.MetaData.appViewName = appViewName;
             _basic.MetaData.moduleGetter = moduleGetter;
-            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            ssrInitStoreKey = _basic.config.SSRKey;
             store = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             preModuleNames = beforeRender(store);
             preModuleNames.filter(function (name) {
