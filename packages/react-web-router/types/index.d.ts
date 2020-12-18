@@ -1,5 +1,5 @@
-/// <reference path="../env/global.d.ts" />
-import React, { ReactElement, ComponentType, FunctionComponent, ComponentClass } from 'react';
+/// <reference types="@medux/react-web-router/env/global" />
+import React, { ComponentType, FunctionComponent, ComponentClass, ReactNode } from 'react';
 import { LoadView } from '@medux/react';
 import { HistoryActions } from '@medux/web';
 import { Options as ReactReduxOptions } from 'react-redux';
@@ -13,9 +13,14 @@ export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
 export type { RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules } from '@medux/route-plan-a';
 export type { RootState, RouteState, LocationTransform } from '@medux/web';
+export interface ServerRequest {
+    url: string;
+}
+export interface ServerResponse {
+}
 export declare type FacadeExports<APP extends RootModuleFacade, RouteParams extends {
     [K in keyof APP]: any;
-}> = {
+}, Request extends ServerRequest = ServerRequest, Response extends ServerResponse = ServerResponse> = {
     App: {
         store: Store;
         state: RootState<APP, RouteParams>;
@@ -24,6 +29,8 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
         getActions<N extends keyof APP>(...args: N[]): {
             [K in N]: APP[K]['actions'];
         };
+        request: Request;
+        response: Response;
     };
     Modules: RootModuleAPI<APP>;
 };
@@ -34,35 +41,19 @@ export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, ap
     historyType?: 'Browser' | 'Hash' | 'Memory';
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
-    container?: string | Element | ((component: ReactElement<any>) => void);
+    container?: string;
 }): Promise<{
     store: import("@medux/core/types").ModuleStore;
 }>;
-export declare function buildSSR(moduleGetter: ModuleGetter, { appModuleName, appViewName, location, locationTransform, storeOptions, renderToStream, }: {
+export declare function buildSSR(moduleGetter: ModuleGetter, { request, response, appModuleName, appViewName, locationTransform, storeOptions, container, }: {
     appModuleName?: string;
     appViewName?: string;
-    location: string;
+    request: ServerRequest;
+    response: ServerResponse;
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
-    renderToStream?: boolean;
-}): Promise<{
-    html: string | meduxCore.ReadableStream;
-    data: any;
-    ssrInitStoreKey: string;
-}>;
-interface ElseProps {
-    elseView?: React.ReactNode;
-    children: React.ReactNode;
-}
-export declare const Else: React.FC<ElseProps>;
-interface SwitchProps {
-    elseView?: React.ReactNode;
-    children: React.ReactNode;
-}
-export declare const Switch: React.FC<SwitchProps>;
-export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-    replace?: boolean;
-}
+    container?: string;
+}): Promise<string>;
 export declare type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
 export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
 export interface Connect {
@@ -71,4 +62,21 @@ export interface Connect {
     }>;
 }
 export declare const connect: Connect;
+interface ElseProps {
+    elseView?: ReactNode;
+    children: ReactNode;
+}
+export declare const Else: React.NamedExoticComponent<ElseProps>;
+interface SwitchProps {
+    elseView?: ReactNode;
+    children: ReactNode;
+}
+export declare const Switch: React.NamedExoticComponent<SwitchProps>;
+export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+    replace?: boolean;
+}
 export declare const Link: React.ForwardRefExoticComponent<LinkProps & React.RefAttributes<HTMLAnchorElement>>;
+interface DocumentHeadProps {
+    children?: ReactNode;
+}
+export declare const DocumentHead: React.NamedExoticComponent<DocumentHeadProps>;

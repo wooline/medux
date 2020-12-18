@@ -1308,6 +1308,15 @@ var env = typeof window === 'object' && window.window || typeof global === 'obje
 var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 var isDevelopmentEnv = process.env.NODE_ENV !== 'production';
 var client = isServerEnv ? undefined : env;
+var _MEDUX_ENV = {};
+
+try {
+  _MEDUX_ENV = process.env.MEDUX_ENV;
+} catch (error) {
+  _MEDUX_ENV = {};
+}
+
+var MEDUX_ENV = _MEDUX_ENV;
 
 var TaskCountEvent = 'TaskCountEvent';
 var LoadingState;
@@ -1504,11 +1513,13 @@ var TaskCounter = function (_PDispatcher) {
 
 var config = {
   NSP: '.',
-  MSP: ','
+  MSP: ',',
+  SSRKey: 'meduxInitStore'
 };
 function setConfig(_config) {
   _config.NSP && (config.NSP = _config.NSP);
   _config.MSP && (config.MSP = _config.MSP);
+  _config.SSRKey && (config.SSRKey = _config.SSRKey);
 }
 var ActionTypes = {
   MLoading: 'Loading',
@@ -1658,6 +1669,9 @@ function delayPromise(second) {
 }
 function isPromise(data) {
   return typeof data === 'object' && typeof data.then === 'function';
+}
+function isServer() {
+  return isServerEnv;
 }
 
 function errorAction(error) {
@@ -2548,6 +2562,8 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     MetaData.clientStore.destroy();
   }
 
+  var store;
+
   var combineReducers = function combineReducers(rootState, action) {
     if (!store) {
       return rootState;
@@ -2767,7 +2783,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
-  var store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
+  store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
 
   store.destroy = function () {
     return undefined;
@@ -2935,7 +2951,7 @@ function _renderApp() {
               cacheModule(appModuleOrName);
             }
 
-            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            ssrInitStoreKey = config.SSRKey;
             initData = storeOptions.initData || {};
 
             if (client[ssrInitStoreKey]) {
@@ -3003,7 +3019,7 @@ function _renderSSR() {
             MetaData.appModuleName = appModuleName;
             MetaData.appViewName = appViewName;
             MetaData.moduleGetter = moduleGetter;
-            ssrInitStoreKey = storeOptions.ssrInitStoreKey || 'meduxInitStore';
+            ssrInitStoreKey = config.SSRKey;
             store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
             preModuleNames = beforeRender(store);
             preModuleNames.filter(function (name) {
@@ -7979,7 +7995,9 @@ var appExports = {
   getActions: undefined,
   state: undefined,
   store: undefined,
-  history: undefined
+  history: undefined,
+  request: undefined,
+  response: undefined
 };
 function exportApp() {
   var modules = getRootModuleAPI();
@@ -8040,18 +8058,22 @@ function buildApp(moduleGetter, _ref) {
     return Object.keys(routeState.params);
   });
 }
+var SSRTPL = isServer() && MEDUX_ENV.ssrHTML ? Buffer.from(MEDUX_ENV.ssrHTML, 'base64').toString() : '';
 function buildSSR(moduleGetter, _ref2) {
-  var _ref2$appModuleName = _ref2.appModuleName,
+  var request = _ref2.request,
+      response = _ref2.response,
+      _ref2$appModuleName = _ref2.appModuleName,
       appModuleName = _ref2$appModuleName === void 0 ? 'app' : _ref2$appModuleName,
       _ref2$appViewName = _ref2.appViewName,
       appViewName = _ref2$appViewName === void 0 ? 'main' : _ref2$appViewName,
-      location = _ref2.location,
       locationTransform = _ref2.locationTransform,
       _ref2$storeOptions = _ref2.storeOptions,
       storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
-      _ref2$renderToStream = _ref2.renderToStream,
-      renderToStream = _ref2$renderToStream === void 0 ? false : _ref2$renderToStream;
-  appExports.history = createRouter(location, locationTransform);
+      _ref2$container = _ref2.container,
+      container = _ref2$container === void 0 ? 'root' : _ref2$container;
+  appExports.request = request;
+  appExports.response = response;
+  appExports.history = createRouter(request.url, locationTransform);
 
   if (!storeOptions.initData) {
     storeOptions.initData = {};
@@ -8060,7 +8082,7 @@ function buildSSR(moduleGetter, _ref2) {
   storeOptions.initData = Object.assign({}, storeOptions.initData, {
     route: appExports.history.getRouteState()
   });
-  return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, function (store) {
+  return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, false, function (store) {
     appExports.store = store;
     Object.defineProperty(appExports, 'state', {
       get: function get() {
@@ -8070,42 +8092,65 @@ function buildSSR(moduleGetter, _ref2) {
     appExports.history.setStore(store);
     var routeState = appExports.history.getRouteState();
     return Object.keys(routeState.params);
+  }).then(function (_ref3) {
+    var html = _ref3.html,
+        data = _ref3.data,
+        ssrInitStoreKey = _ref3.ssrInitStoreKey;
+    var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
+
+    if (match) {
+      var pageHead = html.split(/<head>|<\/head>/, 3);
+      html = pageHead[0] + pageHead[2];
+      return SSRTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+    }
+
+    return html;
   });
 }
-var Else = function Else(_ref3) {
-  var children = _ref3.children,
-      elseView = _ref3.elseView;
+var connect = baseConnect;
 
-  if (!children || Array.isArray(children) && children.every(function (item) {
-    return !item;
-  })) {
-    return React.createElement(React.Fragment, null, elseView);
-  }
-
-  return React.createElement(React.Fragment, null, children);
-};
-var Switch = function Switch(_ref4) {
+var ElseComponent = function ElseComponent(_ref4) {
   var children = _ref4.children,
       elseView = _ref4.elseView;
+  var arr = [];
+  React.Children.forEach(children, function (item) {
+    item && arr.push(item);
+  });
 
-  if (!children || Array.isArray(children) && children.every(function (item) {
-    return !item;
-  })) {
-    return React.createElement(React.Fragment, null, elseView);
+  if (arr.length > 0) {
+    return React.createElement(React.Fragment, null, arr);
   }
 
-  return React.createElement(React.Fragment, null, Array.isArray(children) ? children[0] : children);
+  return React.createElement(React.Fragment, null, elseView);
 };
+
+var Else = React.memo(ElseComponent);
+
+var SwitchComponent = function SwitchComponent(_ref5) {
+  var children = _ref5.children,
+      elseView = _ref5.elseView;
+  var arr = [];
+  React.Children.forEach(children, function (item) {
+    item && arr.push(item);
+  });
+
+  if (arr.length > 0) {
+    return React.createElement(React.Fragment, null, arr[0]);
+  }
+
+  return React.createElement(React.Fragment, null, elseView);
+};
+
+var Switch = React.memo(SwitchComponent);
 
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
 
-var connect = baseConnect;
-var Link = React.forwardRef(function (_ref5, ref) {
-  var _onClick = _ref5.onClick,
-      replace = _ref5.replace,
-      rest = _objectWithoutPropertiesLoose(_ref5, ["onClick", "replace"]);
+var Link = React.forwardRef(function (_ref6, ref) {
+  var _onClick = _ref6.onClick,
+      replace = _ref6.replace,
+      rest = _objectWithoutPropertiesLoose(_ref6, ["onClick", "replace"]);
 
   var target = rest.target;
   var props = Object.assign({}, rest, {
@@ -8128,4 +8173,27 @@ var Link = React.forwardRef(function (_ref5, ref) {
   }));
 });
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+var DocumentHeadComponent = function DocumentHeadComponent(_ref7) {
+  var children = _ref7.children;
+  var title = '';
+  React.Children.forEach(children, function (child) {
+    if (child && child.type === 'title') {
+      title = child.props.children;
+    }
+  });
+
+  if (!isServer()) {
+    useEffect(function () {
+      if (title) {
+        document.title = title;
+      }
+    }, [title]);
+    return null;
+  }
+
+  return React.createElement("head", null, children);
+};
+
+var DocumentHead = React.memo(DocumentHeadComponent);
+
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
