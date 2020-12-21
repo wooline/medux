@@ -132,4 +132,5 @@ export declare function logger(before: (action: Action, moduleName: string, prom
 export declare function delayPromise(second: number): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function isPromise(data: any): data is Promise<any>;
 export declare function isServer(): boolean;
+export declare function serverSide<T>(callback: () => T): T | undefined;
 export {};

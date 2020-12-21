@@ -339,3 +339,9 @@ export function isPromise(data: any): data is Promise<any> {
 export function isServer(): boolean {
   return isServerEnv;
 }
+export function serverSide<T>(callback: () => T) {
+  if (isServerEnv) {
+    return callback();
+  }
+  return undefined;
+}

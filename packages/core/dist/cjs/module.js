@@ -191,10 +191,10 @@ function _renderApp() {
             }
 
             store = (0, _store.buildStore)(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            preModuleNames = beforeRender(store);
-            preModuleNames.filter(function (name) {
+            preModuleNames = beforeRender(store).filter(function (name) {
               return name !== appModuleName;
-            }).unshift(appModuleName);
+            });
+            preModuleNames.unshift(appModuleName);
             _context.next = 15;
             return Promise.all(preModuleNames.map(function (moduleName) {
               if (moduleGetter[moduleName]) {
@@ -253,10 +253,10 @@ function _renderSSR() {
             _basic.MetaData.moduleGetter = moduleGetter;
             ssrInitStoreKey = _basic.config.SSRKey;
             store = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            preModuleNames = beforeRender(store);
-            preModuleNames.filter(function (name) {
+            preModuleNames = beforeRender(store).filter(function (name) {
               return name !== appModuleName;
-            }).unshift(appModuleName);
+            });
+            preModuleNames.unshift(appModuleName);
             _context2.next = 10;
             return Promise.all(preModuleNames.map(function (moduleName) {
               if (moduleGetter[moduleName]) {

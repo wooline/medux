@@ -11,6 +11,7 @@ exports.logger = logger;
 exports.delayPromise = delayPromise;
 exports.isPromise = isPromise;
 exports.isServer = isServer;
+exports.serverSide = serverSide;
 exports.MetaData = exports.ActionTypes = exports.config = void 0;
 
 var _sprite = require("./sprite");
@@ -196,4 +197,12 @@ function isPromise(data) {
 
 function isServer() {
   return _env.isServerEnv;
+}
+
+function serverSide(callback) {
+  if (_env.isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
 }

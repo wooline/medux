@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
+import {patchRequire} from 'fs-monkey';
 import {ConcatSource} from 'webpack-sources';
 import {Compiler} from 'webpack';
 import {validate} from 'schema-utils';
@@ -30,6 +31,8 @@ export class SsrInject {
   htmlKey: string = 'process.env.MEDUX_ENV_SSRTPL';
 
   html: string = '';
+
+  outputFileSystem: any;
 
   constructor(options: Options = {}) {
     validate(schema, options, {name: '@medux/dev-webpack/ssr-inject'});
@@ -67,9 +70,9 @@ export class SsrInject {
     } else {
       compiler.hooks.compilation.tap('SsrInject', (compilation) => {
         HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync('SsrInjectSetHtml', (data, callback) => {
+          const outputFileSystem = compiler.outputFileSystem as any;
           const html = Buffer.from(data.html).toString('base64');
           this.html = html;
-          const outputFileSystem = compiler.outputFileSystem as any;
           const entryFilePath = this.entryFilePath;
           if (outputFileSystem.existsSync(entryFilePath)) {
             const source: string = outputFileSystem.readFileSync(entryFilePath).toString();
@@ -81,9 +84,25 @@ export class SsrInject {
       });
     }
   }
+
+  getEntryPath(res: any) {
+    // const {outputFileSystem, stats} = res.locals.webpack.devMiddleware;
+    // const compilerArr = devMiddleware.compiler.compilers;
+    // const statsArr = stats.toJson().children;
+    // const {assetsByChunkName, assets, chunks, outputPath} = statsArr[1];
+    // const mainPath = path.join(outputPath, 'main.js');
+    if (!this.outputFileSystem) {
+      const {outputFileSystem} = res.locals.webpack.devMiddleware;
+      patchRequire(outputFileSystem);
+      this.outputFileSystem = outputFileSystem;
+    }
+    return this.entryFilePath;
+  }
 }
+
 let instance: SsrInject | null = null;
-export function getPlugin(entryFileName: string = 'main.js') {
+
+export function getSsrInjectPlugin(entryFileName: string = 'main.js') {
   if (!instance) {
     instance = new SsrInject({entryFileName});
   }

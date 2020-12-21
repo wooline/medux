@@ -200,12 +200,11 @@ export async function renderApp<V>(
     initData = {...initData, ...client![ssrInitStoreKey]};
   }
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  preModuleNames
-    .filter((name) => {
-      return name !== appModuleName;
-    })
-    .unshift(appModuleName);
+  const preModuleNames = beforeRender(store).filter((name) => {
+    return name !== appModuleName;
+  });
+  preModuleNames.unshift(appModuleName);
+
   // 预加载模块，以防止loading与SSR不一致
   await Promise.all(
     preModuleNames.map((moduleName) => {
@@ -243,12 +242,10 @@ export async function renderSSR<V>(
   MetaData.moduleGetter = moduleGetter;
   const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  preModuleNames
-    .filter((name) => {
-      return name !== appModuleName;
-    })
-    .unshift(appModuleName);
+  const preModuleNames = beforeRender(store).filter((name) => {
+    return name !== appModuleName;
+  });
+  preModuleNames.unshift(appModuleName);
 
   let appModule: Module | undefined;
 

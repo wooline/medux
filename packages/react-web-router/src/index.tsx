@@ -11,7 +11,21 @@ import type {Store} from 'redux';
 import type {RootState, LocationTransform} from '@medux/web';
 
 export {exportModule} from '@medux/react';
-export {ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime} from '@medux/core';
+export {
+  ActionTypes,
+  delayPromise,
+  LoadingState,
+  modelHotReplacement,
+  effect,
+  errorAction,
+  reducer,
+  viewHotReplacement,
+  setLoading,
+  setConfig,
+  logger,
+  setLoadingDepthTime,
+  isServer,
+} from '@medux/core';
 export {setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
@@ -22,7 +36,9 @@ export type {RootState, RouteState, LocationTransform} from '@medux/web';
 export interface ServerRequest {
   url: string;
 }
-export interface ServerResponse {}
+export interface ServerResponse {
+  redirect(status: number, path: string): void;
+}
 
 export type FacadeExports<
   APP extends RootModuleFacade,
@@ -51,7 +67,7 @@ const appExports: {store: any; state: any; loadView: any; getActions: any; histo
   response: undefined as any,
 };
 
-export function exportApp(): FacadeExports<any, any> {
+export function exportApp(): FacadeExports<any, any, any, any> {
   const modules = getRootModuleAPI();
   appExports.getActions = (...args: string[]) => {
     return args.reduce((prev, moduleName) => {
@@ -130,7 +146,7 @@ export function buildSSR(
 ): Promise<string> {
   if (!SSRTPL) {
     // @ts-ignore
-    SSRTPL = Buffer.from(process.env.MEDUX_ENV_SSRTPL, 'base64').toString();
+    SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
   }
   appExports.request = request;
   appExports.response = response;

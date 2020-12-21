@@ -2054,10 +2054,10 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
   }
 
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  preModuleNames.filter(name => {
+  const preModuleNames = beforeRender(store).filter(name => {
     return name !== appModuleName;
-  }).unshift(appModuleName);
+  });
+  preModuleNames.unshift(appModuleName);
   await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
       return getModuleByName(moduleName, moduleGetter);
@@ -2081,10 +2081,10 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   MetaData.moduleGetter = moduleGetter;
   const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  preModuleNames.filter(name => {
+  const preModuleNames = beforeRender(store).filter(name => {
     return name !== appModuleName;
-  }).unshift(appModuleName);
+  });
+  preModuleNames.unshift(appModuleName);
   let appModule;
   await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
@@ -7005,7 +7005,7 @@ function buildSSR(moduleGetter, {
   container = 'root'
 }) {
   if (!SSRTPL) {
-    SSRTPL = Buffer.from(process.env.MEDUX_ENV_SSRTPL, 'base64').toString();
+    SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
   }
 
   appExports.request = request;
@@ -7141,4 +7141,4 @@ const DocumentHeadComponent = ({
 
 const DocumentHead = React.memo(DocumentHeadComponent);
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };

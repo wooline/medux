@@ -165,3 +165,10 @@ export function isPromise(data) {
 export function isServer() {
   return isServerEnv;
 }
+export function serverSide(callback) {
+  if (isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
+}

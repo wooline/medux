@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-webpack",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-webpack",
   "author": "wooline <wooline@qq.com>",
@@ -25,7 +25,6 @@
     "@medux/core": "^2.0.0"
   },
   "dependencies": {
-    "nanoid": "~3.1.20",
     "schema-utils":"~3.0.0",
     "loader-utils": "~2.0.0",
     "typescript-json-schema": "0.43.0",

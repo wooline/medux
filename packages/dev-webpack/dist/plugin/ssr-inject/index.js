@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPlugin = exports.SsrInject = void 0;
+exports.getSsrInjectPlugin = exports.SsrInject = void 0;
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const fs_monkey_1 = require("fs-monkey");
 const webpack_sources_1 = require("webpack-sources");
 const schema_utils_1 = require("schema-utils");
 const schema = {
@@ -57,9 +58,9 @@ class SsrInject {
         else {
             compiler.hooks.compilation.tap('SsrInject', (compilation) => {
                 HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync('SsrInjectSetHtml', (data, callback) => {
+                    const outputFileSystem = compiler.outputFileSystem;
                     const html = Buffer.from(data.html).toString('base64');
                     this.html = html;
-                    const outputFileSystem = compiler.outputFileSystem;
                     const entryFilePath = this.entryFilePath;
                     if (outputFileSystem.existsSync(entryFilePath)) {
                         const source = outputFileSystem.readFileSync(entryFilePath).toString();
@@ -71,13 +72,21 @@ class SsrInject {
             });
         }
     }
+    getEntryPath(res) {
+        if (!this.outputFileSystem) {
+            const { outputFileSystem } = res.locals.webpack.devMiddleware;
+            fs_monkey_1.patchRequire(outputFileSystem);
+            this.outputFileSystem = outputFileSystem;
+        }
+        return this.entryFilePath;
+    }
 }
 exports.SsrInject = SsrInject;
 let instance = null;
-function getPlugin(entryFileName = 'main.js') {
+function getSsrInjectPlugin(entryFileName = 'main.js') {
     if (!instance) {
         instance = new SsrInject({ entryFileName });
     }
     return instance;
 }
-exports.getPlugin = getPlugin;
+exports.getSsrInjectPlugin = getSsrInjectPlugin;

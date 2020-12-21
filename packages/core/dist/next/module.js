@@ -141,10 +141,10 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   }
 
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  preModuleNames.filter(name => {
+  const preModuleNames = beforeRender(store).filter(name => {
     return name !== appModuleName;
-  }).unshift(appModuleName);
+  });
+  preModuleNames.unshift(appModuleName);
   await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
       return getModuleByName(moduleName, moduleGetter);
@@ -168,10 +168,10 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
   MetaData.moduleGetter = moduleGetter;
   const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store);
-  preModuleNames.filter(name => {
+  const preModuleNames = beforeRender(store).filter(name => {
     return name !== appModuleName;
-  }).unshift(appModuleName);
+  });
+  preModuleNames.unshift(appModuleName);
   let appModule;
   await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {

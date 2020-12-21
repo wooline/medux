@@ -7,7 +7,7 @@ import type { RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispa
 import type { Store } from 'redux';
 import type { RootState, LocationTransform } from '@medux/web';
 export { exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime } from '@medux/core';
+export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, isServer, } from '@medux/core';
 export { setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
 export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
@@ -17,6 +17,7 @@ export interface ServerRequest {
     url: string;
 }
 export interface ServerResponse {
+    redirect(status: number, path: string): void;
 }
 export declare type FacadeExports<APP extends RootModuleFacade, RouteParams extends {
     [K in keyof APP]: any;
@@ -34,7 +35,7 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
     };
     Modules: RootModuleAPI<APP>;
 };
-export declare function exportApp(): FacadeExports<any, any>;
+export declare function exportApp(): FacadeExports<any, any, any, any>;
 export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, locationTransform, storeOptions, container, }: {
     appModuleName?: string;
     appViewName?: string;

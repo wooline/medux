@@ -7,8 +7,10 @@ export declare class SsrInject {
     entryFilePath: string;
     htmlKey: string;
     html: string;
+    outputFileSystem: any;
     constructor(options?: Options);
     apply(compiler: Compiler): void;
+    getEntryPath(res: any): string;
 }
-export declare function getPlugin(entryFileName?: string): SsrInject;
+export declare function getSsrInjectPlugin(entryFileName?: string): SsrInject;
 export {};

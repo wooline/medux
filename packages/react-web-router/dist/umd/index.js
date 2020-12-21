@@ -2956,10 +2956,10 @@
               }
 
               store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-              preModuleNames = beforeRender(store);
-              preModuleNames.filter(function (name) {
+              preModuleNames = beforeRender(store).filter(function (name) {
                 return name !== appModuleName;
-              }).unshift(appModuleName);
+              });
+              preModuleNames.unshift(appModuleName);
               _context.next = 15;
               return Promise.all(preModuleNames.map(function (moduleName) {
                 if (moduleGetter[moduleName]) {
@@ -3018,10 +3018,10 @@
               MetaData.moduleGetter = moduleGetter;
               ssrInitStoreKey = config.SSRKey;
               store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-              preModuleNames = beforeRender(store);
-              preModuleNames.filter(function (name) {
+              preModuleNames = beforeRender(store).filter(function (name) {
                 return name !== appModuleName;
-              }).unshift(appModuleName);
+              });
+              preModuleNames.unshift(appModuleName);
               _context2.next = 10;
               return Promise.all(preModuleNames.map(function (moduleName) {
                 if (moduleGetter[moduleName]) {
@@ -8070,7 +8070,7 @@
         container = _ref2$container === void 0 ? 'root' : _ref2$container;
 
     if (!SSRTPL) {
-      SSRTPL = Buffer.from(process.env.MEDUX_ENV_SSRTPL, 'base64').toString();
+      SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
     }
 
     appExports.request = request;
@@ -8214,6 +8214,7 @@
   exports.errorAction = errorAction;
   exports.exportApp = exportApp;
   exports.exportModule = exportModule$1;
+  exports.isServer = isServer;
   exports.logger = logger;
   exports.modelHotReplacement = modelHotReplacement;
   exports.reducer = reducer;
