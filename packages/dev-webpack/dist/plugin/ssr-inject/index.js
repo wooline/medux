@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getPlugin = exports.SsrInject = void 0;
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack_sources_1 = require("webpack-sources");
@@ -10,22 +11,19 @@ const schema = {
         entryFileName: {
             type: 'string',
         },
-        htmlKey: {
-            type: 'string',
-        },
     },
     additionalProperties: false,
 };
 function replace(source, htmlKey, html) {
     return source.replace(htmlKey, html);
 }
-module.exports = class SsrInject {
+class SsrInject {
     constructor(options = {}) {
         this.entryFilePath = '';
+        this.htmlKey = 'process.env.MEDUX_ENV_SSRTPL';
         this.html = '';
         schema_utils_1.validate(schema, options, { name: '@medux/dev-webpack/ssr-inject' });
         this.entryFileName = options.entryFileName || 'main.js';
-        this.htmlKey = options.htmlKey || '';
     }
     apply(compiler) {
         const htmlKey = this.htmlKey;
@@ -73,4 +71,13 @@ module.exports = class SsrInject {
             });
         }
     }
-};
+}
+exports.SsrInject = SsrInject;
+let instance = null;
+function getPlugin(entryFileName = 'main.js') {
+    if (!instance) {
+        instance = new SsrInject({ entryFileName });
+    }
+    return instance;
+}
+exports.getPlugin = getPlugin;

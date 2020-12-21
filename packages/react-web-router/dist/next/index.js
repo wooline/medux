@@ -518,15 +518,6 @@ const env = typeof window === 'object' && window.window || typeof global === 'ob
 const isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 const isDevelopmentEnv = process.env.NODE_ENV !== 'production';
 const client = isServerEnv ? undefined : env;
-let _MEDUX_ENV = {};
-
-try {
-  _MEDUX_ENV = process.env.MEDUX_ENV;
-} catch (error) {
-  _MEDUX_ENV = {};
-}
-
-const MEDUX_ENV = _MEDUX_ENV;
 
 const TaskCountEvent = 'TaskCountEvent';
 let LoadingState;
@@ -7003,7 +6994,7 @@ function buildApp(moduleGetter, {
     return Object.keys(routeState.params);
   });
 }
-const SSRTPL = isServer() && MEDUX_ENV.ssrHTML ? Buffer.from(MEDUX_ENV.ssrHTML, 'base64').toString() : '';
+let SSRTPL;
 function buildSSR(moduleGetter, {
   request,
   response,
@@ -7013,6 +7004,10 @@ function buildSSR(moduleGetter, {
   storeOptions = {},
   container = 'root'
 }) {
+  if (!SSRTPL) {
+    SSRTPL = Buffer.from(process.env.MEDUX_ENV_SSRTPL, 'base64').toString();
+  }
+
   appExports.request = request;
   appExports.response = response;
   appExports.history = createRouter(request.url, locationTransform);

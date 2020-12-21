@@ -1,6 +1,6 @@
 /// <reference path="../env/global.d.ts" />
 import {routeMiddleware, routeReducer} from '@medux/route-plan-a';
-import {getRootModuleAPI, isServer, MEDUX_ENV} from '@medux/core';
+import {getRootModuleAPI, isServer} from '@medux/core';
 import React, {ComponentType, FunctionComponent, ComponentClass, ReactNode, useEffect} from 'react';
 import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
@@ -106,8 +106,7 @@ export function buildApp(
   });
 }
 
-// @ts-ignore
-const SSRTPL: string = isServer() && MEDUX_ENV.ssrHTML ? Buffer.from(MEDUX_ENV.ssrHTML, 'base64').toString() : '';
+let SSRTPL: string;
 
 export function buildSSR(
   moduleGetter: ModuleGetter,
@@ -129,6 +128,10 @@ export function buildSSR(
     container?: string;
   }
 ): Promise<string> {
+  if (!SSRTPL) {
+    // @ts-ignore
+    SSRTPL = Buffer.from(process.env.MEDUX_ENV_SSRTPL, 'base64').toString();
+  }
   appExports.request = request;
   appExports.response = response;
   appExports.history = createRouter(request.url, locationTransform);

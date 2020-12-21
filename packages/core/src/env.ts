@@ -12,12 +12,12 @@ export const isDevelopmentEnv: boolean = process.env.NODE_ENV !== 'production';
 
 export const client: meduxCore.ENV | undefined = isServerEnv ? undefined : env;
 
-let _MEDUX_ENV: {[key: string]: any} = {};
-try {
-  // @ts-ignore
-  _MEDUX_ENV = process.env.MEDUX_ENV;
-} catch (error) {
-  _MEDUX_ENV = {};
-}
+// let _MEDUX_ENV: {[key: string]: any} = {};
+// try {
+//   // @ts-ignore
+//   _MEDUX_ENV = process.env.MEDUX_ENV;
+// } catch (error) {
+//   _MEDUX_ENV = {};
+// }
 
-export const MEDUX_ENV = _MEDUX_ENV;
+// export const MEDUX_ENV = _MEDUX_ENV;

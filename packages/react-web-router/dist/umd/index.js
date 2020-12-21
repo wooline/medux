@@ -1315,15 +1315,6 @@
   var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
   var isDevelopmentEnv = process.env.NODE_ENV !== 'production';
   var client = isServerEnv ? undefined : env;
-  var _MEDUX_ENV = {};
-
-  try {
-    _MEDUX_ENV = process.env.MEDUX_ENV;
-  } catch (error) {
-    _MEDUX_ENV = {};
-  }
-
-  var MEDUX_ENV = _MEDUX_ENV;
 
   var TaskCountEvent = 'TaskCountEvent';
 
@@ -8064,7 +8055,7 @@
       return Object.keys(routeState.params);
     });
   }
-  var SSRTPL = isServer() && MEDUX_ENV.ssrHTML ? Buffer.from(MEDUX_ENV.ssrHTML, 'base64').toString() : '';
+  var SSRTPL;
   function buildSSR(moduleGetter, _ref2) {
     var request = _ref2.request,
         response = _ref2.response,
@@ -8077,6 +8068,11 @@
         storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
         _ref2$container = _ref2.container,
         container = _ref2$container === void 0 ? 'root' : _ref2$container;
+
+    if (!SSRTPL) {
+      SSRTPL = Buffer.from(process.env.MEDUX_ENV_SSRTPL, 'base64').toString();
+    }
+
     appExports.request = request;
     appExports.response = response;
     appExports.history = createRouter(request.url, locationTransform);

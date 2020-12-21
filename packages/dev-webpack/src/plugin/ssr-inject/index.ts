@@ -10,9 +10,6 @@ const schema: any = {
     entryFileName: {
       type: 'string',
     },
-    htmlKey: {
-      type: 'string',
-    },
   },
   additionalProperties: false,
 };
@@ -23,36 +20,21 @@ function replace(source: string, htmlKey: string, html: string) {
 
 interface Options {
   entryFileName?: string;
-  htmlKey?: string;
 }
 
-module.exports = class SsrInject {
+export class SsrInject {
   entryFileName: string;
 
   entryFilePath: string = '';
 
-  htmlKey: string;
+  htmlKey: string = 'process.env.MEDUX_ENV_SSRTPL';
 
   html: string = '';
 
   constructor(options: Options = {}) {
     validate(schema, options, {name: '@medux/dev-webpack/ssr-inject'});
     this.entryFileName = options.entryFileName || 'main.js';
-    this.htmlKey = options.htmlKey || '';
   }
-
-  // replace(compilation: any, htmlPluginData: any, callback: (ctx: any, data: any) => void) {
-  //   const {file, key} = this;
-  //   const assets = compilation.assets;
-  //   const keys = Object.keys(assets);
-  //   const mainFileName = keys.find((name) => file === name);
-  //   if (mainFileName) {
-  //     compilation.updateAsset(mainFileName, (source: string) => {
-  //       return new ConcatSource(source.replace(new RegExp(`['"]${key}['"]`), JSON.stringify(htmlPluginData.html)));
-  //     });
-  //   }
-  //   callback(null, htmlPluginData);
-  // }
 
   apply(compiler: Compiler) {
     const htmlKey = this.htmlKey;
@@ -99,4 +81,11 @@ module.exports = class SsrInject {
       });
     }
   }
-};
+}
+let instance: SsrInject | null = null;
+export function getPlugin(entryFileName: string = 'main.js') {
+  if (!instance) {
+    instance = new SsrInject({entryFileName});
+  }
+  return instance;
+}
