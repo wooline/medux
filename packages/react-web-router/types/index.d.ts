@@ -7,7 +7,7 @@ import type { RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispa
 import type { Store } from 'redux';
 import type { RootState, LocationTransform } from '@medux/web';
 export { exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, isServer, } from '@medux/core';
+export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, isServer, serverSide, } from '@medux/core';
 export { setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
 export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
@@ -46,7 +46,8 @@ export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, ap
 }): Promise<{
     store: import("@medux/core/types").ModuleStore;
 }>;
-export declare function buildSSR(moduleGetter: ModuleGetter, { request, response, appModuleName, appViewName, locationTransform, storeOptions, container, }: {
+export declare function setSsrHtmlTpl(tpl: string): void;
+export declare function buildSSR(moduleGetter: ModuleGetter, { request, response, appModuleName, appViewName, locationTransform, storeOptions, container, updateHtmlTpl, }: {
     appModuleName?: string;
     appViewName?: string;
     request: ServerRequest;
@@ -54,6 +55,7 @@ export declare function buildSSR(moduleGetter: ModuleGetter, { request, response
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     container?: string;
+    updateHtmlTpl?: (tpl: string) => string;
 }): Promise<string>;
 export declare type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
 export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;

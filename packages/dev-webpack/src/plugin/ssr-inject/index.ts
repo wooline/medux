@@ -1,5 +1,7 @@
 import * as path from 'path';
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
+import * as fs from 'fs';
+import {ufs} from 'unionfs';
 import {patchRequire} from 'fs-monkey';
 import {ConcatSource} from 'webpack-sources';
 import {Compiler} from 'webpack';
@@ -93,8 +95,9 @@ export class SsrInject {
     // const mainPath = path.join(outputPath, 'main.js');
     if (!this.outputFileSystem) {
       const {outputFileSystem} = res.locals.webpack.devMiddleware;
-      patchRequire(outputFileSystem);
-      this.outputFileSystem = outputFileSystem;
+      ufs.use(outputFileSystem).use(fs);
+      patchRequire(ufs);
+      this.outputFileSystem = ufs;
     }
     return this.entryFilePath;
   }

@@ -15,7 +15,7 @@
     "@types/node": "~14.0.0"
   },
   "dependencies": {
-    "@medux/babel-preset-recommended": "~1.0.2",
+    "@medux/babel-preset-recommended": "~1.0.3",
     "@medux/eslint-plugin-recommended": "~1.0.7",
     "@medux/stylelint-config-recommended": "~1.0.0",
     "@types/fs-extra": "~9.0.1",

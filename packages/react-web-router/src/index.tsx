@@ -25,6 +25,7 @@ export {
   logger,
   setLoadingDepthTime,
   isServer,
+  serverSide,
 } from '@medux/core';
 export {setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 
@@ -124,6 +125,10 @@ export function buildApp(
 
 let SSRTPL: string;
 
+export function setSsrHtmlTpl(tpl: string) {
+  SSRTPL = tpl;
+}
+
 export function buildSSR(
   moduleGetter: ModuleGetter,
   {
@@ -134,6 +139,7 @@ export function buildSSR(
     locationTransform,
     storeOptions = {},
     container = 'root',
+    updateHtmlTpl,
   }: {
     appModuleName?: string;
     appViewName?: string;
@@ -142,12 +148,14 @@ export function buildSSR(
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     container?: string;
+    updateHtmlTpl?: (tpl: string) => string;
   }
 ): Promise<string> {
   if (!SSRTPL) {
     // @ts-ignore
     SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
   }
+  const ssrTPL = updateHtmlTpl ? updateHtmlTpl(SSRTPL) : SSRTPL;
   appExports.request = request;
   appExports.response = response;
   appExports.history = createRouter(request.url, locationTransform);
@@ -167,11 +175,11 @@ export function buildSSR(
     const routeState = appExports.history.getRouteState();
     return Object.keys(routeState.params);
   }).then(({html, data, ssrInitStoreKey}) => {
-    const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
+    const match = ssrTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
       html = pageHead[0] + pageHead[2];
-      return SSRTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+      return ssrTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
     }
     return html;
   });

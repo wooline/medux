@@ -824,6 +824,13 @@ function isPromise(data) {
 function isServer() {
   return isServerEnv;
 }
+function serverSide(callback) {
+  if (isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
+}
 
 function errorAction(error) {
   return {
@@ -6995,6 +7002,9 @@ function buildApp(moduleGetter, {
   });
 }
 let SSRTPL;
+function setSsrHtmlTpl(tpl) {
+  SSRTPL = tpl;
+}
 function buildSSR(moduleGetter, {
   request,
   response,
@@ -7002,12 +7012,14 @@ function buildSSR(moduleGetter, {
   appViewName = 'main',
   locationTransform,
   storeOptions = {},
-  container = 'root'
+  container = 'root',
+  updateHtmlTpl
 }) {
   if (!SSRTPL) {
     SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
   }
 
+  const ssrTPL = updateHtmlTpl ? updateHtmlTpl(SSRTPL) : SSRTPL;
   appExports.request = request;
   appExports.response = response;
   appExports.history = createRouter(request.url, locationTransform);
@@ -7034,12 +7046,12 @@ function buildSSR(moduleGetter, {
     data,
     ssrInitStoreKey
   }) => {
-    const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
+    const match = ssrTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
 
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
       html = pageHead[0] + pageHead[2];
-      return SSRTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+      return ssrTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
     }
 
     return html;
@@ -7141,4 +7153,4 @@ const DocumentHeadComponent = ({
 
 const DocumentHead = React.memo(DocumentHeadComponent);
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };

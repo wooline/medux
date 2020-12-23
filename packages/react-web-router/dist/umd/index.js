@@ -1670,6 +1670,13 @@
   function isServer() {
     return isServerEnv;
   }
+  function serverSide(callback) {
+    if (isServerEnv) {
+      return callback();
+    }
+
+    return undefined;
+  }
 
   function errorAction(error) {
     return {
@@ -8056,6 +8063,9 @@
     });
   }
   var SSRTPL;
+  function setSsrHtmlTpl(tpl) {
+    SSRTPL = tpl;
+  }
   function buildSSR(moduleGetter, _ref2) {
     var request = _ref2.request,
         response = _ref2.response,
@@ -8067,12 +8077,14 @@
         _ref2$storeOptions = _ref2.storeOptions,
         storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
         _ref2$container = _ref2.container,
-        container = _ref2$container === void 0 ? 'root' : _ref2$container;
+        container = _ref2$container === void 0 ? 'root' : _ref2$container,
+        updateHtmlTpl = _ref2.updateHtmlTpl;
 
     if (!SSRTPL) {
       SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
     }
 
+    var ssrTPL = updateHtmlTpl ? updateHtmlTpl(SSRTPL) : SSRTPL;
     appExports.request = request;
     appExports.response = response;
     appExports.history = createRouter(request.url, locationTransform);
@@ -8098,12 +8110,12 @@
       var html = _ref3.html,
           data = _ref3.data,
           ssrInitStoreKey = _ref3.ssrInitStoreKey;
-      var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
+      var match = ssrTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
 
       if (match) {
         var pageHead = html.split(/<head>|<\/head>/, 3);
         html = pageHead[0] + pageHead[2];
-        return SSRTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+        return ssrTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
       }
 
       return html;
@@ -8218,10 +8230,12 @@
   exports.logger = logger;
   exports.modelHotReplacement = modelHotReplacement;
   exports.reducer = reducer;
+  exports.serverSide = serverSide;
   exports.setConfig = setConfig;
   exports.setLoading = setLoading;
   exports.setLoadingDepthTime = setLoadingDepthTime;
   exports.setRouteConfig = setRouteConfig;
+  exports.setSsrHtmlTpl = setSsrHtmlTpl;
   exports.viewHotReplacement = viewHotReplacement;
 
   Object.defineProperty(exports, '__esModule', { value: true });

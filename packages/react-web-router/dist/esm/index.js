@@ -1664,6 +1664,13 @@ function isPromise(data) {
 function isServer() {
   return isServerEnv;
 }
+function serverSide(callback) {
+  if (isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
+}
 
 function errorAction(error) {
   return {
@@ -8050,6 +8057,9 @@ function buildApp(moduleGetter, _ref) {
   });
 }
 var SSRTPL;
+function setSsrHtmlTpl(tpl) {
+  SSRTPL = tpl;
+}
 function buildSSR(moduleGetter, _ref2) {
   var request = _ref2.request,
       response = _ref2.response,
@@ -8061,12 +8071,14 @@ function buildSSR(moduleGetter, _ref2) {
       _ref2$storeOptions = _ref2.storeOptions,
       storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
       _ref2$container = _ref2.container,
-      container = _ref2$container === void 0 ? 'root' : _ref2$container;
+      container = _ref2$container === void 0 ? 'root' : _ref2$container,
+      updateHtmlTpl = _ref2.updateHtmlTpl;
 
   if (!SSRTPL) {
     SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
   }
 
+  var ssrTPL = updateHtmlTpl ? updateHtmlTpl(SSRTPL) : SSRTPL;
   appExports.request = request;
   appExports.response = response;
   appExports.history = createRouter(request.url, locationTransform);
@@ -8092,12 +8104,12 @@ function buildSSR(moduleGetter, _ref2) {
     var html = _ref3.html,
         data = _ref3.data,
         ssrInitStoreKey = _ref3.ssrInitStoreKey;
-    var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
+    var match = ssrTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
 
     if (match) {
       var pageHead = html.split(/<head>|<\/head>/, 3);
       html = pageHead[0] + pageHead[2];
-      return SSRTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+      return ssrTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
     }
 
     return html;
@@ -8192,4 +8204,4 @@ var DocumentHeadComponent = function DocumentHeadComponent(_ref7) {
 
 var DocumentHead = React.memo(DocumentHeadComponent);
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, reducer, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };

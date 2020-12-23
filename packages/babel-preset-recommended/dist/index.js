@@ -1,9 +1,8 @@
 "use strict";
 const runtimeVersion = require('@babel/runtime/package.json').version;
 module.exports = function (api, options = {}) {
-    if (process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === 'test' || api.caller((caller) => caller && caller.target === 'node')) {
         options.module = 'cjs';
-        options.targets = { node: 'current' };
     }
     if (options.module === 'cjs' && !options.targets) {
         options.targets = { node: 'current' };

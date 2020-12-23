@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSsrInjectPlugin = exports.SsrInject = void 0;
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const fs = require("fs");
+const unionfs_1 = require("unionfs");
 const fs_monkey_1 = require("fs-monkey");
 const webpack_sources_1 = require("webpack-sources");
 const schema_utils_1 = require("schema-utils");
@@ -75,8 +77,9 @@ class SsrInject {
     getEntryPath(res) {
         if (!this.outputFileSystem) {
             const { outputFileSystem } = res.locals.webpack.devMiddleware;
-            fs_monkey_1.patchRequire(outputFileSystem);
-            this.outputFileSystem = outputFileSystem;
+            unionfs_1.ufs.use(outputFileSystem).use(fs);
+            fs_monkey_1.patchRequire(unionfs_1.ufs);
+            this.outputFileSystem = unionfs_1.ufs;
         }
         return this.entryFilePath;
     }

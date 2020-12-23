@@ -1,2 +1,2 @@
-declare const _default: (source: string) => string;
+declare const _default: (this: any, source: string) => string;
 export = _default;

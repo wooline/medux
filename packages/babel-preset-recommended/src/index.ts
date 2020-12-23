@@ -9,9 +9,8 @@ type Options = {
 const runtimeVersion = require('@babel/runtime/package.json').version;
 
 module.exports = function (api: any, options: Options = {}) {
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === 'test' || api.caller((caller: any) => caller && caller.target === 'node')) {
     options.module = 'cjs';
-    options.targets = {node: 'current'};
   }
   if (options.module === 'cjs' && !options.targets) {
     options.targets = {node: 'current'};
