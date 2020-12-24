@@ -145,14 +145,14 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
     return name !== appModuleName;
   });
   preModuleNames.unshift(appModuleName);
-  await Promise.all(preModuleNames.map(moduleName => {
+  const modules = await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
       return getModuleByName(moduleName, moduleGetter);
     }
 
-    return null;
+    return undefined;
   }));
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  const appModule = modules[0];
   await appModule.default.model(store);
   reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
   return {
@@ -172,19 +172,16 @@ export async function renderSSR(render, moduleGetter, appModuleName, appViewName
     return name !== appModuleName;
   });
   preModuleNames.unshift(appModuleName);
-  let appModule;
-  await Promise.all(preModuleNames.map(moduleName => {
+  const modules = await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
-      const module = moduleGetter[moduleName]();
-
-      if (moduleName === appModuleName) {
-        appModule = module;
-      }
-
-      return module.default.model(store);
+      return getModuleByName(moduleName, moduleGetter);
     }
 
     return null;
+  }));
+  const appModule = modules[0];
+  await Promise.all(modules.map(module => {
+    return module && module.default.model(store);
   }));
   store.dispatch = defFun;
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);

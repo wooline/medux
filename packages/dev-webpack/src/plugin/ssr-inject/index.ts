@@ -2,9 +2,9 @@ import * as path from 'path';
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 import * as fs from 'fs';
 import {ufs} from 'unionfs';
+import webpack, {Compiler} from 'webpack';
 import {patchRequire} from 'fs-monkey';
-import {ConcatSource} from 'webpack-sources';
-import {Compiler} from 'webpack';
+
 import {validate} from 'schema-utils';
 
 const schema: any = {
@@ -52,7 +52,7 @@ export class SsrInject {
           const html = this.html;
           if (assets[entryFileName] && html) {
             compilation.updateAsset(entryFileName, (source) => {
-              return new ConcatSource(replace(source.source().toString(), htmlKey, html));
+              return new webpack.sources.RawSource(replace(source.source().toString(), htmlKey, html), false);
             });
           }
         });
@@ -95,7 +95,7 @@ export class SsrInject {
     // const mainPath = path.join(outputPath, 'main.js');
     if (!this.outputFileSystem) {
       const {outputFileSystem} = res.locals.webpack.devMiddleware;
-      ufs.use(outputFileSystem).use(fs);
+      ufs.use(fs).use(outputFileSystem);
       patchRequire(ufs);
       this.outputFileSystem = ufs;
     }

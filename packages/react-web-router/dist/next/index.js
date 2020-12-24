@@ -2065,14 +2065,14 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
     return name !== appModuleName;
   });
   preModuleNames.unshift(appModuleName);
-  await Promise.all(preModuleNames.map(moduleName => {
+  const modules = await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
       return getModuleByName(moduleName, moduleGetter);
     }
 
-    return null;
+    return undefined;
   }));
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  const appModule = modules[0];
   await appModule.default.model(store);
   reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
   return {
@@ -2092,19 +2092,16 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
     return name !== appModuleName;
   });
   preModuleNames.unshift(appModuleName);
-  let appModule;
-  await Promise.all(preModuleNames.map(moduleName => {
+  const modules = await Promise.all(preModuleNames.map(moduleName => {
     if (moduleGetter[moduleName]) {
-      const module = moduleGetter[moduleName]();
-
-      if (moduleName === appModuleName) {
-        appModule = module;
-      }
-
-      return module.default.model(store);
+      return getModuleByName(moduleName, moduleGetter);
     }
 
     return null;
+  }));
+  const appModule = modules[0];
+  await Promise.all(modules.map(module => {
+    return module && module.default.model(store);
   }));
   store.dispatch = defFun;
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
@@ -7012,14 +7009,12 @@ function buildSSR(moduleGetter, {
   appViewName = 'main',
   locationTransform,
   storeOptions = {},
-  container = 'root',
-  updateHtmlTpl
+  container = 'root'
 }) {
   if (!SSRTPL) {
     SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
   }
 
-  const ssrTPL = updateHtmlTpl ? updateHtmlTpl(SSRTPL) : SSRTPL;
   appExports.request = request;
   appExports.response = response;
   appExports.history = createRouter(request.url, locationTransform);
@@ -7046,12 +7041,12 @@ function buildSSR(moduleGetter, {
     data,
     ssrInitStoreKey
   }) => {
-    const match = ssrTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
+    const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
 
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
       html = pageHead[0] + pageHead[2];
-      return ssrTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+      return SSRTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
     }
 
     return html;

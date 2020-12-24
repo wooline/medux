@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-webpack",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-webpack",
   "author": "wooline <wooline@qq.com>",

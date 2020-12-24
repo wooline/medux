@@ -206,15 +206,15 @@ export async function renderApp<V>(
   preModuleNames.unshift(appModuleName);
 
   // 预加载模块，以防止loading与SSR不一致
-  await Promise.all(
+  const modules = await Promise.all(
     preModuleNames.map((moduleName) => {
       if (moduleGetter[moduleName]) {
         return getModuleByName(moduleName, moduleGetter);
       }
-      return null;
+      return undefined;
     })
   );
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  const appModule = modules[0]!;
   await appModule.default.model(store);
   reRender = render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
   return {store};
@@ -247,18 +247,18 @@ export async function renderSSR<V>(
   });
   preModuleNames.unshift(appModuleName);
 
-  let appModule: Module | undefined;
-
-  await Promise.all(
+  const modules = await Promise.all(
     preModuleNames.map((moduleName) => {
       if (moduleGetter[moduleName]) {
-        const module = moduleGetter[moduleName]() as Module;
-        if (moduleName === appModuleName) {
-          appModule = module;
-        }
-        return module.default.model(store);
+        return getModuleByName(moduleName, moduleGetter);
       }
       return null;
+    })
+  );
+  const appModule = modules[0]!;
+  await Promise.all(
+    modules.map((module) => {
+      return module && module.default.model(store);
     })
   );
   store.dispatch = defFun;

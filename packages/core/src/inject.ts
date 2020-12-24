@@ -334,7 +334,6 @@ export function getModuleByName(moduleName: string, moduleGetter: ModuleGetter):
   const result = moduleGetter[moduleName]();
   if (isPromise(result)) {
     return result.then((module) => {
-      // 在SSR时loadView不能出现异步，否则浏览器初轮渲染不会包括异步组件，从而导致和服务器返回不一致
       cacheModule(module);
       return module as Module;
     });

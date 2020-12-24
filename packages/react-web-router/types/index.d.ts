@@ -47,7 +47,7 @@ export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, ap
     store: import("@medux/core/types").ModuleStore;
 }>;
 export declare function setSsrHtmlTpl(tpl: string): void;
-export declare function buildSSR(moduleGetter: ModuleGetter, { request, response, appModuleName, appViewName, locationTransform, storeOptions, container, updateHtmlTpl, }: {
+export declare function buildSSR(moduleGetter: ModuleGetter, { request, response, appModuleName, appViewName, locationTransform, storeOptions, container, }: {
     appModuleName?: string;
     appViewName?: string;
     request: ServerRequest;
@@ -55,7 +55,6 @@ export declare function buildSSR(moduleGetter: ModuleGetter, { request, response
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     container?: string;
-    updateHtmlTpl?: (tpl: string) => string;
 }): Promise<string>;
 export declare type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
 export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;

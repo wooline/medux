@@ -2932,7 +2932,7 @@
 
   function _renderApp() {
     _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-      var appModuleName, ssrInitStoreKey, initData, store, preModuleNames, appModule;
+      var appModuleName, ssrInitStoreKey, initData, store, preModuleNames, modules, appModule;
       return regenerator.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -2973,25 +2973,22 @@
                   return getModuleByName(moduleName, moduleGetter);
                 }
 
-                return null;
+                return undefined;
               }));
 
             case 15:
-              _context.next = 17;
-              return getModuleByName(appModuleName, moduleGetter);
-
-            case 17:
-              appModule = _context.sent;
-              _context.next = 20;
+              modules = _context.sent;
+              appModule = modules[0];
+              _context.next = 19;
               return appModule.default.model(store);
 
-            case 20:
+            case 19:
               reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
               return _context.abrupt("return", {
                 store: store
               });
 
-            case 22:
+            case 21:
             case "end":
               return _context.stop();
           }
@@ -3011,7 +3008,7 @@
 
   function _renderSSR() {
     _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-      var ssrInitStoreKey, store, preModuleNames, appModule;
+      var ssrInitStoreKey, store, preModuleNames, modules, appModule;
       return regenerator.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
@@ -3032,23 +3029,25 @@
               _context2.next = 10;
               return Promise.all(preModuleNames.map(function (moduleName) {
                 if (moduleGetter[moduleName]) {
-                  var module = moduleGetter[moduleName]();
-
-                  if (moduleName === appModuleName) {
-                    appModule = module;
-                  }
-
-                  return module.default.model(store);
+                  return getModuleByName(moduleName, moduleGetter);
                 }
 
                 return null;
               }));
 
             case 10:
+              modules = _context2.sent;
+              appModule = modules[0];
+              _context2.next = 14;
+              return Promise.all(modules.map(function (module) {
+                return module && module.default.model(store);
+              }));
+
+            case 14:
               store.dispatch = defFun;
               return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
 
-            case 12:
+            case 16:
             case "end":
               return _context2.stop();
           }
@@ -8077,14 +8076,12 @@
         _ref2$storeOptions = _ref2.storeOptions,
         storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
         _ref2$container = _ref2.container,
-        container = _ref2$container === void 0 ? 'root' : _ref2$container,
-        updateHtmlTpl = _ref2.updateHtmlTpl;
+        container = _ref2$container === void 0 ? 'root' : _ref2$container;
 
     if (!SSRTPL) {
       SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
     }
 
-    var ssrTPL = updateHtmlTpl ? updateHtmlTpl(SSRTPL) : SSRTPL;
     appExports.request = request;
     appExports.response = response;
     appExports.history = createRouter(request.url, locationTransform);
@@ -8110,12 +8107,12 @@
       var html = _ref3.html,
           data = _ref3.data,
           ssrInitStoreKey = _ref3.ssrInitStoreKey;
-      var match = ssrTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
+      var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
 
       if (match) {
         var pageHead = html.split(/<head>|<\/head>/, 3);
         html = pageHead[0] + pageHead[2];
-        return ssrTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+        return SSRTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
       }
 
       return html;

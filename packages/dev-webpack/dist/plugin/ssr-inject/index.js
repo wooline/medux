@@ -5,8 +5,8 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const fs = require("fs");
 const unionfs_1 = require("unionfs");
+const webpack_1 = require("webpack");
 const fs_monkey_1 = require("fs-monkey");
-const webpack_sources_1 = require("webpack-sources");
 const schema_utils_1 = require("schema-utils");
 const schema = {
     type: 'object',
@@ -39,7 +39,7 @@ class SsrInject {
                     const html = this.html;
                     if (assets[entryFileName] && html) {
                         compilation.updateAsset(entryFileName, (source) => {
-                            return new webpack_sources_1.ConcatSource(replace(source.source().toString(), htmlKey, html));
+                            return new webpack_1.default.sources.RawSource(replace(source.source().toString(), htmlKey, html), false);
                         });
                     }
                 });
@@ -77,7 +77,7 @@ class SsrInject {
     getEntryPath(res) {
         if (!this.outputFileSystem) {
             const { outputFileSystem } = res.locals.webpack.devMiddleware;
-            unionfs_1.ufs.use(outputFileSystem).use(fs);
+            unionfs_1.ufs.use(fs).use(outputFileSystem);
             fs_monkey_1.patchRequire(unionfs_1.ufs);
             this.outputFileSystem = unionfs_1.ufs;
         }
