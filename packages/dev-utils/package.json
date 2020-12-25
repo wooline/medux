@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0",
   "description": "Common development tools.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "author": "wooline <wooline@qq.com>",
@@ -11,7 +11,11 @@
   "engines": {
     "node": ">=9.0.0"
   },
+  "bin": {
+    "patchActions": "./bin/patchActions"
+  },
   "files": [
+    "bin/",
     "dist/"
   ],
   "scripts": {
@@ -25,9 +29,9 @@
     "@medux/core": "^2.0.0"
   },
   "dependencies": {
-    "json-format": "^1.0.0",
-    "typescript-json-schema": "^0.46.0",
-    "schema-utils": "^3.0.0"
+    "commander": "^6.0.0",
+    "chalk": "^4.0.0",
+    "typescript-json-schema": "^0.46.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

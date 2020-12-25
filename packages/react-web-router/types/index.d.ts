@@ -36,7 +36,7 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
     Modules: RootModuleAPI<APP>;
     Actions: RootModuleActions<APP>;
 };
-export declare function proxyPollyfill(typeName: string, json?: string): void;
+export declare function patchActions(typeName: string, json?: string): void;
 export declare function exportApp(): FacadeExports<any, any, any, any>;
 export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, locationTransform, storeOptions, container, }: {
     appModuleName?: string;

@@ -69,7 +69,7 @@ const appExports: {store: any; state: any; loadView: any; getActions: any; histo
   response: undefined as any,
 };
 
-export function proxyPollyfill(typeName: string, json?: string): void {
+export function patchActions(typeName: string, json?: string): void {
   if (json) {
     getRootModuleAPI(JSON.parse(json));
   }

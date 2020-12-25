@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+
+const { program } = require('commander');
+const {patch} = require('../dist/patch-actions');
+
+program
+  .command('patch [tsconfig] [entry]')
+  .description('patch the actions without proxy')
+  .action((tsconfig, entry) => {
+    patch(tsconfig, entry, true);
+  });
+
+program
+  .command('echo [tsconfig] [entry]')
+  .description('echo the actions without proxy')
+  .action((tsconfig, entry) => {
+    patch(tsconfig, entry, false);
+  });
+
+program.parse(process.argv);
+
+

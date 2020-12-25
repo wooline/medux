@@ -8002,7 +8002,7 @@
     request: undefined,
     response: undefined
   };
-  function proxyPollyfill(typeName, json) {
+  function patchActions(typeName, json) {
     if (json) {
       getRootModuleAPI(JSON.parse(json));
     }
@@ -8232,7 +8232,7 @@
   exports.isServer = isServer;
   exports.logger = logger;
   exports.modelHotReplacement = modelHotReplacement;
-  exports.proxyPollyfill = proxyPollyfill;
+  exports.patchActions = patchActions;
   exports.reducer = reducer;
   exports.serverSide = serverSide;
   exports.setConfig = setConfig;
