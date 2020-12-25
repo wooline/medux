@@ -8,10 +8,10 @@ export function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
-        var obj = data[moduleName];
+        var arr = data[moduleName];
         var actions = {};
         var actionNames = {};
-        Object.keys(obj.actionNames).forEach(function (actionName) {
+        arr.forEach(function (actionName) {
           actions[actionName] = function () {
             for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
               payload[_key] = arguments[_key];

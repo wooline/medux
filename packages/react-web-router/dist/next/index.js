@@ -1926,10 +1926,10 @@ function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
-        const obj = data[moduleName];
+        const arr = data[moduleName];
         const actions = {};
         const actionNames = {};
-        Object.keys(obj.actionNames).forEach(actionName => {
+        arr.forEach(actionName => {
           actions[actionName] = (...payload) => ({
             type: moduleName + config.NSP + actionName,
             payload
@@ -6947,6 +6947,11 @@ const appExports = {
   request: undefined,
   response: undefined
 };
+function proxyPollyfill(typeName, json) {
+  if (json) {
+    getRootModuleAPI(JSON.parse(json));
+  }
+}
 function exportApp() {
   const modules = getRootModuleAPI();
 
@@ -6959,7 +6964,8 @@ function exportApp() {
 
   return {
     App: appExports,
-    Modules: modules
+    Modules: modules,
+    Actions: {}
   };
 }
 function buildApp(moduleGetter, {
@@ -7148,4 +7154,4 @@ const DocumentHeadComponent = ({
 
 const DocumentHead = React.memo(DocumentHeadComponent);
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, proxyPollyfill, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };

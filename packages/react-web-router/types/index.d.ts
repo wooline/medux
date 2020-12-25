@@ -3,7 +3,7 @@ import React, { ComponentType, FunctionComponent, ComponentClass, ReactNode } fr
 import { LoadView } from '@medux/react';
 import { HistoryActions } from '@medux/web';
 import { Options as ReactReduxOptions } from 'react-redux';
-import type { RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispatch } from '@medux/core';
+import type { RootModuleFacade, RootModuleAPI, RootModuleActions, ModuleGetter, StoreOptions, Dispatch } from '@medux/core';
 import type { Store } from 'redux';
 import type { RootState, LocationTransform } from '@medux/web';
 export { exportModule } from '@medux/react';
@@ -34,7 +34,9 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
         response: Response;
     };
     Modules: RootModuleAPI<APP>;
+    Actions: RootModuleActions<APP>;
 };
+export declare function proxyPollyfill(typeName: string, json?: string): void;
 export declare function exportApp(): FacadeExports<any, any, any, any>;
 export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, locationTransform, storeOptions, container, }: {
     appModuleName?: string;

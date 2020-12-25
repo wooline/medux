@@ -6,10 +6,10 @@ export function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
-        const obj = data[moduleName];
+        const arr = data[moduleName];
         const actions = {};
         const actionNames = {};
-        Object.keys(obj.actionNames).forEach(actionName => {
+        arr.forEach(actionName => {
           actions[actionName] = (...payload) => ({
             type: moduleName + config.NSP + actionName,
             payload

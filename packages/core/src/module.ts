@@ -20,11 +20,14 @@ type ModuleFacade<M extends CommonModule> = {
   actions: M['default']['actions'];
   actionNames: {[key in keyof M['default']['actions']]: string};
 };
+
 export type RootModuleFacade<
   G extends {
     [N in Extract<keyof G, string>]: () => CommonModule<N> | Promise<CommonModule<N>>;
   } = ModuleGetter
 > = {[K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>};
+
+export type RootModuleActions<A extends RootModuleFacade> = {[K in keyof A]: keyof A[K]['actions']};
 
 export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames'>};
 
@@ -38,14 +41,14 @@ export type LoadView<A extends RootModuleFacade = {}, Options = any, Comp = any>
   error?: Comp
 ) => A[M]['views'][V];
 
-export function getRootModuleAPI(data?: {[moduleName: string]: {actionNames: {[key: string]: string}}}): RootModuleAPI<any> {
+export function getRootModuleAPI(data?: {[moduleName: string]: string[]}): RootModuleAPI<any> {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
-        const obj = data[moduleName];
+        const arr = data[moduleName];
         const actions: {[actionName: string]: any} = {};
         const actionNames: {[actionName: string]: string} = {};
-        Object.keys(obj.actionNames).forEach((actionName) => {
+        arr.forEach((actionName) => {
           actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
           actionNames[actionName] = moduleName + config.NSP + actionName;
         });

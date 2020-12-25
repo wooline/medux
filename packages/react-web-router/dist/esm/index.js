@@ -2798,10 +2798,10 @@ function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
-        var obj = data[moduleName];
+        var arr = data[moduleName];
         var actions = {};
         var actionNames = {};
-        Object.keys(obj.actionNames).forEach(function (actionName) {
+        arr.forEach(function (actionName) {
           actions[actionName] = function () {
             for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
               payload[_key] = arguments[_key];
@@ -7996,6 +7996,11 @@ var appExports = {
   request: undefined,
   response: undefined
 };
+function proxyPollyfill(typeName, json) {
+  if (json) {
+    getRootModuleAPI(JSON.parse(json));
+  }
+}
 function exportApp() {
   var modules = getRootModuleAPI();
 
@@ -8012,7 +8017,8 @@ function exportApp() {
 
   return {
     App: appExports,
-    Modules: modules
+    Modules: modules,
+    Actions: {}
   };
 }
 function buildApp(moduleGetter, _ref) {
@@ -8201,4 +8207,4 @@ var DocumentHeadComponent = function DocumentHeadComponent(_ref7) {
 
 var DocumentHead = React.memo(DocumentHeadComponent);
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, proxyPollyfill, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };

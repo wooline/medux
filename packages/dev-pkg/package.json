@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-pkg",
-  "version": "2.0.4",
+  "version": "2.0.6",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
   "author": "wooline <wooline@qq.com>",
@@ -12,26 +12,27 @@
     "node": ">=9.0.0"
   },
   "peerDependencies": {
-    "@types/node": "~14.0.0"
+    "@types/node": "^14.0.0"
   },
   "dependencies": {
-    "@medux/babel-preset-recommended": "~1.0.3",
-    "@medux/eslint-plugin-recommended": "~1.0.7",
-    "@medux/stylelint-config-recommended": "~1.0.0",
-    "@types/fs-extra": "~9.0.1",
-    "chalk": "~4.1.0",
-    "copyfiles": "~2.4.0",
-    "cross-env": "~7.0.2",
-    "eslint": "~7.13.0",
-    "fs-extra": "~9.0.1",
-    "deep-extend": "~0.6.0",
-    "indexof": "~0.0.1",
-    "prettier": "~2.1.2",
-    "react-refresh": "~0.9.0",
-    "rimraf": "~3.0.2",
-    "stylelint": "~13.7.2",
-    "nanoid": "~3.1.20",
-    "yargs": "~16.1.0"
+    "@medux/babel-preset-recommended": "^1.0.4",
+    "@medux/eslint-plugin-recommended": "^1.0.7",
+    "@medux/stylelint-config-recommended": "^1.0.0",
+    "@medux/dev-utils": "^3.0.0",
+    "@types/fs-extra": "^9.0.0",
+    "chalk": "^4.0.0",
+    "copyfiles": "^2.0.0",
+    "cross-env": "^7.0.0",
+    "eslint": "^7.0.0",
+    "fs-extra": "^9.0.0",
+    "deep-extend": "^0.6.0",
+    "indexof": "^0.0.1",
+    "prettier": "^2.1.2",
+    "react-refresh": "^0.9.0",
+    "rimraf": "^3.0.0",
+    "stylelint": "^13.0.0",
+    "nanoid": "^3.0.0",
+    "yargs": "^16.0.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

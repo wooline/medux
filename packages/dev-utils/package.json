@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "2.0.0-alpha.5",
+  "version": "3.0.0-alpha.0",
   "description": "Common development tools.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "author": "wooline <wooline@qq.com>",
@@ -17,21 +17,16 @@
   "scripts": {
     "eslintSrc": "../../node_modules/.bin/eslint --cache ./src",
     "clearDist": "../../node_modules/.bin/rimraf ./dist",
-    "prebuild": "yarn eslintSrc && yarn clearDist",
+    "buildTypes": "tsc --project ./src/tsconfig.types.json",
+    "prebuild": "yarn eslintSrc && yarn clearDist && yarn buildTypes",
     "build": "tsc -P ./src"
   },
-  "dependencies": {
-    "@medux/core": "^2.0.0-alpha.5"
-  },
   "peerDependencies": {
-    "@types/express": "^4.0.0",
-    "axios": "^0.18.0",
-    "chalk": "^2.4.0",
-    "express": "^4.0.0",
-    "http-proxy-middleware": "^0.20.0",
+    "@medux/core": "^2.0.0"
+  },
+  "dependencies": {
     "json-format": "^1.0.0",
-    "loader-utils": "^2.0.0",
-    "micromatch": "^4.0.0",
+    "typescript-json-schema": "^0.46.0",
     "schema-utils": "^3.0.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"

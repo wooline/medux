@@ -2806,10 +2806,10 @@ function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
-        var obj = data[moduleName];
+        var arr = data[moduleName];
         var actions = {};
         var actionNames = {};
-        Object.keys(obj.actionNames).forEach(function (actionName) {
+        arr.forEach(function (actionName) {
           actions[actionName] = function () {
             for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
               payload[_key] = arguments[_key];
@@ -8004,6 +8004,11 @@ var appExports = {
   request: undefined,
   response: undefined
 };
+function proxyPollyfill(typeName, json) {
+  if (json) {
+    getRootModuleAPI(JSON.parse(json));
+  }
+}
 function exportApp() {
   var modules = getRootModuleAPI();
 
@@ -8020,7 +8025,8 @@ function exportApp() {
 
   return {
     App: appExports,
-    Modules: modules
+    Modules: modules,
+    Actions: {}
   };
 }
 function buildApp(moduleGetter, _ref) {
@@ -8228,6 +8234,7 @@ exports.exportModule = exportModule$1;
 exports.isServer = isServer;
 exports.logger = logger;
 exports.modelHotReplacement = modelHotReplacement;
+exports.proxyPollyfill = proxyPollyfill;
 exports.reducer = reducer;
 exports.serverSide = serverSide;
 exports.setConfig = setConfig;

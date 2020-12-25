@@ -74,11 +74,12 @@ export class SsrInject {
         HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync('SsrInjectSetHtml', (data, callback) => {
           const outputFileSystem = compiler.outputFileSystem as any;
           const html = Buffer.from(data.html).toString('base64');
+          const rawHtml = this.html || htmlKey;
           this.html = html;
           const entryFilePath = this.entryFilePath;
           if (outputFileSystem.existsSync(entryFilePath)) {
             const source: string = outputFileSystem.readFileSync(entryFilePath).toString();
-            outputFileSystem.writeFileSync(entryFilePath, replace(source, htmlKey, html));
+            outputFileSystem.writeFileSync(entryFilePath, replace(source, rawHtml, html));
             delete require.cache[entryFilePath];
           }
           callback(null, data);

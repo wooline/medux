@@ -6,7 +6,7 @@ import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
 import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux';
 
-import type {RootModuleFacade, RootModuleAPI, ModuleGetter, StoreOptions, Dispatch} from '@medux/core';
+import type {RootModuleFacade, RootModuleAPI, RootModuleActions, ModuleGetter, StoreOptions, Dispatch} from '@medux/core';
 import type {Store} from 'redux';
 import type {RootState, LocationTransform} from '@medux/web';
 
@@ -57,6 +57,7 @@ export type FacadeExports<
     response: Response;
   };
   Modules: RootModuleAPI<APP>;
+  Actions: RootModuleActions<APP>;
 };
 const appExports: {store: any; state: any; loadView: any; getActions: any; history: HistoryActions; request: ServerRequest; response: ServerResponse} = {
   loadView,
@@ -68,6 +69,11 @@ const appExports: {store: any; state: any; loadView: any; getActions: any; histo
   response: undefined as any,
 };
 
+export function proxyPollyfill(typeName: string, json?: string): void {
+  if (json) {
+    getRootModuleAPI(JSON.parse(json));
+  }
+}
 export function exportApp(): FacadeExports<any, any, any, any> {
   const modules = getRootModuleAPI();
   appExports.getActions = (...args: string[]) => {
@@ -79,6 +85,7 @@ export function exportApp(): FacadeExports<any, any, any, any> {
   return {
     App: appExports as any,
     Modules: modules,
+    Actions: {},
   };
 }
 
