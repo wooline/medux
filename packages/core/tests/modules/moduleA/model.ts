@@ -1,35 +1,26 @@
 import {CoreModuleHandlers, CoreModuleState, reducer} from 'src/index';
+import {messages} from '../../utils';
 
 export interface State extends CoreModuleState {
-  message: string;
-  text: string;
-  tips: string;
+  count: number;
 }
-
-export const initModelState: State = {
-  message: 'message',
-  text: 'text',
-  tips: 'tips',
-};
 
 // 定义本模块的Handlers
 export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
   constructor() {
-    super(initModelState);
+    super({count: 0});
   }
 
   @reducer
-  public setMessage(message: string): State {
-    return {...this.state, message};
+  public add(prevState?: any): State {
+    messages.push(['moduleA/add', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
+    return {...this.state, count: this.state.count + 1};
   }
 
   @reducer
-  public setText(text: string): State {
-    return {...this.state, text};
-  }
-
-  @reducer
-  public setTips(tips: string): State {
-    return {...this.state, tips};
+  public add2(prevState?: any): State {
+    messages.push(['moduleA/add2', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
+    this.state.count += 1;
+    return this.state;
   }
 }

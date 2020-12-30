@@ -1306,7 +1306,6 @@ function _optionalCallableProperty(obj, name) {
 
 var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
 var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
-var isDevelopmentEnv = process.env.NODE_ENV !== 'production';
 var client = isServerEnv ? undefined : env;
 
 var TaskCountEvent = 'TaskCountEvent';
@@ -1501,16 +1500,126 @@ var TaskCounter = function (_PDispatcher) {
 
   return TaskCounter;
 }(PDispatcher);
+function isPlainObject(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __deepMerge(optimize, target, inject) {
+  Object.keys(inject).forEach(function (key) {
+    var src = target[key];
+    var val = inject[key];
+
+    if (isPlainObject(val)) {
+      if (isPlainObject(src)) {
+        target[key] = __deepMerge(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepMerge(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
+
+function deepMerge(target) {
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
+  }
+
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+
+  if (args.length < 1) {
+    return target;
+  }
+
+  args.forEach(function (inject, index) {
+    if (isPlainObject(inject)) {
+      var lastArg = false;
+      var last2Arg = null;
+
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+
+      Object.keys(inject).forEach(function (key) {
+        var src = target[key];
+        var val = inject[key];
+
+        if (isPlainObject(val)) {
+          if (isPlainObject(src)) {
+            target[key] = __deepMerge(lastArg, src, val);
+          } else {
+            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepMerge(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
+    }
+  });
+  return target;
+}
 
 var config = {
   NSP: '.',
   MSP: ',',
-  SSRKey: 'meduxInitStore'
+  SSRKey: 'meduxInitStore',
+  MutableData: false,
+  DEVTOOLS: process.env.NODE_ENV === 'development'
 };
 function setConfig(_config) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.MSP && (config.MSP = _config.MSP);
-  _config.SSRKey && (config.SSRKey = _config.SSRKey);
+  _config.NSP !== undefined && (config.NSP = _config.NSP);
+  _config.MSP !== undefined && (config.MSP = _config.MSP);
+  _config.SSRKey !== undefined && (config.SSRKey = _config.SSRKey);
+  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
+  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
+}
+function warn(str) {
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+function deepMergeState(target) {
+  if (target === void 0) {
+    target = {};
+  }
+
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
+  }
+
+  if (config.MutableData) {
+    return deepMerge.apply(void 0, [target].concat(args));
+  }
+
+  return deepMerge.apply(void 0, [{}, target].concat(args));
+}
+function mergeState(target) {
+  if (target === void 0) {
+    target = {};
+  }
+
+  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    args[_key2 - 1] = arguments[_key2];
+  }
+
+  if (config.MutableData) {
+    return Object.assign.apply(Object, [target].concat(args));
+  }
+
+  return Object.assign.apply(Object, [{}, target].concat(args));
+}
+function snapshotState(target) {
+  if (config.MutableData) {
+    return JSON.parse(JSON.stringify(target));
+  }
+
+  return target;
 }
 var ActionTypes = {
   MLoading: 'Loading',
@@ -1648,8 +1757,8 @@ function delayPromise(second) {
         }, second * 1000);
       });
 
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
       }
 
       return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
@@ -1743,7 +1852,7 @@ var ActionTypes$1 = {
  * @returns {boolean} True if the argument appears to be a plain object.
  */
 
-function isPlainObject(obj) {
+function isPlainObject$1(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   var proto = obj;
 
@@ -1917,7 +2026,7 @@ function createStore(reducer, preloadedState, enhancer) {
 
 
   function dispatch(action) {
-    if (!isPlainObject(action)) {
+    if (!isPlainObject$1(action)) {
       throw new Error('Actions must be plain objects. ' + 'Use custom middleware for async actions.');
     }
 
@@ -2356,37 +2465,13 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.store._medux_.prevState[this.moduleName];
+        return this.store._medux_.realtimeState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.store._medux_.prevState;
-      }
-    }, {
-      kind: "get",
-      key: "currentState",
-      value: function currentState() {
-        return this.store._medux_.currentState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "currentRootState",
-      value: function currentRootState() {
-        return this.store._medux_.currentState;
-      }
-    }, {
-      kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return this.store._medux_.beforeState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return this.store._medux_.beforeState;
+        return this.store._medux_.realtimeState;
       }
     }, {
       kind: "method",
@@ -2412,16 +2497,16 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Update",
       value: function Update(payload, key) {
-        return Object.assign({}, this.state, payload);
+        return mergeState(this.state, payload);
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
-        var state = this.state;
-        return Object.assign({}, state, {
-          loading: Object.assign({}, state.loading, payload)
+        var loading = mergeState(this.state.loading, payload);
+        return mergeState(this.state, {
+          loading: loading
         });
       }
     }]
@@ -2440,7 +2525,7 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       var _initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign({}, _initState, preModuleState);
+      var moduleState = mergeState(_initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;
@@ -2562,22 +2647,22 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
 
   var store;
 
-  var combineReducers = function combineReducers(rootState, action) {
+  var combineReducers = function combineReducers(state, action) {
     if (!store) {
-      return rootState;
+      return state;
     }
 
     var meta = store._medux_;
-    meta.prevState = rootState;
-    meta.currentState = rootState;
+    var currentState = meta.currentState;
+    var realtimeState = meta.realtimeState;
     Object.keys(storeReducers).forEach(function (moduleName) {
-      var result = storeReducers[moduleName](rootState[moduleName], action);
+      var node = storeReducers[moduleName](state[moduleName], action);
 
-      if (result !== rootState[moduleName]) {
-        var _Object$assign;
-
-        meta.currentState = Object.assign({}, meta.currentState, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
+      if (config.MutableData && realtimeState[moduleName] !== node) {
+        warn('Use rewrite instead of replace to update state in MutableData');
       }
+
+      realtimeState[moduleName] = node;
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
@@ -2606,22 +2691,18 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          var result = fun.apply(void 0, getActionData(action));
+          var node = fun.apply(void 0, getActionData(action).concat([currentState]));
 
-          if (result !== rootState[moduleName]) {
-            var _Object$assign2;
-
-            meta.currentState = Object.assign({}, meta.currentState, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
+          if (config.MutableData && realtimeState[moduleName] !== node) {
+            warn('Use rewrite instead of replace to update state in MutableData');
           }
+
+          realtimeState[moduleName] = node;
         }
       });
     }
 
-    var changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(function (moduleName) {
-      return rootState[moduleName] !== meta.currentState[moduleName];
-    });
-    meta.prevState = changed ? meta.currentState : rootState;
-    return meta.prevState;
+    return realtimeState;
   };
 
   var middleware = function middleware(_ref) {
@@ -2635,7 +2716,10 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         }
 
         var meta = store._medux_;
-        meta.beforeState = meta.prevState;
+        var rootState = store.getState();
+        meta.realtimeState = mergeState(rootState);
+        meta.currentState = snapshotState(rootState);
+        var currentState = meta.currentState;
         var action = next(originalAction);
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
@@ -2665,7 +2749,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun.apply(void 0, getActionData(action));
+              var effectResult = fun.apply(void 0, getActionData(action).concat([currentState]));
               var decorators = fun.__decorators__;
 
               if (decorators) {
@@ -2735,7 +2819,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
             actionName = _action$type$split[1];
 
         if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-          var hasInjected = !!store._medux_.injectedModules[moduleName];
+          var hasInjected = store._medux_.injectedModules[moduleName];
 
           if (!hasInjected) {
             if (actionName === ActionTypes.MInit) {
@@ -2764,8 +2848,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
       var newStore = newCreateStore.apply(void 0, arguments);
       var moduleStore = newStore;
       moduleStore._medux_ = {
-        beforeState: {},
-        prevState: {},
+        realtimeState: {},
         currentState: {},
         reducerMap: {},
         effectMap: {},
@@ -2777,7 +2860,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
 
   var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
 
-  if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (config.DEVTOOLS && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
@@ -3051,228 +3134,6 @@ function _renderSSR() {
   return _renderSSR.apply(this, arguments);
 }
 
-function isPlainObject$1(obj) {
-  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
-}
-
-function __deepExtend(optimize, target, inject) {
-  Object.keys(inject).forEach(function (key) {
-    var src = target[key];
-    var val = inject[key];
-
-    if (isPlainObject$1(val)) {
-      if (isPlainObject$1(src)) {
-        target[key] = __deepExtend(optimize, src, val);
-      } else {
-        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
-      }
-    } else {
-      target[key] = val;
-    }
-  });
-  return target;
-}
-
-function deepExtend(target) {
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
-  }
-
-  if (!isPlainObject$1(target)) {
-    target = {};
-  }
-
-  if (args.length < 1) {
-    return target;
-  }
-
-  args.forEach(function (inject, index) {
-    if (isPlainObject$1(inject)) {
-      var lastArg = false;
-      var last2Arg = null;
-
-      if (index === args.length - 1) {
-        lastArg = true;
-      } else if (index === args.length - 2) {
-        last2Arg = args[index + 1];
-      }
-
-      Object.keys(inject).forEach(function (key) {
-        var src = target[key];
-        var val = inject[key];
-
-        if (isPlainObject$1(val)) {
-          if (isPlainObject$1(src)) {
-            target[key] = __deepExtend(lastArg, src, val);
-          } else {
-            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
-          }
-        } else {
-          target[key] = val;
-        }
-      });
-    }
-  });
-  return target;
-}
-
-function __extendDefault(target, def) {
-  var clone = {};
-  Object.keys(def).forEach(function (key) {
-    if (!target.hasOwnProperty(key)) {
-      clone[key] = def[key];
-    } else {
-      var tval = target[key];
-      var dval = def[key];
-
-      if (isPlainObject$1(tval) && isPlainObject$1(dval) && tval !== dval) {
-        clone[key] = __extendDefault(tval, dval);
-      } else {
-        clone[key] = tval;
-      }
-    }
-  });
-  return clone;
-}
-
-function extendDefault(target, def) {
-  if (!isPlainObject$1(target)) {
-    target = {};
-  }
-
-  if (!isPlainObject$1(def)) {
-    def = {};
-  }
-
-  return __extendDefault(target, def);
-}
-
-function __excludeDefault(data, def) {
-  var result = {};
-  var hasSub = false;
-  Object.keys(data).forEach(function (key) {
-    var value = data[key];
-    var defaultValue = def[key];
-
-    if (value !== defaultValue) {
-      if (typeof value === typeof defaultValue && isPlainObject$1(value)) {
-        value = __excludeDefault(value, defaultValue);
-      }
-
-      if (value !== undefined) {
-        hasSub = true;
-        result[key] = value;
-      }
-    }
-  });
-
-  if (hasSub) {
-    return result;
-  }
-
-  return undefined;
-}
-
-function excludeDefault(data, def, keepTopLevel) {
-  if (!isPlainObject$1(data)) {
-    return {};
-  }
-
-  if (!isPlainObject$1(def)) {
-    return data;
-  }
-
-  var filtered = __excludeDefault(data, def);
-
-  if (keepTopLevel) {
-    var result = {};
-    Object.keys(data).forEach(function (key) {
-      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
-    });
-    return result;
-  }
-
-  return filtered || {};
-}
-
-function __splitPrivate(data) {
-  var keys = Object.keys(data);
-
-  if (keys.length === 0) {
-    return [undefined, undefined];
-  }
-
-  var publicData;
-  var privateData;
-  keys.forEach(function (key) {
-    var value = data[key];
-
-    if (key.startsWith('_')) {
-      if (!privateData) {
-        privateData = {};
-      }
-
-      privateData[key] = value;
-    } else if (isPlainObject$1(value)) {
-      var _splitPrivate = __splitPrivate(value),
-          subPublicData = _splitPrivate[0],
-          subPrivateData = _splitPrivate[1];
-
-      if (subPublicData) {
-        if (!publicData) {
-          publicData = {};
-        }
-
-        publicData[key] = subPublicData;
-      }
-
-      if (subPrivateData) {
-        if (!privateData) {
-          privateData = {};
-        }
-
-        privateData[key] = subPrivateData;
-      }
-    } else {
-      if (!publicData) {
-        publicData = {};
-      }
-
-      publicData[key] = value;
-    }
-  });
-  return [publicData, privateData];
-}
-
-function splitPrivate(data, deleteTopLevel) {
-  if (!isPlainObject$1(data)) {
-    return [undefined, undefined];
-  }
-
-  var keys = Object.keys(data);
-
-  if (keys.length === 0) {
-    return [undefined, undefined];
-  }
-
-  var result = __splitPrivate(data);
-
-  var publicData = result[0];
-  var privateData = result[1];
-  keys.forEach(function (key) {
-    if (!deleteTopLevel[key]) {
-      if (!publicData) {
-        publicData = {};
-      }
-
-      if (!publicData[key]) {
-        publicData[key] = {};
-      }
-    }
-  });
-  return [publicData, privateData];
-}
-
 var routeConfig = {
   RSP: '|',
   historyMax: 10,
@@ -3403,6 +3264,167 @@ function buildHistoryStack(location, action, key, curData) {
     history: historyList,
     stack: stackList
   };
+}
+
+function isPlainObject$2(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __extendDefault(target, def) {
+  var clone = {};
+  Object.keys(def).forEach(function (key) {
+    if (!target.hasOwnProperty(key)) {
+      clone[key] = def[key];
+    } else {
+      var tval = target[key];
+      var dval = def[key];
+
+      if (isPlainObject$2(tval) && isPlainObject$2(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+
+function extendDefault(target, def) {
+  if (!isPlainObject$2(target)) {
+    target = {};
+  }
+
+  if (!isPlainObject$2(def)) {
+    def = {};
+  }
+
+  return __extendDefault(target, def);
+}
+
+function __excludeDefault(data, def) {
+  var result = {};
+  var hasSub = false;
+  Object.keys(data).forEach(function (key) {
+    var value = data[key];
+    var defaultValue = def[key];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject$2(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+
+  return undefined;
+}
+
+function excludeDefault(data, def, keepTopLevel) {
+  if (!isPlainObject$2(data)) {
+    return {};
+  }
+
+  if (!isPlainObject$2(def)) {
+    return data;
+  }
+
+  var filtered = __excludeDefault(data, def);
+
+  if (keepTopLevel) {
+    var result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+
+  return filtered || {};
+}
+
+function __splitPrivate(data) {
+  var keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  var publicData;
+  var privateData;
+  keys.forEach(function (key) {
+    var value = data[key];
+
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+
+      privateData[key] = value;
+    } else if (isPlainObject$2(value)) {
+      var _splitPrivate = __splitPrivate(value),
+          subPublicData = _splitPrivate[0],
+          subPrivateData = _splitPrivate[1];
+
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+
+        publicData[key] = subPublicData;
+      }
+
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+
+function splitPrivate(data, deleteTopLevel) {
+  if (!isPlainObject$2(data)) {
+    return [undefined, undefined];
+  }
+
+  var keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  var result = __splitPrivate(data);
+
+  var publicData = result[0];
+  var privateData = result[1];
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
 }
 
 /**
@@ -3980,9 +4002,9 @@ function createWebLocationTransform(defaultData, pathnameRules, base64, serializ
         }
 
         data.tag = tag;
-        data.params = deepExtend(pathParams, search, hash);
+        data.params = deepMerge(pathParams, search, hash);
       } else {
-        data.params = deepExtend(search, hash);
+        data.params = deepMerge(search, hash);
       }
 
       data.params = assignDefaultData(data.params, defaultData);
@@ -4043,14 +4065,14 @@ var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHand
       key: "Init",
       value: function Init(initState) {
         var routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? deepExtend({}, initState, routeParams) : initState;
+        return routeParams ? deepMergeState(initState, routeParams) : initState;
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        return deepExtend({}, this.state, payload);
+        return deepMergeState(this.state, payload);
       }
     }]
   };
@@ -4093,7 +4115,7 @@ var routeMiddleware = function routeMiddleware(_ref) {
           if (routeParams) {
             var _rootState$moduleName;
 
-            if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
+            if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
               dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
             }
           }
@@ -4169,7 +4191,7 @@ var BaseHistoryActions = function () {
 
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params: params
@@ -4179,7 +4201,7 @@ var BaseHistoryActions = function () {
   _proto.locationToUrl = function locationToUrl(data) {
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     var nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params: params
@@ -6269,7 +6291,7 @@ function shallowEqual(objA, objB) {
  * @param {any} obj The object to inspect.
  * @returns {boolean} True if the argument appears to be a plain object.
  */
-function isPlainObject$2(obj) {
+function isPlainObject$3(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   var proto = Object.getPrototypeOf(obj);
   if (proto === null) return true;
@@ -6308,7 +6330,7 @@ function warning$1(message) {
 }
 
 function verifyPlainObject(value, displayName, methodName) {
-  if (!isPlainObject$2(value)) {
+  if (!isPlainObject$3(value)) {
     warning$1(methodName + "() in " + displayName + " must return a plain object. Instead received " + value + ".");
   }
 }
@@ -8207,4 +8229,4 @@ var DocumentHeadComponent = function DocumentHeadComponent(_ref7) {
 
 var DocumentHead = React.memo(DocumentHeadComponent);
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };

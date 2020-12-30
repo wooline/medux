@@ -22,10 +22,6 @@ var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate
 
 var _core = require("@medux/core");
 
-var _deepExtend = require("./deep-extend");
-
-exports.deepExtend = _deepExtend.deepExtend;
-
 var _basic = require("./basic");
 
 exports.setRouteConfig = _basic.setRouteConfig;
@@ -67,14 +63,14 @@ var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _
       key: "Init",
       value: function Init(initState) {
         var routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? (0, _deepExtend.deepExtend)({}, initState, routeParams) : initState;
+        return routeParams ? (0, _core.deepMergeState)(initState, routeParams) : initState;
       }
     }, {
       kind: "method",
       decorators: [_core.reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        return (0, _deepExtend.deepExtend)({}, this.state, payload);
+        return (0, _core.deepMergeState)(this.state, payload);
       }
     }]
   };
@@ -123,7 +119,7 @@ var routeMiddleware = function routeMiddleware(_ref) {
           if (routeParams) {
             var _rootState$moduleName;
 
-            if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
+            if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
               dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
             }
           }
@@ -200,7 +196,7 @@ var BaseHistoryActions = function () {
 
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams && data.params ? (0, _deepExtend.deepExtend)({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? (0, _core.deepMerge)({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params: params
@@ -210,7 +206,7 @@ var BaseHistoryActions = function () {
   _proto.locationToUrl = function locationToUrl(data) {
     var tag = data.tag;
     var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams && data.params ? (0, _deepExtend.deepExtend)({}, extendParams, data.params) : data.params;
+    var params = extendParams && data.params ? (0, _core.deepMerge)({}, extendParams, data.params) : data.params;
     var nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params: params

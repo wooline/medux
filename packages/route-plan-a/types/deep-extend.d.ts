@@ -1,11 +1,4 @@
 export declare function isPlainObject(obj: any): boolean;
-export declare function deepExtend(target: {
-    [key: string]: any;
-}, ...args: {
-    [key: string]: any;
-}[]): {
-    [key: string]: any;
-};
 export declare function extendDefault(target: {
     [key: string]: any;
 }, def: {

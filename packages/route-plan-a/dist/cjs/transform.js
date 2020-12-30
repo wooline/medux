@@ -4,6 +4,8 @@ exports.__esModule = true;
 exports.isLocationMap = isLocationMap;
 exports.createWebLocationTransform = createWebLocationTransform;
 
+var _core = require("@medux/core");
+
 var _deepExtend = require("./deep-extend");
 
 var _matchPath = require("./matchPath");
@@ -139,9 +141,9 @@ function createWebLocationTransform(defaultData, pathnameRules, base64, serializ
         }
 
         data.tag = tag;
-        data.params = (0, _deepExtend.deepExtend)(pathParams, search, hash);
+        data.params = (0, _core.deepMerge)(pathParams, search, hash);
       } else {
-        data.params = (0, _deepExtend.deepExtend)(search, hash);
+        data.params = (0, _core.deepMerge)(search, hash);
       }
 
       data.params = assignDefaultData(data.params, defaultData);

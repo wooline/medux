@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Common development tools.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "author": "wooline <wooline@qq.com>",
@@ -12,7 +12,7 @@
     "node": ">=9.0.0"
   },
   "bin": {
-    "patchActions": "./bin/patchActions"
+    "medux-patch-actions": "./bin/patch-actions"
   },
   "files": [
     "bin/",

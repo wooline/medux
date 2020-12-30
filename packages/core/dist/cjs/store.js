@@ -61,22 +61,22 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
 
   var store;
 
-  var combineReducers = function combineReducers(rootState, action) {
+  var combineReducers = function combineReducers(state, action) {
     if (!store) {
-      return rootState;
+      return state;
     }
 
     var meta = store._medux_;
-    meta.prevState = rootState;
-    meta.currentState = rootState;
+    var currentState = meta.currentState;
+    var realtimeState = meta.realtimeState;
     Object.keys(storeReducers).forEach(function (moduleName) {
-      var result = storeReducers[moduleName](rootState[moduleName], action);
+      var node = storeReducers[moduleName](state[moduleName], action);
 
-      if (result !== rootState[moduleName]) {
-        var _Object$assign;
-
-        meta.currentState = Object.assign({}, meta.currentState, (_Object$assign = {}, _Object$assign[moduleName] = result, _Object$assign));
+      if (_basic.config.MutableData && realtimeState[moduleName] !== node) {
+        (0, _basic.warn)('Use rewrite instead of replace to update state in MutableData');
       }
+
+      realtimeState[moduleName] = node;
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
@@ -105,22 +105,18 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          var result = fun.apply(void 0, getActionData(action));
+          var node = fun.apply(void 0, getActionData(action).concat([currentState]));
 
-          if (result !== rootState[moduleName]) {
-            var _Object$assign2;
-
-            meta.currentState = Object.assign({}, meta.currentState, (_Object$assign2 = {}, _Object$assign2[moduleName] = result, _Object$assign2));
+          if (_basic.config.MutableData && realtimeState[moduleName] !== node) {
+            (0, _basic.warn)('Use rewrite instead of replace to update state in MutableData');
           }
+
+          realtimeState[moduleName] = node;
         }
       });
     }
 
-    var changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(function (moduleName) {
-      return rootState[moduleName] !== meta.currentState[moduleName];
-    });
-    meta.prevState = changed ? meta.currentState : rootState;
-    return meta.prevState;
+    return realtimeState;
   };
 
   var middleware = function middleware(_ref) {
@@ -134,7 +130,10 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         }
 
         var meta = store._medux_;
-        meta.beforeState = meta.prevState;
+        var rootState = store.getState();
+        meta.realtimeState = (0, _basic.mergeState)(rootState);
+        meta.currentState = (0, _basic.snapshotState)(rootState);
+        var currentState = meta.currentState;
         var action = next(originalAction);
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
@@ -164,7 +163,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun.apply(void 0, getActionData(action));
+              var effectResult = fun.apply(void 0, getActionData(action).concat([currentState]));
               var decorators = fun.__decorators__;
 
               if (decorators) {
@@ -234,7 +233,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
             actionName = _action$type$split[1];
 
         if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
-          var hasInjected = !!store._medux_.injectedModules[moduleName];
+          var hasInjected = store._medux_.injectedModules[moduleName];
 
           if (!hasInjected) {
             if (actionName === _basic.ActionTypes.MInit) {
@@ -263,8 +262,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
       var newStore = newCreateStore.apply(void 0, arguments);
       var moduleStore = newStore;
       moduleStore._medux_ = {
-        beforeState: {},
-        prevState: {},
+        realtimeState: {},
         currentState: {},
         reducerMap: {},
         effectMap: {},
@@ -276,7 +274,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
 
   var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
 
-  if (_env.isDevelopmentEnv && _env.client && _env.client.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (_basic.config.DEVTOOLS && _env.client && _env.client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(_env.client.__REDUX_DEVTOOLS_EXTENSION__(_env.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 

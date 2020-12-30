@@ -516,7 +516,6 @@ function _optionalCallableProperty(obj, name) {
 
 const env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
 const isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
-const isDevelopmentEnv = process.env.NODE_ENV !== 'production';
 const client = isServerEnv ? undefined : env;
 
 const TaskCountEvent = 'TaskCountEvent';
@@ -676,16 +675,106 @@ class TaskCounter extends PDispatcher {
   }
 
 }
+function isPlainObject(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __deepMerge(optimize, target, inject) {
+  Object.keys(inject).forEach(function (key) {
+    const src = target[key];
+    const val = inject[key];
+
+    if (isPlainObject(val)) {
+      if (isPlainObject(src)) {
+        target[key] = __deepMerge(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepMerge(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
+
+function deepMerge(target, ...args) {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+
+  if (args.length < 1) {
+    return target;
+  }
+
+  args.forEach(function (inject, index) {
+    if (isPlainObject(inject)) {
+      let lastArg = false;
+      let last2Arg = null;
+
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+
+      Object.keys(inject).forEach(function (key) {
+        const src = target[key];
+        const val = inject[key];
+
+        if (isPlainObject(val)) {
+          if (isPlainObject(src)) {
+            target[key] = __deepMerge(lastArg, src, val);
+          } else {
+            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepMerge(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
+    }
+  });
+  return target;
+}
 
 const config = {
   NSP: '.',
   MSP: ',',
-  SSRKey: 'meduxInitStore'
+  SSRKey: 'meduxInitStore',
+  MutableData: false,
+  DEVTOOLS: process.env.NODE_ENV === 'development'
 };
 function setConfig(_config) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.MSP && (config.MSP = _config.MSP);
-  _config.SSRKey && (config.SSRKey = _config.SSRKey);
+  _config.NSP !== undefined && (config.NSP = _config.NSP);
+  _config.MSP !== undefined && (config.MSP = _config.MSP);
+  _config.SSRKey !== undefined && (config.SSRKey = _config.SSRKey);
+  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
+  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
+}
+function warn(str) {
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+function deepMergeState(target = {}, ...args) {
+  if (config.MutableData) {
+    return deepMerge(target, ...args);
+  }
+
+  return deepMerge({}, target, ...args);
+}
+function mergeState(target = {}, ...args) {
+  if (config.MutableData) {
+    return Object.assign(target, ...args);
+  }
+
+  return Object.assign({}, target, ...args);
+}
+function snapshotState(target) {
+  if (config.MutableData) {
+    return JSON.parse(JSON.stringify(target));
+  }
+
+  return target;
 }
 const ActionTypes = {
   MLoading: 'Loading',
@@ -903,7 +992,7 @@ var ActionTypes$1 = {
  * @returns {boolean} True if the argument appears to be a plain object.
  */
 
-function isPlainObject(obj) {
+function isPlainObject$1(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   var proto = obj;
 
@@ -1077,7 +1166,7 @@ function createStore(reducer, preloadedState, enhancer) {
 
 
   function dispatch(action) {
-    if (!isPlainObject(action)) {
+    if (!isPlainObject$1(action)) {
       throw new Error('Actions must be plain objects. ' + 'Use custom middleware for async actions.');
     }
 
@@ -1521,37 +1610,13 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.store._medux_.prevState[this.moduleName];
+        return this.store._medux_.realtimeState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.store._medux_.prevState;
-      }
-    }, {
-      kind: "get",
-      key: "currentState",
-      value: function currentState() {
-        return this.store._medux_.currentState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "currentRootState",
-      value: function currentRootState() {
-        return this.store._medux_.currentState;
-      }
-    }, {
-      kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return this.store._medux_.beforeState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return this.store._medux_.beforeState;
+        return this.store._medux_.realtimeState;
       }
     }, {
       kind: "method",
@@ -1577,16 +1642,16 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Update",
       value: function Update(payload, key) {
-        return Object.assign({}, this.state, payload);
+        return mergeState(this.state, payload);
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
-        const state = this.state;
-        return Object.assign({}, state, {
-          loading: Object.assign({}, state.loading, payload)
+        const loading = mergeState(this.state.loading, payload);
+        return mergeState(this.state, {
+          loading
         });
       }
     }]
@@ -1605,7 +1670,7 @@ const exportModule = (moduleName, ModuleHandles, views) => {
       const initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       const preModuleState = store.getState()[moduleName] || {};
-      const moduleState = Object.assign({}, initState, preModuleState);
+      const moduleState = mergeState(initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;
@@ -1707,22 +1772,22 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
 
   let store;
 
-  const combineReducers = (rootState, action) => {
+  const combineReducers = (state, action) => {
     if (!store) {
-      return rootState;
+      return state;
     }
 
     const meta = store._medux_;
-    meta.prevState = rootState;
-    meta.currentState = rootState;
+    const currentState = meta.currentState;
+    const realtimeState = meta.realtimeState;
     Object.keys(storeReducers).forEach(moduleName => {
-      const result = storeReducers[moduleName](rootState[moduleName], action);
+      const node = storeReducers[moduleName](state[moduleName], action);
 
-      if (result !== rootState[moduleName]) {
-        meta.currentState = Object.assign({}, meta.currentState, {
-          [moduleName]: result
-        });
+      if (config.MutableData && realtimeState[moduleName] !== node) {
+        warn('Use rewrite instead of replace to update state in MutableData');
       }
+
+      realtimeState[moduleName] = node;
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -1751,20 +1816,18 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const result = fun(...getActionData(action));
+          const node = fun(...getActionData(action), currentState);
 
-          if (result !== rootState[moduleName]) {
-            meta.currentState = Object.assign({}, meta.currentState, {
-              [moduleName]: result
-            });
+          if (config.MutableData && realtimeState[moduleName] !== node) {
+            warn('Use rewrite instead of replace to update state in MutableData');
           }
+
+          realtimeState[moduleName] = node;
         }
       });
     }
 
-    const changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== meta.currentState[moduleName]);
-    meta.prevState = changed ? meta.currentState : rootState;
-    return meta.prevState;
+    return realtimeState;
   };
 
   const middleware = ({
@@ -1777,7 +1840,10 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
     }
 
     const meta = store._medux_;
-    meta.beforeState = meta.prevState;
+    const rootState = store.getState();
+    meta.realtimeState = mergeState(rootState);
+    meta.currentState = snapshotState(rootState);
+    const currentState = meta.currentState;
     const action = next(originalAction);
     const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -1807,7 +1873,7 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(...getActionData(action));
+          const effectResult = fun(...getActionData(action), currentState);
           const decorators = fun.__decorators__;
 
           if (decorators) {
@@ -1869,7 +1935,7 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
     const [moduleName, actionName] = action.type.split(config.NSP);
 
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const hasInjected = !!store._medux_.injectedModules[moduleName];
+      const hasInjected = store._medux_.injectedModules[moduleName];
 
       if (!hasInjected) {
         if (actionName === ActionTypes.MInit) {
@@ -1894,8 +1960,7 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
       const newStore = newCreateStore(...args);
       const moduleStore = newStore;
       moduleStore._medux_ = {
-        beforeState: {},
-        prevState: {},
+        realtimeState: {},
         currentState: {},
         reducerMap: {},
         effectMap: {},
@@ -1907,7 +1972,7 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
 
   const enhancers = [middlewareEnhancer, enhancer, ...storeEnhancers];
 
-  if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (config.DEVTOOLS && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
@@ -2107,222 +2172,6 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
   return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
 }
 
-function isPlainObject$1(obj) {
-  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
-}
-
-function __deepExtend(optimize, target, inject) {
-  Object.keys(inject).forEach(function (key) {
-    const src = target[key];
-    const val = inject[key];
-
-    if (isPlainObject$1(val)) {
-      if (isPlainObject$1(src)) {
-        target[key] = __deepExtend(optimize, src, val);
-      } else {
-        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
-      }
-    } else {
-      target[key] = val;
-    }
-  });
-  return target;
-}
-
-function deepExtend(target, ...args) {
-  if (!isPlainObject$1(target)) {
-    target = {};
-  }
-
-  if (args.length < 1) {
-    return target;
-  }
-
-  args.forEach(function (inject, index) {
-    if (isPlainObject$1(inject)) {
-      let lastArg = false;
-      let last2Arg = null;
-
-      if (index === args.length - 1) {
-        lastArg = true;
-      } else if (index === args.length - 2) {
-        last2Arg = args[index + 1];
-      }
-
-      Object.keys(inject).forEach(function (key) {
-        const src = target[key];
-        const val = inject[key];
-
-        if (isPlainObject$1(val)) {
-          if (isPlainObject$1(src)) {
-            target[key] = __deepExtend(lastArg, src, val);
-          } else {
-            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
-          }
-        } else {
-          target[key] = val;
-        }
-      });
-    }
-  });
-  return target;
-}
-
-function __extendDefault(target, def) {
-  const clone = {};
-  Object.keys(def).forEach(function (key) {
-    if (!target.hasOwnProperty(key)) {
-      clone[key] = def[key];
-    } else {
-      const tval = target[key];
-      const dval = def[key];
-
-      if (isPlainObject$1(tval) && isPlainObject$1(dval) && tval !== dval) {
-        clone[key] = __extendDefault(tval, dval);
-      } else {
-        clone[key] = tval;
-      }
-    }
-  });
-  return clone;
-}
-
-function extendDefault(target, def) {
-  if (!isPlainObject$1(target)) {
-    target = {};
-  }
-
-  if (!isPlainObject$1(def)) {
-    def = {};
-  }
-
-  return __extendDefault(target, def);
-}
-
-function __excludeDefault(data, def) {
-  const result = {};
-  let hasSub = false;
-  Object.keys(data).forEach(key => {
-    let value = data[key];
-    const defaultValue = def[key];
-
-    if (value !== defaultValue) {
-      if (typeof value === typeof defaultValue && isPlainObject$1(value)) {
-        value = __excludeDefault(value, defaultValue);
-      }
-
-      if (value !== undefined) {
-        hasSub = true;
-        result[key] = value;
-      }
-    }
-  });
-
-  if (hasSub) {
-    return result;
-  }
-
-  return undefined;
-}
-
-function excludeDefault(data, def, keepTopLevel) {
-  if (!isPlainObject$1(data)) {
-    return {};
-  }
-
-  if (!isPlainObject$1(def)) {
-    return data;
-  }
-
-  const filtered = __excludeDefault(data, def);
-
-  if (keepTopLevel) {
-    const result = {};
-    Object.keys(data).forEach(function (key) {
-      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
-    });
-    return result;
-  }
-
-  return filtered || {};
-}
-
-function __splitPrivate(data) {
-  const keys = Object.keys(data);
-
-  if (keys.length === 0) {
-    return [undefined, undefined];
-  }
-
-  let publicData;
-  let privateData;
-  keys.forEach(key => {
-    const value = data[key];
-
-    if (key.startsWith('_')) {
-      if (!privateData) {
-        privateData = {};
-      }
-
-      privateData[key] = value;
-    } else if (isPlainObject$1(value)) {
-      const [subPublicData, subPrivateData] = __splitPrivate(value);
-
-      if (subPublicData) {
-        if (!publicData) {
-          publicData = {};
-        }
-
-        publicData[key] = subPublicData;
-      }
-
-      if (subPrivateData) {
-        if (!privateData) {
-          privateData = {};
-        }
-
-        privateData[key] = subPrivateData;
-      }
-    } else {
-      if (!publicData) {
-        publicData = {};
-      }
-
-      publicData[key] = value;
-    }
-  });
-  return [publicData, privateData];
-}
-
-function splitPrivate(data, deleteTopLevel) {
-  if (!isPlainObject$1(data)) {
-    return [undefined, undefined];
-  }
-
-  const keys = Object.keys(data);
-
-  if (keys.length === 0) {
-    return [undefined, undefined];
-  }
-
-  const result = __splitPrivate(data);
-
-  let publicData = result[0];
-  const privateData = result[1];
-  keys.forEach(function (key) {
-    if (!deleteTopLevel[key]) {
-      if (!publicData) {
-        publicData = {};
-      }
-
-      if (!publicData[key]) {
-        publicData[key] = {};
-      }
-    }
-  });
-  return [publicData, privateData];
-}
-
 const routeConfig = {
   RSP: '|',
   historyMax: 10,
@@ -2446,6 +2295,165 @@ function buildHistoryStack(location, action, key, curData) {
     history: historyList,
     stack: stackList
   };
+}
+
+function isPlainObject$2(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __extendDefault(target, def) {
+  const clone = {};
+  Object.keys(def).forEach(function (key) {
+    if (!target.hasOwnProperty(key)) {
+      clone[key] = def[key];
+    } else {
+      const tval = target[key];
+      const dval = def[key];
+
+      if (isPlainObject$2(tval) && isPlainObject$2(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+
+function extendDefault(target, def) {
+  if (!isPlainObject$2(target)) {
+    target = {};
+  }
+
+  if (!isPlainObject$2(def)) {
+    def = {};
+  }
+
+  return __extendDefault(target, def);
+}
+
+function __excludeDefault(data, def) {
+  const result = {};
+  let hasSub = false;
+  Object.keys(data).forEach(key => {
+    let value = data[key];
+    const defaultValue = def[key];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject$2(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+
+  return undefined;
+}
+
+function excludeDefault(data, def, keepTopLevel) {
+  if (!isPlainObject$2(data)) {
+    return {};
+  }
+
+  if (!isPlainObject$2(def)) {
+    return data;
+  }
+
+  const filtered = __excludeDefault(data, def);
+
+  if (keepTopLevel) {
+    const result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+
+  return filtered || {};
+}
+
+function __splitPrivate(data) {
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  let publicData;
+  let privateData;
+  keys.forEach(key => {
+    const value = data[key];
+
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+
+      privateData[key] = value;
+    } else if (isPlainObject$2(value)) {
+      const [subPublicData, subPrivateData] = __splitPrivate(value);
+
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+
+        publicData[key] = subPublicData;
+      }
+
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+
+function splitPrivate(data, deleteTopLevel) {
+  if (!isPlainObject$2(data)) {
+    return [undefined, undefined];
+  }
+
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  const result = __splitPrivate(data);
+
+  let publicData = result[0];
+  const privateData = result[1];
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
 }
 
 /**
@@ -3016,9 +3024,9 @@ function createWebLocationTransform(defaultData, pathnameRules, base64 = false, 
         }
 
         data.tag = tag;
-        data.params = deepExtend(pathParams, search, hash);
+        data.params = deepMerge(pathParams, search, hash);
       } else {
-        data.params = deepExtend(search, hash);
+        data.params = deepMerge(search, hash);
       }
 
       data.params = assignDefaultData(data.params, defaultData);
@@ -3071,14 +3079,14 @@ let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHand
       key: "Init",
       value: function Init(initState) {
         const routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? deepExtend({}, initState, routeParams) : initState;
+        return routeParams ? deepMergeState(initState, routeParams) : initState;
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        return deepExtend({}, this.state, payload);
+        return deepMergeState(this.state, payload);
       }
     }]
   };
@@ -3120,7 +3128,7 @@ const routeMiddleware = ({
       if (routeParams) {
         var _rootState$moduleName;
 
-        if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
+        if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
         }
       }
@@ -3194,7 +3202,7 @@ class BaseHistoryActions {
       tag
     } = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
+    const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params
@@ -3206,7 +3214,7 @@ class BaseHistoryActions {
       tag
     } = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
+    const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     const nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params
@@ -5260,7 +5268,7 @@ function shallowEqual(objA, objB) {
  * @param {any} obj The object to inspect.
  * @returns {boolean} True if the argument appears to be a plain object.
  */
-function isPlainObject$2(obj) {
+function isPlainObject$3(obj) {
   if (typeof obj !== 'object' || obj === null) return false;
   var proto = Object.getPrototypeOf(obj);
   if (proto === null) return true;
@@ -5299,7 +5307,7 @@ function warning$1(message) {
 }
 
 function verifyPlainObject(value, displayName, methodName) {
-  if (!isPlainObject$2(value)) {
+  if (!isPlainObject$3(value)) {
     warning$1(methodName + "() in " + displayName + " must return a plain object. Instead received " + value + ".");
   }
 }
@@ -7154,4 +7162,4 @@ const DocumentHeadComponent = ({
 
 const DocumentHead = React.memo(DocumentHeadComponent);
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepExtend, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connect, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setLoadingDepthTime, setRouteConfig, setSsrHtmlTpl, viewHotReplacement };

@@ -6,7 +6,7 @@ export = function loader(this: any, source: string) {
   const filePath: string = this.resourcePath;
   const fileName = path.basename(filePath).split('.')[0];
   if (filePath.indexOf(moduleIndexFile) > -1 && fileName === 'index') {
-    const arr = source.match(/export default exportModule\s*\(([^)]+)\)/m);
+    const arr = source.match(/exportModule\s*\(([^)]+)\)/m);
     const medux = source.match(/['"](@medux\/.+?)['"]/);
     if (arr && medux) {
       const args = arr[1].replace(/\s/gm, '');

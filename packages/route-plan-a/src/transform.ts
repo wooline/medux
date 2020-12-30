@@ -1,4 +1,5 @@
-import {deepExtend, extendDefault, excludeDefault, splitPrivate} from './deep-extend';
+import {deepMerge} from '@medux/core';
+import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
 import {extractPathParams, PathnameRules} from './matchPath';
 import type {RootParams, Location, NativeLocation, WebNativeLocation} from './basic';
 
@@ -41,7 +42,7 @@ function parseWebNativeLocation(nativeLocation: WebNativeLocation, key: string, 
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
   return {pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname, search: search ? parse(search) : undefined, hash: hash ? parse(hash) : undefined};
 }
-// : assignDefaultData(params, defaultData)
+
 function toNativeLocation(tag: string, search: any, hash: any, key: string, base64: boolean, stringify: (data: any) => string): WebNativeLocation {
   let searchStr = search ? stringify(search) : '';
   let hashStr = hash ? stringify(hash) : '';
@@ -97,9 +98,9 @@ export function createWebLocationTransform<P extends RootParams>(
           matchCache.set(pathname, tag, pathParams);
         }
         data.tag = tag;
-        data.params = deepExtend(pathParams, search, hash);
+        data.params = deepMerge(pathParams, search, hash);
       } else {
-        data.params = deepExtend(search, hash);
+        data.params = deepMerge(search, hash);
       }
       data.params = assignDefaultData(data.params, defaultData);
       return data;

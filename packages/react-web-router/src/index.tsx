@@ -26,8 +26,10 @@ export {
   setLoadingDepthTime,
   isServer,
   serverSide,
+  deepMerge,
+  deepMergeState,
 } from '@medux/core';
-export {setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
+export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';

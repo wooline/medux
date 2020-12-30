@@ -148,3 +148,57 @@ export class TaskCounter extends PDispatcher {
     return this;
   }
 }
+export function isPlainObject(obj: any) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __deepMerge(optimize: boolean | null, target: {[key: string]: any}, inject: {[key: string]: any}[]) {
+  Object.keys(inject).forEach(function (key) {
+    const src = target[key];
+    const val = inject[key];
+    if (isPlainObject(val)) {
+      if (isPlainObject(src)) {
+        target[key] = __deepMerge(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepMerge(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
+
+export function deepMerge(target: {[key: string]: any}, ...args: {[key: string]: any}[]): {[key: string]: any} {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+  if (args.length < 1) {
+    return target;
+  }
+  args.forEach(function (inject, index) {
+    if (isPlainObject(inject)) {
+      let lastArg = false;
+      let last2Arg: any = null;
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+      Object.keys(inject).forEach(function (key) {
+        const src = target[key];
+        const val = inject[key];
+        if (isPlainObject(val)) {
+          if (isPlainObject(src)) {
+            target[key] = __deepMerge(lastArg, src, val);
+          } else {
+            target[key] = lastArg || (last2Arg && !last2Arg[key]) ? val : __deepMerge(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
+    }
+  });
+  return target;
+}

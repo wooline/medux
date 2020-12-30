@@ -1,8 +1,9 @@
 import * as path from 'path';
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 import * as fs from 'fs';
+import * as webpack from 'webpack';
 import {ufs} from 'unionfs';
-import webpack, {Compiler} from 'webpack';
+import {Compiler} from 'webpack';
 import {patchRequire} from 'fs-monkey';
 
 import {validate} from 'schema-utils';

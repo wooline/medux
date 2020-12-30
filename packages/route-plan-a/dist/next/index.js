@@ -1,9 +1,7 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { CoreModuleHandlers, config, reducer } from '@medux/core';
-import { deepExtend } from './deep-extend';
+import { CoreModuleHandlers, config, reducer, deepMerge, deepMergeState } from '@medux/core';
 import { buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation } from './basic';
-export { deepExtend } from './deep-extend';
 export { createWebLocationTransform } from './transform';
 export { PathnameRules, extractPathParams } from './matchPath';
 export { setRouteConfig } from './basic';
@@ -25,14 +23,14 @@ export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreMod
       key: "Init",
       value: function Init(initState) {
         const routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? deepExtend({}, initState, routeParams) : initState;
+        return routeParams ? deepMergeState(initState, routeParams) : initState;
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "RouteParams",
       value: function RouteParams(payload) {
-        return deepExtend({}, this.state, payload);
+        return deepMergeState(this.state, payload);
       }
     }]
   };
@@ -74,7 +72,7 @@ export const routeMiddleware = ({
       if (routeParams) {
         var _rootState$moduleName;
 
-        if ((_rootState$moduleName = rootState[moduleName]) === null || _rootState$moduleName === void 0 ? void 0 : _rootState$moduleName.initialized) {
+        if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
         }
       }
@@ -148,7 +146,7 @@ export class BaseHistoryActions {
       tag
     } = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
+    const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     return {
       tag: tag || this._routeState.tag || '/',
       params
@@ -160,7 +158,7 @@ export class BaseHistoryActions {
       tag
     } = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams && data.params ? deepExtend({}, extendParams, data.params) : data.params;
+    const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     const nativeLocation = this.locationTransform.out({
       tag: tag || this._routeState.tag || '/',
       params

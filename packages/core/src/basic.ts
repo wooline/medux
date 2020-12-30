@@ -1,21 +1,28 @@
 import {Unsubscribe} from 'redux';
-import {LoadingState, TaskCountEvent, TaskCounter} from './sprite';
+import {deepMerge, LoadingState, TaskCountEvent, TaskCounter} from './sprite';
 import {env, isServerEnv} from './env';
 
 /**
  * 可供设置的全局参数，参见setConfig
- * - SSRKey 默认为 meduxInitStore 用于SSR同构时传递data
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
+ * - SSRKey 默认为 meduxInitStore 用于SSR同构时传递data
+ * - MutableData 默认为 false 不使用可变数据
+ * - DEVTOOLS 默认为仅开发环境，是否使用chrome reduxDevTools
  */
 export const config: {
   NSP: string;
   MSP: string;
   SSRKey: string;
+  MutableData: boolean;
+  DEVTOOLS: boolean;
 } = {
   NSP: '.',
   MSP: ',',
   SSRKey: 'meduxInitStore',
+  MutableData: false,
+  // @ts-ignore
+  DEVTOOLS: process.env.NODE_ENV === 'development',
 };
 /**
  * 可供设置的全局参数
@@ -23,10 +30,40 @@ export const config: {
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
-export function setConfig(_config: {NSP?: string; MSP?: string; SSRKey?: string}) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.MSP && (config.MSP = _config.MSP);
-  _config.SSRKey && (config.SSRKey = _config.SSRKey);
+export function setConfig(_config: {NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DEVTOOLS?: boolean}) {
+  _config.NSP !== undefined && (config.NSP = _config.NSP);
+  _config.MSP !== undefined && (config.MSP = _config.MSP);
+  _config.SSRKey !== undefined && (config.SSRKey = _config.SSRKey);
+  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
+  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
+}
+
+export function warn(str: string) {
+  // @ts-ignore
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+
+export function deepMergeState(target: any = {}, ...args: any[]) {
+  if (config.MutableData) {
+    return deepMerge(target, ...args);
+  }
+  return deepMerge({}, target, ...args);
+}
+
+export function mergeState(target: any = {}, ...args: any[]) {
+  if (config.MutableData) {
+    return Object.assign(target, ...args);
+  }
+  return Object.assign({}, target, ...args);
+}
+
+export function snapshotState(target: any) {
+  if (config.MutableData) {
+    return JSON.parse(JSON.stringify(target));
+  }
+  return target;
 }
 
 export interface CommonModule<ModuleName extends string = string> {
@@ -185,8 +222,7 @@ export interface ModuleStore extends Store {
     reducerMap: ReducerMap;
     effectMap: EffectMap;
     injectedModules: {[moduleName: string]: boolean | undefined};
-    beforeState: CoreRootState;
-    prevState: CoreRootState;
+    realtimeState: CoreRootState;
     currentState: CoreRootState;
   };
 }

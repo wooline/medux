@@ -7,8 +7,8 @@ import type { RootModuleFacade, RootModuleAPI, RootModuleActions, ModuleGetter, 
 import type { Store } from 'redux';
 import type { RootState, LocationTransform } from '@medux/web';
 export { exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, isServer, serverSide, } from '@medux/core';
-export { setRouteConfig, deepExtend, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
+export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, isServer, serverSide, deepMerge, deepMergeState, } from '@medux/core';
+export { setRouteConfig, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
 export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
 export type { RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules } from '@medux/route-plan-a';

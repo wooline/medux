@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as TJS from 'typescript-json-schema';
 import * as chalk from 'chalk';
 
-export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _rewrite?: boolean) {
+export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _echo?: boolean) {
   const RootPath = process.cwd();
   let tsconfig;
   if (!_tsconfig) {
@@ -31,7 +31,7 @@ export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _rew
       return obj;
     }, {});
     const json2 = `'${JSON.stringify(actions)}'`;
-    if (!_rewrite) {
+    if (_echo) {
       console.info(json2);
     } else if (json !== json2) {
       const newSource = source.replace(arr[0], `patchActions(${typeName}, ${json2})`);

@@ -2,7 +2,6 @@ import { Middleware, Reducer } from 'redux';
 import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
 import type { LocationTransform } from './transform';
 import type { RootParams, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload } from './basic';
-export { deepExtend } from './deep-extend';
 export { createWebLocationTransform } from './transform';
 export { PathnameRules, extractPathParams } from './matchPath';
 export { setRouteConfig } from './basic';

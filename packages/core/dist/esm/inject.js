@@ -1,5 +1,5 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { MetaData, config, reducer, isPromise } from './basic';
+import { MetaData, config, reducer, isPromise, mergeState } from './basic';
 import { moduleInitAction } from './actions';
 import { isServerEnv } from './env';
 export function cacheModule(module) {
@@ -122,37 +122,13 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.store._medux_.prevState[this.moduleName];
+        return this.store._medux_.realtimeState[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.store._medux_.prevState;
-      }
-    }, {
-      kind: "get",
-      key: "currentState",
-      value: function currentState() {
-        return this.store._medux_.currentState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "currentRootState",
-      value: function currentRootState() {
-        return this.store._medux_.currentState;
-      }
-    }, {
-      kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return this.store._medux_.beforeState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return this.store._medux_.beforeState;
+        return this.store._medux_.realtimeState;
       }
     }, {
       kind: "method",
@@ -178,16 +154,16 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
       decorators: [reducer],
       key: "Update",
       value: function Update(payload, key) {
-        return Object.assign({}, this.state, payload);
+        return mergeState(this.state, payload);
       }
     }, {
       kind: "method",
       decorators: [reducer],
       key: "Loading",
       value: function Loading(payload) {
-        var state = this.state;
-        return Object.assign({}, state, {
-          loading: Object.assign({}, state.loading, payload)
+        var loading = mergeState(this.state.loading, payload);
+        return mergeState(this.state, {
+          loading: loading
         });
       }
     }]
@@ -206,7 +182,7 @@ export var exportModule = function exportModule(moduleName, ModuleHandles, views
       var _initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign({}, _initState, preModuleState);
+      var moduleState = mergeState(_initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;

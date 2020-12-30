@@ -7,8 +7,6 @@ export const env: meduxCore.ENV = (typeof window === 'object' && window.window) 
 // export const env: ENV = (typeof self === 'object' && self.self === self && self) || (typeof global === 'object' && global.global === global && global) || this;
 // @ts-ignore
 export const isServerEnv: boolean = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
-// @ts-ignore
-export const isDevelopmentEnv: boolean = process.env.NODE_ENV !== 'production';
 
 export const client: meduxCore.ENV | undefined = isServerEnv ? undefined : env;
 

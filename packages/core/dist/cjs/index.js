@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.isDevelopmentEnv = exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.serverSide = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
+exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.deepMerge = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.serverSide = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.mergeState = exports.deepMergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -14,6 +14,8 @@ exports.reducer = _basic.reducer;
 exports.config = _basic.config;
 exports.effect = _basic.effect;
 exports.logger = _basic.logger;
+exports.deepMergeState = _basic.deepMergeState;
+exports.mergeState = _basic.mergeState;
 exports.setConfig = _basic.setConfig;
 exports.delayPromise = _basic.delayPromise;
 exports.setLoading = _basic.setLoading;
@@ -39,6 +41,7 @@ exports.getView = _inject.getView;
 var _sprite = require("./sprite");
 
 exports.LoadingState = _sprite.LoadingState;
+exports.deepMerge = _sprite.deepMerge;
 
 var _module = require("./module");
 
@@ -53,4 +56,3 @@ var _env = require("./env");
 exports.env = _env.env;
 exports.client = _env.client;
 exports.isServerEnv = _env.isServerEnv;
-exports.isDevelopmentEnv = _env.isDevelopmentEnv;

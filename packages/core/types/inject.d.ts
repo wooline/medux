@@ -17,10 +17,6 @@ export declare abstract class CoreModuleHandlers<S extends CoreModuleState = Cor
     constructor(initState: S);
     protected get state(): S;
     protected get rootState(): R;
-    protected get currentState(): S;
-    protected get currentRootState(): R;
-    protected get prevState(): undefined | S;
-    protected get prevRootState(): R;
     protected dispatch(action: Action): Action | Promise<void>;
     protected loadModel(moduleName: string): void | Promise<void>;
     Init(initState: S): S;

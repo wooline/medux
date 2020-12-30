@@ -1,4 +1,19 @@
-import {Action, ActionHandler, ActionHandlerList, ActionHandlerMap, CoreModuleState, CommonModule, MetaData, ModuleModel, ModuleGetter, ModuleStore, config, reducer, isPromise} from './basic';
+import {
+  Action,
+  ActionHandler,
+  ActionHandlerList,
+  ActionHandlerMap,
+  CoreModuleState,
+  CommonModule,
+  MetaData,
+  ModuleModel,
+  ModuleGetter,
+  ModuleStore,
+  config,
+  reducer,
+  isPromise,
+  mergeState,
+} from './basic';
 import {moduleInitAction} from './actions';
 import {isServerEnv} from './env';
 
@@ -126,53 +141,14 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * 获取本Model的state
    */
   protected get state(): S {
-    return this.store._medux_.prevState[this.moduleName] as S;
+    return this.store._medux_.realtimeState[this.moduleName] as S;
   }
 
   /**
    * 获取整个store的state
    */
   protected get rootState(): R {
-    return this.store._medux_.prevState as R;
-  }
-
-  /**
-   * - 获取本Model的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
-   * - state会等到所有模块的reducer更新完成时才变化
-   * - currentState是实时更新变化
-   */
-  protected get currentState(): S {
-    return this.store._medux_.currentState[this.moduleName] as S;
-  }
-
-  /**
-   * 获取整个store的实时state，通常在reducer中使用，当一个action引起多个不同模块reducer执行时：
-   * - state会等到所有模块的reducer更新完成时才变化
-   * - currentState是实时更新变化
-   */
-  protected get currentRootState(): R {
-    return this.store._medux_.currentState as R;
-  }
-
-  /**
-   * 获取本Model的前state状态，通常在effect中使用，当一个action同时引起reducer和effect执行时：
-   * - 所有reducer会先执行完毕并更新rootState
-   * - 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
-   * - 使用prevState可以取到reducer变更之前的state
-   */
-  protected get prevState(): undefined | S {
-    return this.store._medux_.beforeState[this.moduleName] as S;
-  }
-
-  /**
-   * 获整个store的前state状态，通常在effect中使用，
-   * 当一个action同时引起reducer和effect执行时：
-   * - 所有reducer会先执行完毕并更新rootState
-   * - 之后才开始执行effect，此时effect中取到的rootState已经被reducer变更了
-   * - 使用prevState可以取到reducer变更之前的state
-   */
-  protected get prevRootState(): R {
-    return this.store._medux_.beforeState as any;
+    return this.store._medux_.realtimeState as R;
   }
 
   /**
@@ -203,7 +179,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    */
   @reducer
   public Update(payload: Partial<S>, key: string): S {
-    return {...this.state, ...payload};
+    return mergeState(this.state, payload);
   }
 
   /**
@@ -212,11 +188,13 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    */
   @reducer
   public Loading(payload: {[group: string]: string}): S {
-    const state = this.state;
-    return {
-      ...state,
-      loading: {...state.loading, ...payload},
-    };
+    const loading = mergeState(this.state.loading, payload);
+    return mergeState(this.state, {loading});
+    // const state = this.state;
+    // return {
+    //   ...state,
+    //   loading: {...state.loading, ...payload},
+    // };
   }
 }
 
@@ -280,7 +258,7 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
       const initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles as any);
       const preModuleState: CoreModuleState = store.getState()[moduleName] || {};
-      const moduleState: CoreModuleState = {...initState, ...preModuleState};
+      const moduleState: CoreModuleState = mergeState(initState, preModuleState);
       if (!moduleState.initialized) {
         moduleState.initialized = true;
         return store.dispatch(moduleInitAction(moduleName, moduleState)) as any;

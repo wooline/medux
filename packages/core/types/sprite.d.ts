@@ -36,3 +36,11 @@ export declare class TaskCounter extends PDispatcher {
     addItem(promise: Promise<any>, note?: string): Promise<any>;
     private completeItem;
 }
+export declare function isPlainObject(obj: any): boolean;
+export declare function deepMerge(target: {
+    [key: string]: any;
+}, ...args: {
+    [key: string]: any;
+}[]): {
+    [key: string]: any;
+};

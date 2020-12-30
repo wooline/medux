@@ -1,12 +1,10 @@
 import {Middleware, Reducer} from 'redux';
-import {CoreModuleHandlers, CoreModuleState, config, reducer} from '@medux/core';
-import {deepExtend} from './deep-extend';
+import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMerge, deepMergeState} from '@medux/core';
 import {buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation} from './basic';
 
 import type {LocationTransform} from './transform';
 import type {RootParams, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
 
-export {deepExtend} from './deep-extend';
 export {createWebLocationTransform} from './transform';
 export {PathnameRules, extractPathParams} from './matchPath';
 export {setRouteConfig} from './basic';
@@ -21,12 +19,12 @@ export class RouteModuleHandlers<S extends CoreModuleState, R extends Record<str
   @reducer
   public Init(initState: S): S {
     const routeParams = this.rootState.route.params[this.moduleName];
-    return routeParams ? (deepExtend({}, initState, routeParams) as any) : initState;
+    return routeParams ? (deepMergeState(initState, routeParams) as any) : initState;
   }
 
   @reducer
   public RouteParams(payload: Partial<S>): S {
-    return deepExtend({}, this.state, payload) as any;
+    return deepMergeState(this.state, payload) as any;
   }
 }
 export const RouteActionTypes = {
@@ -149,14 +147,14 @@ export abstract class BaseHistoryActions<P extends RootParams, NL extends Native
     }
     const {tag} = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params: P = extendParams && data.params ? (deepExtend({}, extendParams, data.params) as any) : data.params;
+    const params: P = extendParams && data.params ? (deepMerge({}, extendParams, data.params) as any) : data.params;
     return {tag: tag || this._routeState.tag || '/', params};
   }
 
   locationToUrl(data: RoutePayload<P>): string {
     const {tag} = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params: P = extendParams && data.params ? (deepExtend({}, extendParams, data.params) as any) : data.params;
+    const params: P = extendParams && data.params ? (deepMerge({}, extendParams, data.params) as any) : data.params;
     const nativeLocation = this.locationTransform.out({tag: tag || this._routeState.tag || '/', params});
     return this.nativeHistory.toUrl(nativeLocation);
   }

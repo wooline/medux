@@ -4,8 +4,8 @@ exports.getSsrInjectPlugin = exports.SsrInject = void 0;
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const fs = require("fs");
+const webpack = require("webpack");
 const unionfs_1 = require("unionfs");
-const webpack_1 = require("webpack");
 const fs_monkey_1 = require("fs-monkey");
 const schema_utils_1 = require("schema-utils");
 const schema = {
@@ -39,7 +39,7 @@ class SsrInject {
                     const html = this.html;
                     if (assets[entryFileName] && html) {
                         compilation.updateAsset(entryFileName, (source) => {
-                            return new webpack_1.default.sources.RawSource(replace(source.source().toString(), htmlKey, html), false);
+                            return new webpack.sources.RawSource(replace(source.source().toString(), htmlKey, html), false);
                         });
                     }
                 });

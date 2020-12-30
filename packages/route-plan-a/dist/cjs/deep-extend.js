@@ -2,74 +2,12 @@
 
 exports.__esModule = true;
 exports.isPlainObject = isPlainObject;
-exports.deepExtend = deepExtend;
 exports.extendDefault = extendDefault;
 exports.excludeDefault = excludeDefault;
 exports.splitPrivate = splitPrivate;
 
 function isPlainObject(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
-}
-
-function __deepExtend(optimize, target, inject) {
-  Object.keys(inject).forEach(function (key) {
-    var src = target[key];
-    var val = inject[key];
-
-    if (isPlainObject(val)) {
-      if (isPlainObject(src)) {
-        target[key] = __deepExtend(optimize, src, val);
-      } else {
-        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
-      }
-    } else {
-      target[key] = val;
-    }
-  });
-  return target;
-}
-
-function deepExtend(target) {
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
-  }
-
-  if (!isPlainObject(target)) {
-    target = {};
-  }
-
-  if (args.length < 1) {
-    return target;
-  }
-
-  args.forEach(function (inject, index) {
-    if (isPlainObject(inject)) {
-      var lastArg = false;
-      var last2Arg = null;
-
-      if (index === args.length - 1) {
-        lastArg = true;
-      } else if (index === args.length - 2) {
-        last2Arg = args[index + 1];
-      }
-
-      Object.keys(inject).forEach(function (key) {
-        var src = target[key];
-        var val = inject[key];
-
-        if (isPlainObject(val)) {
-          if (isPlainObject(src)) {
-            target[key] = __deepExtend(lastArg, src, val);
-          } else {
-            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepExtend(lastArg, {}, val);
-          }
-        } else {
-          target[key] = val;
-        }
-      });
-    }
-  });
-  return target;
 }
 
 function __extendDefault(target, def) {

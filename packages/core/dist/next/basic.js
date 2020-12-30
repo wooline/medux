@@ -1,14 +1,44 @@
-import { TaskCountEvent, TaskCounter } from './sprite';
+import { deepMerge, TaskCountEvent, TaskCounter } from './sprite';
 import { env, isServerEnv } from './env';
 export const config = {
   NSP: '.',
   MSP: ',',
-  SSRKey: 'meduxInitStore'
+  SSRKey: 'meduxInitStore',
+  MutableData: false,
+  DEVTOOLS: process.env.NODE_ENV === 'development'
 };
 export function setConfig(_config) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.MSP && (config.MSP = _config.MSP);
-  _config.SSRKey && (config.SSRKey = _config.SSRKey);
+  _config.NSP !== undefined && (config.NSP = _config.NSP);
+  _config.MSP !== undefined && (config.MSP = _config.MSP);
+  _config.SSRKey !== undefined && (config.SSRKey = _config.SSRKey);
+  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
+  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
+}
+export function warn(str) {
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+export function deepMergeState(target = {}, ...args) {
+  if (config.MutableData) {
+    return deepMerge(target, ...args);
+  }
+
+  return deepMerge({}, target, ...args);
+}
+export function mergeState(target = {}, ...args) {
+  if (config.MutableData) {
+    return Object.assign(target, ...args);
+  }
+
+  return Object.assign({}, target, ...args);
+}
+export function snapshotState(target) {
+  if (config.MutableData) {
+    return JSON.parse(JSON.stringify(target));
+  }
+
+  return target;
 }
 export const ActionTypes = {
   MLoading: 'Loading',

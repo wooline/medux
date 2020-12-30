@@ -1,4 +1,5 @@
-import { deepExtend, extendDefault, excludeDefault, splitPrivate } from './deep-extend';
+import { deepMerge } from '@medux/core';
+import { extendDefault, excludeDefault, splitPrivate } from './deep-extend';
 import { extractPathParams } from './matchPath';
 
 function splitSearch(search, key) {
@@ -124,9 +125,9 @@ export function createWebLocationTransform(defaultData, pathnameRules, base64 = 
         }
 
         data.tag = tag;
-        data.params = deepExtend(pathParams, search, hash);
+        data.params = deepMerge(pathParams, search, hash);
       } else {
-        data.params = deepExtend(search, hash);
+        data.params = deepMerge(search, hash);
       }
 
       data.params = assignDefaultData(data.params, defaultData);

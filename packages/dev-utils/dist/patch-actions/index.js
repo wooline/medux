@@ -5,7 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const TJS = require("typescript-json-schema");
 const chalk = require("chalk");
-function patch(_tsconfig, _entryFilePath, _rewrite) {
+function patch(_tsconfig, _entryFilePath, _echo) {
     const RootPath = process.cwd();
     let tsconfig;
     if (!_tsconfig) {
@@ -35,7 +35,7 @@ function patch(_tsconfig, _entryFilePath, _rewrite) {
             return obj;
         }, {});
         const json2 = `'${JSON.stringify(actions)}'`;
-        if (!_rewrite) {
+        if (_echo) {
             console.info(json2);
         }
         else if (json !== json2) {

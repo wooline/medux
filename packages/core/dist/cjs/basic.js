@@ -2,6 +2,10 @@
 
 exports.__esModule = true;
 exports.setConfig = setConfig;
+exports.warn = warn;
+exports.deepMergeState = deepMergeState;
+exports.mergeState = mergeState;
+exports.snapshotState = snapshotState;
 exports.getAppModuleName = getAppModuleName;
 exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setLoading = setLoading;
@@ -21,14 +25,64 @@ var _env = require("./env");
 var config = {
   NSP: '.',
   MSP: ',',
-  SSRKey: 'meduxInitStore'
+  SSRKey: 'meduxInitStore',
+  MutableData: false,
+  DEVTOOLS: process.env.NODE_ENV === 'development'
 };
 exports.config = config;
 
 function setConfig(_config) {
-  _config.NSP && (config.NSP = _config.NSP);
-  _config.MSP && (config.MSP = _config.MSP);
-  _config.SSRKey && (config.SSRKey = _config.SSRKey);
+  _config.NSP !== undefined && (config.NSP = _config.NSP);
+  _config.MSP !== undefined && (config.MSP = _config.MSP);
+  _config.SSRKey !== undefined && (config.SSRKey = _config.SSRKey);
+  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
+  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
+}
+
+function warn(str) {
+  if (process.env.NODE_ENV === 'development') {
+    _env.env.console.warn(str);
+  }
+}
+
+function deepMergeState(target) {
+  if (target === void 0) {
+    target = {};
+  }
+
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
+  }
+
+  if (config.MutableData) {
+    return _sprite.deepMerge.apply(void 0, [target].concat(args));
+  }
+
+  return _sprite.deepMerge.apply(void 0, [{}, target].concat(args));
+}
+
+function mergeState(target) {
+  if (target === void 0) {
+    target = {};
+  }
+
+  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    args[_key2 - 1] = arguments[_key2];
+  }
+
+  if (config.MutableData) {
+    return Object.assign.apply(Object, [target].concat(args));
+  }
+
+  return Object.assign.apply(Object, [{}, target].concat(args));
+}
+
+function snapshotState(target) {
+  if (config.MutableData) {
+    return JSON.parse(JSON.stringify(target));
+  }
+
+  return target;
 }
 
 var ActionTypes = {
@@ -180,8 +234,8 @@ function delayPromise(second) {
         }, second * 1000);
       });
 
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
       }
 
       return Promise.all([delay, fun.apply(target, args)]).then(function (items) {

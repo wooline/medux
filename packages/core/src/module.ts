@@ -41,7 +41,7 @@ export type LoadView<A extends RootModuleFacade = {}, Options = any, Comp = any>
   error?: Comp
 ) => A[M]['views'][V];
 
-export function getRootModuleAPI(data?: {[moduleName: string]: string[]}): RootModuleAPI<any> {
+export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {[moduleName: string]: string[]}): RootModuleAPI<T> {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
@@ -96,7 +96,7 @@ export function getRootModuleAPI(data?: {[moduleName: string]: string[]}): RootM
       );
     }
   }
-  return MetaData.facadeMap;
+  return MetaData.facadeMap as any;
 }
 function clearHandlers(key: string, actionHandlerMap: ActionHandlerMap) {
   for (const actionName in actionHandlerMap) {

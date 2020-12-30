@@ -3,6 +3,7 @@
     "**/node_modules": true,
     "**/dist": true,
     "**/docs": true,
+    "**/api": true,
     "**/types": true
   },
   "files.eol": "\n",

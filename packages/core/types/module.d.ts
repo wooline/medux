@@ -27,9 +27,9 @@ export declare type RootModuleState<A extends RootModuleFacade = RootModuleFacad
     [key in keyof A]: A[key]['state'];
 };
 export declare type LoadView<A extends RootModuleFacade = {}, Options = any, Comp = any> = <M extends keyof A, V extends A[M]['viewName']>(moduleName: M, viewName: V, options?: Options, loading?: Comp, error?: Comp) => A[M]['views'][V];
-export declare function getRootModuleAPI(data?: {
+export declare function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {
     [moduleName: string]: string[];
-}): RootModuleAPI<any>;
+}): RootModuleAPI<T>;
 export declare function modelHotReplacement(moduleName: string, ActionHandles: {
     new (): CoreModuleHandlers;
 }): void;

@@ -2,57 +2,6 @@ export function isPlainObject(obj: any) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
-function __deepExtend(optimize: boolean | null, target: {[key: string]: any}, inject: {[key: string]: any}[]) {
-  Object.keys(inject).forEach(function (key) {
-    const src = target[key];
-    const val = inject[key];
-    if (isPlainObject(val)) {
-      if (isPlainObject(src)) {
-        target[key] = __deepExtend(optimize, src, val);
-      } else {
-        target[key] = optimize ? val : __deepExtend(optimize, {}, val);
-      }
-    } else {
-      target[key] = val;
-    }
-  });
-  return target;
-}
-
-export function deepExtend(target: {[key: string]: any}, ...args: {[key: string]: any}[]): {[key: string]: any} {
-  if (!isPlainObject(target)) {
-    target = {};
-  }
-  if (args.length < 1) {
-    return target;
-  }
-  args.forEach(function (inject, index) {
-    if (isPlainObject(inject)) {
-      let lastArg = false;
-      let last2Arg: any = null;
-      if (index === args.length - 1) {
-        lastArg = true;
-      } else if (index === args.length - 2) {
-        last2Arg = args[index + 1];
-      }
-      Object.keys(inject).forEach(function (key) {
-        const src = target[key];
-        const val = inject[key];
-        if (isPlainObject(val)) {
-          if (isPlainObject(src)) {
-            target[key] = __deepExtend(lastArg, src, val);
-          } else {
-            target[key] = lastArg || (last2Arg && !last2Arg[key]) ? val : __deepExtend(lastArg, {}, val);
-          }
-        } else {
-          target[key] = val;
-        }
-      });
-    }
-  });
-  return target;
-}
-
 function __extendDefault(target: Object, def: Object): Object {
   const clone: any = {};
   Object.keys(def).forEach(function (key) {

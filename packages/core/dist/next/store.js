@@ -1,7 +1,7 @@
 import { applyMiddleware, compose, createStore } from 'redux';
-import { ActionTypes, MetaData, config, isPromise } from './basic';
+import { ActionTypes, MetaData, config, isPromise, snapshotState, mergeState, warn } from './basic';
 import { loadModel } from './inject';
-import { client, isDevelopmentEnv, isServerEnv } from './env';
+import { client, isServerEnv } from './env';
 import { errorAction } from './actions';
 export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
@@ -34,22 +34,22 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
 
   let store;
 
-  const combineReducers = (rootState, action) => {
+  const combineReducers = (state, action) => {
     if (!store) {
-      return rootState;
+      return state;
     }
 
     const meta = store._medux_;
-    meta.prevState = rootState;
-    meta.currentState = rootState;
+    const currentState = meta.currentState;
+    const realtimeState = meta.realtimeState;
     Object.keys(storeReducers).forEach(moduleName => {
-      const result = storeReducers[moduleName](rootState[moduleName], action);
+      const node = storeReducers[moduleName](state[moduleName], action);
 
-      if (result !== rootState[moduleName]) {
-        meta.currentState = Object.assign({}, meta.currentState, {
-          [moduleName]: result
-        });
+      if (config.MutableData && realtimeState[moduleName] !== node) {
+        warn('Use rewrite instead of replace to update state in MutableData');
       }
+
+      realtimeState[moduleName] = node;
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -78,20 +78,18 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const result = fun(...getActionData(action));
+          const node = fun(...getActionData(action), currentState);
 
-          if (result !== rootState[moduleName]) {
-            meta.currentState = Object.assign({}, meta.currentState, {
-              [moduleName]: result
-            });
+          if (config.MutableData && realtimeState[moduleName] !== node) {
+            warn('Use rewrite instead of replace to update state in MutableData');
           }
+
+          realtimeState[moduleName] = node;
         }
       });
     }
 
-    const changed = Object.keys(rootState).length !== Object.keys(meta.currentState).length || Object.keys(rootState).some(moduleName => rootState[moduleName] !== meta.currentState[moduleName]);
-    meta.prevState = changed ? meta.currentState : rootState;
-    return meta.prevState;
+    return realtimeState;
   };
 
   const middleware = ({
@@ -104,7 +102,10 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     }
 
     const meta = store._medux_;
-    meta.beforeState = meta.prevState;
+    const rootState = store.getState();
+    meta.realtimeState = mergeState(rootState);
+    meta.currentState = snapshotState(rootState);
+    const currentState = meta.currentState;
     const action = next(originalAction);
     const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
@@ -134,7 +135,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(...getActionData(action));
+          const effectResult = fun(...getActionData(action), currentState);
           const decorators = fun.__decorators__;
 
           if (decorators) {
@@ -196,7 +197,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     const [moduleName, actionName] = action.type.split(config.NSP);
 
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const hasInjected = !!store._medux_.injectedModules[moduleName];
+      const hasInjected = store._medux_.injectedModules[moduleName];
 
       if (!hasInjected) {
         if (actionName === ActionTypes.MInit) {
@@ -221,8 +222,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
       const newStore = newCreateStore(...args);
       const moduleStore = newStore;
       moduleStore._medux_ = {
-        beforeState: {},
-        prevState: {},
+        realtimeState: {},
         currentState: {},
         reducerMap: {},
         effectMap: {},
@@ -234,7 +234,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
 
   const enhancers = [middlewareEnhancer, enhancer, ...storeEnhancers];
 
-  if (isDevelopmentEnv && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (config.DEVTOOLS && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
