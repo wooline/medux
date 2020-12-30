@@ -2,17 +2,27 @@
 import React, { ComponentType, FunctionComponent, ComponentClass, ReactNode } from 'react';
 import { LoadView } from '@medux/react';
 import { HistoryActions } from '@medux/web';
-import { Options as ReactReduxOptions } from 'react-redux';
 import type { RootModuleFacade, RootModuleAPI, RootModuleActions, ModuleGetter, StoreOptions, Dispatch } from '@medux/core';
 import type { Store } from 'redux';
 import type { RootState, LocationTransform } from '@medux/web';
 export { exportModule } from '@medux/react';
-export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, setConfig, logger, setLoadingDepthTime, isServer, serverSide, deepMerge, deepMergeState, } from '@medux/core';
-export { setRouteConfig, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
+export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, setLoadingDepthTime, isServer, serverSide, deepMerge, deepMergeState, } from '@medux/core';
+export { RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
 export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
 export type { RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules } from '@medux/route-plan-a';
 export type { RootState, RouteState, LocationTransform } from '@medux/web';
+export declare function setConfig(conf: {
+    connect?: Function;
+    RSP?: string;
+    historyMax?: number;
+    homeUri?: string;
+    NSP?: string;
+    MSP?: string;
+    SSRKey?: string;
+    MutableData?: boolean;
+    DEVTOOLS?: boolean;
+}): void;
 export interface ServerRequest {
     url: string;
 }
@@ -44,7 +54,7 @@ export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, ap
     historyType?: 'Browser' | 'Hash' | 'Memory';
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
-    container?: string;
+    container?: string | Element;
 }): Promise<{
     store: import("@medux/core/types").ModuleStore;
 }>;
@@ -60,12 +70,11 @@ export declare function buildSSR(moduleGetter: ModuleGetter, { request, response
 }): Promise<string>;
 export declare type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
 export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
-export interface Connect {
-    <S = {}, D = {}, W = {}>(mapStateToProps?: (state: any, owner: W) => S, mapDispatchToProps?: (dispatch: Dispatch, owner: W) => D, options?: ReactReduxOptions<any, S, W>): InferableComponentEnhancerWithProps<S & D & {
+export interface SimpleConnect<Options> {
+    <S = {}, D = {}, W = {}>(mapStateToProps?: (state: any, owner: W) => S, options?: Options): InferableComponentEnhancerWithProps<S & D & {
         dispatch: Dispatch;
     }>;
 }
-export declare const connect: Connect;
 interface ElseProps {
     elseView?: ReactNode;
     children: ReactNode;

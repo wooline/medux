@@ -49,5 +49,6 @@
   "dependencies": {
     "@babel/runtime": "~7.12.5",
     "redux": "^4.0.5"
-  }
+  },
+  "gitHead": "5638ad91c6d59f14b7083b832629db5eca9195ef"
 }

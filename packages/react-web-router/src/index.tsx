@@ -1,10 +1,10 @@
 /// <reference path="../env/global.d.ts" />
-import {routeMiddleware, routeReducer} from '@medux/route-plan-a';
-import {getRootModuleAPI, isServer, mergeState} from '@medux/core';
+import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-plan-a';
+import {getRootModuleAPI, isServer, mergeState, setConfig as setCoreConfig} from '@medux/core';
 import React, {ComponentType, FunctionComponent, ComponentClass, ReactNode, useEffect} from 'react';
 import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
-import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux';
+// import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux';
 
 import type {RootModuleFacade, RootModuleAPI, RootModuleActions, ModuleGetter, StoreOptions, Dispatch} from '@medux/core';
 import type {Store} from 'redux';
@@ -21,7 +21,6 @@ export {
   reducer,
   viewHotReplacement,
   setLoading,
-  setConfig,
   logger,
   setLoadingDepthTime,
   isServer,
@@ -29,12 +28,17 @@ export {
   deepMerge,
   deepMergeState,
 } from '@medux/core';
-export {setRouteConfig, RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
+export {RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
 export type {RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules} from '@medux/route-plan-a';
 export type {RootState, RouteState, LocationTransform} from '@medux/web';
+
+export function setConfig(conf: {connect?: Function; RSP?: string; historyMax?: number; homeUri?: string; NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DEVTOOLS?: boolean}) {
+  setCoreConfig(conf);
+  setRouteConfig(conf);
+}
 
 export interface ServerRequest {
   url: string;
@@ -106,7 +110,7 @@ export function buildApp(
     historyType?: 'Browser' | 'Hash' | 'Memory';
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
-    container?: string;
+    container?: string | Element;
   }
 ) {
   appExports.history = createRouter(historyType, locationTransform);
@@ -170,7 +174,7 @@ export function buildSSR(
   }
   storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.history.getRouteState()});
   // storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
-  return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, false, (store) => {
+  return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, (store) => {
     appExports.store = store as any;
     Object.defineProperty(appExports, 'state', {
       get: () => {
@@ -195,15 +199,9 @@ export type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends C
 
 export type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
 
-export interface Connect {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  <S = {}, D = {}, W = {}>(
-    mapStateToProps?: (state: any, owner: W) => S,
-    mapDispatchToProps?: (dispatch: Dispatch, owner: W) => D,
-    options?: ReactReduxOptions<any, S, W>
-  ): InferableComponentEnhancerWithProps<S & D & {dispatch: Dispatch}>;
+export interface SimpleConnect<Options> {
+  <S = {}, D = {}, W = {}>(mapStateToProps?: (state: any, owner: W) => S, options?: Options): InferableComponentEnhancerWithProps<S & D & {dispatch: Dispatch}>;
 }
-export const connect: Connect = baseConnect as any;
 
 interface ElseProps {
   elseView?: ReactNode;

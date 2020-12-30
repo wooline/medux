@@ -3,8 +3,7 @@ import _objectWithoutPropertiesLoose from "@babel/runtime/helpers/esm/objectWith
 import * as core from '@medux/core';
 import { env, getView, isPromise } from '@medux/core';
 import React, { useEffect, useState } from 'react';
-import { renderToNodeStream, renderToString } from 'react-dom/server';
-import { Provider } from 'react-redux';
+import { renderToString } from 'react-dom/server';
 import ReactDOM from 'react-dom';
 export function renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, beforeRender) {
   if (container === void 0) {
@@ -13,44 +12,32 @@ export function renderApp(moduleGetter, appModuleName, appViewName, storeOptions
 
   return core.renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
     var reRender = function reRender(View) {
-      var reduxProvider = React.createElement(Provider, {
+      var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
+      ReactDOM.unmountComponentAtNode(panel);
+      var render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(React.createElement(View, {
         store: store
-      }, React.createElement(View, null));
-
-      if (typeof container === 'function') {
-        container(reduxProvider);
-      } else {
-        var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
-        ReactDOM.unmountComponentAtNode(panel);
-        var render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(reduxProvider, panel);
-      }
+      }), panel);
     };
 
     reRender(AppView);
     return reRender;
   }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
-export function renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, beforeRender) {
+export function renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  if (renderToStream === void 0) {
-    renderToStream = false;
-  }
-
   return core.renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
     var data = store.getState();
-    var reduxProvider = React.createElement(Provider, {
-      store: store
-    }, React.createElement(AppView, null));
-    var render = renderToStream ? renderToNodeStream : renderToString;
     return {
       store: store,
       ssrInitStoreKey: ssrInitStoreKey,
       data: data,
-      html: render(reduxProvider)
+      html: renderToString(React.createElement(AppView, {
+        store: store
+      }))
     };
   }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }

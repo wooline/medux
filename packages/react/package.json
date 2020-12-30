@@ -42,9 +42,7 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-beta.2.4",
-    "@types/react-redux": "^7.0.0",
-    "react-redux": "^7.0.0"
+    "@medux/core": "^2.0.0-beta.2.4"
   },
-  "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
+  "gitHead": "5638ad91c6d59f14b7083b832629db5eca9195ef"
 }

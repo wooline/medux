@@ -187,7 +187,7 @@ export const exportModule = (moduleName, ModuleHandles, views) => {
       const initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       const preModuleState = store.getState()[moduleName] || {};
-      const moduleState = mergeState(initState, preModuleState);
+      const moduleState = Object.assign({}, initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;

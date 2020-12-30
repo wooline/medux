@@ -61,7 +61,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     Object.keys(storeReducers).forEach(function (moduleName) {
       var node = storeReducers[moduleName](state[moduleName], action);
 
-      if (config.MutableData && realtimeState[moduleName] !== node) {
+      if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
         warn('Use rewrite instead of replace to update state in MutableData');
       }
 
@@ -96,7 +96,7 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
           var fun = handlers[moduleName];
           var node = fun.apply(void 0, getActionData(action).concat([currentState]));
 
-          if (config.MutableData && realtimeState[moduleName] !== node) {
+          if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             warn('Use rewrite instead of replace to update state in MutableData');
           }
 

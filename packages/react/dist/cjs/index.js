@@ -19,8 +19,6 @@ var _react = _interopRequireWildcard(require("react"));
 
 var _server = require("react-dom/server");
 
-var _reactRedux = require("react-redux");
-
 var _reactDom = _interopRequireDefault(require("react-dom"));
 
 function renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, beforeRender) {
@@ -30,20 +28,14 @@ function renderApp(moduleGetter, appModuleName, appViewName, storeOptions, conta
 
   return core.renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
     var reRender = function reRender(View) {
-      var reduxProvider = _react.default.createElement(_reactRedux.Provider, {
+      var panel = typeof container === 'string' ? core.env.document.getElementById(container) : container;
+
+      _reactDom.default.unmountComponentAtNode(panel);
+
+      var render = core.env[ssrInitStoreKey] ? _reactDom.default.hydrate : _reactDom.default.render;
+      render(_react.default.createElement(View, {
         store: store
-      }, _react.default.createElement(View, null));
-
-      if (typeof container === 'function') {
-        container(reduxProvider);
-      } else {
-        var panel = typeof container === 'string' ? core.env.document.getElementById(container) : container;
-
-        _reactDom.default.unmountComponentAtNode(panel);
-
-        var render = core.env[ssrInitStoreKey] ? _reactDom.default.hydrate : _reactDom.default.render;
-        render(reduxProvider, panel);
-      }
+      }), panel);
     };
 
     reRender(AppView);
@@ -51,28 +43,20 @@ function renderApp(moduleGetter, appModuleName, appViewName, storeOptions, conta
   }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }
 
-function renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, renderToStream, beforeRender) {
+function renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
   if (storeOptions === void 0) {
     storeOptions = {};
   }
 
-  if (renderToStream === void 0) {
-    renderToStream = false;
-  }
-
   return core.renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
     var data = store.getState();
-
-    var reduxProvider = _react.default.createElement(_reactRedux.Provider, {
-      store: store
-    }, _react.default.createElement(AppView, null));
-
-    var render = renderToStream ? _server.renderToNodeStream : _server.renderToString;
     return {
       store: store,
       ssrInitStoreKey: ssrInitStoreKey,
       data: data,
-      html: render(reduxProvider)
+      html: (0, _server.renderToString)(_react.default.createElement(AppView, {
+        store: store
+      }))
     };
   }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
 }

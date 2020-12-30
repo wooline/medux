@@ -258,7 +258,7 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
       const initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles as any);
       const preModuleState: CoreModuleState = store.getState()[moduleName] || {};
-      const moduleState: CoreModuleState = mergeState(initState, preModuleState);
+      const moduleState: CoreModuleState = {...initState, ...preModuleState};
       if (!moduleState.initialized) {
         moduleState.initialized = true;
         return store.dispatch(moduleInitAction(moduleName, moduleState)) as any;

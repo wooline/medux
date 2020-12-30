@@ -201,7 +201,7 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       var _initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = (0, _basic.mergeState)(_initState, preModuleState);
+      var moduleState = Object.assign({}, _initState, preModuleState);
 
       if (!moduleState.initialized) {
         moduleState.initialized = true;
