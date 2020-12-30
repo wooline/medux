@@ -1,5 +1,5 @@
 import {Middleware, Reducer} from 'redux';
-import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMerge, deepMergeState} from '@medux/core';
+import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMerge, deepMergeState, mergeState} from '@medux/core';
 import {buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation} from './basic';
 
 import type {LocationTransform} from './transform';
@@ -72,7 +72,7 @@ export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (
 };
 export const routeReducer: Reducer = (state: RouteState<any, any>, action) => {
   if (action.type === RouteActionTypes.RouteChange) {
-    return action.payload[0];
+    return mergeState(state, action.payload[0]);
   }
   return state;
 };

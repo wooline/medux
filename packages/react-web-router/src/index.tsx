@@ -1,6 +1,6 @@
 /// <reference path="../env/global.d.ts" />
 import {routeMiddleware, routeReducer} from '@medux/route-plan-a';
-import {getRootModuleAPI, isServer} from '@medux/core';
+import {getRootModuleAPI, isServer, mergeState} from '@medux/core';
 import React, {ComponentType, FunctionComponent, ComponentClass, ReactNode, useEffect} from 'react';
 import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
 import {createRouter, HistoryActions} from '@medux/web';
@@ -121,7 +121,7 @@ export function buildApp(
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = {...storeOptions.initData, route: appExports.history.getRouteState()};
+  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.history.getRouteState()});
   // storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
 
   return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
@@ -168,7 +168,7 @@ export function buildSSR(
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = {...storeOptions.initData, route: appExports.history.getRouteState()};
+  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.history.getRouteState()});
   // storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
   return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, false, (store) => {
     appExports.store = store as any;

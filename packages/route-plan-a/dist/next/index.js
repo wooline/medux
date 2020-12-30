@@ -1,6 +1,6 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { CoreModuleHandlers, config, reducer, deepMerge, deepMergeState } from '@medux/core';
+import { CoreModuleHandlers, config, reducer, deepMerge, deepMergeState, mergeState } from '@medux/core';
 import { buildHistoryStack, routeConfig, uriToLocation, locationToUri, extractNativeLocation } from './basic';
 export { createWebLocationTransform } from './transform';
 export { PathnameRules, extractPathParams } from './matchPath';
@@ -83,7 +83,7 @@ export const routeMiddleware = ({
 };
 export const routeReducer = (state, action) => {
   if (action.type === RouteActionTypes.RouteChange) {
-    return action.payload[0];
+    return mergeState(state, action.payload[0]);
   }
 
   return state;

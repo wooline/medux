@@ -135,7 +135,7 @@ exports.routeMiddleware = routeMiddleware;
 
 var routeReducer = function routeReducer(state, action) {
   if (action.type === RouteActionTypes.RouteChange) {
-    return action.payload[0];
+    return (0, _core.mergeState)(state, action.payload[0]);
   }
 
   return state;

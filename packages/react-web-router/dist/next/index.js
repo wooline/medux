@@ -3139,7 +3139,7 @@ const routeMiddleware = ({
 };
 const routeReducer = (state, action) => {
   if (action.type === RouteActionTypes.RouteChange) {
-    return action.payload[0];
+    return mergeState(state, action.payload[0]);
   }
 
   return state;
@@ -7002,7 +7002,7 @@ function buildApp(moduleGetter, {
     storeOptions.initData = {};
   }
 
-  storeOptions.initData = Object.assign({}, storeOptions.initData, {
+  storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.history.getRouteState()
   });
   return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, store => {
@@ -7037,7 +7037,7 @@ function buildSSR(moduleGetter, {
     storeOptions.initData = {};
   }
 
-  storeOptions.initData = Object.assign({}, storeOptions.initData, {
+  storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.history.getRouteState()
   });
   return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, false, store => {
