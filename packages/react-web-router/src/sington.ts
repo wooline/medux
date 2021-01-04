@@ -1,8 +1,8 @@
-import {loadView, LoadView} from '@medux/react';
-import {getRootModuleAPI} from '@medux/core';
 import type {RootModuleFacade, RootModuleAPI, RootModuleActions} from '@medux/core';
 import type {Store} from 'redux';
 import type {RootState, HistoryActions} from '@medux/web';
+import {getRootModuleAPI} from '@medux/core';
+import {loadView, LoadView} from './components/LoadView';
 
 export interface ServerRequest {
   url: string;

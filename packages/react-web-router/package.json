@@ -42,6 +42,7 @@
     "react-redux": true
   },
   "peerDependencies": {
+    "@types/react-redux":"~7.0.0",
     "react-redux": "~7.0.0"
   },
   "dependencies": {

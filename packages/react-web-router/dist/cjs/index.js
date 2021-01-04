@@ -3,13 +3,12 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var React = require('react');
-var ReactDOM = require('react-dom');
-require('react-dom/server');
+var reactDom = require('react-dom');
+var reactRedux = require('react-redux');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
-var ReactDOM__default = /*#__PURE__*/_interopDefaultLegacy(ReactDOM);
 
 function createCommonjsModule(fn, basedir, module) {
 	return module = {
@@ -5641,6 +5640,8 @@ function exportApp() {
   };
 }
 
+var connectRedux = reactRedux.connect;
+
 function setConfig$1(conf) {
   setConfig(conf);
   setRouteConfig(conf);
@@ -5682,9 +5683,9 @@ function buildApp(moduleGetter, _ref) {
   return renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
     var reRender = function reRender(View) {
       var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
-      ReactDOM__default['default'].unmountComponentAtNode(panel);
-      var render = env[ssrInitStoreKey] ? ReactDOM__default['default'].hydrate : ReactDOM__default['default'].render;
-      render(React__default['default'].createElement(View, {
+      reactDom.unmountComponentAtNode(panel);
+      var renderFun = env[ssrInitStoreKey] ? reactDom.hydrate : reactDom.render;
+      renderFun(React__default['default'].createElement(View, {
         store: store
       }), panel);
     };
@@ -5770,6 +5771,7 @@ exports.ActionTypes = ActionTypes;
 exports.BaseModuleHandlers = RouteModuleHandlers;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
+exports.connectRedux = connectRedux;
 exports.createWebLocationTransform = createWebLocationTransform;
 exports.deepMerge = deepMerge;
 exports.deepMergeState = deepMergeState;

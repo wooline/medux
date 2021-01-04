@@ -1,4 +1,4 @@
-/// <reference types="@medux/react-web-router/env/global" />
+/// <reference path="../env/global.d.ts" />
 import type { ComponentType } from 'react';
 import type { ModuleGetter, StoreOptions, ExportModule } from '@medux/core';
 import type { LocationTransform } from '@medux/web';
@@ -6,6 +6,7 @@ import type { ServerRequest, ServerResponse } from './sington';
 export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, setLoadingDepthTime, isServer, serverSide, deepMerge, deepMergeState, } from '@medux/core';
 export { RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
 export { exportApp, patchActions } from './sington';
+export { connectRedux } from './conectRedux';
 export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
 export type { RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules } from '@medux/route-plan-a';

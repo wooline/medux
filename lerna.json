@@ -1,10 +1,9 @@
 {
   "packages": [
     "packages/core",
-    "packages/react",
-    "packages/react-web-router",
     "packages/route-plan-a",
-    "packages/web"
+    "packages/web",
+    "packages/react-web-router"
   ],
   "command": {
     "publish": {

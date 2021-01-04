@@ -1,6 +1,6 @@
 /// <reference path="../env/global.d.ts" />
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {unmountComponentAtNode, hydrate, render} from 'react-dom';
 import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-plan-a';
 import {env, renderApp, renderSSR, mergeState, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
 import {createRouter} from '@medux/web';
@@ -8,6 +8,7 @@ import type {ComponentType} from 'react';
 import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
 import type {LocationTransform} from '@medux/web';
 import {appExports} from './sington';
+
 import type {ServerRequest, ServerResponse} from './sington';
 
 export {
@@ -29,6 +30,7 @@ export {
 } from '@medux/core';
 export {RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 export {exportApp, patchActions} from './sington';
+export {connectRedux} from './conectRedux';
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
 export type {RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules} from '@medux/route-plan-a';
@@ -78,9 +80,9 @@ export function buildApp(
     (store, appModel, AppView, ssrInitStoreKey) => {
       const reRender = (View: ComponentType<any>) => {
         const panel: any = typeof container === 'string' ? env.document.getElementById(container) : container;
-        ReactDOM.unmountComponentAtNode(panel!);
-        const render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-        render(<View store={store} />, panel);
+        unmountComponentAtNode(panel!);
+        const renderFun = env[ssrInitStoreKey] ? hydrate : render;
+        renderFun(<View store={store} />, panel);
       };
       reRender(AppView);
       return reRender;

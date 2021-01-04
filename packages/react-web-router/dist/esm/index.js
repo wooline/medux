@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
-import 'react-dom/server';
+import { unmountComponentAtNode, hydrate, render } from 'react-dom';
+import { connect } from 'react-redux';
 
 function createCommonjsModule(fn, basedir, module) {
 	return module = {
@@ -5633,6 +5633,8 @@ function exportApp() {
   };
 }
 
+var connectRedux = connect;
+
 function setConfig$1(conf) {
   setConfig(conf);
   setRouteConfig(conf);
@@ -5674,9 +5676,9 @@ function buildApp(moduleGetter, _ref) {
   return renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
     var reRender = function reRender(View) {
       var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
-      ReactDOM.unmountComponentAtNode(panel);
-      var render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(React.createElement(View, {
+      unmountComponentAtNode(panel);
+      var renderFun = env[ssrInitStoreKey] ? hydrate : render;
+      renderFun(React.createElement(View, {
         store: store
       }), panel);
     };
@@ -5758,4 +5760,4 @@ function buildSSR(moduleGetter, _ref2) {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, LoadingState, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, LoadingState, buildApp, buildSSR, connectRedux, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };

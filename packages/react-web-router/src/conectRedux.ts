@@ -1,7 +1,7 @@
-import {connect, Options} from 'react-redux';
+import {connect} from 'react-redux';
+import type {Options} from 'react-redux';
+import type {ComponentType, FunctionComponent, ComponentClass} from 'react';
 import type {Dispatch} from '@medux/core';
-
-import {ComponentType, FunctionComponent, ComponentClass} from 'react';
 
 export type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
 
