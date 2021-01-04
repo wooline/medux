@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-plan-a",
-  "version": "2.0.0-beta.3.0",
+  "version": "2.0.0-beta.3.2",
   "description": "The practice of @medux/core in web route.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-plan-a",
   "author": "wooline <wooline@qq.com>",
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-beta.3.0",
+    "@medux/core": "^2.0.0-beta.3.2",
     "path-to-regexp": "~6.2.0"
   },
   "gitHead": "5638ad91c6d59f14b7083b832629db5eca9195ef"
