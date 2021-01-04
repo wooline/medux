@@ -2,7 +2,7 @@ import type {RootModuleFacade, RootModuleAPI, RootModuleActions} from '@medux/co
 import type {Store} from 'redux';
 import type {RootState, HistoryActions} from '@medux/web';
 import {getRootModuleAPI} from '@medux/core';
-import {loadView, LoadView} from './components/LoadView';
+import {LoadView, loadView} from './loadView';
 
 export interface ServerRequest {
   url: string;

@@ -5640,6 +5640,93 @@
 
 	var connectRedux = reactRedux.connect;
 
+	var Component = function Component(_ref) {
+	  var children = _ref.children;
+	  var title = '';
+	  React__default['default'].Children.forEach(children, function (child) {
+	    if (child && child.type === 'title') {
+	      title = child.props.children;
+	    }
+	  });
+
+	  if (!isServer()) {
+	    React.useEffect(function () {
+	      if (title) {
+	        document.title = title;
+	      }
+	    }, [title]);
+	    return null;
+	  }
+
+	  return React__default['default'].createElement("head", null, children);
+	};
+
+	var DocumentHead = React__default['default'].memo(Component);
+
+	var Component$1 = function Component(_ref) {
+	  var children = _ref.children,
+	      elseView = _ref.elseView;
+	  var arr = [];
+	  React__default['default'].Children.forEach(children, function (item) {
+	    item && arr.push(item);
+	  });
+
+	  if (arr.length > 0) {
+	    return React__default['default'].createElement(React__default['default'].Fragment, null, arr);
+	  }
+
+	  return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
+	};
+
+	var Else = React__default['default'].memo(Component$1);
+
+	var Component$2 = function Component(_ref) {
+	  var children = _ref.children,
+	      elseView = _ref.elseView;
+	  var arr = [];
+	  React__default['default'].Children.forEach(children, function (item) {
+	    item && arr.push(item);
+	  });
+
+	  if (arr.length > 0) {
+	    return React__default['default'].createElement(React__default['default'].Fragment, null, arr[0]);
+	  }
+
+	  return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
+	};
+
+	var Switch = React__default['default'].memo(Component$2);
+
+	function isModifiedEvent(event) {
+	  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
+	}
+
+	var Link = React__default['default'].forwardRef(function (_ref, ref) {
+	  var _onClick = _ref.onClick,
+	      replace = _ref.replace,
+	      rest = _objectWithoutPropertiesLoose(_ref, ["onClick", "replace"]);
+
+	  var target = rest.target;
+	  var props = Object.assign({}, rest, {
+	    onClick: function onClick(event) {
+	      try {
+	        _onClick && _onClick(event);
+	      } catch (ex) {
+	        event.preventDefault();
+	        throw ex;
+	      }
+
+	      if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
+	          event.preventDefault();
+	          replace ? appExports.history.replace(rest.href) : appExports.history.push(rest.href);
+	        }
+	    }
+	  });
+	  return React__default['default'].createElement("a", _extends({}, props, {
+	    ref: ref
+	  }));
+	});
+
 	function setConfig$1(conf) {
 	  setConfig(conf);
 	  setRouteConfig(conf);
@@ -5767,6 +5854,10 @@
 
 	exports.ActionTypes = ActionTypes;
 	exports.BaseModuleHandlers = RouteModuleHandlers;
+	exports.DocumentHead = DocumentHead;
+	exports.Else = Else;
+	exports.Link = Link;
+	exports.Switch = Switch;
 	exports.buildApp = buildApp;
 	exports.buildSSR = buildSSR;
 	exports.connectRedux = connectRedux;

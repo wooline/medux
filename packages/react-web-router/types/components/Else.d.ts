@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
-interface ElseProps {
+interface Props {
     elseView?: ReactNode;
     children: ReactNode;
 }
-declare const _default: React.NamedExoticComponent<ElseProps>;
-export default _default;
+export declare const Else: React.NamedExoticComponent<Props>;
+export {};

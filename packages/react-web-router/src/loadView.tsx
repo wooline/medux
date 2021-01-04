@@ -1,6 +1,6 @@
 import React, {ComponentType, FC, useEffect, useState} from 'react';
 import {RootModuleFacade, getView, isPromise} from '@medux/core';
-import type {LoadView as BaseLoadView} from '@medux/core';
+import type {BaseLoadView} from '@medux/core';
 
 export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {forwardRef?: boolean}, ComponentType<any>>;
 

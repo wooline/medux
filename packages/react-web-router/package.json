@@ -47,7 +47,6 @@
   },
   "dependencies": {
     "@medux/core": "^2.0.0-beta.3.0",
-    "@medux/react": "^2.0.0-beta.3.0",
     "@medux/route-plan-a": "^2.0.0-beta.3.0",
     "@medux/web": "^2.0.0-beta.3.0"
   },

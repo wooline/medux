@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
-interface SwitchProps {
+interface Props {
     elseView?: ReactNode;
     children: ReactNode;
 }
-declare const _default: React.NamedExoticComponent<SwitchProps>;
-export default _default;
+export declare const Switch: React.NamedExoticComponent<Props>;
+export {};

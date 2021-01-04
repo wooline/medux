@@ -1,10 +1,10 @@
 import React, {ReactNode} from 'react';
 
-interface SwitchProps {
+interface Props {
   elseView?: ReactNode;
   children: ReactNode;
 }
-const SwitchComponent: React.FC<SwitchProps> = ({children, elseView}) => {
+const Component: React.FC<Props> = ({children, elseView}) => {
   const arr: ReactNode[] = [];
   React.Children.forEach(children, (item) => {
     item && arr.push(item);
@@ -15,4 +15,4 @@ const SwitchComponent: React.FC<SwitchProps> = ({children, elseView}) => {
   return <>{elseView}</>;
 };
 
-export default React.memo(SwitchComponent);
+export const Switch = React.memo(Component);

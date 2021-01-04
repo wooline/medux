@@ -1,7 +1,7 @@
 import type { RootModuleFacade, RootModuleAPI, RootModuleActions } from '@medux/core';
 import type { Store } from 'redux';
 import type { RootState, HistoryActions } from '@medux/web';
-import { LoadView } from './components/LoadView';
+import { LoadView } from './loadView';
 export interface ServerRequest {
     url: string;
 }

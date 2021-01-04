@@ -1,10 +1,10 @@
 import React, {ReactNode} from 'react';
 
-interface ElseProps {
+interface Props {
   elseView?: ReactNode;
   children: ReactNode;
 }
-const ElseComponent: React.FC<ElseProps> = ({children, elseView}) => {
+const Component: React.FC<Props> = ({children, elseView}) => {
   const arr: ReactNode[] = [];
   React.Children.forEach(children, (item) => {
     item && arr.push(item);
@@ -15,4 +15,4 @@ const ElseComponent: React.FC<ElseProps> = ({children, elseView}) => {
   return <>{elseView}</>;
 };
 
-export default React.memo(ElseComponent);
+export const Else = React.memo(Component);

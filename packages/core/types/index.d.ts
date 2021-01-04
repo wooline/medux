@@ -8,4 +8,4 @@ export { env, client, isServerEnv } from './env';
 export type { Actions, ExportModule } from './inject';
 export type { Action, CoreModuleState, CoreRootState, CommonModule, Dispatch, ModuleGetter, ModuleModel, ModuleStore } from './basic';
 export type { StoreOptions } from './store';
-export type { RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, LoadView, ReturnModule } from './module';
+export type { RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, BaseLoadView, ReturnModule } from './module';

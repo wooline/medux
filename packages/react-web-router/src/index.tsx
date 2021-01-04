@@ -31,10 +31,15 @@ export {
 export {RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 export {exportApp, patchActions} from './sington';
 export {connectRedux} from './conectRedux';
+export {DocumentHead} from './components/DocumentHead';
+export {Else} from './components/Else';
+export {Switch} from './components/Switch';
+export {Link} from './components/Link';
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
 export type {RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules} from '@medux/route-plan-a';
 export type {RootState, RouteState, LocationTransform} from '@medux/web';
+export type {LoadView} from './loadView';
 export type {FacadeExports} from './sington';
 
 export function setConfig(conf: {connect?: Function; RSP?: string; historyMax?: number; homeUri?: string; NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DEVTOOLS?: boolean}) {

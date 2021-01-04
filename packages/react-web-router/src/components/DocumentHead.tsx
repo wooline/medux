@@ -1,11 +1,11 @@
 import React, {ReactNode, useEffect} from 'react';
 import {isServer} from '@medux/core';
 
-interface DocumentHeadProps {
+interface Props {
   children?: ReactNode;
 }
 
-const DocumentHeadComponent: React.FC<DocumentHeadProps> = ({children}) => {
+const Component: React.FC<Props> = ({children}) => {
   let title = '';
   React.Children.forEach(children, (child: any) => {
     if (child && child.type === 'title') {
@@ -24,4 +24,4 @@ const DocumentHeadComponent: React.FC<DocumentHeadProps> = ({children}) => {
   return <head>{children}</head>;
 };
 
-export default React.memo(DocumentHeadComponent);
+export const DocumentHead = React.memo(Component);

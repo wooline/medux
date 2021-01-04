@@ -4566,6 +4566,100 @@ function exportApp() {
 
 const connectRedux = connect;
 
+const Component = ({
+  children
+}) => {
+  let title = '';
+  React.Children.forEach(children, child => {
+    if (child && child.type === 'title') {
+      title = child.props.children;
+    }
+  });
+
+  if (!isServer()) {
+    useEffect(() => {
+      if (title) {
+        document.title = title;
+      }
+    }, [title]);
+    return null;
+  }
+
+  return React.createElement("head", null, children);
+};
+
+const DocumentHead = React.memo(Component);
+
+const Component$1 = ({
+  children,
+  elseView
+}) => {
+  const arr = [];
+  React.Children.forEach(children, item => {
+    item && arr.push(item);
+  });
+
+  if (arr.length > 0) {
+    return React.createElement(React.Fragment, null, arr);
+  }
+
+  return React.createElement(React.Fragment, null, elseView);
+};
+
+const Else = React.memo(Component$1);
+
+const Component$2 = ({
+  children,
+  elseView
+}) => {
+  const arr = [];
+  React.Children.forEach(children, item => {
+    item && arr.push(item);
+  });
+
+  if (arr.length > 0) {
+    return React.createElement(React.Fragment, null, arr[0]);
+  }
+
+  return React.createElement(React.Fragment, null, elseView);
+};
+
+const Switch = React.memo(Component$2);
+
+function isModifiedEvent(event) {
+  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
+}
+
+const Link = React.forwardRef((_ref, ref) => {
+  let {
+    onClick,
+    replace
+  } = _ref,
+      rest = _objectWithoutPropertiesLoose(_ref, ["onClick", "replace"]);
+
+  const {
+    target
+  } = rest;
+  const props = Object.assign({}, rest, {
+    onClick: event => {
+      try {
+        onClick && onClick(event);
+      } catch (ex) {
+        event.preventDefault();
+        throw ex;
+      }
+
+      if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
+          event.preventDefault();
+          replace ? appExports.history.replace(rest.href) : appExports.history.push(rest.href);
+        }
+    }
+  });
+  return React.createElement("a", _extends({}, props, {
+    ref: ref
+  }));
+});
+
 function setConfig$1(conf) {
   setConfig(conf);
   setRouteConfig(conf);
@@ -4684,4 +4778,4 @@ function buildSSR(moduleGetter, {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, LoadingState, buildApp, buildSSR, connectRedux, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connectRedux, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
