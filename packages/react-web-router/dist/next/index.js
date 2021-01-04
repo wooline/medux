@@ -1,39 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { renderToString } from 'react-dom/server';
 import ReactDOM from 'react-dom';
-
-function _extends() {
-  _extends = Object.assign || function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-
-    return target;
-  };
-
-  return _extends.apply(this, arguments);
-}
-
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-
-  return target;
-}
+import 'react-dom/server';
 
 function _defineProperty(obj, key, value) {
   if (key in obj) {
@@ -3258,89 +3225,23 @@ class BaseHistoryActions {
 
 }
 
-function renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container = 'root', beforeRender) {
-  return renderApp((store, appModel, AppView, ssrInitStoreKey) => {
-    const reRender = View => {
-      const panel = typeof container === 'string' ? env.document.getElementById(container) : container;
-      ReactDOM.unmountComponentAtNode(panel);
-      const render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
-      render(React.createElement(View, {
-        store: store
-      }), panel);
-    };
+function _extends() {
+  _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
 
-    reRender(AppView);
-    return reRender;
-  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
-}
-function renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
-  return renderSSR((store, appModel, AppView, ssrInitStoreKey) => {
-    const data = store.getState();
-    return {
-      store,
-      ssrInitStoreKey,
-      data,
-      html: renderToString(React.createElement(AppView, {
-        store: store
-      }))
-    };
-  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
-}
-
-const LoadViewOnError = () => {
-  return React.createElement("div", null, "error");
-};
-
-const loadView = (moduleName, viewName, options, Loading, Error) => {
-  const {
-    forwardRef
-  } = options || {};
-  let active = true;
-
-  const Loader = function ViewLoader(props) {
-    useEffect(() => {
-      return () => {
-        active = false;
-      };
-    }, []);
-    const [view, setView] = useState(() => {
-      const moduleViewResult = getView(moduleName, viewName);
-
-      if (isPromise(moduleViewResult)) {
-        moduleViewResult.then(Component => {
-          active && setView({
-            Component
-          });
-        }).catch(() => {
-          active && setView({
-            Component: Error || LoadViewOnError
-          });
-        });
-        return null;
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
       }
+    }
 
-      return {
-        Component: moduleViewResult
-      };
-    });
-
-    const {
-      forwardRef2
-    } = props,
-          other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
-
-    const ref = forwardRef ? {
-      ref: forwardRef2
-    } : {};
-    return view ? React.createElement(view.Component, _extends({}, other, ref)) : Loading ? React.createElement(Loading, props) : null;
+    return target;
   };
 
-  const Component = forwardRef ? React.forwardRef((props, ref) => React.createElement(Loader, _extends({}, props, {
-    forwardRef: ref
-  }))) : Loader;
-  return Component;
-};
-const exportModule$1 = exportModule;
+  return _extends.apply(this, arguments);
+}
 
 function isAbsolute(pathname) {
   return pathname.charAt(0) === '/';
@@ -4563,10 +4464,75 @@ function createRouter(createHistory, locationTransform) {
   return historyActions;
 }
 
-function setConfig$1(conf) {
-  setConfig(conf);
-  setRouteConfig(conf);
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
 }
+
+const LoadViewOnError = () => {
+  return React.createElement("div", null, "error");
+};
+
+const loadView = (moduleName, viewName, options, Loading, Error) => {
+  const {
+    forwardRef
+  } = options || {};
+  let active = true;
+
+  const Loader = function ViewLoader(props) {
+    useEffect(() => {
+      return () => {
+        active = false;
+      };
+    }, []);
+    const [view, setView] = useState(() => {
+      const moduleViewResult = getView(moduleName, viewName);
+
+      if (isPromise(moduleViewResult)) {
+        moduleViewResult.then(Component => {
+          active && setView({
+            Component
+          });
+        }).catch(() => {
+          active && setView({
+            Component: Error || LoadViewOnError
+          });
+        });
+        return null;
+      }
+
+      return {
+        Component: moduleViewResult
+      };
+    });
+
+    const {
+      forwardRef2
+    } = props,
+          other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
+
+    const ref = forwardRef ? {
+      ref: forwardRef2
+    } : {};
+    return view ? React.createElement(view.Component, _extends({}, other, ref)) : Loading ? React.createElement(Loading, props) : null;
+  };
+
+  const Component = forwardRef ? React.forwardRef((props, ref) => React.createElement(Loader, _extends({}, props, {
+    forwardRef: ref
+  }))) : Loader;
+  return Component;
+};
+
 const appExports = {
   loadView,
   getActions: undefined,
@@ -4597,6 +4563,12 @@ function exportApp() {
     Actions: {}
   };
 }
+
+function setConfig$1(conf) {
+  setConfig(conf);
+  setRouteConfig(conf);
+}
+const exportModule$1 = exportModule;
 function buildApp(moduleGetter, {
   appModuleName = 'app',
   appViewName = 'main',
@@ -4626,7 +4598,19 @@ function buildApp(moduleGetter, {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.history.getRouteState()
   });
-  return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, store => {
+  return renderApp((store, appModel, AppView, ssrInitStoreKey) => {
+    const reRender = View => {
+      const panel = typeof container === 'string' ? env.document.getElementById(container) : container;
+      ReactDOM.unmountComponentAtNode(panel);
+      const render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+      render(React.createElement(View, {
+        store: store
+      }), panel);
+    };
+
+    reRender(AppView);
+    return reRender;
+  }, moduleGetter, appModuleName, appViewName, storeOptions, store => {
     appExports.store = store;
     appExports.history.setStore(store);
     const routeState = appExports.history.getRouteState();
@@ -4661,7 +4645,17 @@ function buildSSR(moduleGetter, {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.history.getRouteState()
   });
-  return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, store => {
+  return renderSSR((store, appModel, AppView, ssrInitStoreKey) => {
+    const data = store.getState();
+    return {
+      store,
+      ssrInitStoreKey,
+      data,
+      html: require('react-dom/server').renderToString(React.createElement(AppView, {
+        store: store
+      }))
+    };
+  }, moduleGetter, appModuleName, appViewName, storeOptions, store => {
     appExports.store = store;
     Object.defineProperty(appExports, 'state', {
       get: () => {
@@ -4688,98 +4682,4 @@ function buildSSR(moduleGetter, {
   });
 }
 
-const ElseComponent = ({
-  children,
-  elseView
-}) => {
-  const arr = [];
-  React.Children.forEach(children, item => {
-    item && arr.push(item);
-  });
-
-  if (arr.length > 0) {
-    return React.createElement(React.Fragment, null, arr);
-  }
-
-  return React.createElement(React.Fragment, null, elseView);
-};
-
-const Else = React.memo(ElseComponent);
-
-const SwitchComponent = ({
-  children,
-  elseView
-}) => {
-  const arr = [];
-  React.Children.forEach(children, item => {
-    item && arr.push(item);
-  });
-
-  if (arr.length > 0) {
-    return React.createElement(React.Fragment, null, arr[0]);
-  }
-
-  return React.createElement(React.Fragment, null, elseView);
-};
-
-const Switch = React.memo(SwitchComponent);
-
-function isModifiedEvent(event) {
-  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
-}
-
-const Link = React.forwardRef((_ref, ref) => {
-  let {
-    onClick,
-    replace
-  } = _ref,
-      rest = _objectWithoutPropertiesLoose(_ref, ["onClick", "replace"]);
-
-  const {
-    target
-  } = rest;
-  const props = Object.assign({}, rest, {
-    onClick: event => {
-      try {
-        onClick && onClick(event);
-      } catch (ex) {
-        event.preventDefault();
-        throw ex;
-      }
-
-      if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
-          event.preventDefault();
-          replace ? appExports.history.replace(rest.href) : appExports.history.push(rest.href);
-        }
-    }
-  });
-  return React.createElement("a", _extends({}, props, {
-    ref: ref
-  }));
-});
-
-const DocumentHeadComponent = ({
-  children
-}) => {
-  let title = '';
-  React.Children.forEach(children, child => {
-    if (child && child.type === 'title') {
-      title = child.props.children;
-    }
-  });
-
-  if (!isServer()) {
-    useEffect(() => {
-      if (title) {
-        document.title = title;
-      }
-    }, [title]);
-    return null;
-  }
-
-  return React.createElement("head", null, children);
-};
-
-const DocumentHead = React.memo(DocumentHeadComponent);
-
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, LoadingState, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };

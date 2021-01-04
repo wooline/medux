@@ -7,7 +7,7 @@ module.exports = function (api, options = {}) {
     if (options.module === 'cjs' && !options.targets) {
         options.targets = { node: 'current' };
     }
-    const { module = 'esm', targets, presets = ['@babel/preset-react'], moduleResolver, rootImport, plugins = [] } = options;
+    const { module = 'esm', targets, presets = ['@babel/preset-react'], moduleResolver, rootImport, plugins = [], classPropertiesLoose = true } = options;
     return {
         sourceType: 'unambiguous',
         presets: [
@@ -28,7 +28,7 @@ module.exports = function (api, options = {}) {
             ...plugins,
             '@babel/plugin-syntax-dynamic-import',
             ['@babel/plugin-proposal-decorators', { legacy: false, decoratorsBeforeExport: true }],
-            ['@babel/plugin-proposal-class-properties', { loose: true }],
+            ['@babel/plugin-proposal-class-properties', { loose: classPropertiesLoose }],
             '@babel/plugin-proposal-nullish-coalescing-operator',
             '@babel/plugin-proposal-optional-chaining',
             ['@babel/plugin-proposal-object-rest-spread', { loose: true, useBuiltIns: true }],

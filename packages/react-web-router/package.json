@@ -38,7 +38,11 @@
   },
   "externals": {
     "react": true,
-    "react-dom": true
+    "react-dom": true,
+    "react-redux": true
+  },
+  "peerDependencies": {
+    "react-redux": "~7.0.0"
   },
   "dependencies": {
     "@medux/core": "^2.0.0-beta.3.0",

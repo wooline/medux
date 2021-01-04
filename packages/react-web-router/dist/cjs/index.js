@@ -3,46 +3,13 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var React = require('react');
-var server = require('react-dom/server');
 var ReactDOM = require('react-dom');
+require('react-dom/server');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
 var ReactDOM__default = /*#__PURE__*/_interopDefaultLegacy(ReactDOM);
-
-function _extends() {
-  _extends = Object.assign || function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-
-    return target;
-  };
-
-  return _extends.apply(this, arguments);
-}
-
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-
-  return target;
-}
 
 function createCommonjsModule(fn, basedir, module) {
 	return module = {
@@ -4303,100 +4270,23 @@ var BaseHistoryActions = function () {
   return BaseHistoryActions;
 }();
 
-function renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, beforeRender) {
-  if (container === void 0) {
-    container = 'root';
-  }
+function _extends() {
+  _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
 
-  return renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
-    var reRender = function reRender(View) {
-      var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
-      ReactDOM__default['default'].unmountComponentAtNode(panel);
-      var render = env[ssrInitStoreKey] ? ReactDOM__default['default'].hydrate : ReactDOM__default['default'].render;
-      render(React__default['default'].createElement(View, {
-        store: store
-      }), panel);
-    };
-
-    reRender(AppView);
-    return reRender;
-  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
-}
-function renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-  if (storeOptions === void 0) {
-    storeOptions = {};
-  }
-
-  return renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
-    var data = store.getState();
-    return {
-      store: store,
-      ssrInitStoreKey: ssrInitStoreKey,
-      data: data,
-      html: server.renderToString(React__default['default'].createElement(AppView, {
-        store: store
-      }))
-    };
-  }, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender);
-}
-
-var LoadViewOnError = function LoadViewOnError() {
-  return React__default['default'].createElement("div", null, "error");
-};
-
-var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
-  var _ref = options || {},
-      forwardRef = _ref.forwardRef;
-
-  var active = true;
-
-  var Loader = function ViewLoader(props) {
-    React.useEffect(function () {
-      return function () {
-        active = false;
-      };
-    }, []);
-
-    var _useState = React.useState(function () {
-      var moduleViewResult = getView(moduleName, viewName);
-
-      if (isPromise(moduleViewResult)) {
-        moduleViewResult.then(function (Component) {
-          active && setView({
-            Component: Component
-          });
-        }).catch(function () {
-          active && setView({
-            Component: Error || LoadViewOnError
-          });
-        });
-        return null;
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
       }
+    }
 
-      return {
-        Component: moduleViewResult
-      };
-    }),
-        view = _useState[0],
-        setView = _useState[1];
-
-    var forwardRef2 = props.forwardRef2,
-        other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
-
-    var ref = forwardRef ? {
-      ref: forwardRef2
-    } : {};
-    return view ? React__default['default'].createElement(view.Component, _extends({}, other, ref)) : Loading ? React__default['default'].createElement(Loading, props) : null;
+    return target;
   };
 
-  var Component = forwardRef ? React__default['default'].forwardRef(function (props, ref) {
-    return React__default['default'].createElement(Loader, _extends({}, props, {
-      forwardRef: ref
-    }));
-  }) : Loader;
-  return Component;
-};
-var exportModule$1 = exportModule;
+  return _extends.apply(this, arguments);
+}
 
 function isAbsolute(pathname) {
   return pathname.charAt(0) === '/';
@@ -5644,10 +5534,78 @@ function createRouter(createHistory, locationTransform) {
   return historyActions;
 }
 
-function setConfig$1(conf) {
-  setConfig(conf);
-  setRouteConfig(conf);
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
 }
+
+var LoadViewOnError = function LoadViewOnError() {
+  return React__default['default'].createElement("div", null, "error");
+};
+
+var loadView = function loadView(moduleName, viewName, options, Loading, Error) {
+  var _ref = options || {},
+      forwardRef = _ref.forwardRef;
+
+  var active = true;
+
+  var Loader = function ViewLoader(props) {
+    React.useEffect(function () {
+      return function () {
+        active = false;
+      };
+    }, []);
+
+    var _useState = React.useState(function () {
+      var moduleViewResult = getView(moduleName, viewName);
+
+      if (isPromise(moduleViewResult)) {
+        moduleViewResult.then(function (Component) {
+          active && setView({
+            Component: Component
+          });
+        }).catch(function () {
+          active && setView({
+            Component: Error || LoadViewOnError
+          });
+        });
+        return null;
+      }
+
+      return {
+        Component: moduleViewResult
+      };
+    }),
+        view = _useState[0],
+        setView = _useState[1];
+
+    var forwardRef2 = props.forwardRef2,
+        other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
+
+    var ref = forwardRef ? {
+      ref: forwardRef2
+    } : {};
+    return view ? React__default['default'].createElement(view.Component, _extends({}, other, ref)) : Loading ? React__default['default'].createElement(Loading, props) : null;
+  };
+
+  var Component = forwardRef ? React__default['default'].forwardRef(function (props, ref) {
+    return React__default['default'].createElement(Loader, _extends({}, props, {
+      forwardRef: ref
+    }));
+  }) : Loader;
+  return Component;
+};
+
 var appExports = {
   loadView: loadView,
   getActions: undefined,
@@ -5682,6 +5640,12 @@ function exportApp() {
     Actions: {}
   };
 }
+
+function setConfig$1(conf) {
+  setConfig(conf);
+  setRouteConfig(conf);
+}
+var exportModule$1 = exportModule;
 function buildApp(moduleGetter, _ref) {
   var _ref$appModuleName = _ref.appModuleName,
       appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
@@ -5715,7 +5679,19 @@ function buildApp(moduleGetter, _ref) {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.history.getRouteState()
   });
-  return renderApp$1(moduleGetter, appModuleName, appViewName, storeOptions, container, function (store) {
+  return renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
+    var reRender = function reRender(View) {
+      var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
+      ReactDOM__default['default'].unmountComponentAtNode(panel);
+      var render = env[ssrInitStoreKey] ? ReactDOM__default['default'].hydrate : ReactDOM__default['default'].render;
+      render(React__default['default'].createElement(View, {
+        store: store
+      }), panel);
+    };
+
+    reRender(AppView);
+    return reRender;
+  }, moduleGetter, appModuleName, appViewName, storeOptions, function (store) {
     appExports.store = store;
     appExports.history.setStore(store);
     var routeState = appExports.history.getRouteState();
@@ -5754,7 +5730,17 @@ function buildSSR(moduleGetter, _ref2) {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.history.getRouteState()
   });
-  return renderSSR$1(moduleGetter, appModuleName, appViewName, storeOptions, function (store) {
+  return renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
+    var data = store.getState();
+    return {
+      store: store,
+      ssrInitStoreKey: ssrInitStoreKey,
+      data: data,
+      html: require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
+        store: store
+      }))
+    };
+  }, moduleGetter, appModuleName, appViewName, storeOptions, function (store) {
     appExports.store = store;
     Object.defineProperty(appExports, 'state', {
       get: function get() {
@@ -5780,99 +5766,8 @@ function buildSSR(moduleGetter, _ref2) {
   });
 }
 
-var ElseComponent = function ElseComponent(_ref4) {
-  var children = _ref4.children,
-      elseView = _ref4.elseView;
-  var arr = [];
-  React__default['default'].Children.forEach(children, function (item) {
-    item && arr.push(item);
-  });
-
-  if (arr.length > 0) {
-    return React__default['default'].createElement(React__default['default'].Fragment, null, arr);
-  }
-
-  return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
-};
-
-var Else = React__default['default'].memo(ElseComponent);
-
-var SwitchComponent = function SwitchComponent(_ref5) {
-  var children = _ref5.children,
-      elseView = _ref5.elseView;
-  var arr = [];
-  React__default['default'].Children.forEach(children, function (item) {
-    item && arr.push(item);
-  });
-
-  if (arr.length > 0) {
-    return React__default['default'].createElement(React__default['default'].Fragment, null, arr[0]);
-  }
-
-  return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
-};
-
-var Switch = React__default['default'].memo(SwitchComponent);
-
-function isModifiedEvent(event) {
-  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
-}
-
-var Link = React__default['default'].forwardRef(function (_ref6, ref) {
-  var _onClick = _ref6.onClick,
-      replace = _ref6.replace,
-      rest = _objectWithoutPropertiesLoose(_ref6, ["onClick", "replace"]);
-
-  var target = rest.target;
-  var props = Object.assign({}, rest, {
-    onClick: function onClick(event) {
-      try {
-        _onClick && _onClick(event);
-      } catch (ex) {
-        event.preventDefault();
-        throw ex;
-      }
-
-      if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
-          event.preventDefault();
-          replace ? appExports.history.replace(rest.href) : appExports.history.push(rest.href);
-        }
-    }
-  });
-  return React__default['default'].createElement("a", _extends({}, props, {
-    ref: ref
-  }));
-});
-
-var DocumentHeadComponent = function DocumentHeadComponent(_ref7) {
-  var children = _ref7.children;
-  var title = '';
-  React__default['default'].Children.forEach(children, function (child) {
-    if (child && child.type === 'title') {
-      title = child.props.children;
-    }
-  });
-
-  if (!isServer()) {
-    React.useEffect(function () {
-      if (title) {
-        document.title = title;
-      }
-    }, [title]);
-    return null;
-  }
-
-  return React__default['default'].createElement("head", null, children);
-};
-
-var DocumentHead = React__default['default'].memo(DocumentHeadComponent);
-
 exports.ActionTypes = ActionTypes;
 exports.BaseModuleHandlers = RouteModuleHandlers;
-exports.DocumentHead = DocumentHead;
-exports.Else = Else;
-exports.Link = Link;
-exports.Switch = Switch;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
 exports.createWebLocationTransform = createWebLocationTransform;

@@ -1,16 +1,15 @@
 /// <reference path="../env/global.d.ts" />
+import React from 'react';
+import ReactDOM from 'react-dom';
 import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-plan-a';
-import {getRootModuleAPI, isServer, mergeState, setConfig as setCoreConfig} from '@medux/core';
-import React, {ComponentType, FunctionComponent, ComponentClass, ReactNode, useEffect} from 'react';
-import {renderApp, renderSSR, loadView, LoadView} from '@medux/react';
-import {createRouter, HistoryActions} from '@medux/web';
-// import {connect as baseConnect, Options as ReactReduxOptions} from 'react-redux';
+import {env, renderApp, renderSSR, mergeState, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
+import {createRouter} from '@medux/web';
+import type {ComponentType} from 'react';
+import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
+import type {LocationTransform} from '@medux/web';
+import {appExports} from './sington';
+import type {ServerRequest, ServerResponse} from './sington';
 
-import type {RootModuleFacade, RootModuleAPI, RootModuleActions, ModuleGetter, StoreOptions, Dispatch} from '@medux/core';
-import type {Store} from 'redux';
-import type {RootState, LocationTransform} from '@medux/web';
-
-export {exportModule} from '@medux/react';
 export {
   ActionTypes,
   delayPromise,
@@ -29,71 +28,19 @@ export {
   deepMergeState,
 } from '@medux/core';
 export {RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
-
+export {exportApp, patchActions} from './sington';
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
 export type {RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules} from '@medux/route-plan-a';
 export type {RootState, RouteState, LocationTransform} from '@medux/web';
+export type {FacadeExports} from './sington';
 
 export function setConfig(conf: {connect?: Function; RSP?: string; historyMax?: number; homeUri?: string; NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DEVTOOLS?: boolean}) {
   setCoreConfig(conf);
   setRouteConfig(conf);
 }
 
-export interface ServerRequest {
-  url: string;
-}
-export interface ServerResponse {
-  redirect(status: number, path: string): void;
-}
-
-export type FacadeExports<
-  APP extends RootModuleFacade,
-  RouteParams extends {[K in keyof APP]: any},
-  Request extends ServerRequest = ServerRequest,
-  Response extends ServerResponse = ServerResponse
-> = {
-  App: {
-    store: Store;
-    state: RootState<APP, RouteParams>;
-    loadView: LoadView<APP>;
-    history: HistoryActions<RouteParams>;
-    getActions<N extends keyof APP>(...args: N[]): {[K in N]: APP[K]['actions']};
-    request: Request;
-    response: Response;
-  };
-  Modules: RootModuleAPI<APP>;
-  Actions: RootModuleActions<APP>;
-};
-const appExports: {store: any; state: any; loadView: any; getActions: any; history: HistoryActions; request: ServerRequest; response: ServerResponse} = {
-  loadView,
-  getActions: undefined,
-  state: undefined,
-  store: undefined,
-  history: undefined as any,
-  request: undefined as any,
-  response: undefined as any,
-};
-
-export function patchActions(typeName: string, json?: string): void {
-  if (json) {
-    getRootModuleAPI(JSON.parse(json));
-  }
-}
-export function exportApp(): FacadeExports<any, any, any, any> {
-  const modules = getRootModuleAPI();
-  appExports.getActions = (...args: string[]) => {
-    return args.reduce((prev, moduleName) => {
-      prev[moduleName] = modules[moduleName].actions;
-      return prev;
-    }, {});
-  };
-  return {
-    App: appExports as any,
-    Modules: modules,
-    Actions: {},
-  };
-}
+export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
 
 export function buildApp(
   moduleGetter: ModuleGetter,
@@ -126,14 +73,29 @@ export function buildApp(
     storeOptions.initData = {};
   }
   storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.history.getRouteState()});
-  // storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
 
-  return renderApp(moduleGetter, appModuleName, appViewName, storeOptions, container, (store) => {
-    appExports.store = store as any;
-    appExports.history.setStore(store);
-    const routeState = appExports.history.getRouteState();
-    return Object.keys(routeState.params);
-  });
+  return renderApp<ComponentType<any>>(
+    (store, appModel, AppView, ssrInitStoreKey) => {
+      const reRender = (View: ComponentType<any>) => {
+        const panel: any = typeof container === 'string' ? env.document.getElementById(container) : container;
+        ReactDOM.unmountComponentAtNode(panel!);
+        const render = env[ssrInitStoreKey] ? ReactDOM.hydrate : ReactDOM.render;
+        render(<View store={store} />, panel);
+      };
+      reRender(AppView);
+      return reRender;
+    },
+    moduleGetter,
+    appModuleName,
+    appViewName,
+    storeOptions,
+    (store) => {
+      appExports.store = store as any;
+      appExports.history.setStore(store);
+      const routeState = appExports.history.getRouteState();
+      return Object.keys(routeState.params);
+    }
+  );
 }
 
 let SSRTPL: string;
@@ -173,18 +135,33 @@ export function buildSSR(
     storeOptions.initData = {};
   }
   storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.history.getRouteState()});
-  // storeOptions.initData = appExports.history.mergeInitState(storeOptions.initData as any);
-  return renderSSR(moduleGetter, appModuleName, appViewName, storeOptions, (store) => {
-    appExports.store = store as any;
-    Object.defineProperty(appExports, 'state', {
-      get: () => {
-        return store.getState();
-      },
-    });
-    appExports.history.setStore(store);
-    const routeState = appExports.history.getRouteState();
-    return Object.keys(routeState.params);
-  }).then(({html, data, ssrInitStoreKey}) => {
+  return renderSSR<ComponentType<any>>(
+    (store, appModel, AppView, ssrInitStoreKey) => {
+      const data = store.getState();
+      return {
+        store,
+        ssrInitStoreKey,
+        data,
+        // @ts-ignore
+        html: require('react-dom/server').renderToString(<AppView store={store} />),
+      };
+    },
+    moduleGetter,
+    appModuleName,
+    appViewName,
+    storeOptions,
+    (store) => {
+      appExports.store = store as any;
+      Object.defineProperty(appExports, 'state', {
+        get: () => {
+          return store.getState();
+        },
+      });
+      appExports.history.setStore(store);
+      const routeState = appExports.history.getRouteState();
+      return Object.keys(routeState.params);
+    }
+  ).then(({html, data, ssrInitStoreKey}) => {
     const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
@@ -194,102 +171,3 @@ export function buildSSR(
     return html;
   });
 }
-
-export type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
-
-export type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
-
-export interface SimpleConnect<Options> {
-  <S = {}, D = {}, W = {}>(mapStateToProps?: (state: any, owner: W) => S, options?: Options): InferableComponentEnhancerWithProps<S & D & {dispatch: Dispatch}>;
-}
-
-interface ElseProps {
-  elseView?: ReactNode;
-  children: ReactNode;
-}
-const ElseComponent: React.FC<ElseProps> = ({children, elseView}) => {
-  const arr: ReactNode[] = [];
-  React.Children.forEach(children, (item) => {
-    item && arr.push(item);
-  });
-  if (arr.length > 0) {
-    return <>{arr}</>;
-  }
-  return <>{elseView}</>;
-};
-export const Else = React.memo(ElseComponent);
-interface SwitchProps {
-  elseView?: ReactNode;
-  children: ReactNode;
-}
-const SwitchComponent: React.FC<SwitchProps> = ({children, elseView}) => {
-  const arr: ReactNode[] = [];
-  React.Children.forEach(children, (item) => {
-    item && arr.push(item);
-  });
-  if (arr.length > 0) {
-    return <>{arr[0]}</>;
-  }
-  return <>{elseView}</>;
-};
-
-export const Switch = React.memo(SwitchComponent);
-
-export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  replace?: boolean;
-}
-
-function isModifiedEvent(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) {
-  return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
-}
-
-export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(({onClick, replace, ...rest}, ref) => {
-  const {target} = rest;
-  const props = {
-    ...rest,
-    onClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-      try {
-        onClick && onClick(event);
-      } catch (ex) {
-        event.preventDefault();
-        throw ex;
-      }
-
-      if (
-        !event.defaultPrevented && // onClick prevented default
-        event.button === 0 && // ignore everything but left clicks
-        (!target || target === '_self') && // let browser handle "target=_blank" etc.
-        !isModifiedEvent(event) // ignore clicks with modifier keys
-      ) {
-        event.preventDefault();
-        replace ? appExports.history.replace(rest.href!) : appExports.history.push(rest.href!);
-      }
-    },
-  };
-  return <a {...props} ref={ref} />;
-});
-
-interface DocumentHeadProps {
-  children?: ReactNode;
-}
-
-const DocumentHeadComponent: React.FC<DocumentHeadProps> = ({children}) => {
-  let title = '';
-  React.Children.forEach(children, (child: any) => {
-    if (child && child.type === 'title') {
-      title = child.props.children;
-    }
-  });
-  if (!isServer()) {
-    useEffect(() => {
-      if (title) {
-        // @ts-ignore
-        document.title = title;
-      }
-    }, [title]);
-    return null;
-  }
-  return <head>{children}</head>;
-};
-
-export const DocumentHead = React.memo(DocumentHeadComponent);
