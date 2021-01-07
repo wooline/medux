@@ -4,7 +4,6 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var React = require('react');
 var reactDom = require('react-dom');
-var reactRedux = require('react-redux');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -5640,8 +5639,6 @@ function exportApp() {
   };
 }
 
-var connectRedux = reactRedux.connect;
-
 var Component = function Component(_ref) {
   var children = _ref.children;
   var title = '';
@@ -5862,7 +5859,6 @@ exports.Link = Link;
 exports.Switch = Switch;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
-exports.connectRedux = connectRedux;
 exports.createWebLocationTransform = createWebLocationTransform;
 exports.deepMerge = deepMerge;
 exports.deepMergeState = deepMergeState;

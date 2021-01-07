@@ -1,0 +1,9 @@
+{
+  "name": "conect-mobx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "../../dist/cjs/lib/conect-mobx",
+  "module": "../../dist/esm/lib/conect-mobx",
+  "jsnext:main": "../../dist/next/lib/conect-mobx",
+  "types": "../../types/lib/conect-mobx"
+}

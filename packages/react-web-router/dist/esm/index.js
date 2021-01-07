@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { unmountComponentAtNode, hydrate, render } from 'react-dom';
-import { connect } from 'react-redux';
 
 function createCommonjsModule(fn, basedir, module) {
 	return module = {
@@ -5633,8 +5632,6 @@ function exportApp() {
   };
 }
 
-var connectRedux = connect;
-
 var Component = function Component(_ref) {
   var children = _ref.children;
   var title = '';
@@ -5847,4 +5844,4 @@ function buildSSR(moduleGetter, _ref2) {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connectRedux, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };

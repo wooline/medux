@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { unmountComponentAtNode, hydrate, render } from 'react-dom';
-import { connect } from 'react-redux';
 
 function _defineProperty(obj, key, value) {
   if (key in obj) {
@@ -4564,8 +4563,6 @@ function exportApp() {
   };
 }
 
-const connectRedux = connect;
-
 const Component = ({
   children
 }) => {
@@ -4778,4 +4775,4 @@ function buildSSR(moduleGetter, {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, connectRedux, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
