@@ -26,7 +26,7 @@ function patch(_tsconfig, _entryFilePath, _echo) {
         const typeName = args1.trim();
         const json = args2.join(',').trim();
         const files = [entryFilePath];
-        console.info(`...PatchActions with ${chalk.yellow(`type ${typeName.substr(1, typeName.length - 2)}`)} for ${chalk.green(entryFilePath)}`);
+        console.info(`...PatchActions using type ${chalk.magenta(`${typeName.substr(1, typeName.length - 2)}`)} for ${chalk.underline(entryFilePath)}`);
         const program = TJS.getProgramFromFiles(files, tsconfig.compilerOptions);
         const defineType = TJS.generateSchema(program, typeName.substr(1, typeName.length - 2), { ignoreErrors: false });
         const properties = defineType.properties;
@@ -41,7 +41,7 @@ function patch(_tsconfig, _entryFilePath, _echo) {
         else if (json !== json2) {
             const newSource = source.replace(arr[0], `patchActions(${typeName}, ${json2})`);
             fs.writeFileSync(entryFilePath, newSource);
-            console.info(`${chalk.green(entryFilePath)} has been patched!`);
+            console.info(`${chalk.underline(entryFilePath)} has been patched!`);
         }
         else {
             console.info('There was no change!');

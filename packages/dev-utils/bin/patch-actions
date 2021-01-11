@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { program } = require('commander');
-const {patch} = require('../dist/patch-actions');
+const {patch} = require('../lib/patch-actions');
 
 program
   .command('patch [tsconfig] [entry]')

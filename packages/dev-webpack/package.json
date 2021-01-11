@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-webpack",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-webpack",
   "author": "wooline <wooline@qq.com>",
@@ -37,6 +37,7 @@
     "source-map-loader": "^2.0.0",
     "style-loader": "^2.0.0",
     "postcss-loader": "^4.0.4",
+    "postcss-flexbugs-fixes": "^4.2.1",
     "image-webpack-loader": "^7.0.0",
     "clean-webpack-plugin":"^3.0.0",
     "eslint-webpack-plugin":"^2.4.1",

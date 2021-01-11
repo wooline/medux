@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-utils",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "description": "Common development tools.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-utils",
   "author": "wooline <wooline@qq.com>",
@@ -16,17 +16,19 @@
   },
   "files": [
     "bin/",
-    "dist/"
+    "lib/"
   ],
   "scripts": {
     "eslintSrc": "../../node_modules/.bin/eslint --cache ./src",
-    "clearDist": "../../node_modules/.bin/rimraf ./dist",
+    "clearDist": "../../node_modules/.bin/rimraf ./lib",
     "buildTypes": "tsc --project ./src/tsconfig.types.json",
     "prebuild": "yarn eslintSrc && yarn clearDist && yarn buildTypes",
     "build": "tsc -P ./src"
   },
   "peerDependencies": {
-    "@medux/core": "^2.0.0"
+    "@medux/core": "^2.0.0",
+    "@types/express": "^4.0.0",
+    "express": "^4.0.0"
   },
   "dependencies": {
     "commander": "^6.0.0",
