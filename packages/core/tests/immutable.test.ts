@@ -89,4 +89,16 @@ describe('init', () => {
       moduleC: {count: 2, initialized: true},
     });
   });
+  test('reducerError', () => {
+    expect(() => mockStore.dispatch(App.moduleA.actions.reducerError('reducerError'))).toThrow('reducerError');
+    expect(actionLogs).toEqual(['moduleA.reducerError']);
+  });
+  test('effect-reducerError', async () => {
+    await mockStore.dispatch(App.moduleA.actions.effectReducerError('reducerError'));
+    expect(actionLogs).toEqual(['moduleA.effectReducerError', 'moduleA.reducerError', 'medux.Error']);
+  });
+  // test('effectEffectError同步错误', async () => {
+  //   await mockStore.dispatch(App.moduleA.actions.effectEffectError('effectEffectError同步错误'));
+  //   expect(actionLogs).toEqual(['moduleA.effectEffectError', 'moduleA.effectError', 'moduleA.simple', 'medux.Error']);
+  // });
 });

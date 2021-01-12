@@ -23,6 +23,12 @@ export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
   }
 
   @effect()
+  protected async triggerError(prevState: any) {
+    this.dispatch(this.actions.add());
+    messages.push(['moduleB/moduleA.add', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
+  }
+
+  @effect()
   protected async ['moduleA.add'](prevState: any) {
     this.dispatch(this.actions.add());
     messages.push(['moduleB/moduleA.add', JSON.stringify(this.rootState), JSON.stringify(prevState)]);

@@ -1,6 +1,6 @@
-export declare function errorAction(error: any): {
+export declare function errorAction(reason: Object): {
     type: string;
-    payload: any[];
+    payload: Object[];
 };
 export declare function moduleInitAction(moduleName: string, initState: any): {
     type: string;

@@ -8,23 +8,22 @@ export function getActionData(action) {
 }
 
 function isProcessedError(error) {
-  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
-    return undefined;
-  }
-
-  return !!error.meduxProcessed;
+  return error && !!error.__meduxProcessed__;
 }
 
 function setProcessedError(error, meduxProcessed) {
-  if (typeof error === 'object') {
-    error.meduxProcessed = meduxProcessed;
-    return error;
+  if (typeof error !== 'object') {
+    error = {
+      message: error
+    };
   }
 
-  return {
-    meduxProcessed,
-    error
-  };
+  Object.defineProperty(error, '__meduxProcessed__', {
+    value: meduxProcessed,
+    enumerable: false,
+    writable: true
+  });
+  return error;
 }
 
 export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = [], storeEnhancers = []) {
@@ -59,6 +58,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     if (handlerModules.length > 0) {
       const orderList = [];
       const priority = action.priority ? [...action.priority] : [];
+      const actionData = getActionData(action);
       handlerModules.forEach(moduleName => {
         const fun = handlers[moduleName];
 
@@ -78,7 +78,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const node = fun(...getActionData(action), currentState);
+          const node = fun(...actionData, currentState);
 
           if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             warn('Use rewrite instead of replace to update state in MutableData');
@@ -95,6 +95,16 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
   const middleware = ({
     dispatch
   }) => next => originalAction => {
+    if (originalAction.type === ActionTypes.Error) {
+      const actionData = getActionData(originalAction);
+
+      if (isProcessedError(actionData[0])) {
+        return originalAction;
+      }
+
+      actionData[0] = setProcessedError(actionData[0], true);
+    }
+
     if (isServerEnv) {
       if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
         return originalAction;
@@ -113,6 +123,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
+      const actionData = getActionData(action);
       const orderList = [];
       const priority = action.priority ? [...action.priority] : [];
       handlerModules.forEach(moduleName => {
@@ -135,7 +146,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(...getActionData(action), currentState);
+          const effectResult = fun(...actionData, currentState);
           const decorators = fun.__decorators__;
 
           if (decorators) {
@@ -158,27 +169,22 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
             }
 
             return reslove;
-          }, error => {
+          }, reason => {
             if (decorators) {
               const results = fun.__decoratorResults__ || [];
               decorators.forEach((decorator, index) => {
                 if (decorator[1]) {
-                  decorator[1]('Rejected', results[index], error);
+                  decorator[1]('Rejected', results[index], reason);
                 }
               });
               fun.__decoratorResults__ = undefined;
             }
 
-            if (action.type === ActionTypes.Error) {
-              if (isProcessedError(error) === undefined) {
-                error = setProcessedError(error, true);
-              }
-
-              throw error;
-            } else if (isProcessedError(error)) {
-              throw error;
+            if (isProcessedError(reason)) {
+              throw reason;
             } else {
-              return dispatch(errorAction(error));
+              reason = setProcessedError(reason, false);
+              return dispatch(errorAction(reason));
             }
           });
           promiseResults.push(errorHandler);

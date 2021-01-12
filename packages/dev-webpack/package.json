@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-webpack",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-webpack",
   "author": "wooline <wooline@qq.com>",
@@ -12,11 +12,11 @@
     "node": ">=9.0.0"
   },
   "files": [
-    "dist/"
+    "lib/"
   ],
   "scripts": {
     "eslintSrc": "../../node_modules/.bin/eslint --cache ./src",
-    "clearDist": "../../node_modules/.bin/rimraf ./dist",
+    "clearDist": "../../node_modules/.bin/rimraf ./lib",
     "buildTypes": "tsc --project ./src/tsconfig.types.json",
     "prebuild": "yarn eslintSrc && yarn clearDist && yarn buildTypes",
     "build": "tsc -P ./src"

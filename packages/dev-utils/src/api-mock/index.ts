@@ -32,7 +32,7 @@ export = function createMiddleware(mockDir: string) {
       }
       return false;
     });
-    if (mockPath) {
+    if (mockPath && fs.existsSync(mockPath)) {
       delete require.cache[mockPath];
       const middleware = require(mockPath);
       if (typeof middleware === 'function') {

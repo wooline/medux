@@ -19,23 +19,22 @@ function getActionData(action) {
 }
 
 function isProcessedError(error) {
-  if (typeof error !== 'object' || error.meduxProcessed === undefined) {
-    return undefined;
-  }
-
-  return !!error.meduxProcessed;
+  return error && !!error.__meduxProcessed__;
 }
 
 function setProcessedError(error, meduxProcessed) {
-  if (typeof error === 'object') {
-    error.meduxProcessed = meduxProcessed;
-    return error;
+  if (typeof error !== 'object') {
+    error = {
+      message: error
+    };
   }
 
-  return {
-    meduxProcessed: meduxProcessed,
-    error: error
-  };
+  Object.defineProperty(error, '__meduxProcessed__', {
+    value: meduxProcessed,
+    enumerable: false,
+    writable: true
+  });
+  return error;
 }
 
 function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
@@ -86,6 +85,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     if (handlerModules.length > 0) {
       var orderList = [];
       var priority = action.priority ? [].concat(action.priority) : [];
+      var actionData = getActionData(action);
       handlerModules.forEach(function (moduleName) {
         var fun = handlers[moduleName];
 
@@ -105,7 +105,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          var node = fun.apply(void 0, getActionData(action).concat([currentState]));
+          var node = fun.apply(void 0, actionData.concat([currentState]));
 
           if (_basic.config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             (0, _basic.warn)('Use rewrite instead of replace to update state in MutableData');
@@ -123,6 +123,16 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     var dispatch = _ref.dispatch;
     return function (next) {
       return function (originalAction) {
+        if (originalAction.type === _basic.ActionTypes.Error) {
+          var actionData = getActionData(originalAction);
+
+          if (isProcessedError(actionData[0])) {
+            return originalAction;
+          }
+
+          actionData[0] = setProcessedError(actionData[0], true);
+        }
+
         if (_env.isServerEnv) {
           if (originalAction.type.split(_basic.config.NSP)[1] === _basic.ActionTypes.MLoading) {
             return originalAction;
@@ -141,6 +151,8 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
+          var _actionData = getActionData(action);
+
           var orderList = [];
           var priority = action.priority ? [].concat(action.priority) : [];
           handlerModules.forEach(function (moduleName) {
@@ -163,7 +175,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun.apply(void 0, getActionData(action).concat([currentState]));
+              var effectResult = fun.apply(void 0, _actionData.concat([currentState]));
               var decorators = fun.__decorators__;
 
               if (decorators) {
@@ -187,28 +199,23 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
                 }
 
                 return reslove;
-              }, function (error) {
+              }, function (reason) {
                 if (decorators) {
                   var _results2 = fun.__decoratorResults__ || [];
 
                   decorators.forEach(function (decorator, index) {
                     if (decorator[1]) {
-                      decorator[1]('Rejected', _results2[index], error);
+                      decorator[1]('Rejected', _results2[index], reason);
                     }
                   });
                   fun.__decoratorResults__ = undefined;
                 }
 
-                if (action.type === _basic.ActionTypes.Error) {
-                  if (isProcessedError(error) === undefined) {
-                    error = setProcessedError(error, true);
-                  }
-
-                  throw error;
-                } else if (isProcessedError(error)) {
-                  throw error;
+                if (isProcessedError(reason)) {
+                  throw reason;
                 } else {
-                  return dispatch((0, _actions.errorAction)(error));
+                  reason = setProcessedError(reason, false);
+                  return dispatch((0, _actions.errorAction)(reason));
                 }
               });
               promiseResults.push(errorHandler);

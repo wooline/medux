@@ -28,7 +28,7 @@ module.exports = function createMiddleware(mockDir) {
             }
             return false;
         });
-        if (mockPath) {
+        if (mockPath && fs.existsSync(mockPath)) {
             delete require.cache[mockPath];
             const middleware = require(mockPath);
             if (typeof middleware === 'function') {

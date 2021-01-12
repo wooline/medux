@@ -6,10 +6,10 @@ exports.moduleInitAction = moduleInitAction;
 
 var _basic = require("./basic");
 
-function errorAction(error) {
+function errorAction(reason) {
   return {
     type: _basic.ActionTypes.Error,
-    payload: [error]
+    payload: [reason]
   };
 }
 
