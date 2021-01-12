@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-web-router",
-  "version": "2.0.0-beta.3.5",
+  "version": "2.0.0-beta.3.6",
   "description": "The practice of @medux/core in react.",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-web-router",
   "author": "wooline <wooline@qq.com>",
@@ -46,9 +46,9 @@
     "react-redux": "~7.0.0"
   },
   "dependencies": {
-    "@medux/core": "^2.0.0-beta.3.5",
-    "@medux/route-plan-a": "^2.0.0-beta.3.5",
-    "@medux/web": "^2.0.0-beta.3.5"
+    "@medux/core": "^2.0.0-beta.3.6",
+    "@medux/route-plan-a": "^2.0.0-beta.3.6",
+    "@medux/web": "^2.0.0-beta.3.6"
   },
   "gitHead": "e8adb4fdd9bed18771636edd5dc588512a4b32c0"
 }
