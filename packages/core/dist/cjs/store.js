@@ -2,6 +2,8 @@
 
 exports.__esModule = true;
 exports.getActionData = getActionData;
+exports.isProcessedError = isProcessedError;
+exports.setProcessedError = setProcessedError;
 exports.buildStore = buildStore;
 
 var _redux = require("redux");

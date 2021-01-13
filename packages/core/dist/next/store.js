@@ -6,12 +6,10 @@ import { errorAction } from './actions';
 export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
-
-function isProcessedError(error) {
+export function isProcessedError(error) {
   return error && !!error.__meduxProcessed__;
 }
-
-function setProcessedError(error, meduxProcessed) {
+export function setProcessedError(error, meduxProcessed) {
   if (typeof error !== 'object') {
     error = {
       message: error
@@ -25,7 +23,6 @@ function setProcessedError(error, meduxProcessed) {
   });
   return error;
 }
-
 export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = [], storeEnhancers = []) {
   if (MetaData.clientStore) {
     MetaData.clientStore.destroy();

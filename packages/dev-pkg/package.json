@@ -18,7 +18,7 @@
     "@medux/babel-preset-recommended": "^1.0.5",
     "@medux/eslint-plugin-recommended": "^1.0.7",
     "@medux/stylelint-config-recommended": "^1.0.0",
-    "@medux/dev-utils": "^3.0.3",
+    "@medux/dev-utils": "^3.0.4",
     "@types/fs-extra": "^9.0.0",
     "chalk": "^4.0.0",
     "copyfiles": "^2.0.0",

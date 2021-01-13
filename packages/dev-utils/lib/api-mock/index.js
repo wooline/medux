@@ -4,7 +4,7 @@ const fs = require("fs");
 const chalk = require("chalk");
 module.exports = function createMiddleware(mockDir) {
     const indexFile = path.join(mockDir, 'index.js');
-    console.info(`${chalk.magenta('enable api mock file:')} ${chalk.underline(indexFile)}`);
+    console.info(`enable ${chalk.magenta('api mock')} file: ${chalk.underline(indexFile)}`);
     if (!fs.existsSync(mockDir)) {
         fs.mkdirSync(mockDir);
     }
@@ -20,7 +20,7 @@ module.exports = function createMiddleware(mockDir) {
         const indexMap = new Function(str)();
         let mockPath;
         Object.keys(indexMap).some((rule) => {
-            const isMatch = new RegExp(rule).test(req.originalUrl);
+            const isMatch = new RegExp(rule).test(`${req.method.toLocaleUpperCase()} ${req.originalUrl}`);
             if (isMatch) {
                 const extname = path.extname(indexMap[rule]);
                 mockPath = extname ? path.join(mockDir, indexMap[rule]) : path.join(mockDir, `${indexMap[rule]}.js`);

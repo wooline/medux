@@ -36,10 +36,10 @@ export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function isProcessedError(error: any): boolean {
+export function isProcessedError(error: any): boolean {
   return error && !!error.__meduxProcessed__;
 }
-function setProcessedError(error: any, meduxProcessed: boolean): {__meduxProcessed__: boolean; [key: string]: any} {
+export function setProcessedError(error: any, meduxProcessed: boolean): {__meduxProcessed__: boolean; [key: string]: any} {
   if (typeof error !== 'object') {
     error = {message: error};
   }

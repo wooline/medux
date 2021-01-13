@@ -26,7 +26,7 @@ function patch(_tsconfig, _entryFilePath, _echo) {
         const typeName = args1.trim();
         const json = args2.join(',').trim();
         const files = [entryFilePath];
-        console.info(`...PatchActions using type ${chalk.magenta(`${typeName.substr(1, typeName.length - 2)}`)} for ${chalk.underline(entryFilePath)}`);
+        console.info(`patchActions using type ${chalk.magenta(`${typeName.substr(1, typeName.length - 2)}`)} for ${chalk.underline(entryFilePath)}`);
         const program = TJS.getProgramFromFiles(files, tsconfig.compilerOptions);
         const defineType = TJS.generateSchema(program, typeName.substr(1, typeName.length - 2), { ignoreErrors: false });
         const properties = defineType.properties;

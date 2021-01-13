@@ -3,7 +3,7 @@ import type { ComponentType } from 'react';
 import type { ModuleGetter, StoreOptions, ExportModule } from '@medux/core';
 import type { LocationTransform } from '@medux/web';
 import type { ServerRequest, ServerResponse } from './sington';
-export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, setLoadingDepthTime, isServer, serverSide, deepMerge, deepMergeState, } from '@medux/core';
+export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, setLoadingDepthTime, isServer, serverSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
 export { RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform } from '@medux/route-plan-a';
 export { exportApp, patchActions } from './sington';
 export { DocumentHead } from './components/DocumentHead';

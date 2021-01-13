@@ -13,8 +13,7 @@ module.exports = function loader(source) {
             const views = args.replace([modelName, ModelHandlers, ''].join(','), '');
             const viewPaths = source.match(/['"]\.\/views\/.*['"]/gm) || [];
             const strs = [
-                `import {modelHotReplacement} from ${medux[0]};`,
-                `import {viewHotReplacement} from ${medux[0]};`,
+                `import {modelHotReplacement, viewHotReplacement} from ${medux[0]};`,
                 source,
                 `if (module.hot) {
         module.hot.accept("./model", () => {

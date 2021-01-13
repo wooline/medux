@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.deepMerge = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.serverSide = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.mergeState = exports.deepMergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
+exports.isServerEnv = exports.client = exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.deepMerge = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.serverSide = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.mergeState = exports.deepMergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -28,6 +28,8 @@ exports.getAppModuleName = _basic.getAppModuleName;
 var _store = require("./store");
 
 exports.getActionData = _store.getActionData;
+exports.setProcessedError = _store.setProcessedError;
+exports.isProcessedError = _store.isProcessedError;
 
 var _inject = require("./inject");
 

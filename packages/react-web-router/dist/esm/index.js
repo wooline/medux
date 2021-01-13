@@ -2519,11 +2519,9 @@ function getModuleByName(moduleName, moduleGetter) {
 function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
-
 function isProcessedError(error) {
   return error && !!error.__meduxProcessed__;
 }
-
 function setProcessedError(error, meduxProcessed) {
   if (typeof error !== 'object') {
     error = {
@@ -2538,7 +2536,6 @@ function setProcessedError(error, meduxProcessed) {
   });
   return error;
 }
-
 function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
   if (preloadedState === void 0) {
     preloadedState = {};
@@ -5851,4 +5848,4 @@ function buildSSR(moduleGetter, _ref2) {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };

@@ -2526,11 +2526,9 @@ function getModuleByName(moduleName, moduleGetter) {
 function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
-
 function isProcessedError(error) {
   return error && !!error.__meduxProcessed__;
 }
-
 function setProcessedError(error, meduxProcessed) {
   if (typeof error !== 'object') {
     error = {
@@ -2545,7 +2543,6 @@ function setProcessedError(error, meduxProcessed) {
   });
   return error;
 }
-
 function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
   if (preloadedState === void 0) {
     preloadedState = {};
@@ -5874,6 +5871,7 @@ exports.effect = effect;
 exports.errorAction = errorAction;
 exports.exportApp = exportApp;
 exports.exportModule = exportModule$1;
+exports.isProcessedError = isProcessedError;
 exports.isServer = isServer;
 exports.logger = logger;
 exports.modelHotReplacement = modelHotReplacement;
@@ -5883,5 +5881,6 @@ exports.serverSide = serverSide;
 exports.setConfig = setConfig$1;
 exports.setLoading = setLoading;
 exports.setLoadingDepthTime = setLoadingDepthTime;
+exports.setProcessedError = setProcessedError;
 exports.setSsrHtmlTpl = setSsrHtmlTpl;
 exports.viewHotReplacement = viewHotReplacement;

@@ -27,6 +27,8 @@ export {
   serverSide,
   deepMerge,
   deepMergeState,
+  isProcessedError,
+  setProcessedError,
 } from '@medux/core';
 export {RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
 export {exportApp, patchActions} from './sington';
