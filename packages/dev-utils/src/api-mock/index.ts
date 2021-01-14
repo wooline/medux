@@ -4,22 +4,22 @@ import * as chalk from 'chalk';
 
 import {NextFunction, Request, Response} from 'express';
 
-export = function createMiddleware(mockDir: string) {
-  const indexFile = path.join(mockDir, 'index.js');
-  console.info(`enable ${chalk.magenta('api mock')} file: ${chalk.underline(indexFile)}`);
+export function createMiddleware(mockFile: string) {
+  console.info(`enable ${chalk.magenta('api mock')} file: ${chalk.underline(mockFile)}`);
+  const mockDir = path.dirname(mockFile);
   if (!fs.existsSync(mockDir)) {
     fs.mkdirSync(mockDir);
   }
-  if (!fs.existsSync(indexFile)) {
-    fs.writeFileSync(indexFile, 'module.exports = {}');
+  if (!fs.existsSync(mockFile)) {
+    fs.writeFileSync(mockFile, 'module.exports = {}');
   }
 
   return (req: Request, res: Response, next: NextFunction) => {
     const str = fs
-      .readFileSync(indexFile)
+      .readFileSync(mockFile)
       .toString()
       .replace(/^[^{]+/, 'return ')
-      .replace(/\brequire\(/g, '(');
+      .replace(/\b(require|import)\(/g, '(');
     // eslint-disable-next-line @typescript-eslint/no-implied-eval
     const indexMap: {[rule: string]: string} = new Function(str)();
     let mockPath;
@@ -27,12 +27,20 @@ export = function createMiddleware(mockDir: string) {
       const isMatch = new RegExp(rule).test(`${req.method.toLocaleUpperCase()} ${req.originalUrl}`);
       if (isMatch) {
         const extname = path.extname(indexMap[rule]);
-        mockPath = extname ? path.join(mockDir, indexMap[rule]) : path.join(mockDir, `${indexMap[rule]}.js`);
+        if (extname) {
+          if (fs.existsSync(path.join(mockDir, indexMap[rule]))) {
+            mockPath = path.join(mockDir, indexMap[rule]);
+          }
+        } else if (fs.existsSync(path.join(mockDir, `${indexMap[rule]}.js`))) {
+          mockPath = path.join(mockDir, `${indexMap[rule]}.js`);
+        } else if (fs.existsSync(path.join(mockDir, `${indexMap[rule]}.ts`))) {
+          mockPath = path.join(mockDir, `${indexMap[rule]}.ts`);
+        }
         return true;
       }
       return false;
     });
-    if (mockPath && fs.existsSync(mockPath)) {
+    if (mockPath) {
       delete require.cache[mockPath];
       const middleware = require(mockPath);
       if (typeof middleware === 'function') {
@@ -41,4 +49,4 @@ export = function createMiddleware(mockDir: string) {
     }
     return next();
   };
-};
+}

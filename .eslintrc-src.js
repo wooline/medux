@@ -1,5 +1,3 @@
-const { off } = require("process");
-
 module.exports = {
   root: true,
   extends: ['plugin:@medux/recommended/common'],

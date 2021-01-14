@@ -21,7 +21,6 @@ module.exports = {
     },
   },
   rules: {
-    'no-console': 'off',
     'no-plusplus': 'off',
     'func-names': 'off',
     'no-undef': 'off',
@@ -59,5 +58,7 @@ module.exports = {
         format: ['PascalCase'],
       },
     ],
+    'no-debugger': process.env.NODE_ENV === 'development' ? 'off' : 'warn',
+    'no-console': process.env.NODE_ENV === 'development' ? 'off' : 'warn',
   },
 };

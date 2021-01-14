@@ -4,16 +4,22 @@ import * as TJS from 'typescript-json-schema';
 import * as chalk from 'chalk';
 
 export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _echo?: boolean) {
-  const RootPath = process.cwd();
+  const rootPath = process.cwd();
+  const srcPath = path.join(rootPath, 'src');
   let tsconfig;
   if (!_tsconfig) {
-    tsconfig = require(path.join(RootPath, './tsconfig.json'));
+    if (fs.existsSync(path.join(srcPath, './tsconfig.json'))) {
+      tsconfig = require(path.join(srcPath, './tsconfig.json'));
+      process.chdir('./src');
+    } else {
+      tsconfig = require(path.join(rootPath, './tsconfig.json'));
+    }
   } else if (typeof _tsconfig === 'string') {
     tsconfig = require(_tsconfig);
   } else {
     tsconfig = _tsconfig;
   }
-  const srcPath = path.join(RootPath, 'src');
+
   const entryFilePath = _entryFilePath || (fs.existsSync(path.join(srcPath, 'Global.ts')) ? path.join(srcPath, 'Global.ts') : path.join(srcPath, 'Global.tsx'));
   const source = fs.readFileSync(entryFilePath).toString();
   const arr = source.match(/patchActions\s*\(([^)]+)\)/m);

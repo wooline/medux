@@ -1,6 +1,6 @@
 {
   "name": "@medux/dev-pkg",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/dev-pkg",
   "author": "wooline <wooline@qq.com>",
@@ -16,9 +16,8 @@
   },
   "dependencies": {
     "@medux/babel-preset-recommended": "^1.0.5",
-    "@medux/eslint-plugin-recommended": "^1.0.7",
+    "@medux/eslint-plugin-recommended": "^1.0.8",
     "@medux/stylelint-config-recommended": "^1.0.0",
-    "@medux/dev-utils": "^3.0.4",
     "@types/fs-extra": "^9.0.0",
     "chalk": "^4.0.0",
     "copyfiles": "^2.0.0",
@@ -26,6 +25,7 @@
     "eslint": "^7.0.0",
     "fs-extra": "^9.0.0",
     "deep-extend": "^0.6.0",
+    "fast-deep-equal": "^3.1.0",
     "indexof": "^0.0.1",
     "prettier": "^2.1.2",
     "react-refresh": "^0.9.0",
