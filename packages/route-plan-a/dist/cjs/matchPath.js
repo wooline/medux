@@ -68,7 +68,7 @@ function extractPathParams(rules, pathname, pathParams) {
 
         if (typeof result === 'string') {
           pathname = result;
-        } else if (result && subPathname) {
+        } else if (result) {
           return matchPathame + extractPathParams(result, subPathname, pathParams);
         } else {
           return pathname;

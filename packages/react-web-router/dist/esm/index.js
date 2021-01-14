@@ -3788,7 +3788,7 @@ function extractPathParams(rules, pathname, pathParams) {
 
         if (typeof result === 'string') {
           pathname = result;
-        } else if (result && subPathname) {
+        } else if (result) {
           return matchPathame + extractPathParams(result, subPathname, pathParams);
         } else {
           return pathname;
@@ -5569,10 +5569,11 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
           active && setView({
             Component: Component
           });
-        }).catch(function () {
+        }).catch(function (e) {
           active && setView({
             Component: Error || LoadViewOnError
           });
+          env.console.error(e);
         });
         return null;
       }

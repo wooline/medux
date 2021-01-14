@@ -65,7 +65,7 @@ export function extractPathParams<P extends RootParams>(rules: PathnameRules<P>,
         const result = rules[rule](args, pathParams);
         if (typeof result === 'string') {
           pathname = result;
-        } else if (result && subPathname) {
+        } else if (result) {
           return matchPathame + extractPathParams(result, subPathname, pathParams);
         } else {
           return pathname;

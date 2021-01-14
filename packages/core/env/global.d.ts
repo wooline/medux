@@ -8,6 +8,7 @@ declare namespace meduxCore {
   interface Console {
     log: (msg: string) => void;
     warn: (msg: string) => void;
+    error: (error: any) => void;
   }
   interface ENV {
     __REDUX_DEVTOOLS_EXTENSION__?: (options: any) => any;

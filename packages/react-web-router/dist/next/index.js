@@ -2816,7 +2816,7 @@ function extractPathParams(rules, pathname, pathParams) {
 
         if (typeof result === 'string') {
           pathname = result;
-        } else if (result && subPathname) {
+        } else if (result) {
           return matchPathame + extractPathParams(result, subPathname, pathParams);
         } else {
           return pathname;
@@ -4505,10 +4505,11 @@ const loadView = (moduleName, viewName, options, Loading, Error) => {
           active && setView({
             Component
           });
-        }).catch(() => {
+        }).catch(e => {
           active && setView({
             Component: Error || LoadViewOnError
           });
+          env.console.error(e);
         });
         return null;
       }

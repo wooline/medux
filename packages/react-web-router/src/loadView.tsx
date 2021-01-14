@@ -1,5 +1,5 @@
 import React, {ComponentType, FC, useEffect, useState} from 'react';
-import {RootModuleFacade, getView, isPromise} from '@medux/core';
+import {RootModuleFacade, getView, isPromise, env} from '@medux/core';
 import type {BaseLoadView} from '@medux/core';
 
 export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {forwardRef?: boolean}, ComponentType<any>>;
@@ -29,8 +29,9 @@ export const loadView: LoadView = (moduleName, viewName, options, Loading, Error
             // Object.keys(Component).forEach(key => (loader[key] = Component[key]));
             active && setView({Component});
           })
-          .catch(() => {
+          .catch((e: any) => {
             active && setView({Component: Error || LoadViewOnError});
+            env.console.error(e);
           });
         return null;
       }
