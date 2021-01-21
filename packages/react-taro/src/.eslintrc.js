@@ -5,7 +5,7 @@ module.exports = {
     project: `${__dirname}/tsconfig.json`,
   },
   rules: {
-    'no-console': 'off',
+
   },
   ignorePatterns: [],
 };

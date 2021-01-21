@@ -56,11 +56,11 @@ describe('actions', () => {
     });
     expect(nativeHistoryMock.push).toHaveBeenCalledWith({pathname: '/photos/2', search: '', hash: ''}, '2');
   });
-  test('push /photos/2?q={"photos":{"listSearch":{"page":2}}}', async () => {
-    await historyActions.push('/photos/2/?{"photos":{"listSearch":{"page":2}}}');
+  test('push /photos/2?_={"photos":{"listSearch":{"page":2}}}', async () => {
+    await historyActions.push('/photos/2/?_={"photos":{"listSearch":{"page":2}}}');
     expect(historyActions.getRouteState()).toEqual({
       pathname: '/photos/2',
-      search: '{"photos":{"listSearch":{"page":2}}}',
+      search: '_={"photos":{"listSearch":{"page":2}}}',
       hash: '',
       tag: '/photos/2',
       params: {photos: {_detailKey: '', _listKey: '', itemId: '', listSearch: {title: '', page: 2, pageSize: 10}}},
@@ -70,11 +70,11 @@ describe('actions', () => {
       stack: ['3|/photos/2|{"photos":{"_detailKey":"","_listKey":"","itemId":"","listSearch":{"title":"","page":2,"pageSize":10}}}', '1|/|{}'],
     });
   });
-  test('push /photos/2?q={"photos":{"listSearch":{"page":3}}}', async () => {
-    await historyActions.push('/photos/2?{"photos":{"listSearch":{"page":3}}}');
+  test('push /photos/2?_={"photos":{"listSearch":{"page":3}}}', async () => {
+    await historyActions.push('/photos/2?_={"photos":{"listSearch":{"page":3}}}');
     expect(historyActions.getRouteState()).toEqual({
       pathname: '/photos/2',
-      search: '{"photos":{"listSearch":{"page":3}}}',
+      search: '_={"photos":{"listSearch":{"page":3}}}',
       hash: '',
       tag: '/photos/2',
       params: {photos: {_detailKey: '', _listKey: '', itemId: '', listSearch: {title: '', page: 3, pageSize: 10}}},

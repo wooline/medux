@@ -50,7 +50,7 @@ describe('locationTransform', () => {
     });
   });
   test('locationTransform /admin/member/detail/1', () => {
-    expect(locationTransform.in({pathname: '/admin/member/detail/1', search: '{"member":{"listParams":{"pageCurrent":2,"pageCurrent2":3}}}', hash: ''})).toEqual({
+    expect(locationTransform.in({pathname: '/admin/member/detail/1', search: '_={"member":{"listParams":{"pageCurrent":2,"pageCurrent2":3}}}', hash: ''})).toEqual({
       tag: '/admin/member/detail/1',
       params: {
         admin: {},
@@ -73,8 +73,8 @@ describe('locationTransform', () => {
     expect(
       locationTransform.in({
         pathname: '/admin/member/detail/1',
-        search: '{"member":{"listParams":{"pageCurrent":2,"pageCurrent2":3}}}',
-        hash: '{"member":{"_listVer":2,"_itemVer": 3}}',
+        search: '_={"member":{"listParams":{"pageCurrent":2,"pageCurrent2":3}}}',
+        hash: '_={"member":{"_listVer":2,"_itemVer": 3}}',
       })
     ).toEqual({
       tag: '/admin/member/detail/1',
@@ -146,8 +146,8 @@ describe('locationTransform', () => {
       })
     ).toEqual({
       pathname: '/admin/member',
-      search: '{"member":{"listParams":{"pageCurrent":2,"term":"aaa"}}}',
-      hash: '{"member":{"_listVer":2}}',
+      search: '_={"member":{"listParams":{"pageCurrent":2,"term":"aaa"}}}',
+      hash: '_={"member":{"_listVer":2}}',
     });
   });
 });

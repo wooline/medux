@@ -3,8 +3,8 @@ import { extendDefault, excludeDefault, splitPrivate } from './deep-extend';
 import { extractPathParams } from './matchPath';
 
 function splitSearch(search, key) {
-  const reg = new RegExp(`[?&#]${key}=([^&]+)`);
-  const arr = search.match(reg);
+  const reg = new RegExp(`&${key}=([^&]+)`);
+  const arr = `&${search}`.match(reg);
   return arr ? arr[1] : '';
 }
 
@@ -19,20 +19,20 @@ function assignDefaultData(data, def) {
 }
 
 function encodeBas64(str) {
-  return btoa ? btoa(str) : Buffer ? Buffer.from(str).toString('base64') : str;
+  return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
 }
 
 function decodeBas64(str) {
-  return atob ? atob(str) : Buffer ? Buffer.from(str, 'base64').toString() : str;
+  return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
 }
 
 function parseWebNativeLocation(nativeLocation, key, base64, parse) {
-  let search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
-  let hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
+  let search = splitSearch(nativeLocation.search, key);
+  let hash = splitSearch(nativeLocation.hash, key);
 
   if (base64) {
-    search = search && decodeBas64(search);
-    hash = hash && decodeBas64(hash);
+    search = search ? decodeBas64(search) : '';
+    hash = hash ? decodeBas64(hash) : '';
   }
 
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
@@ -48,15 +48,15 @@ function toNativeLocation(tag, search, hash, key, base64, stringify) {
   let hashStr = hash ? stringify(hash) : '';
 
   if (base64) {
-    searchStr = searchStr && encodeBas64(searchStr);
-    hashStr = hashStr && encodeBas64(hashStr);
+    searchStr = searchStr ? encodeBas64(searchStr) : '';
+    hashStr = hashStr ? encodeBas64(hashStr) : '';
   }
 
   const pathname = `/${tag}`.replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    search: key ? `${key}=${searchStr}` : searchStr,
-    hash: key ? `${key}=${hashStr}` : hashStr
+    search: searchStr ? `${key}=${searchStr}` : '',
+    hash: hashStr ? `${key}=${hashStr}` : ''
   };
 }
 
@@ -67,7 +67,7 @@ export function isLocationMap(data) {
 
   return false;
 }
-export function createWebLocationTransform(defaultData, pathnameRules, base64 = false, serialization = JSON, key = '') {
+export function createWebLocationTransform(defaultData, pathnameRules, base64 = false, serialization = JSON, key = '_') {
   const matchCache = {
     _cache: {},
 

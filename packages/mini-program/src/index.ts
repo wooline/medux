@@ -1,88 +1,126 @@
-import './env';
+/* eslint-disable @typescript-eslint/no-use-before-define */
+import {BaseHistoryActions, NativeHistory} from '@medux/route-plan-a';
+// import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
+import {env, RootModuleFacade} from '@medux/core';
 
-import {
-  ActionTypes,
-  RootState as BaseRootState,
-  CommonModule,
-  DisplayViews,
-  ExportModule,
-  ModuleGetter,
-  RouteState,
-  StoreOptions,
-  StoreState,
-  exportModule as baseExportModule,
-  renderApp,
-} from '@medux/core';
-import {HistoryActions, ToBrowserUrl, createRouter} from './history';
-import {MeduxLocation, TransformRoute, setRouteConfig} from '@medux/route-plan-a';
-import {Middleware, Store} from 'redux';
+import type {RootState as BaseRootState, RootParams, RouteState as BaseRouteState, LocationTransform as BaseLocationTransform, WebNativeLocation} from '@medux/route-plan-a';
 
-export type {RouteConfig} from '@medux/route-plan-a';
-export type {LocationMap} from './history';
+export type RouteState<P extends RootParams> = BaseRouteState<P, WebNativeLocation>;
+export type RootState<A extends RootModuleFacade, P extends RootParams> = BaseRootState<A, P, WebNativeLocation>;
+export type LocationTransform<P extends RootParams> = BaseLocationTransform<P, WebNativeLocation>;
 
-export type RootState<G extends ModuleGetter> = BaseRootState<G, MeduxLocation>;
-export type BrowserRouter<Params> = {transformRoute: TransformRoute; historyActions: HistoryActions<Params>; toUrl: ToBrowserUrl<Params>};
-export const exportModule: ExportModule<any> = baseExportModule;
+class History {}
 
-let historyActions: HistoryActions | undefined = undefined;
-let transformRoute: TransformRoute | undefined = undefined;
-let toBrowserUrl: ToBrowserUrl | undefined = undefined;
+// function locationToUrl(loaction: PaLocation): string {
+//   return loaction.pathname + loaction.search + loaction.hash;
+// }
+export class WebNativeHistory implements NativeHistory<WebNativeLocation> {
+  public history: History;
 
-function checkRedirect(views: DisplayViews): boolean {
-  if (views['@']) {
-    const url = Object.keys(views['@'])[0];
-    historyActions!.navigateTo(url);
-    return true;
+  constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string) {
+    const [pathname, search = ''] = createHistory.split('?');
+    this.history = {
+      action: 'PUSH',
+      length: 0,
+      listen() {
+        return () => undefined;
+      },
+      createHref() {
+        return '';
+      },
+      push() {},
+      replace() {},
+      go() {},
+      goBack() {},
+      goForward() {},
+      block() {
+        return () => undefined;
+      },
+      location: {
+        pathname,
+        search: search && `?${search}`,
+        hash: '',
+      } as any,
+    };
   }
-  return false;
-}
-const redirectMiddleware: Middleware = () => (next) => (action) => {
-  if (action.type === ActionTypes.RouteChange) {
-    const routeState: RouteState = action.payload[0];
-    const {views} = routeState.data;
-    if (checkRedirect(views)) {
-      return;
+
+  getUrl() {
+    const {pathname = '', search = '', hash = ''} = this.history.location;
+    return [pathname, search, hash].join('');
+  }
+
+  getKey(location: HistoryLocation): string {
+    return (location.state || '') as string;
+  }
+
+  getLocation(): WebNativeLocation {
+    const {pathname = '', search = '', hash = ''} = this.history.location;
+    return {pathname, search: decodeURIComponent(search).replace('?', ''), hash: decodeURIComponent(hash).replace('#', '')};
+  }
+
+  parseUrl(url: string): WebNativeLocation {
+    if (!url) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: '',
+      };
+    }
+    const arr = url.split(/[?#]/);
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+    const [pathname, search = '', hash = ''] = arr;
+
+    return {
+      pathname,
+      search,
+      hash,
+    };
+  }
+
+  toUrl(location: WebNativeLocation): string {
+    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
+  }
+
+  push(location: WebNativeLocation, key: string): void {
+    this.history.push(this.toUrl(location), key as any);
+  }
+
+  replace(location: WebNativeLocation, key: string): void {
+    this.history.replace(this.toUrl(location), key as any);
+  }
+
+  relaunch(location: WebNativeLocation, key: string): void {
+    this.history.push(this.toUrl(location), key as any);
+  }
+
+  pop(location: WebNativeLocation, n: number, key: string): void {
+    if (n < 500) {
+      this.history.go(-n);
+    } else {
+      this.history.push(this.toUrl(location), key as any);
     }
   }
-  return next(action);
-};
-export interface InitAppOptions {
-  startupUrl: string;
-  moduleGetter: ModuleGetter;
-  appModule: CommonModule;
-  appViewName?: string;
-  routeConfig?: import('@medux/route-plan-a').RouteConfig;
-  locationMap?: import('./history').LocationMap;
-  defaultRouteParams?: {[moduleName: string]: any};
-  storeOptions?: StoreOptions;
 }
-export function initApp({startupUrl, moduleGetter, appModule, appViewName = 'main', routeConfig = {}, locationMap, defaultRouteParams, storeOptions = {}}: InitAppOptions) {
-  setRouteConfig({defaultRouteParams});
-  const router = createRouter(routeConfig, startupUrl, locationMap);
-  historyActions = router.historyActions;
-  toBrowserUrl = router.toBrowserUrl;
-  transformRoute = router.transformRoute;
-  if (!storeOptions.middlewares) {
-    storeOptions.middlewares = [];
+export class HistoryActions<P extends RootParams = RootParams> extends BaseHistoryActions<P, WebNativeLocation> {
+  constructor(protected nativeHistory: WebNativeHistory, locationTransform: LocationTransform<P>) {
+    super(nativeHistory, locationTransform);
   }
-  storeOptions.middlewares.unshift(redirectMiddleware);
-  let reduxStore: Store | undefined = undefined;
-  renderApp(
-    () => {
-      return () => void 0;
-    },
-    moduleGetter,
-    appModule,
-    appViewName,
-    router.historyProxy,
-    storeOptions,
-    (store: Store<StoreState>) => {
-      const storeState = store.getState();
-      const {views} = storeState.route.data;
-      checkRedirect(views);
-      reduxStore = store;
-      return store;
-    }
-  );
-  return {store: reduxStore!, historyActions: historyActions!, toBrowserUrl: toBrowserUrl!, transformRoute: transformRoute!};
+
+  getNativeHistory() {
+    return this.nativeHistory.history;
+  }
+
+  destroy() {}
+
+  refresh() {
+    this.nativeHistory.history.go(0);
+  }
+}
+
+export function createRouter<P extends RootParams = RootParams>(locationTransform: LocationTransform<P>) {
+  const nativeHistory = new WebNativeHistory(createHistory);
+  const historyActions = new HistoryActions(nativeHistory, locationTransform);
+  return historyActions;
 }

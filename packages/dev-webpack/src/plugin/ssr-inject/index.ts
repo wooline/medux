@@ -39,7 +39,7 @@ export class SsrInject {
 
   constructor(options: Options = {}) {
     validate(schema, options, {name: '@medux/dev-webpack/ssr-inject'});
-    this.entryFileName = options.entryFileName || 'main.js';
+    this.entryFileName = options.entryFileName || 'server.js';
   }
 
   apply(compiler: Compiler) {

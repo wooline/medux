@@ -7,7 +7,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 import alias from '@rollup/plugin-alias';
 
-const tag = process.env.NODE_ENV === 'production' ? 'pro' : process.env.NODE_TAG;
+const tag = process.env.NODE_TAG || process.env.NODE_ENV;
 
 export default function (root, moduleName, globals, aliasEntries) {
   const cfg = {
@@ -17,15 +17,9 @@ export default function (root, moduleName, globals, aliasEntries) {
         {file: `dist/esm/index.js`, format: 'esm'},
         {file: `dist/cjs/index.js`, format: 'cjs'},
         {file: `dist/umd/index.js`, format: 'umd', name: moduleName, globals},
+        {file: `dist/umd/index.min.js`, format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
       ],
       mainFields: ['module', 'main'],
-    },
-    pro: {
-      output: [
-        {file: `dist/esm/index.min.js`, format: 'esm', plugins: [terser()], sourcemap: true},
-        {file: `dist/cjs/index.min.js`, format: 'cjs', plugins: [terser()], sourcemap: true},
-      ],
-      mainFields: ['main'],
     },
   };
   const env = cfg[tag];

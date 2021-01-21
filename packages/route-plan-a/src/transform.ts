@@ -8,8 +8,8 @@ export type LocationTransform<P extends RootParams, NL extends NativeLocation> =
 export type LocationMap<P extends RootParams> = {in: (location: Location<any>) => Location<P>; out: (location: Location<P>) => Location<any>};
 
 function splitSearch(search: string, key: string): string {
-  const reg = new RegExp(`[?&#]${key}=([^&]+)`);
-  const arr = search.match(reg);
+  const reg = new RegExp(`&${key}=([^&]+)`);
+  const arr = `&${search}`.match(reg);
   return arr ? arr[1] : '';
 }
 
@@ -25,19 +25,19 @@ function assignDefaultData(data: {[moduleName: string]: any}, def: {[moduleName:
 function encodeBas64(str: string): string {
   // @ts-ignore
   // eslint-disable-next-line no-nested-ternary
-  return btoa ? btoa(str) : Buffer ? Buffer.from(str).toString('base64') : str;
+  return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
 }
 function decodeBas64(str: string): string {
   // @ts-ignore
   // eslint-disable-next-line no-nested-ternary
-  return atob ? atob(str) : Buffer ? Buffer.from(str, 'base64').toString() : str;
+  return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
 }
 function parseWebNativeLocation(nativeLocation: WebNativeLocation, key: string, base64: boolean, parse: (str: string) => any): {pathname: string; search: any; hash: any} {
-  let search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
-  let hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
+  let search = splitSearch(nativeLocation.search, key);
+  let hash = splitSearch(nativeLocation.hash, key);
   if (base64) {
-    search = search && decodeBas64(search);
-    hash = hash && decodeBas64(hash);
+    search = search ? decodeBas64(search) : '';
+    hash = hash ? decodeBas64(hash) : '';
   }
   const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
   return {pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname, search: search ? parse(search) : undefined, hash: hash ? parse(hash) : undefined};
@@ -47,11 +47,11 @@ function toNativeLocation(tag: string, search: any, hash: any, key: string, base
   let searchStr = search ? stringify(search) : '';
   let hashStr = hash ? stringify(hash) : '';
   if (base64) {
-    searchStr = searchStr && encodeBas64(searchStr);
-    hashStr = hashStr && encodeBas64(hashStr);
+    searchStr = searchStr ? encodeBas64(searchStr) : '';
+    hashStr = hashStr ? encodeBas64(hashStr) : '';
   }
   const pathname = `/${tag}`.replace(/\/+/g, '/');
-  return {pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname, search: key ? `${key}=${searchStr}` : searchStr, hash: key ? `${key}=${hashStr}` : hashStr};
+  return {pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname, search: searchStr ? `${key}=${searchStr}` : '', hash: hashStr ? `${key}=${hashStr}` : ''};
 }
 
 export function isLocationMap<P extends RootParams>(data: LocationMap<P> | PathnameRules<P>): data is LocationMap<P> {
@@ -66,7 +66,7 @@ export function createWebLocationTransform<P extends RootParams>(
   pathnameRules?: PathnameRules<P>,
   base64: boolean = false,
   serialization: {parse(str: string): any; stringify(data: any): string} = JSON,
-  key: string = ''
+  key: string = '_'
 ): LocationTransform<P, WebNativeLocation> {
   // 主要用来cache 以下out会使用到in中的PathnameRules
   const matchCache = {

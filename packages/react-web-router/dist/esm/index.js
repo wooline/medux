@@ -3801,8 +3801,8 @@ function extractPathParams(rules, pathname, pathParams) {
 }
 
 function splitSearch(search, key) {
-  var reg = new RegExp("[?&#]" + key + "=([^&]+)");
-  var arr = search.match(reg);
+  var reg = new RegExp("&" + key + "=([^&]+)");
+  var arr = ("&" + search).match(reg);
   return arr ? arr[1] : '';
 }
 
@@ -3817,20 +3817,20 @@ function assignDefaultData(data, def) {
 }
 
 function encodeBas64(str) {
-  return btoa ? btoa(str) : Buffer ? Buffer.from(str).toString('base64') : str;
+  return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
 }
 
 function decodeBas64(str) {
-  return atob ? atob(str) : Buffer ? Buffer.from(str, 'base64').toString() : str;
+  return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
 }
 
 function parseWebNativeLocation(nativeLocation, key, base64, parse) {
-  var search = key ? splitSearch(nativeLocation.search, key) : nativeLocation.search;
-  var hash = key ? splitSearch(nativeLocation.hash, key) : nativeLocation.hash;
+  var search = splitSearch(nativeLocation.search, key);
+  var hash = splitSearch(nativeLocation.hash, key);
 
   if (base64) {
-    search = search && decodeBas64(search);
-    hash = hash && decodeBas64(hash);
+    search = search ? decodeBas64(search) : '';
+    hash = hash ? decodeBas64(hash) : '';
   }
 
   var pathname = ("/" + nativeLocation.pathname).replace(/\/+/g, '/');
@@ -3846,15 +3846,15 @@ function toNativeLocation(tag, search, hash, key, base64, stringify) {
   var hashStr = hash ? stringify(hash) : '';
 
   if (base64) {
-    searchStr = searchStr && encodeBas64(searchStr);
-    hashStr = hashStr && encodeBas64(hashStr);
+    searchStr = searchStr ? encodeBas64(searchStr) : '';
+    hashStr = hashStr ? encodeBas64(hashStr) : '';
   }
 
   var pathname = ("/" + tag).replace(/\/+/g, '/');
   return {
     pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    search: key ? key + "=" + searchStr : searchStr,
-    hash: key ? key + "=" + hashStr : hashStr
+    search: searchStr ? key + "=" + searchStr : '',
+    hash: hashStr ? key + "=" + hashStr : ''
   };
 }
 function createWebLocationTransform(defaultData, pathnameRules, base64, serialization, key) {
@@ -3867,7 +3867,7 @@ function createWebLocationTransform(defaultData, pathnameRules, base64, serializ
   }
 
   if (key === void 0) {
-    key = '';
+    key = '_';
   }
 
   var matchCache = {

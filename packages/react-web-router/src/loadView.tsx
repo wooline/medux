@@ -1,4 +1,4 @@
-import React, {ComponentType, FC, useEffect, useState} from 'react';
+import React, {ComponentType, FC, useEffect, useState, ForwardRefRenderFunction} from 'react';
 import {RootModuleFacade, getView, isPromise, env} from '@medux/core';
 import type {BaseLoadView} from '@medux/core';
 
@@ -7,11 +7,12 @@ export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {forward
 const LoadViewOnError: ComponentType<any> = () => {
   return <div>error</div>;
 };
+
 export const loadView: LoadView = (moduleName, viewName, options, Loading, Error) => {
   const {forwardRef} = options || {};
   // Can't perform a React state update on an unmounted component.
   let active = true;
-  const Loader: FC<any> = function ViewLoader(props: any) {
+  const Loader: ForwardRefRenderFunction<any> = function ViewLoader(props, ref) {
     useEffect(() => {
       return () => {
         active = false;
@@ -42,12 +43,10 @@ export const loadView: LoadView = (moduleName, viewName, options, Loading, Error
       // Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
       return {Component: moduleViewResult};
     });
-    const {forwardRef2, ...other} = props;
-    const ref = forwardRef ? {ref: forwardRef2} : {};
     // eslint-disable-next-line no-nested-ternary
-    return view ? <view.Component {...other} {...ref} /> : Loading ? <Loading {...props} /> : null;
+    return view ? <view.Component {...props} ref={ref} /> : Loading ? <Loading {...props} /> : null;
   };
-  const Component = forwardRef ? React.forwardRef((props, ref) => <Loader {...props} forwardRef={ref} />) : Loader;
+  const Component = forwardRef ? React.forwardRef(Loader) : Loader;
 
   return Component as any;
 };
