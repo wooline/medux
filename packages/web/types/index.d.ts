@@ -8,7 +8,7 @@ export declare type LocationTransform<P extends RootParams> = BaseLocationTransf
 export declare class WebNativeHistory implements NativeHistory<WebNativeLocation> {
     history: History<never>;
     constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string);
-    getLocation(): WebNativeLocation;
+    getInitLocation(): WebNativeLocation;
     getUrl(): string;
     parseUrl(url: string): WebNativeLocation;
     toUrl(location: WebNativeLocation): string;

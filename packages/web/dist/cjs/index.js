@@ -66,7 +66,7 @@ var WebNativeHistory = function () {
 
   var _proto = WebNativeHistory.prototype;
 
-  _proto.getLocation = function getLocation() {
+  _proto.getInitLocation = function getInitLocation() {
     var _this$history$locatio = this.history.location,
         _this$history$locatio2 = _this$history$locatio.pathname,
         pathname = _this$history$locatio2 === void 0 ? '' : _this$history$locatio2,

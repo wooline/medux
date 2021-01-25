@@ -4066,7 +4066,7 @@ var BaseHistoryActions = function () {
 
     _defineProperty(this, "store", void 0);
 
-    var location = this.locationTransform.in(nativeHistory.getLocation());
+    var location = this.locationTransform.in(nativeHistory.getInitLocation());
 
     var key = this._createKey();
 
@@ -5350,7 +5350,7 @@ var WebNativeHistory = function () {
 
   var _proto = WebNativeHistory.prototype;
 
-  _proto.getLocation = function getLocation() {
+  _proto.getInitLocation = function getInitLocation() {
     var _this$history$locatio = this.history.location,
         _this$history$locatio2 = _this$history$locatio.pathname,
         pathname = _this$history$locatio2 === void 0 ? '' : _this$history$locatio2,
@@ -5529,21 +5529,6 @@ function createRouter(createHistory, locationTransform) {
   return historyActions;
 }
 
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-
-  return target;
-}
-
 var LoadViewOnError = function LoadViewOnError() {
   return React.createElement("div", null, "error");
 };
@@ -5554,7 +5539,7 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
 
   var active = true;
 
-  var Loader = function ViewLoader(props) {
+  var Loader = function ViewLoader(props, ref) {
     useEffect(function () {
       return function () {
         active = false;
@@ -5585,20 +5570,12 @@ var loadView = function loadView(moduleName, viewName, options, Loading, Error) 
         view = _useState[0],
         setView = _useState[1];
 
-    var forwardRef2 = props.forwardRef2,
-        other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
-
-    var ref = forwardRef ? {
-      ref: forwardRef2
-    } : {};
-    return view ? React.createElement(view.Component, _extends({}, other, ref)) : Loading ? React.createElement(Loading, props) : null;
+    return view ? React.createElement(view.Component, _extends({}, props, {
+      ref: ref
+    })) : Loading ? React.createElement(Loading, props) : null;
   };
 
-  var Component = forwardRef ? React.forwardRef(function (props, ref) {
-    return React.createElement(Loader, _extends({}, props, {
-      forwardRef: ref
-    }));
-  }) : Loader;
+  var Component = forwardRef ? React.forwardRef(Loader) : Loader;
   return Component;
 };
 
@@ -5693,6 +5670,21 @@ var Component$2 = function Component(_ref) {
 };
 
 var Switch = React.memo(Component$2);
+
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
 
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);

@@ -19,7 +19,7 @@ export function setRouteConfig(conf: {RSP?: string; historyMax?: number; homeUri
   conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
 
-export type HistoryAction = 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
+export type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
 
 export type ModuleParams = {[key: string]: any};
 export type RootParams = {[moduleName: string]: ModuleParams};
@@ -29,31 +29,28 @@ export type RootParams = {[moduleName: string]: ModuleParams};
 //   search: string;
 // }
 
-export interface NativeLocation {}
-
-export interface WebNativeLocation extends NativeLocation {
+export interface NativeLocation {
   pathname: string;
   search: string;
   hash: string;
 }
+
 export interface Location<P extends RootParams = RootParams> {
   tag: string;
   params: Partial<P>;
 }
 
-export type RouteState<P extends RootParams, NL extends NativeLocation> = Location<P> &
+export type RouteState<P extends RootParams, NL extends NativeLocation = NativeLocation> = Location<P> &
   NL & {
     action: HistoryAction;
     key: string;
-    history: string[];
-    stack: string[];
   };
 
-export type RouteRootState<P extends RootParams, NL extends NativeLocation> = CoreRootState & {
+export type RouteRootState<P extends RootParams, NL extends NativeLocation = NativeLocation> = CoreRootState & {
   route: RouteState<P, NL>;
 };
 
-export type RootState<A extends RootModuleFacade, P extends RootParams, NL extends NativeLocation> = {
+export type RootState<A extends RootModuleFacade, P extends RootParams, NL extends NativeLocation = NativeLocation> = {
   route: RouteState<P, NL>;
 } & {[M in keyof A]?: A[M]['state']};
 
@@ -61,7 +58,7 @@ export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
 export function extractNativeLocation<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>): NL {
   const data = {...routeState};
-  ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach((key) => {
+  ['tag', 'params', 'action', 'key'].forEach((key) => {
     delete data[key];
   });
   return data;
@@ -72,13 +69,16 @@ export interface RoutePayload<P extends RootParams = RootParams> {
   extendParams?: P | true;
 }
 
-export function locationToUri(location: Location, key: string): string {
-  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
+function locationToUri(location: Location, key: string): {uri: string; tag: string; query: string; key: string} {
+  const {tag, params} = location;
+  const query = params ? JSON.stringify(params) : '';
+  return {uri: [key, tag, query].join(routeConfig.RSP), tag, query, key};
 }
+
 function splitUri(uri: string): [string, string, string];
 function splitUri(uri: string, name: 'key' | 'tag' | 'query'): string;
 function splitUri(...args: any): [string, string, string] | string {
-  const [uri, name] = args;
+  const [uri = '', name] = args;
   const arr = uri.split(routeConfig.RSP, 3);
   const index = {key: 0, tag: 1, query: 2};
   if (name) {
@@ -91,60 +91,152 @@ export function uriToLocation<P extends RootParams>(uri: string): {key: string; 
   const location: Location<P> = {tag, params: JSON.parse(query)};
   return {key, location};
 }
-export function buildHistoryStack(location: Location, action: HistoryAction, key: string, curData: {history: string[]; stack: string[]}): {history: string[]; stack: string[]} {
-  const maxLength = routeConfig.historyMax;
-  const tag = location.tag;
-  const uri = locationToUri(location, key);
-  const {history, stack} = curData;
-  let historyList: string[] = [...history];
-  let stackList: string[] = [...stack];
-  if (action === 'RELAUNCH') {
-    historyList = [uri];
-    stackList = [uri];
-  } else if (action === 'PUSH') {
-    historyList.unshift(uri);
-    if (historyList.length > maxLength) {
-      historyList.length = maxLength;
+
+interface HistoryRecord {
+  uri: string;
+  tag: string;
+  query: string;
+  key: string;
+  sub: History;
+}
+export class History {
+  groupMax: number = 10;
+
+  actionsMax: number = 10;
+
+  private groups: HistoryRecord[] = [];
+
+  private actions: HistoryRecord[] = [];
+
+  getAction(keyOrIndex?: number | string): HistoryRecord | undefined {
+    if (keyOrIndex === undefined) {
+      keyOrIndex = 0;
     }
-    if (splitUri(stackList[0], 'tag') !== tag) {
-      stackList.unshift(uri);
-      if (stackList.length > maxLength) {
-        stackList.length = maxLength;
-      }
-    } else {
-      stackList[0] = uri;
+    if (typeof keyOrIndex === 'number') {
+      return this.actions[keyOrIndex];
     }
-  } else if (action === 'REPLACE') {
-    historyList[0] = uri;
-    stackList[0] = uri;
-    if (tag === splitUri(stackList[1], 'tag')) {
-      stackList.splice(1, 1);
-    }
-    if (stackList.length > maxLength) {
-      stackList.length = maxLength;
-    }
-  } else if (action.startsWith('POP')) {
-    const n = parseInt(action.replace('POP', ''), 10) || 1;
-    const useStack = n > 1000;
-    if (useStack) {
-      historyList = [];
-      stackList.splice(0, n - 1000);
-    } else {
-      const arr = historyList.splice(0, n + 1, uri).reduce((pre: string[], curUri) => {
-        const ctag = splitUri(curUri, 'tag');
-        if (pre[pre.length - 1] !== ctag) {
-          pre.push(ctag);
-        }
-        return pre;
-      }, []);
-      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
-        arr.pop();
-      }
-      stackList.splice(0, arr.length, uri);
-      if (tag === splitUri(stackList[1], 'tag')) {
-        stackList.splice(1, 1);
-      }
-    }
+    return this.actions.find((item) => item.key === keyOrIndex);
   }
-  return {history: historyList, stack: stackList};
+
+  getGroup(keyOrIndex?: number | string): HistoryRecord | undefined {
+    if (keyOrIndex === undefined) {
+      keyOrIndex = 0;
+    }
+    if (typeof keyOrIndex === 'number') {
+      return this.groups[keyOrIndex];
+    }
+    return this.groups.find((item) => item.key === keyOrIndex);
+  }
+
+  getActionIndex(key: string): number {
+    return this.actions.findIndex((item) => item.key === key);
+  }
+
+  getGroupIndex(key: string): number {
+    return this.groups.findIndex((item) => item.key === key);
+  }
+
+  getCurrentInternalHistory(): History {
+    return this.actions[0].sub;
+  }
+
+  findTag(tag: string) {}
+
+  getUriStack(): {actions: string[]; groups: string[]} {
+    return {actions: this.actions.map((item) => item.uri), groups: this.groups.map((item) => item.uri)};
+  }
+
+  push(location: Location, key: string) {
+    const {uri, tag, query} = locationToUri(location, key);
+    const newStack: HistoryRecord = {uri, tag, query, key, sub: new History()};
+    const groups = [...this.groups];
+    const actions = [...this.actions];
+    const actionsMax = this.actionsMax;
+    const groupMax = this.groupMax;
+    actions.unshift(newStack);
+    if (actions.length > actionsMax) {
+      actions.length = actionsMax;
+    }
+    if (splitUri(groups[0]?.uri, 'tag') !== tag) {
+      groups.unshift(newStack);
+      if (groups.length > groupMax) {
+        groups.length = groupMax;
+      }
+    } else {
+      groups[0] = newStack;
+    }
+    this.actions = actions;
+    this.groups = groups;
+  }
+
+  replace(location: Location, key: string) {
+    const {uri, tag, query} = locationToUri(location, key);
+    const newStack: HistoryRecord = {uri, tag, query, key, sub: new History()};
+    const groups = [...this.groups];
+    const actions = [...this.actions];
+    const groupMax = this.groupMax;
+    actions[0] = newStack;
+    groups[0] = newStack;
+    if (tag === splitUri(groups[1]?.uri, 'tag')) {
+      groups.splice(1, 1);
+    }
+    if (groups.length > groupMax) {
+      groups.length = groupMax;
+    }
+    this.actions = actions;
+    this.groups = groups;
+  }
+
+  relaunch(location: Location, key: string) {
+    const {uri, tag, query} = locationToUri(location, key);
+    const newStack: HistoryRecord = {uri, tag, query, key, sub: new History()};
+    const actions: HistoryRecord[] = [newStack];
+    const groups: HistoryRecord[] = [newStack];
+    this.actions = actions;
+    this.groups = groups;
+  }
+
+  pop(n: number) {
+    const historyRecord = this.getGroup(n);
+    if (!historyRecord) {
+      return false;
+    }
+    const groups = [...this.groups];
+    const actions: HistoryRecord[] = [];
+    groups.splice(0, n);
+    this.actions = actions;
+    this.groups = groups;
+    return true;
+  }
+
+  back(n: number) {
+    const historyRecord = this.getAction(n);
+    if (!historyRecord) {
+      return false;
+    }
+    const uri = historyRecord.uri;
+    const tag = splitUri(uri, 'tag');
+    const groups = [...this.groups];
+    const actions = [...this.actions];
+    const deleteActions = actions.splice(0, n + 1, historyRecord);
+    // 对删除的actions按tag合并
+    const arr = deleteActions.reduce((pre: string[], curStack) => {
+      const ctag = splitUri(curStack.uri, 'tag');
+      if (pre[pre.length - 1] !== ctag) {
+        pre.push(ctag);
+      }
+      return pre;
+    }, []);
+
+    if (arr[arr.length - 1] === splitUri(actions[1]?.uri, 'tag')) {
+      arr.pop();
+    }
+    groups.splice(0, arr.length, historyRecord);
+    if (tag === splitUri(groups[1]?.uri, 'tag')) {
+      groups.splice(1, 1);
+    }
+    this.actions = actions;
+    this.groups = groups;
+    return true;
+  }
 }

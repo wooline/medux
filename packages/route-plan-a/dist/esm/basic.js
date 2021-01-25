@@ -1,3 +1,4 @@
+import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 export var routeConfig = {
   RSP: '|',
   historyMax: 10,
@@ -10,13 +11,22 @@ export function setRouteConfig(conf) {
 }
 export function extractNativeLocation(routeState) {
   var data = Object.assign({}, routeState);
-  ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach(function (key) {
+  ['tag', 'params', 'action', 'key'].forEach(function (key) {
     delete data[key];
   });
   return data;
 }
-export function locationToUri(location, key) {
-  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
+
+function locationToUri(location, key) {
+  var tag = location.tag,
+      params = location.params;
+  var query = params ? JSON.stringify(params) : '';
+  return {
+    uri: [key, tag, query].join(routeConfig.RSP),
+    tag: tag,
+    query: query,
+    key: key
+  };
 }
 
 function splitUri() {
@@ -24,7 +34,8 @@ function splitUri() {
     args[_key] = arguments[_key];
   }
 
-  var uri = args[0],
+  var _args$ = args[0],
+      uri = _args$ === void 0 ? '' : _args$,
       name = args[1];
   var arr = uri.split(routeConfig.RSP, 3);
   var index = {
@@ -55,77 +66,220 @@ export function uriToLocation(uri) {
     location: location
   };
 }
-export function buildHistoryStack(location, action, key, curData) {
-  var maxLength = routeConfig.historyMax;
-  var tag = location.tag;
-  var uri = locationToUri(location, key);
-  var history = curData.history,
-      stack = curData.stack;
-  var historyList = [].concat(history);
-  var stackList = [].concat(stack);
+export var History = function () {
+  function History() {
+    _defineProperty(this, "groupMax", 10);
 
-  if (action === 'RELAUNCH') {
-    historyList = [uri];
-    stackList = [uri];
-  } else if (action === 'PUSH') {
-    historyList.unshift(uri);
+    _defineProperty(this, "actionsMax", 10);
 
-    if (historyList.length > maxLength) {
-      historyList.length = maxLength;
-    }
+    _defineProperty(this, "groups", []);
 
-    if (splitUri(stackList[0], 'tag') !== tag) {
-      stackList.unshift(uri);
-
-      if (stackList.length > maxLength) {
-        stackList.length = maxLength;
-      }
-    } else {
-      stackList[0] = uri;
-    }
-  } else if (action === 'REPLACE') {
-    historyList[0] = uri;
-    stackList[0] = uri;
-
-    if (tag === splitUri(stackList[1], 'tag')) {
-      stackList.splice(1, 1);
-    }
-
-    if (stackList.length > maxLength) {
-      stackList.length = maxLength;
-    }
-  } else if (action.startsWith('POP')) {
-    var n = parseInt(action.replace('POP', ''), 10) || 1;
-    var useStack = n > 1000;
-
-    if (useStack) {
-      historyList = [];
-      stackList.splice(0, n - 1000);
-    } else {
-      var arr = historyList.splice(0, n + 1, uri).reduce(function (pre, curUri) {
-        var ctag = splitUri(curUri, 'tag');
-
-        if (pre[pre.length - 1] !== ctag) {
-          pre.push(ctag);
-        }
-
-        return pre;
-      }, []);
-
-      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
-        arr.pop();
-      }
-
-      stackList.splice(0, arr.length, uri);
-
-      if (tag === splitUri(stackList[1], 'tag')) {
-        stackList.splice(1, 1);
-      }
-    }
+    _defineProperty(this, "actions", []);
   }
 
-  return {
-    history: historyList,
-    stack: stackList
+  var _proto = History.prototype;
+
+  _proto.getAction = function getAction(keyOrIndex) {
+    if (keyOrIndex === undefined) {
+      keyOrIndex = 0;
+    }
+
+    if (typeof keyOrIndex === 'number') {
+      return this.actions[keyOrIndex];
+    }
+
+    return this.actions.find(function (item) {
+      return item.key === keyOrIndex;
+    });
   };
-}
+
+  _proto.getGroup = function getGroup(keyOrIndex) {
+    if (keyOrIndex === undefined) {
+      keyOrIndex = 0;
+    }
+
+    if (typeof keyOrIndex === 'number') {
+      return this.groups[keyOrIndex];
+    }
+
+    return this.groups.find(function (item) {
+      return item.key === keyOrIndex;
+    });
+  };
+
+  _proto.getActionIndex = function getActionIndex(key) {
+    return this.actions.findIndex(function (item) {
+      return item.key === key;
+    });
+  };
+
+  _proto.getGroupIndex = function getGroupIndex(key) {
+    return this.groups.findIndex(function (item) {
+      return item.key === key;
+    });
+  };
+
+  _proto.getCurrentInternalHistory = function getCurrentInternalHistory() {
+    return this.actions[0].sub;
+  };
+
+  _proto.findTag = function findTag(tag) {};
+
+  _proto.getUriStack = function getUriStack() {
+    return {
+      actions: this.actions.map(function (item) {
+        return item.uri;
+      }),
+      groups: this.groups.map(function (item) {
+        return item.uri;
+      })
+    };
+  };
+
+  _proto.push = function push(location, key) {
+    var _groups$;
+
+    var _locationToUri = locationToUri(location, key),
+        uri = _locationToUri.uri,
+        tag = _locationToUri.tag,
+        query = _locationToUri.query;
+
+    var newStack = {
+      uri: uri,
+      tag: tag,
+      query: query,
+      key: key,
+      sub: new History()
+    };
+    var groups = [].concat(this.groups);
+    var actions = [].concat(this.actions);
+    var actionsMax = this.actionsMax;
+    var groupMax = this.groupMax;
+    actions.unshift(newStack);
+
+    if (actions.length > actionsMax) {
+      actions.length = actionsMax;
+    }
+
+    if (splitUri((_groups$ = groups[0]) === null || _groups$ === void 0 ? void 0 : _groups$.uri, 'tag') !== tag) {
+      groups.unshift(newStack);
+
+      if (groups.length > groupMax) {
+        groups.length = groupMax;
+      }
+    } else {
+      groups[0] = newStack;
+    }
+
+    this.actions = actions;
+    this.groups = groups;
+  };
+
+  _proto.replace = function replace(location, key) {
+    var _groups$2;
+
+    var _locationToUri2 = locationToUri(location, key),
+        uri = _locationToUri2.uri,
+        tag = _locationToUri2.tag,
+        query = _locationToUri2.query;
+
+    var newStack = {
+      uri: uri,
+      tag: tag,
+      query: query,
+      key: key,
+      sub: new History()
+    };
+    var groups = [].concat(this.groups);
+    var actions = [].concat(this.actions);
+    var groupMax = this.groupMax;
+    actions[0] = newStack;
+    groups[0] = newStack;
+
+    if (tag === splitUri((_groups$2 = groups[1]) === null || _groups$2 === void 0 ? void 0 : _groups$2.uri, 'tag')) {
+      groups.splice(1, 1);
+    }
+
+    if (groups.length > groupMax) {
+      groups.length = groupMax;
+    }
+
+    this.actions = actions;
+    this.groups = groups;
+  };
+
+  _proto.relaunch = function relaunch(location, key) {
+    var _locationToUri3 = locationToUri(location, key),
+        uri = _locationToUri3.uri,
+        tag = _locationToUri3.tag,
+        query = _locationToUri3.query;
+
+    var newStack = {
+      uri: uri,
+      tag: tag,
+      query: query,
+      key: key,
+      sub: new History()
+    };
+    var actions = [newStack];
+    var groups = [newStack];
+    this.actions = actions;
+    this.groups = groups;
+  };
+
+  _proto.pop = function pop(n) {
+    var historyRecord = this.getGroup(n);
+
+    if (!historyRecord) {
+      return false;
+    }
+
+    var groups = [].concat(this.groups);
+    var actions = [];
+    groups.splice(0, n);
+    this.actions = actions;
+    this.groups = groups;
+    return true;
+  };
+
+  _proto.back = function back(n) {
+    var _actions$, _groups$3;
+
+    var historyRecord = this.getAction(n);
+
+    if (!historyRecord) {
+      return false;
+    }
+
+    var uri = historyRecord.uri;
+    var tag = splitUri(uri, 'tag');
+    var groups = [].concat(this.groups);
+    var actions = [].concat(this.actions);
+    var deleteActions = actions.splice(0, n + 1, historyRecord);
+    var arr = deleteActions.reduce(function (pre, curStack) {
+      var ctag = splitUri(curStack.uri, 'tag');
+
+      if (pre[pre.length - 1] !== ctag) {
+        pre.push(ctag);
+      }
+
+      return pre;
+    }, []);
+
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) === null || _actions$ === void 0 ? void 0 : _actions$.uri, 'tag')) {
+      arr.pop();
+    }
+
+    groups.splice(0, arr.length, historyRecord);
+
+    if (tag === splitUri((_groups$3 = groups[1]) === null || _groups$3 === void 0 ? void 0 : _groups$3.uri, 'tag')) {
+      groups.splice(1, 1);
+    }
+
+    this.actions = actions;
+    this.groups = groups;
+    return true;
+  };
+
+  return History;
+}();

@@ -3076,7 +3076,7 @@ class BaseHistoryActions {
 
     _defineProperty(this, "store", void 0);
 
-    const location = this.locationTransform.in(nativeHistory.getLocation());
+    const location = this.locationTransform.in(nativeHistory.getInitLocation());
 
     const key = this._createKey();
 
@@ -4311,7 +4311,7 @@ class WebNativeHistory {
     }
   }
 
-  getLocation() {
+  getInitLocation() {
     const {
       pathname = '',
       search = '',
@@ -4466,21 +4466,6 @@ function createRouter(createHistory, locationTransform) {
   return historyActions;
 }
 
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-
-  return target;
-}
-
 const LoadViewOnError = () => {
   return React.createElement("div", null, "error");
 };
@@ -4491,7 +4476,7 @@ const loadView = (moduleName, viewName, options, Loading, Error) => {
   } = options || {};
   let active = true;
 
-  const Loader = function ViewLoader(props) {
+  const Loader = function ViewLoader(props, ref) {
     useEffect(() => {
       return () => {
         active = false;
@@ -4518,21 +4503,12 @@ const loadView = (moduleName, viewName, options, Loading, Error) => {
         Component: moduleViewResult
       };
     });
-
-    const {
-      forwardRef2
-    } = props,
-          other = _objectWithoutPropertiesLoose(props, ["forwardRef2"]);
-
-    const ref = forwardRef ? {
-      ref: forwardRef2
-    } : {};
-    return view ? React.createElement(view.Component, _extends({}, other, ref)) : Loading ? React.createElement(Loading, props) : null;
+    return view ? React.createElement(view.Component, _extends({}, props, {
+      ref: ref
+    })) : Loading ? React.createElement(Loading, props) : null;
   };
 
-  const Component = forwardRef ? React.forwardRef((props, ref) => React.createElement(Loader, _extends({}, props, {
-    forwardRef: ref
-  }))) : Loader;
+  const Component = forwardRef ? React.forwardRef(Loader) : Loader;
   return Component;
 };
 
@@ -4626,6 +4602,21 @@ const Component$2 = ({
 };
 
 const Switch = React.memo(Component$2);
+
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
 
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);

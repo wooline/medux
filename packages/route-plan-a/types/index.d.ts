@@ -1,12 +1,13 @@
 import { Middleware, Reducer } from 'redux';
 import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
+import { History } from './basic';
 import type { LocationTransform } from './transform';
-import type { RootParams, Location, NativeLocation, WebNativeLocation, RouteState, HistoryAction, RoutePayload } from './basic';
+import type { RootParams, Location, NativeLocation, RouteState, HistoryAction, RoutePayload } from './basic';
 export { createWebLocationTransform } from './transform';
 export { PathnameRules, extractPathParams } from './matchPath';
 export { setRouteConfig } from './basic';
 export type { LocationMap, LocationTransform } from './transform';
-export type { RootParams, Location, NativeLocation, WebNativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload } from './basic';
+export type { RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload } from './basic';
 interface Store {
     dispatch(action: {
         type: string;
@@ -38,37 +39,34 @@ export declare function routeChangeAction<P extends RootParams, NL extends Nativ
 };
 export declare const routeMiddleware: Middleware;
 export declare const routeReducer: Reducer;
-export interface NativeHistory<NL extends NativeLocation = WebNativeLocation> {
-    getLocation(): NL;
+export interface NativeRouter<NL extends NativeLocation = NativeLocation> {
     parseUrl(url: string): NL;
     toUrl(location: NL): string;
     push(location: NL, key: string): void;
     replace(location: NL, key: string): void;
     relaunch(location: NL, key: string): void;
+    back(location: NL, n: number, key: string): void;
     pop(location: NL, n: number, key: string): void;
 }
-export declare abstract class BaseHistoryActions<P extends RootParams, NL extends NativeLocation = WebNativeLocation> {
-    protected nativeHistory: NativeHistory<NL>;
+export declare abstract class BaseRouter<P extends RootParams, NL extends NativeLocation = NativeLocation> {
+    protected nativeRouter: NativeRouter<NL>;
     protected locationTransform: LocationTransform<P, NL>;
     private _tid;
     private _routeState;
-    private _startupUri;
     protected store: Store | undefined;
-    constructor(nativeHistory: NativeHistory<NL>, locationTransform: LocationTransform<P, NL>);
+    readonly history: History;
+    constructor(initLocation: NL, nativeRouter: NativeRouter<NL>, locationTransform: LocationTransform<P, NL>);
     getRouteState(): RouteState<P, NL>;
     setStore(_store: Store): void;
     protected getCurKey(): string;
     private _createKey;
-    protected findHistoryByKey(key: string): number;
     payloadToLocation(data: RoutePayload<P> | string): Location<P>;
     locationToUrl(data: RoutePayload<P>): string;
     locationToRouteState(location: Location<P>, action: HistoryAction, key: string): RouteState<P, NL>;
-    protected dispatch(location: Location<P>, action: HistoryAction, key?: string, callNative?: string | number): Promise<RouteState<P, NL>>;
-    relaunch(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P, NL>>;
-    push(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P, NL>>;
-    replace(data: RoutePayload<P> | string, disableNative?: boolean): Promise<RouteState<P, NL>>;
-    pop(n?: number, root?: 'HOME' | 'FIRST' | '', disableNative?: boolean, useStack?: boolean): Promise<RouteState<P, NL>>;
-    back(n?: number, root?: 'HOME' | 'FIRST' | '', disableNative?: boolean): Promise<RouteState<P, NL>>;
-    home(root?: 'HOME' | 'FIRST', disableNative?: boolean): Promise<RouteState<P, NL>>;
+    relaunch(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P, NL>>;
+    push(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P, NL>>;
+    replace(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P, NL>>;
+    back(n?: number, internal?: boolean): Promise<RouteState<P, NL>>;
+    pop(n?: number, internal?: boolean): Promise<RouteState<P, NL>>;
     abstract destroy(): void;
 }

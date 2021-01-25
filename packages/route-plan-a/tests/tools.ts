@@ -1,8 +1,8 @@
-import {BaseHistoryActions, NativeHistory, PathnameRules, createWebLocationTransform} from 'src/index';
+import {BaseRouter, NativeRouter, PathnameRules, createWebLocationTransform} from 'src/index';
 
-import nativeHistoryMock from './nativeHistory';
+import nativeRouterMock from './nativeRouter';
 
-jest.mock('./nativeHistory');
+jest.mock('./nativeRouter');
 
 interface MemberRouteParams {
   listParams: {pageSize: number; pageCurrent: number; term?: string};
@@ -76,18 +76,11 @@ const pathnameRules: PathnameRules<RouteParams> = {
 };
 
 export const locationTransform = createWebLocationTransform(defaultRouteParams, pathnameRules);
-export class HistoryActions extends BaseHistoryActions<RouteParams> {
+export class Router extends BaseRouter<RouteParams> {
   destroy() {}
 }
 
-export const nativeHistory: NativeHistory = {
-  getLocation() {
-    return {
-      pathname: '/',
-      search: '',
-      hash: '',
-    };
-  },
+export const nativeRouter: NativeRouter = {
   parseUrl(url: string) {
     if (!url) {
       return {
@@ -112,15 +105,18 @@ export const nativeHistory: NativeHistory = {
     return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
   },
   push(location, key) {
-    nativeHistoryMock.push(location, key);
+    nativeRouterMock.push(location, key);
   },
   replace(location, key) {
-    nativeHistoryMock.replace(location, key);
+    nativeRouterMock.replace(location, key);
   },
   relaunch(location, key) {
-    nativeHistoryMock.relaunch(location, key);
+    nativeRouterMock.relaunch(location, key);
+  },
+  back(location, n, key) {
+    nativeRouterMock.back(location, n, key);
   },
   pop(location, n, key) {
-    nativeHistoryMock.pop(location, n, key);
+    nativeRouterMock.pop(location, n, key);
   },
 };

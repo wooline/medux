@@ -6,7 +6,7 @@ exports.__esModule = true;
 exports.beforeRouteChangeAction = beforeRouteChangeAction;
 exports.routeParamsAction = routeParamsAction;
 exports.routeChangeAction = routeChangeAction;
-exports.BaseHistoryActions = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.setRouteConfig = exports.extractPathParams = exports.PathnameRules = exports.createWebLocationTransform = void 0;
+exports.BaseRouter = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.setRouteConfig = exports.extractPathParams = exports.PathnameRules = exports.createWebLocationTransform = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
@@ -143,26 +143,27 @@ var routeReducer = function routeReducer(state, action) {
 
 exports.routeReducer = routeReducer;
 
-var BaseHistoryActions = function () {
-  function BaseHistoryActions(nativeHistory, locationTransform) {
-    this.nativeHistory = nativeHistory;
+var BaseRouter = function () {
+  function BaseRouter(initLocation, nativeRouter, locationTransform) {
+    this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     (0, _defineProperty2.default)(this, "_tid", 0);
     (0, _defineProperty2.default)(this, "_routeState", void 0);
-    (0, _defineProperty2.default)(this, "_startupUri", void 0);
     (0, _defineProperty2.default)(this, "store", void 0);
-    var location = this.locationTransform.in(nativeHistory.getLocation());
+    (0, _defineProperty2.default)(this, "history", void 0);
+    var location = this.locationTransform.in(initLocation);
 
     var key = this._createKey();
 
+    this.history = new _basic.History();
     var routeState = this.locationToRouteState(location, 'RELAUNCH', key);
     this._routeState = routeState;
-    this._startupUri = (0, _basic.locationToUri)(location, key);
+    this.history.relaunch(location, key);
     var nativeLocation = (0, _basic.extractNativeLocation)(routeState);
-    nativeHistory.relaunch(nativeLocation, key);
+    nativeRouter.relaunch(nativeLocation, key);
   }
 
-  var _proto = BaseHistoryActions.prototype;
+  var _proto = BaseRouter.prototype;
 
   _proto.getRouteState = function getRouteState() {
     return this._routeState;
@@ -181,16 +182,9 @@ var BaseHistoryActions = function () {
     return "" + this._tid;
   };
 
-  _proto.findHistoryByKey = function findHistoryByKey(key) {
-    var history = this._routeState.history;
-    return history.findIndex(function (uri) {
-      return uri.startsWith("" + key + _basic.routeConfig.RSP);
-    });
-  };
-
   _proto.payloadToLocation = function payloadToLocation(data) {
     if (typeof data === 'string') {
-      var nativeLocation = this.nativeHistory.parseUrl(data);
+      var nativeLocation = this.nativeRouter.parseUrl(data);
       return this.locationTransform.in(nativeLocation);
     }
 
@@ -211,61 +205,45 @@ var BaseHistoryActions = function () {
       tag: tag || this._routeState.tag || '/',
       params: params
     });
-    return this.nativeHistory.toUrl(nativeLocation);
+    return this.nativeRouter.toUrl(nativeLocation);
   };
 
   _proto.locationToRouteState = function locationToRouteState(location, action, key) {
-    var _buildHistoryStack = (0, _basic.buildHistoryStack)(location, action, key, this._routeState || {
-      history: [],
-      stack: []
-    }),
-        history = _buildHistoryStack.history,
-        stack = _buildHistoryStack.stack;
-
     var natvieLocation = this.locationTransform.out(location);
     return Object.assign({}, location, {
       action: action,
-      key: key,
-      history: history,
-      stack: stack
+      key: key
     }, natvieLocation);
   };
 
-  _proto.dispatch = function () {
-    var _dispatch = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(location, action, key, callNative) {
-      var routeState, nativeLocation;
+  _proto.relaunch = function () {
+    var _relaunch = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(data, internal) {
+      var paLocation, key, routeState, nativeLocation;
       return _regenerator.default.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              if (key === void 0) {
-                key = '';
-              }
-
-              key = key || this._createKey();
-              routeState = this.locationToRouteState(location, action, key);
+              paLocation = this.payloadToLocation(data);
+              key = this._createKey();
+              routeState = this.locationToRouteState(paLocation, 'RELAUNCH', key);
               _context.next = 5;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
               this._routeState = routeState;
-              _context.next = 8;
-              return this.store.dispatch(routeChangeAction(routeState));
+              this.store.dispatch(routeChangeAction(routeState));
 
-            case 8:
-              if (callNative) {
+              if (internal) {
+                this.history.getCurrentInternalHistory().relaunch(paLocation, key);
+              } else {
+                this.history.relaunch(paLocation, key);
                 nativeLocation = (0, _basic.extractNativeLocation)(routeState);
-
-                if (typeof callNative === 'number') {
-                  this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative, key);
-                } else {
-                  this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation, key);
-                }
+                this.nativeRouter.relaunch(nativeLocation, key);
               }
 
               return _context.abrupt("return", routeState);
 
-            case 10:
+            case 9:
             case "end":
               return _context.stop();
           }
@@ -273,81 +251,212 @@ var BaseHistoryActions = function () {
       }, _callee, this);
     }));
 
-    function dispatch(_x, _x2, _x3, _x4) {
-      return _dispatch.apply(this, arguments);
+    function relaunch(_x, _x2) {
+      return _relaunch.apply(this, arguments);
     }
 
-    return dispatch;
+    return relaunch;
   }();
 
-  _proto.relaunch = function relaunch(data, disableNative) {
-    var paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
-  };
+  _proto.push = function () {
+    var _push = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(data, internal) {
+      var paLocation, key, routeState, nativeLocation;
+      return _regenerator.default.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              paLocation = this.payloadToLocation(data);
+              key = this._createKey();
+              routeState = this.locationToRouteState(paLocation, 'PUSH', key);
+              _context2.next = 5;
+              return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-  _proto.push = function push(data, disableNative) {
-    var paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
-  };
+            case 5:
+              this._routeState = routeState;
+              this.store.dispatch(routeChangeAction(routeState));
 
-  _proto.replace = function replace(data, disableNative) {
-    var paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
-  };
+              if (internal) {
+                this.history.getCurrentInternalHistory().push(paLocation, key);
+              } else {
+                this.history.push(paLocation, key);
+                nativeLocation = (0, _basic.extractNativeLocation)(routeState);
+                this.nativeRouter.push(nativeLocation, key);
+              }
 
-  _proto.pop = function pop(n, root, disableNative, useStack) {
-    if (n === void 0) {
-      n = 1;
+              return _context2.abrupt("return", routeState);
+
+            case 9:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, _callee2, this);
+    }));
+
+    function push(_x3, _x4) {
+      return _push.apply(this, arguments);
     }
 
-    if (root === void 0) {
-      root = 'FIRST';
+    return push;
+  }();
+
+  _proto.replace = function () {
+    var _replace = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee3(data, internal) {
+      var paLocation, key, routeState, nativeLocation;
+      return _regenerator.default.wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              paLocation = this.payloadToLocation(data);
+              key = this._createKey();
+              routeState = this.locationToRouteState(paLocation, 'REPLACE', key);
+              _context3.next = 5;
+              return this.store.dispatch(beforeRouteChangeAction(routeState));
+
+            case 5:
+              this._routeState = routeState;
+              this.store.dispatch(routeChangeAction(routeState));
+
+              if (internal) {
+                this.history.getCurrentInternalHistory().replace(paLocation, key);
+              } else {
+                this.history.replace(paLocation, key);
+                nativeLocation = (0, _basic.extractNativeLocation)(routeState);
+                this.nativeRouter.replace(nativeLocation, key);
+              }
+
+              return _context3.abrupt("return", routeState);
+
+            case 9:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3, this);
+    }));
+
+    function replace(_x5, _x6) {
+      return _replace.apply(this, arguments);
     }
 
-    n = n || 1;
-    var uri = useStack ? this._routeState.stack[n] : this._routeState.history[n];
-    var k = useStack ? 1000 + n : n;
+    return replace;
+  }();
 
-    if (!uri) {
-      k = 1000000;
+  _proto.back = function () {
+    var _back = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee4(n, internal) {
+      var stack, uri, _uriToLocation, key, paLocation, routeState, nativeLocation;
 
-      if (root === 'HOME') {
-        uri = _basic.routeConfig.homeUri;
-      } else if (root === 'FIRST') {
-        uri = this._startupUri;
-      } else {
-        return Promise.reject(1);
-      }
+      return _regenerator.default.wrap(function _callee4$(_context4) {
+        while (1) {
+          switch (_context4.prev = _context4.next) {
+            case 0:
+              if (n === void 0) {
+                n = 1;
+              }
+
+              stack = internal ? this.history.getCurrentInternalHistory().getAction(n) : this.history.getAction(n);
+
+              if (stack) {
+                _context4.next = 4;
+                break;
+              }
+
+              return _context4.abrupt("return", Promise.reject(1));
+
+            case 4:
+              uri = stack.uri;
+              _uriToLocation = (0, _basic.uriToLocation)(uri), key = _uriToLocation.key, paLocation = _uriToLocation.location;
+              routeState = this.locationToRouteState(paLocation, 'BACK', key);
+              _context4.next = 9;
+              return this.store.dispatch(beforeRouteChangeAction(routeState));
+
+            case 9:
+              this._routeState = routeState;
+              this.store.dispatch(routeChangeAction(routeState));
+
+              if (internal) {
+                this.history.getCurrentInternalHistory().back(n);
+              } else {
+                this.history.back(n);
+                nativeLocation = (0, _basic.extractNativeLocation)(routeState);
+                this.nativeRouter.back(nativeLocation, n, key);
+              }
+
+              return _context4.abrupt("return", routeState);
+
+            case 13:
+            case "end":
+              return _context4.stop();
+          }
+        }
+      }, _callee4, this);
+    }));
+
+    function back(_x7, _x8) {
+      return _back.apply(this, arguments);
     }
 
-    var _uriToLocation = (0, _basic.uriToLocation)(uri),
-        key = _uriToLocation.key,
-        location = _uriToLocation.location;
+    return back;
+  }();
 
-    return this.dispatch(location, "POP" + k, key, disableNative ? '' : k);
-  };
+  _proto.pop = function () {
+    var _pop = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee5(n, internal) {
+      var stack, uri, _uriToLocation2, key, paLocation, routeState, nativeLocation;
 
-  _proto.back = function back(n, root, disableNative) {
-    if (n === void 0) {
-      n = 1;
+      return _regenerator.default.wrap(function _callee5$(_context5) {
+        while (1) {
+          switch (_context5.prev = _context5.next) {
+            case 0:
+              if (n === void 0) {
+                n = 1;
+              }
+
+              stack = internal ? this.history.getCurrentInternalHistory().getGroup(n) : this.history.getGroup(n);
+
+              if (stack) {
+                _context5.next = 4;
+                break;
+              }
+
+              return _context5.abrupt("return", Promise.reject(1));
+
+            case 4:
+              uri = stack.uri;
+              _uriToLocation2 = (0, _basic.uriToLocation)(uri), key = _uriToLocation2.key, paLocation = _uriToLocation2.location;
+              routeState = this.locationToRouteState(paLocation, 'POP', key);
+              _context5.next = 9;
+              return this.store.dispatch(beforeRouteChangeAction(routeState));
+
+            case 9:
+              this._routeState = routeState;
+              this.store.dispatch(routeChangeAction(routeState));
+
+              if (internal) {
+                this.history.getCurrentInternalHistory().pop(n);
+              } else {
+                this.history.pop(n);
+                nativeLocation = (0, _basic.extractNativeLocation)(routeState);
+                this.nativeRouter.pop(nativeLocation, n, key);
+              }
+
+              return _context5.abrupt("return", routeState);
+
+            case 13:
+            case "end":
+              return _context5.stop();
+          }
+        }
+      }, _callee5, this);
+    }));
+
+    function pop(_x9, _x10) {
+      return _pop.apply(this, arguments);
     }
 
-    if (root === void 0) {
-      root = 'FIRST';
-    }
+    return pop;
+  }();
 
-    return this.pop(n, root, disableNative, true);
-  };
-
-  _proto.home = function home(root, disableNative) {
-    if (root === void 0) {
-      root = 'FIRST';
-    }
-
-    return this.relaunch(root === 'HOME' ? _basic.routeConfig.homeUri : this._startupUri, disableNative);
-  };
-
-  return BaseHistoryActions;
+  return BaseRouter;
 }();
 
-exports.BaseHistoryActions = BaseHistoryActions;
+exports.BaseRouter = BaseRouter;

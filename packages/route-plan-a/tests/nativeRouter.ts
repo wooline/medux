@@ -1,13 +1,6 @@
-import {NativeHistory} from 'src/index';
+import {NativeRouter} from 'src/index';
 
-const nativeHistory: NativeHistory = {
-  getLocation() {
-    return {
-      pathname: '/',
-      search: '',
-      hash: '',
-    };
-  },
+const nativeRouter: NativeRouter = {
   parseUrl(url: string) {
     if (!url) {
       return {
@@ -40,9 +33,12 @@ const nativeHistory: NativeHistory = {
   relaunch(location, key) {
     console.log('relaunch', key);
   },
+  back(location, n, key) {
+    console.log('back', n, key);
+  },
   pop(location, n, key) {
     console.log('pop', n, key);
   },
 };
 
-export default nativeHistory;
+export default nativeRouter;

@@ -1,4 +1,4 @@
-import React, {ComponentType, FC, useEffect, useState, ForwardRefRenderFunction} from 'react';
+import React, {ComponentType, useEffect, useState, ForwardRefRenderFunction} from 'react';
 import {RootModuleFacade, getView, isPromise, env} from '@medux/core';
 import type {BaseLoadView} from '@medux/core';
 

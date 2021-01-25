@@ -9,7 +9,7 @@ export type RouteState<P extends RootParams> = BaseRouteState<P, WebNativeLocati
 export type RootState<A extends RootModuleFacade, P extends RootParams> = BaseRootState<A, P, WebNativeLocation>;
 export type LocationTransform<P extends RootParams> = BaseLocationTransform<P, WebNativeLocation>;
 
-class History {}
+export interface History {}
 
 // function locationToUrl(loaction: PaLocation): string {
 //   return loaction.pathname + loaction.search + loaction.hash;
@@ -53,7 +53,7 @@ export class WebNativeHistory implements NativeHistory<WebNativeLocation> {
     return (location.state || '') as string;
   }
 
-  getLocation(): WebNativeLocation {
+  getInitLocation(): WebNativeLocation {
     const {pathname = '', search = '', hash = ''} = this.history.location;
     return {pathname, search: decodeURIComponent(search).replace('?', ''), hash: decodeURIComponent(hash).replace('#', '')};
   }
@@ -83,25 +83,13 @@ export class WebNativeHistory implements NativeHistory<WebNativeLocation> {
     return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
   }
 
-  push(location: WebNativeLocation, key: string): void {
-    this.history.push(this.toUrl(location), key as any);
-  }
+  push(location: WebNativeLocation, key: string): void {}
 
-  replace(location: WebNativeLocation, key: string): void {
-    this.history.replace(this.toUrl(location), key as any);
-  }
+  replace(location: WebNativeLocation, key: string): void {}
 
-  relaunch(location: WebNativeLocation, key: string): void {
-    this.history.push(this.toUrl(location), key as any);
-  }
+  relaunch(location: WebNativeLocation, key: string): void {}
 
-  pop(location: WebNativeLocation, n: number, key: string): void {
-    if (n < 500) {
-      this.history.go(-n);
-    } else {
-      this.history.push(this.toUrl(location), key as any);
-    }
-  }
+  pop(location: WebNativeLocation, n: number, key: string): void {}
 }
 export class HistoryActions<P extends RootParams = RootParams> extends BaseHistoryActions<P, WebNativeLocation> {
   constructor(protected nativeHistory: WebNativeHistory, locationTransform: LocationTransform<P>) {

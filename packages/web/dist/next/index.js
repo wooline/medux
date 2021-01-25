@@ -49,7 +49,7 @@ export class WebNativeHistory {
     }
   }
 
-  getLocation() {
+  getInitLocation() {
     const {
       pathname = '',
       search = '',

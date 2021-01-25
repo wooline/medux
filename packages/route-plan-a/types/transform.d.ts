@@ -1,6 +1,6 @@
 import { PathnameRules } from './matchPath';
-import type { RootParams, Location, NativeLocation, WebNativeLocation } from './basic';
-export declare type LocationTransform<P extends RootParams, NL extends NativeLocation> = {
+import type { RootParams, Location, NativeLocation } from './basic';
+export declare type LocationTransform<P extends RootParams, NL extends NativeLocation = NativeLocation> = {
     in: (nativeLocation: NL) => Location<P>;
     out: (meduxLocation: Location<P>) => NL;
 };
@@ -12,4 +12,4 @@ export declare function isLocationMap<P extends RootParams>(data: LocationMap<P>
 export declare function createWebLocationTransform<P extends RootParams>(defaultData: P, pathnameRules?: PathnameRules<P>, base64?: boolean, serialization?: {
     parse(str: string): any;
     stringify(data: any): string;
-}, key?: string): LocationTransform<P, WebNativeLocation>;
+}, key?: string): LocationTransform<P, NativeLocation>;

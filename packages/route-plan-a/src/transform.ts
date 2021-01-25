@@ -1,9 +1,9 @@
 import {deepMerge} from '@medux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
 import {extractPathParams, PathnameRules} from './matchPath';
-import type {RootParams, Location, NativeLocation, WebNativeLocation} from './basic';
+import type {RootParams, Location, NativeLocation} from './basic';
 
-export type LocationTransform<P extends RootParams, NL extends NativeLocation> = {in: (nativeLocation: NL) => Location<P>; out: (meduxLocation: Location<P>) => NL};
+export type LocationTransform<P extends RootParams, NL extends NativeLocation = NativeLocation> = {in: (nativeLocation: NL) => Location<P>; out: (meduxLocation: Location<P>) => NL};
 
 export type LocationMap<P extends RootParams> = {in: (location: Location<any>) => Location<P>; out: (location: Location<P>) => Location<any>};
 
@@ -32,7 +32,7 @@ function decodeBas64(str: string): string {
   // eslint-disable-next-line no-nested-ternary
   return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
 }
-function parseWebNativeLocation(nativeLocation: WebNativeLocation, key: string, base64: boolean, parse: (str: string) => any): {pathname: string; search: any; hash: any} {
+function parseWebNativeLocation(nativeLocation: NativeLocation, key: string, base64: boolean, parse: (str: string) => any): {pathname: string; search: any; hash: any} {
   let search = splitSearch(nativeLocation.search, key);
   let hash = splitSearch(nativeLocation.hash, key);
   if (base64) {
@@ -43,7 +43,7 @@ function parseWebNativeLocation(nativeLocation: WebNativeLocation, key: string, 
   return {pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname, search: search ? parse(search) : undefined, hash: hash ? parse(hash) : undefined};
 }
 
-function toNativeLocation(tag: string, search: any, hash: any, key: string, base64: boolean, stringify: (data: any) => string): WebNativeLocation {
+function toNativeLocation(tag: string, search: any, hash: any, key: string, base64: boolean, stringify: (data: any) => string): NativeLocation {
   let searchStr = search ? stringify(search) : '';
   let hashStr = hash ? stringify(hash) : '';
   if (base64) {
@@ -67,7 +67,7 @@ export function createWebLocationTransform<P extends RootParams>(
   base64: boolean = false,
   serialization: {parse(str: string): any; stringify(data: any): string} = JSON,
   key: string = '_'
-): LocationTransform<P, WebNativeLocation> {
+): LocationTransform<P, NativeLocation> {
   // 主要用来cache 以下out会使用到in中的PathnameRules
   const matchCache = {
     _cache: {},
@@ -87,7 +87,7 @@ export function createWebLocationTransform<P extends RootParams>(
     },
   };
   return {
-    in(nativeLocation: WebNativeLocation): Location<P> {
+    in(nativeLocation: NativeLocation): Location<P> {
       const {pathname, search, hash} = parseWebNativeLocation(nativeLocation, key, base64, serialization.parse);
       const data: Location<any> = {tag: pathname, params: {}};
       if (pathnameRules) {
@@ -105,7 +105,7 @@ export function createWebLocationTransform<P extends RootParams>(
       data.params = assignDefaultData(data.params, defaultData);
       return data;
     },
-    out(meduxLocation: Location<P>): WebNativeLocation {
+    out(meduxLocation: Location<P>): NativeLocation {
       let params = excludeDefault(meduxLocation.params, defaultData, true);
       let result;
       if (pathnameRules) {
