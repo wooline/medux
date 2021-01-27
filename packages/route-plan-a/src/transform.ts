@@ -42,15 +42,17 @@ function parseNativeLocation(nativeLocation: NativeLocation, paramsKey: string, 
   }
   return {pathname: pathname.replace(/\/*$/, '') || '/', searchParams: search ? parse(search) : undefined, hashParams: hash ? parse(hash) : undefined};
 }
-function toNativeLocation(pagename: string, search: any, hash: any, paramsKey: string, base64: boolean, stringify: (data: any) => string): NativeLocation {
+function toNativeLocation(pathname: string, search: any, hash: any, paramsKey: string, base64: boolean, stringify: (data: any) => string): NativeLocation {
   let searchStr = search ? stringify(search) : '';
   let hashStr = hash ? stringify(hash) : '';
   if (base64) {
-    searchStr = searchStr ? encodeBas64(searchStr) : '';
-    hashStr = hashStr ? encodeBas64(hashStr) : '';
+    searchStr = searchStr && encodeBas64(searchStr);
+    hashStr = hashStr && encodeBas64(hashStr);
   }
-  const pathname = `/${pagename}`.replace(/\/+/g, '/');
-  return {pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname, search: searchStr ? `${paramsKey}=${searchStr}` : '', hash: hashStr ? `${paramsKey}=${hashStr}` : ''};
+  if (!pathname.startsWith('/')) {
+    pathname = `/${pathname}`;
+  }
+  return {pathname: pathname.replace(/\/*$/, '') || '/', search: searchStr && `${paramsKey}=${searchStr}`, hash: hashStr && `${paramsKey}=${hashStr}`};
 }
 export type PathnameTransform<P extends {[key: string]: any}> = {
   in(pathname: string): {pagename: string; pathParams: P};
