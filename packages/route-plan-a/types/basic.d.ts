@@ -21,56 +21,64 @@ export interface NativeLocation {
     search: string;
     hash: string;
 }
-export interface Location<P extends RootParams = RootParams> {
-    tag: string;
-    params: Partial<P>;
+export interface Location<P extends {
+    [key: string]: any;
+} = {}> {
+    pagename: string;
+    params: P;
 }
-export declare type RouteState<P extends RootParams, NL extends NativeLocation = NativeLocation> = Location<P> & NL & {
+export declare type RouteState<P extends {
+    [key: string]: any;
+} = {}> = Location<P> & {
     action: HistoryAction;
     key: string;
 };
-export declare type RouteRootState<P extends RootParams, NL extends NativeLocation = NativeLocation> = CoreRootState & {
-    route: RouteState<P, NL>;
+export declare type RouteRootState<P extends {
+    [key: string]: any;
+}> = CoreRootState & {
+    route: RouteState<P>;
 };
-export declare type RootState<A extends RootModuleFacade, P extends RootParams, NL extends NativeLocation = NativeLocation> = {
-    route: RouteState<P, NL>;
+export declare type RootState<A extends RootModuleFacade, P extends {
+    [key: string]: any;
+}> = {
+    route: RouteState<P>;
 } & {
     [M in keyof A]?: A[M]['state'];
 };
 export declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
-export declare function extractNativeLocation<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>): NL;
 export interface RoutePayload<P extends RootParams = RootParams> {
-    tag?: string;
+    pagename?: string;
     params?: DeepPartial<P>;
     extendParams?: P | true;
 }
-export declare function uriToLocation<P extends RootParams>(uri: string): {
+export declare function uriToLocation<P extends {
+    [key: string]: any;
+}>(uri: string): {
     key: string;
     location: Location<P>;
 };
 interface HistoryRecord {
     uri: string;
-    tag: string;
+    pagename: string;
     query: string;
     key: string;
     sub: History;
 }
 export declare class History {
-    groupMax: number;
+    pagesMax: number;
     actionsMax: number;
-    private groups;
+    private pages;
     private actions;
-    getAction(keyOrIndex?: number | string): HistoryRecord | undefined;
-    getGroup(keyOrIndex?: number | string): HistoryRecord | undefined;
+    getActionRecord(keyOrIndex?: number | string): HistoryRecord | undefined;
+    getPageRecord(keyOrIndex?: number | string): HistoryRecord | undefined;
     getActionIndex(key: string): number;
-    getGroupIndex(key: string): number;
+    getPageIndex(key: string): number;
     getCurrentInternalHistory(): History;
-    findTag(tag: string): void;
     getUriStack(): {
         actions: string[];
-        groups: string[];
+        pages: string[];
     };
     push(location: Location, key: string): void;
     replace(location: Location, key: string): void;

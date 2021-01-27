@@ -1,8 +1,8 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseHistoryActions } from '@medux/route-plan-a';
+import { BaseRouter } from '@medux/route-plan-a';
 import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
 import { env } from '@medux/core';
-export class WebNativeHistory {
+export class BrowserNativeRouter {
   constructor(createHistory) {
     _defineProperty(this, "history", void 0);
 
@@ -49,19 +49,6 @@ export class WebNativeHistory {
     }
   }
 
-  getInitLocation() {
-    const {
-      pathname = '',
-      search = '',
-      hash = ''
-    } = this.history.location;
-    return {
-      pathname,
-      search: decodeURIComponent(search).replace('?', ''),
-      hash: decodeURIComponent(hash).replace('#', '')
-    };
-  }
-
   getUrl() {
     const {
       pathname = '',
@@ -69,33 +56,6 @@ export class WebNativeHistory {
       hash = ''
     } = this.history.location;
     return [pathname, search, hash].join('');
-  }
-
-  parseUrl(url) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: ''
-      };
-    }
-
-    const arr = url.split(/[?#]/);
-
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-
-    const [pathname, search = '', hash = ''] = arr;
-    return {
-      pathname,
-      search,
-      hash
-    };
-  }
-
-  toUrl(location) {
-    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
   }
 
   block(blocker) {
@@ -113,49 +73,48 @@ export class WebNativeHistory {
     return location.state || '';
   }
 
-  push(location, key) {
-    this.history.push(this.toUrl(location), key);
+  push(url, key, internal) {
+    !internal && this.history.push(url, key);
   }
 
-  replace(location, key) {
-    this.history.replace(this.toUrl(location), key);
+  replace(url, key, internal) {
+    !internal && this.history.replace(url, key);
   }
 
-  relaunch(location, key) {
-    this.history.push(this.toUrl(location), key);
+  relaunch(url, key, internal) {
+    !internal && this.history.push(url, key);
   }
 
-  pop(location, n, key) {
-    if (n < 500) {
-      this.history.go(-n);
-    } else {
-      this.history.push(this.toUrl(location), key);
-    }
+  back(url, n, key, internal) {
+    !internal && this.history.go(-n);
+  }
+
+  pop(url, n, key, internal) {
+    !internal && this.history.push(url, key);
   }
 
 }
-export class HistoryActions extends BaseHistoryActions {
-  constructor(nativeHistory, locationTransform) {
-    super(nativeHistory, locationTransform);
-    this.nativeHistory = nativeHistory;
+export class Router extends BaseRouter {
+  constructor(browserNativeRouter, locationTransform) {
+    super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
 
     _defineProperty(this, "_unlistenHistory", void 0);
 
     _defineProperty(this, "_timer", 0);
 
-    this._unlistenHistory = this.nativeHistory.block((url, key, action) => {
+    this._unlistenHistory = browserNativeRouter.block((url, key, action) => {
       if (key !== this.getCurKey()) {
         let callback;
         let index = 0;
 
         if (action === 'POP') {
-          index = this.findHistoryByKey(key);
+          index = this.history.getActionIndex(key);
         }
 
         if (index > 0) {
           callback = () => {
             this._timer = 0;
-            this.pop(index);
+            this.back(index);
           };
         } else if (action === 'REPLACE') {
           callback = () => {
@@ -185,21 +144,13 @@ export class HistoryActions extends BaseHistoryActions {
     });
   }
 
-  getNativeHistory() {
-    return this.nativeHistory.history;
-  }
-
   destroy() {
     this._unlistenHistory();
   }
 
-  refresh() {
-    this.nativeHistory.history.go(0);
-  }
-
 }
 export function createRouter(createHistory, locationTransform) {
-  const nativeHistory = new WebNativeHistory(createHistory);
-  const historyActions = new HistoryActions(nativeHistory, locationTransform);
-  return historyActions;
+  const browserNativeRouter = new BrowserNativeRouter(createHistory);
+  const router = new Router(browserNativeRouter, locationTransform);
+  return router;
 }

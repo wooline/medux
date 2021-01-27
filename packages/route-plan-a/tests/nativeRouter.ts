@@ -1,29 +1,6 @@
 import {NativeRouter} from 'src/index';
 
 const nativeRouter: NativeRouter = {
-  parseUrl(url: string) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: '',
-      };
-    }
-    const arr = url.split(/[?#]/);
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-    const [pathname, search = '', hash = ''] = arr;
-
-    return {
-      pathname,
-      search,
-      hash,
-    };
-  },
-  toUrl(location) {
-    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
-  },
   push(location, key) {
     console.log('push', key);
   },

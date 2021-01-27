@@ -3,11 +3,10 @@ import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
 import { History } from './basic';
 import type { LocationTransform } from './transform';
 import type { RootParams, Location, NativeLocation, RouteState, HistoryAction, RoutePayload } from './basic';
-export { createWebLocationTransform } from './transform';
-export { PathnameRules, extractPathParams } from './matchPath';
 export { setRouteConfig } from './basic';
-export type { LocationMap, LocationTransform } from './transform';
-export type { RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload } from './basic';
+export { PagenameMap, createLocationTransform, createPathnameTransform } from './transform';
+export type { LocationTransform, PathnameTransform } from './transform';
+export type { RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload, DeepPartial } from './basic';
 interface Store {
     dispatch(action: {
         type: string;
@@ -25,48 +24,56 @@ export declare const RouteActionTypes: {
     RouteChange: string;
     BeforeRouteChange: string;
 };
-export declare function beforeRouteChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>): {
+export declare function beforeRouteChangeAction<P extends {
+    [key: string]: any;
+}>(routeState: RouteState<P>): {
     type: string;
-    payload: RouteState<P, NL>[];
+    payload: RouteState<P>[];
 };
 export declare function routeParamsAction(moduleName: string, params: any, action: HistoryAction): {
     type: string;
     payload: any[];
 };
-export declare function routeChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>): {
+export declare function routeChangeAction<P extends {
+    [key: string]: any;
+}>(routeState: RouteState<P>): {
     type: string;
-    payload: RouteState<P, NL>[];
+    payload: RouteState<P>[];
 };
 export declare const routeMiddleware: Middleware;
 export declare const routeReducer: Reducer;
-export interface NativeRouter<NL extends NativeLocation = NativeLocation> {
-    parseUrl(url: string): NL;
-    toUrl(location: NL): string;
-    push(location: NL, key: string): void;
-    replace(location: NL, key: string): void;
-    relaunch(location: NL, key: string): void;
-    back(location: NL, n: number, key: string): void;
-    pop(location: NL, n: number, key: string): void;
+export interface NativeRouter {
+    push(url: string, key: string, internal: boolean): void;
+    replace(url: string, key: string, internal: boolean): void;
+    relaunch(url: string, key: string, internal: boolean): void;
+    back(url: string, n: number, key: string, internal: boolean): void;
+    pop(url: string, n: number, key: string, internal: boolean): void;
 }
-export declare abstract class BaseRouter<P extends RootParams, NL extends NativeLocation = NativeLocation> {
-    protected nativeRouter: NativeRouter<NL>;
-    protected locationTransform: LocationTransform<P, NL>;
+export declare abstract class BaseRouter<P extends RootParams> {
+    protected nativeRouter: NativeRouter;
+    protected locationTransform: LocationTransform<P>;
     private _tid;
-    private _routeState;
+    private routeState;
+    private nativeLocation;
+    private url;
     protected store: Store | undefined;
     readonly history: History;
-    constructor(initLocation: NL, nativeRouter: NativeRouter<NL>, locationTransform: LocationTransform<P, NL>);
-    getRouteState(): RouteState<P, NL>;
+    constructor(initUrl: string, nativeRouter: NativeRouter, locationTransform: LocationTransform<P>);
+    getRouteState(): RouteState<P>;
+    getNativeLocation(): NativeLocation;
+    getUrl(): string;
     setStore(_store: Store): void;
     protected getCurKey(): string;
     private _createKey;
-    payloadToLocation(data: RoutePayload<P> | string): Location<P>;
-    locationToUrl(data: RoutePayload<P>): string;
-    locationToRouteState(location: Location<P>, action: HistoryAction, key: string): RouteState<P, NL>;
-    relaunch(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P, NL>>;
-    push(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P, NL>>;
-    replace(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P, NL>>;
-    back(n?: number, internal?: boolean): Promise<RouteState<P, NL>>;
-    pop(n?: number, internal?: boolean): Promise<RouteState<P, NL>>;
+    payloadToLocation(data: RoutePayload<P>): Location<P>;
+    urlToToLocation(url: string): Location<P>;
+    urlToNativeLocation(url: string): NativeLocation;
+    nativeLocationToUrl(nativeLocation: NativeLocation): string;
+    locationToUrl(location: Location<P>): string;
+    relaunch(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>>;
+    push(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>>;
+    replace(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>>;
+    back(n?: number, internal?: boolean): Promise<RouteState<P>>;
+    pop(n?: number, internal?: boolean): Promise<RouteState<P>>;
     abstract destroy(): void;
 }

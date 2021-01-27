@@ -103,42 +103,19 @@ export class Router extends BaseRouter<RouteParams> {
 }
 
 export const nativeRouter: NativeRouter = {
-  parseUrl(url: string) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: '',
-      };
-    }
-    const arr = url.split(/[?#]/);
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-    const [pathname, search = '', hash = ''] = arr;
-
-    return {
-      pathname,
-      search,
-      hash,
-    };
+  push(location, key, internal) {
+    nativeRouterMock.push(location, key, internal);
   },
-  toUrl(location) {
-    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
+  replace(location, key, internal) {
+    nativeRouterMock.replace(location, key, internal);
   },
-  push(location, key) {
-    nativeRouterMock.push(location, key);
+  relaunch(location, key, internal) {
+    nativeRouterMock.relaunch(location, key, internal);
   },
-  replace(location, key) {
-    nativeRouterMock.replace(location, key);
+  back(location, n, key, internal) {
+    nativeRouterMock.back(location, n, key, internal);
   },
-  relaunch(location, key) {
-    nativeRouterMock.relaunch(location, key);
-  },
-  back(location, n, key) {
-    nativeRouterMock.back(location, n, key);
-  },
-  pop(location, n, key) {
-    nativeRouterMock.pop(location, n, key);
+  pop(location, n, key, internal) {
+    nativeRouterMock.pop(location, n, key, internal);
   },
 };

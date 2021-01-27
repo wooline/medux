@@ -4,7 +4,7 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 exports.__esModule = true;
 exports.createRouter = createRouter;
-exports.HistoryActions = exports.WebNativeHistory = void 0;
+exports.Router = exports.BrowserNativeRouter = void 0;
 
 var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
 
@@ -18,8 +18,8 @@ var _history = require("history");
 
 var _core = require("@medux/core");
 
-var WebNativeHistory = function () {
-  function WebNativeHistory(createHistory) {
+var BrowserNativeRouter = function () {
+  function BrowserNativeRouter(createHistory) {
     (0, _defineProperty2.default)(this, "history", void 0);
 
     if (createHistory === 'Hash') {
@@ -64,9 +64,9 @@ var WebNativeHistory = function () {
     }
   }
 
-  var _proto = WebNativeHistory.prototype;
+  var _proto = BrowserNativeRouter.prototype;
 
-  _proto.getInitLocation = function getInitLocation() {
+  _proto.getUrl = function getUrl() {
     var _this$history$locatio = this.history.location,
         _this$history$locatio2 = _this$history$locatio.pathname,
         pathname = _this$history$locatio2 === void 0 ? '' : _this$history$locatio2,
@@ -74,53 +74,7 @@ var WebNativeHistory = function () {
         search = _this$history$locatio3 === void 0 ? '' : _this$history$locatio3,
         _this$history$locatio4 = _this$history$locatio.hash,
         hash = _this$history$locatio4 === void 0 ? '' : _this$history$locatio4;
-    return {
-      pathname: pathname,
-      search: decodeURIComponent(search).replace('?', ''),
-      hash: decodeURIComponent(hash).replace('#', '')
-    };
-  };
-
-  _proto.getUrl = function getUrl() {
-    var _this$history$locatio5 = this.history.location,
-        _this$history$locatio6 = _this$history$locatio5.pathname,
-        pathname = _this$history$locatio6 === void 0 ? '' : _this$history$locatio6,
-        _this$history$locatio7 = _this$history$locatio5.search,
-        search = _this$history$locatio7 === void 0 ? '' : _this$history$locatio7,
-        _this$history$locatio8 = _this$history$locatio5.hash,
-        hash = _this$history$locatio8 === void 0 ? '' : _this$history$locatio8;
     return [pathname, search, hash].join('');
-  };
-
-  _proto.parseUrl = function parseUrl(url) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: ''
-      };
-    }
-
-    var arr = url.split(/[?#]/);
-
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-
-    var pathname = arr[0],
-        _arr$ = arr[1],
-        search = _arr$ === void 0 ? '' : _arr$,
-        _arr$2 = arr[2],
-        hash = _arr$2 === void 0 ? '' : _arr$2;
-    return {
-      pathname: pathname,
-      search: search,
-      hash: hash
-    };
-  };
-
-  _proto.toUrl = function toUrl(location) {
-    return [location.pathname, location.search && "?" + location.search, location.hash && "#" + location.hash].join('');
   };
 
   _proto.block = function block(blocker) {
@@ -141,55 +95,54 @@ var WebNativeHistory = function () {
     return location.state || '';
   };
 
-  _proto.push = function push(location, key) {
-    this.history.push(this.toUrl(location), key);
+  _proto.push = function push(url, key, internal) {
+    !internal && this.history.push(url, key);
   };
 
-  _proto.replace = function replace(location, key) {
-    this.history.replace(this.toUrl(location), key);
+  _proto.replace = function replace(url, key, internal) {
+    !internal && this.history.replace(url, key);
   };
 
-  _proto.relaunch = function relaunch(location, key) {
-    this.history.push(this.toUrl(location), key);
+  _proto.relaunch = function relaunch(url, key, internal) {
+    !internal && this.history.push(url, key);
   };
 
-  _proto.pop = function pop(location, n, key) {
-    if (n < 500) {
-      this.history.go(-n);
-    } else {
-      this.history.push(this.toUrl(location), key);
-    }
+  _proto.back = function back(url, n, key, internal) {
+    !internal && this.history.go(-n);
   };
 
-  return WebNativeHistory;
+  _proto.pop = function pop(url, n, key, internal) {
+    !internal && this.history.push(url, key);
+  };
+
+  return BrowserNativeRouter;
 }();
 
-exports.WebNativeHistory = WebNativeHistory;
+exports.BrowserNativeRouter = BrowserNativeRouter;
 
-var HistoryActions = function (_BaseHistoryActions) {
-  (0, _inheritsLoose2.default)(HistoryActions, _BaseHistoryActions);
+var Router = function (_BaseRouter) {
+  (0, _inheritsLoose2.default)(Router, _BaseRouter);
 
-  function HistoryActions(nativeHistory, locationTransform) {
+  function Router(browserNativeRouter, locationTransform) {
     var _this2;
 
-    _this2 = _BaseHistoryActions.call(this, nativeHistory, locationTransform) || this;
-    _this2.nativeHistory = nativeHistory;
+    _this2 = _BaseRouter.call(this, browserNativeRouter.getUrl(), browserNativeRouter, locationTransform) || this;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_unlistenHistory", void 0);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_timer", 0);
-    _this2._unlistenHistory = _this2.nativeHistory.block(function (url, key, action) {
+    _this2._unlistenHistory = browserNativeRouter.block(function (url, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;
         var index = 0;
 
         if (action === 'POP') {
-          index = _this2.findHistoryByKey(key);
+          index = _this2.history.getActionIndex(key);
         }
 
         if (index > 0) {
           callback = function callback() {
             _this2._timer = 0;
 
-            _this2.pop(index);
+            _this2.back(index);
           };
         } else if (action === 'REPLACE') {
           callback = function callback() {
@@ -223,27 +176,19 @@ var HistoryActions = function (_BaseHistoryActions) {
     return _this2;
   }
 
-  var _proto2 = HistoryActions.prototype;
-
-  _proto2.getNativeHistory = function getNativeHistory() {
-    return this.nativeHistory.history;
-  };
+  var _proto2 = Router.prototype;
 
   _proto2.destroy = function destroy() {
     this._unlistenHistory();
   };
 
-  _proto2.refresh = function refresh() {
-    this.nativeHistory.history.go(0);
-  };
+  return Router;
+}(_routePlanA.BaseRouter);
 
-  return HistoryActions;
-}(_routePlanA.BaseHistoryActions);
-
-exports.HistoryActions = HistoryActions;
+exports.Router = Router;
 
 function createRouter(createHistory, locationTransform) {
-  var nativeHistory = new WebNativeHistory(createHistory);
-  var historyActions = new HistoryActions(nativeHistory, locationTransform);
-  return historyActions;
+  var browserNativeRouter = new BrowserNativeRouter(createHistory);
+  var router = new Router(browserNativeRouter, locationTransform);
+  return router;
 }

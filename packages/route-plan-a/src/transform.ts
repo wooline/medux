@@ -2,7 +2,7 @@ import {deepMerge} from '@medux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
 import type {Location, NativeLocation} from './basic';
 
-export type LocationTransform<P extends {[key: string]: any}, NL extends NativeLocation = NativeLocation> = {in: (nativeLocation: NL) => Location<P>; out: (meduxLocation: Location<P>) => NL};
+export type LocationTransform<P extends {[key: string]: any}> = {in: (nativeLocation: NativeLocation) => Location<P>; out: (meduxLocation: Location<P>) => NativeLocation};
 
 function assignDefaultData(data: {[moduleName: string]: any}, def: {[moduleName: string]: any}): {[moduleName: string]: any} {
   return Object.keys(data).reduce((params, moduleName) => {
@@ -128,7 +128,7 @@ export function createLocationTransform<P extends {[key: string]: any}>(
   base64: boolean = false,
   serialization: {parse(str: string): any; stringify(data: any): string} = JSON,
   paramsKey: string = '_'
-): LocationTransform<P, NativeLocation> {
+): LocationTransform<P> {
   return {
     in(nativeLocation: NativeLocation): Location<P> {
       const {pathname, searchParams, hashParams} = parseNativeLocation(nativeLocation, paramsKey, base64, serialization.parse);

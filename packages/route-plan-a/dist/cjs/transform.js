@@ -1,20 +1,12 @@
 "use strict";
 
 exports.__esModule = true;
-exports.isLocationMap = isLocationMap;
-exports.createWebLocationTransform = createWebLocationTransform;
+exports.createPathnameTransform = createPathnameTransform;
+exports.createLocationTransform = createLocationTransform;
 
 var _core = require("@medux/core");
 
 var _deepExtend = require("./deep-extend");
-
-var _matchPath = require("./matchPath");
-
-function splitSearch(search, key) {
-  var reg = new RegExp("&" + key + "=([^&]+)");
-  var arr = ("&" + search).match(reg);
-  return arr ? arr[1] : '';
-}
 
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce(function (params, moduleName) {
@@ -26,6 +18,12 @@ function assignDefaultData(data, def) {
   }, {});
 }
 
+function splitSearch(search, paramsKey) {
+  var reg = new RegExp("&" + paramsKey + "=([^&]+)");
+  var arr = ("&" + search).match(reg);
+  return arr ? arr[1] : '';
+}
+
 function encodeBas64(str) {
   return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
 }
@@ -34,49 +32,113 @@ function decodeBas64(str) {
   return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
 }
 
-function parseWebNativeLocation(nativeLocation, key, base64, parse) {
-  var search = splitSearch(nativeLocation.search, key);
-  var hash = splitSearch(nativeLocation.hash, key);
+function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
+  var search = splitSearch(nativeLocation.search, paramsKey);
+  var hash = splitSearch(nativeLocation.hash, paramsKey);
 
   if (base64) {
-    search = search ? decodeBas64(search) : '';
-    hash = hash ? decodeBas64(hash) : '';
+    search = search && decodeBas64(search);
+    hash = hash && decodeBas64(hash);
   }
 
-  var pathname = ("/" + nativeLocation.pathname).replace(/\/+/g, '/');
+  var pathname = nativeLocation.pathname;
+
+  if (!pathname.startsWith('/')) {
+    pathname = "/" + pathname;
+  }
+
   return {
-    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    search: search ? parse(search) : undefined,
-    hash: hash ? parse(hash) : undefined
+    pathname: pathname.replace(/\/*$/, '') || '/',
+    searchParams: search ? parse(search) : undefined,
+    hashParams: hash ? parse(hash) : undefined
   };
 }
 
-function toNativeLocation(tag, search, hash, key, base64, stringify) {
+function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) {
   var searchStr = search ? stringify(search) : '';
   var hashStr = hash ? stringify(hash) : '';
 
   if (base64) {
-    searchStr = searchStr ? encodeBas64(searchStr) : '';
-    hashStr = hashStr ? encodeBas64(hashStr) : '';
+    searchStr = searchStr && encodeBas64(searchStr);
+    hashStr = hashStr && encodeBas64(hashStr);
   }
 
-  var pathname = ("/" + tag).replace(/\/+/g, '/');
+  if (!pathname.startsWith('/')) {
+    pathname = "/" + pathname;
+  }
+
   return {
-    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    search: searchStr ? key + "=" + searchStr : '',
-    hash: hashStr ? key + "=" + hashStr : ''
+    pathname: pathname.replace(/\/*$/, '') || '/',
+    search: searchStr && paramsKey + "=" + searchStr,
+    hash: hashStr && paramsKey + "=" + hashStr
   };
 }
 
-function isLocationMap(data) {
-  if (typeof data.in === 'function' && typeof data.out === 'function') {
-    return true;
-  }
+function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
+  pagenameMap = Object.keys(pagenameMap).sort(function (a, b) {
+    return b.length - a.length;
+  }).reduce(function (map, pagename) {
+    var fullPagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
+    map[fullPagename] = pagenameMap[pagename];
+    return map;
+  }, {});
+  return {
+    in: function _in(pathname) {
+      pathname = pathnameIn(pathname);
 
-  return false;
+      if (!pathname.endsWith('/')) {
+        pathname = pathname + "/";
+      }
+
+      var pagename = Object.keys(pagenameMap).find(function (name) {
+        return pathname.startsWith(name);
+      });
+      var pathParams;
+
+      if (!pagename) {
+        pagename = pathname.replace(/\/*$/, '');
+        pathParams = {};
+      } else {
+        var args = pathname.replace(pagename, '').split('/').map(function (item) {
+          return item ? decodeURIComponent(item) : undefined;
+        });
+        pathParams = pagenameMap[pagename].in(args);
+        pagename = pagename.replace(/\/$/, '');
+      }
+
+      return {
+        pagename: pagename,
+        pathParams: pathParams
+      };
+    },
+    out: function out(pagename, params) {
+      pagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
+      var pathname;
+
+      if (!pagenameMap[pagename]) {
+        pathname = pagename.replace(/\/$/, '');
+      } else {
+        var args = pagenameMap[pagename].out(params);
+        pathname = pagename + args.map(function (item) {
+          return item && encodeURIComponent(item);
+        }).join('/').replace(/\/*$/, '');
+      }
+
+      if (pathnameOut) {
+        pathname = pathnameOut(pathname);
+      }
+
+      var data = this.in(pathname);
+      var pathParams = data.pathParams;
+      return {
+        pathname: pathname,
+        pathParams: pathParams
+      };
+    }
+  };
 }
 
-function createWebLocationTransform(defaultData, pathnameRules, base64, serialization, key) {
+function createLocationTransform(pathnameTransform, defaultData, base64, serialization, paramsKey) {
   if (base64 === void 0) {
     base64 = false;
   }
@@ -85,92 +147,38 @@ function createWebLocationTransform(defaultData, pathnameRules, base64, serializ
     serialization = JSON;
   }
 
-  if (key === void 0) {
-    key = '_';
+  if (paramsKey === void 0) {
+    paramsKey = '_';
   }
 
-  var matchCache = {
-    _cache: {},
-    get: function get(pathname) {
-      if (this._cache[pathname]) {
-        var _this$_cache$pathname = this._cache[pathname],
-            tag = _this$_cache$pathname.tag,
-            pathParams = _this$_cache$pathname.pathParams;
-        return {
-          tag: tag,
-          pathParams: JSON.parse(pathParams)
-        };
-      }
-
-      return undefined;
-    },
-    set: function set(pathname, tag, pathParams) {
-      var keys = Object.keys(this._cache);
-
-      if (keys.length > 100) {
-        delete this._cache[keys[0]];
-      }
-
-      this._cache[pathname] = {
-        tag: tag,
-        pathParams: JSON.stringify(pathParams)
-      };
-    }
-  };
   return {
     in: function _in(nativeLocation) {
-      var _parseWebNativeLocati = parseWebNativeLocation(nativeLocation, key, base64, serialization.parse),
-          pathname = _parseWebNativeLocati.pathname,
-          search = _parseWebNativeLocati.search,
-          hash = _parseWebNativeLocati.hash;
+      var _parseNativeLocation = parseNativeLocation(nativeLocation, paramsKey, base64, serialization.parse),
+          pathname = _parseNativeLocation.pathname,
+          searchParams = _parseNativeLocation.searchParams,
+          hashParams = _parseNativeLocation.hashParams;
 
-      var data = {
-        tag: pathname,
-        params: {}
+      var _pathnameTransform$in = pathnameTransform.in(pathname),
+          pagename = _pathnameTransform$in.pagename,
+          pathParams = _pathnameTransform$in.pathParams;
+
+      var params = (0, _core.deepMerge)(pathParams, searchParams, hashParams);
+      params = assignDefaultData(params, defaultData);
+      return {
+        pagename: pagename,
+        params: params
       };
-
-      if (pathnameRules) {
-        var _ref = matchCache.get(pathname) || {},
-            pathParams = _ref.pathParams,
-            tag = _ref.tag;
-
-        if (!tag || !pathParams) {
-          pathParams = {};
-          tag = (0, _matchPath.extractPathParams)(pathnameRules, pathname, pathParams);
-          matchCache.set(pathname, tag, pathParams);
-        }
-
-        data.tag = tag;
-        data.params = (0, _core.deepMerge)(pathParams, search, hash);
-      } else {
-        data.params = (0, _core.deepMerge)(search, hash);
-      }
-
-      data.params = assignDefaultData(data.params, defaultData);
-      return data;
     },
     out: function out(meduxLocation) {
       var params = (0, _deepExtend.excludeDefault)(meduxLocation.params, defaultData, true);
-      var result;
 
-      if (pathnameRules) {
-        var _ref2 = matchCache.get(meduxLocation.tag) || {},
-            pathParams = _ref2.pathParams,
-            tag = _ref2.tag;
+      var _pathnameTransform$ou = pathnameTransform.out(meduxLocation.pagename, params),
+          pathname = _pathnameTransform$ou.pathname,
+          pathParams = _pathnameTransform$ou.pathParams;
 
-        if (!tag || !pathParams) {
-          pathParams = {};
-          tag = (0, _matchPath.extractPathParams)(pathnameRules, meduxLocation.tag, pathParams);
-          matchCache.set(meduxLocation.tag, tag, pathParams);
-        }
-
-        params = (0, _deepExtend.excludeDefault)(params, pathParams, false);
-        result = (0, _deepExtend.splitPrivate)(params, pathParams);
-      } else {
-        result = (0, _deepExtend.splitPrivate)(params, {});
-      }
-
-      return toNativeLocation(meduxLocation.tag, result[0], result[1], key, base64, serialization.stringify);
+      params = (0, _deepExtend.excludeDefault)(params, pathParams, false);
+      var result = (0, _deepExtend.splitPrivate)(params, pathParams);
+      return toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
     }
   };
 }

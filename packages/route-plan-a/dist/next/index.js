@@ -1,10 +1,9 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMerge, deepMergeState, mergeState } from '@medux/core';
-import { uriToLocation, extractNativeLocation, History } from './basic';
-export { createWebLocationTransform } from './transform';
-export { PathnameRules, extractPathParams } from './matchPath';
+import { uriToLocation, History } from './basic';
 export { setRouteConfig } from './basic';
+export { PagenameMap, createLocationTransform, createPathnameTransform } from './transform';
 export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   class RouteModuleHandlers extends _CoreModuleHandlers {
     constructor(...args) {
@@ -89,32 +88,47 @@ export const routeReducer = (state, action) => {
   return state;
 };
 export class BaseRouter {
-  constructor(initLocation, nativeRouter, locationTransform) {
+  constructor(initUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
 
     _defineProperty(this, "_tid", 0);
 
-    _defineProperty(this, "_routeState", void 0);
+    _defineProperty(this, "routeState", void 0);
+
+    _defineProperty(this, "nativeLocation", void 0);
+
+    _defineProperty(this, "url", void 0);
 
     _defineProperty(this, "store", void 0);
 
     _defineProperty(this, "history", void 0);
 
-    const location = this.locationTransform.in(initLocation);
+    this.url = initUrl;
+    this.nativeLocation = this.urlToNativeLocation(initUrl);
+    const location = this.locationTransform.in(this.nativeLocation);
 
     const key = this._createKey();
 
     this.history = new History();
-    const routeState = this.locationToRouteState(location, 'RELAUNCH', key);
-    this._routeState = routeState;
+    const routeState = Object.assign({}, location, {
+      action: 'RELAUNCH',
+      key
+    });
+    this.routeState = routeState;
     this.history.relaunch(location, key);
-    const nativeLocation = extractNativeLocation(routeState);
-    nativeRouter.relaunch(nativeLocation, key);
   }
 
   getRouteState() {
-    return this._routeState;
+    return this.routeState;
+  }
+
+  getNativeLocation() {
+    return this.nativeLocation;
+  }
+
+  getUrl() {
+    return this.url;
   }
 
   setStore(_store) {
@@ -122,7 +136,7 @@ export class BaseRouter {
   }
 
   getCurKey() {
-    return this._routeState.key;
+    return this.routeState.key;
   }
 
   _createKey() {
@@ -131,108 +145,143 @@ export class BaseRouter {
   }
 
   payloadToLocation(data) {
-    if (typeof data === 'string') {
-      const nativeLocation = this.nativeRouter.parseUrl(data);
-      return this.locationTransform.in(nativeLocation);
-    }
-
     const {
-      tag
+      pagename
     } = data;
-    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const extendParams = data.extendParams === true ? this.routeState.params : data.extendParams;
     const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     return {
-      tag: tag || this._routeState.tag || '/',
+      pagename: pagename || this.routeState.pagename || '/',
       params
     };
   }
 
-  locationToUrl(data) {
-    const {
-      tag
-    } = data;
-    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
-    const nativeLocation = this.locationTransform.out({
-      tag: tag || this._routeState.tag || '/',
-      params
-    });
-    return this.nativeRouter.toUrl(nativeLocation);
+  urlToToLocation(url) {
+    const nativeLocation = this.urlToNativeLocation(url);
+    return this.locationTransform.in(nativeLocation);
   }
 
-  locationToRouteState(location, action, key) {
-    const natvieLocation = this.locationTransform.out(location);
-    return Object.assign({}, location, {
-      action,
-      key
-    }, natvieLocation);
+  urlToNativeLocation(url) {
+    if (!url) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: ''
+      };
+    }
+
+    const arr = url.split(/[?#]/);
+
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+
+    const [path, search = '', hash = ''] = arr;
+    let pathname = path;
+
+    if (!pathname.startsWith('/')) {
+      pathname = `/${pathname}`;
+    }
+
+    pathname = pathname.replace(/\/*$/, '') || '/';
+    return {
+      pathname,
+      search,
+      hash
+    };
+  }
+
+  nativeLocationToUrl(nativeLocation) {
+    const {
+      pathname,
+      search,
+      hash
+    } = nativeLocation;
+    return [pathname && pathname.replace(/\/*$/, ''), search && `?${search}`, hash && `#${hash}`].join('');
+  }
+
+  locationToUrl(location) {
+    const nativeLocation = this.locationTransform.out(location);
+    return this.nativeLocationToUrl(nativeLocation);
   }
 
   async relaunch(data, internal) {
-    const paLocation = this.payloadToLocation(data);
+    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
 
     const key = this._createKey();
 
-    const routeState = this.locationToRouteState(paLocation, 'RELAUNCH', key);
+    const routeState = Object.assign({}, location, {
+      action: 'RELAUNCH',
+      key
+    });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
-    this._routeState = routeState;
+    this.routeState = routeState;
     this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
-      this.history.getCurrentInternalHistory().relaunch(paLocation, key);
+      this.history.getCurrentInternalHistory().relaunch(location, key);
     } else {
-      this.history.relaunch(paLocation, key);
-      const nativeLocation = extractNativeLocation(routeState);
-      this.nativeRouter.relaunch(nativeLocation, key);
+      this.history.relaunch(location, key);
     }
 
+    this.nativeRouter.relaunch(this.url, key, !!internal);
     return routeState;
   }
 
   async push(data, internal) {
-    const paLocation = this.payloadToLocation(data);
+    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
 
     const key = this._createKey();
 
-    const routeState = this.locationToRouteState(paLocation, 'PUSH', key);
+    const routeState = Object.assign({}, location, {
+      action: 'PUSH',
+      key
+    });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
-    this._routeState = routeState;
+    this.routeState = routeState;
     this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
-      this.history.getCurrentInternalHistory().push(paLocation, key);
+      this.history.getCurrentInternalHistory().push(location, key);
     } else {
-      this.history.push(paLocation, key);
-      const nativeLocation = extractNativeLocation(routeState);
-      this.nativeRouter.push(nativeLocation, key);
+      this.history.push(location, key);
     }
 
+    this.nativeRouter.push(this.url, key, !!internal);
     return routeState;
   }
 
   async replace(data, internal) {
-    const paLocation = this.payloadToLocation(data);
+    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
 
     const key = this._createKey();
 
-    const routeState = this.locationToRouteState(paLocation, 'REPLACE', key);
+    const routeState = Object.assign({}, location, {
+      action: 'REPLACE',
+      key
+    });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
-    this._routeState = routeState;
+    this.routeState = routeState;
     this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
-      this.history.getCurrentInternalHistory().replace(paLocation, key);
+      this.history.getCurrentInternalHistory().replace(location, key);
     } else {
-      this.history.replace(paLocation, key);
-      const nativeLocation = extractNativeLocation(routeState);
-      this.nativeRouter.replace(nativeLocation, key);
+      this.history.replace(location, key);
     }
 
+    this.nativeRouter.replace(this.url, key, !!internal);
     return routeState;
   }
 
   async back(n = 1, internal) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getAction(n) : this.history.getAction(n);
+    const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
     if (!stack) {
       return Promise.reject(1);
@@ -241,26 +290,30 @@ export class BaseRouter {
     const uri = stack.uri;
     const {
       key,
-      location: paLocation
+      location
     } = uriToLocation(uri);
-    const routeState = this.locationToRouteState(paLocation, 'BACK', key);
+    const routeState = Object.assign({}, location, {
+      action: 'BACK',
+      key
+    });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
-    this._routeState = routeState;
+    this.routeState = routeState;
     this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);
     } else {
       this.history.back(n);
-      const nativeLocation = extractNativeLocation(routeState);
-      this.nativeRouter.back(nativeLocation, n, key);
     }
 
+    this.nativeRouter.back(this.url, n, key, !!internal);
     return routeState;
   }
 
   async pop(n = 1, internal) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getGroup(n) : this.history.getGroup(n);
+    const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
     if (!stack) {
       return Promise.reject(1);
@@ -269,21 +322,25 @@ export class BaseRouter {
     const uri = stack.uri;
     const {
       key,
-      location: paLocation
+      location
     } = uriToLocation(uri);
-    const routeState = this.locationToRouteState(paLocation, 'POP', key);
+    const routeState = Object.assign({}, location, {
+      action: 'POP',
+      key
+    });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
-    this._routeState = routeState;
+    this.routeState = routeState;
     this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
       this.history.getCurrentInternalHistory().pop(n);
     } else {
       this.history.pop(n);
-      const nativeLocation = extractNativeLocation(routeState);
-      this.nativeRouter.pop(nativeLocation, n, key);
     }
 
+    this.nativeRouter.pop(this.url, n, key, !!internal);
     return routeState;
   }
 

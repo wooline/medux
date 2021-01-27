@@ -24,11 +24,6 @@ export type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
 export type ModuleParams = {[key: string]: any};
 export type RootParams = {[moduleName: string]: ModuleParams};
 
-// export interface BaseLocation {
-//   pathname: string;
-//   search: string;
-// }
-
 export interface NativeLocation {
   pathname: string;
   search: string;
@@ -40,29 +35,21 @@ export interface Location<P extends {[key: string]: any} = {}> {
   params: P;
 }
 
-export type RouteState<P extends {[key: string]: any} = {}, NL extends NativeLocation = NativeLocation> = Location<P> &
-  NL & {
-    action: HistoryAction;
-    key: string;
-  };
-
-export type RouteRootState<P extends {[key: string]: any}, NL extends NativeLocation = NativeLocation> = CoreRootState & {
-  route: RouteState<P, NL>;
+export type RouteState<P extends {[key: string]: any} = {}> = Location<P> & {
+  action: HistoryAction;
+  key: string;
 };
 
-export type RootState<A extends RootModuleFacade, P extends {[key: string]: any}, NL extends NativeLocation = NativeLocation> = {
-  route: RouteState<P, NL>;
+export type RouteRootState<P extends {[key: string]: any}> = CoreRootState & {
+  route: RouteState<P>;
+};
+
+export type RootState<A extends RootModuleFacade, P extends {[key: string]: any}> = {
+  route: RouteState<P>;
 } & {[M in keyof A]?: A[M]['state']};
 
 export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
-export function extractNativeLocation<P extends {[key: string]: any}, NL extends NativeLocation>(routeState: RouteState<P, NL>): NL {
-  const data = {...routeState};
-  ['pagename', 'params', 'action', 'key'].forEach((key) => {
-    delete data[key];
-  });
-  return data;
-}
 export interface RoutePayload<P extends RootParams = RootParams> {
   pagename?: string;
   params?: DeepPartial<P>;

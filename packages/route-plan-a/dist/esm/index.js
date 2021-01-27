@@ -5,10 +5,9 @@ import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitial
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMerge, deepMergeState, mergeState } from '@medux/core';
-import { uriToLocation, extractNativeLocation, History } from './basic';
-export { createWebLocationTransform } from './transform';
-export { PathnameRules, extractPathParams } from './matchPath';
+import { uriToLocation, History } from './basic';
 export { setRouteConfig } from './basic';
+export { PagenameMap, createLocationTransform, createPathnameTransform } from './transform';
 export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   var RouteModuleHandlers = function (_CoreModuleHandlers2) {
     _inheritsLoose(RouteModuleHandlers, _CoreModuleHandlers2);
@@ -107,34 +106,49 @@ export var routeReducer = function routeReducer(state, action) {
   return state;
 };
 export var BaseRouter = function () {
-  function BaseRouter(initLocation, nativeRouter, locationTransform) {
+  function BaseRouter(initUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
 
     _defineProperty(this, "_tid", 0);
 
-    _defineProperty(this, "_routeState", void 0);
+    _defineProperty(this, "routeState", void 0);
+
+    _defineProperty(this, "nativeLocation", void 0);
+
+    _defineProperty(this, "url", void 0);
 
     _defineProperty(this, "store", void 0);
 
     _defineProperty(this, "history", void 0);
 
-    var location = this.locationTransform.in(initLocation);
+    this.url = initUrl;
+    this.nativeLocation = this.urlToNativeLocation(initUrl);
+    var location = this.locationTransform.in(this.nativeLocation);
 
     var key = this._createKey();
 
     this.history = new History();
-    var routeState = this.locationToRouteState(location, 'RELAUNCH', key);
-    this._routeState = routeState;
+    var routeState = Object.assign({}, location, {
+      action: 'RELAUNCH',
+      key: key
+    });
+    this.routeState = routeState;
     this.history.relaunch(location, key);
-    var nativeLocation = extractNativeLocation(routeState);
-    nativeRouter.relaunch(nativeLocation, key);
   }
 
   var _proto = BaseRouter.prototype;
 
   _proto.getRouteState = function getRouteState() {
-    return this._routeState;
+    return this.routeState;
+  };
+
+  _proto.getNativeLocation = function getNativeLocation() {
+    return this.nativeLocation;
+  };
+
+  _proto.getUrl = function getUrl() {
+    return this.url;
   };
 
   _proto.setStore = function setStore(_store) {
@@ -142,7 +156,7 @@ export var BaseRouter = function () {
   };
 
   _proto.getCurKey = function getCurKey() {
-    return this._routeState.key;
+    return this.routeState.key;
   };
 
   _proto._createKey = function _createKey() {
@@ -151,67 +165,98 @@ export var BaseRouter = function () {
   };
 
   _proto.payloadToLocation = function payloadToLocation(data) {
-    if (typeof data === 'string') {
-      var nativeLocation = this.nativeRouter.parseUrl(data);
-      return this.locationTransform.in(nativeLocation);
-    }
-
-    var tag = data.tag;
-    var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    var pagename = data.pagename;
+    var extendParams = data.extendParams === true ? this.routeState.params : data.extendParams;
     var params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     return {
-      tag: tag || this._routeState.tag || '/',
+      pagename: pagename || this.routeState.pagename || '/',
       params: params
     };
   };
 
-  _proto.locationToUrl = function locationToUrl(data) {
-    var tag = data.tag;
-    var extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    var params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
-    var nativeLocation = this.locationTransform.out({
-      tag: tag || this._routeState.tag || '/',
-      params: params
-    });
-    return this.nativeRouter.toUrl(nativeLocation);
+  _proto.urlToToLocation = function urlToToLocation(url) {
+    var nativeLocation = this.urlToNativeLocation(url);
+    return this.locationTransform.in(nativeLocation);
   };
 
-  _proto.locationToRouteState = function locationToRouteState(location, action, key) {
-    var natvieLocation = this.locationTransform.out(location);
-    return Object.assign({}, location, {
-      action: action,
-      key: key
-    }, natvieLocation);
+  _proto.urlToNativeLocation = function urlToNativeLocation(url) {
+    if (!url) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: ''
+      };
+    }
+
+    var arr = url.split(/[?#]/);
+
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+
+    var path = arr[0],
+        _arr$ = arr[1],
+        search = _arr$ === void 0 ? '' : _arr$,
+        _arr$2 = arr[2],
+        hash = _arr$2 === void 0 ? '' : _arr$2;
+    var pathname = path;
+
+    if (!pathname.startsWith('/')) {
+      pathname = "/" + pathname;
+    }
+
+    pathname = pathname.replace(/\/*$/, '') || '/';
+    return {
+      pathname: pathname,
+      search: search,
+      hash: hash
+    };
+  };
+
+  _proto.nativeLocationToUrl = function nativeLocationToUrl(nativeLocation) {
+    var pathname = nativeLocation.pathname,
+        search = nativeLocation.search,
+        hash = nativeLocation.hash;
+    return [pathname && pathname.replace(/\/*$/, ''), search && "?" + search, hash && "#" + hash].join('');
+  };
+
+  _proto.locationToUrl = function locationToUrl(location) {
+    var nativeLocation = this.locationTransform.out(location);
+    return this.nativeLocationToUrl(nativeLocation);
   };
 
   _proto.relaunch = function () {
     var _relaunch = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(data, internal) {
-      var paLocation, key, routeState, nativeLocation;
+      var location, key, routeState;
       return _regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              paLocation = this.payloadToLocation(data);
+              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
               key = this._createKey();
-              routeState = this.locationToRouteState(paLocation, 'RELAUNCH', key);
+              routeState = Object.assign({}, location, {
+                action: 'RELAUNCH',
+                key: key
+              });
               _context.next = 5;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              this._routeState = routeState;
+              this.routeState = routeState;
               this.store.dispatch(routeChangeAction(routeState));
+              this.nativeLocation = this.locationTransform.out(location);
+              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
-                this.history.getCurrentInternalHistory().relaunch(paLocation, key);
+                this.history.getCurrentInternalHistory().relaunch(location, key);
               } else {
-                this.history.relaunch(paLocation, key);
-                nativeLocation = extractNativeLocation(routeState);
-                this.nativeRouter.relaunch(nativeLocation, key);
+                this.history.relaunch(location, key);
               }
 
+              this.nativeRouter.relaunch(this.url, key, !!internal);
               return _context.abrupt("return", routeState);
 
-            case 9:
+            case 12:
             case "end":
               return _context.stop();
           }
@@ -228,32 +273,36 @@ export var BaseRouter = function () {
 
   _proto.push = function () {
     var _push = _asyncToGenerator(_regeneratorRuntime.mark(function _callee2(data, internal) {
-      var paLocation, key, routeState, nativeLocation;
+      var location, key, routeState;
       return _regeneratorRuntime.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              paLocation = this.payloadToLocation(data);
+              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
               key = this._createKey();
-              routeState = this.locationToRouteState(paLocation, 'PUSH', key);
+              routeState = Object.assign({}, location, {
+                action: 'PUSH',
+                key: key
+              });
               _context2.next = 5;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              this._routeState = routeState;
+              this.routeState = routeState;
               this.store.dispatch(routeChangeAction(routeState));
+              this.nativeLocation = this.locationTransform.out(location);
+              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
-                this.history.getCurrentInternalHistory().push(paLocation, key);
+                this.history.getCurrentInternalHistory().push(location, key);
               } else {
-                this.history.push(paLocation, key);
-                nativeLocation = extractNativeLocation(routeState);
-                this.nativeRouter.push(nativeLocation, key);
+                this.history.push(location, key);
               }
 
+              this.nativeRouter.push(this.url, key, !!internal);
               return _context2.abrupt("return", routeState);
 
-            case 9:
+            case 12:
             case "end":
               return _context2.stop();
           }
@@ -270,32 +319,36 @@ export var BaseRouter = function () {
 
   _proto.replace = function () {
     var _replace = _asyncToGenerator(_regeneratorRuntime.mark(function _callee3(data, internal) {
-      var paLocation, key, routeState, nativeLocation;
+      var location, key, routeState;
       return _regeneratorRuntime.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
-              paLocation = this.payloadToLocation(data);
+              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
               key = this._createKey();
-              routeState = this.locationToRouteState(paLocation, 'REPLACE', key);
+              routeState = Object.assign({}, location, {
+                action: 'REPLACE',
+                key: key
+              });
               _context3.next = 5;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              this._routeState = routeState;
+              this.routeState = routeState;
               this.store.dispatch(routeChangeAction(routeState));
+              this.nativeLocation = this.locationTransform.out(location);
+              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
-                this.history.getCurrentInternalHistory().replace(paLocation, key);
+                this.history.getCurrentInternalHistory().replace(location, key);
               } else {
-                this.history.replace(paLocation, key);
-                nativeLocation = extractNativeLocation(routeState);
-                this.nativeRouter.replace(nativeLocation, key);
+                this.history.replace(location, key);
               }
 
+              this.nativeRouter.replace(this.url, key, !!internal);
               return _context3.abrupt("return", routeState);
 
-            case 9:
+            case 12:
             case "end":
               return _context3.stop();
           }
@@ -312,7 +365,7 @@ export var BaseRouter = function () {
 
   _proto.back = function () {
     var _back = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(n, internal) {
-      var stack, uri, _uriToLocation, key, paLocation, routeState, nativeLocation;
+      var stack, uri, _uriToLocation, key, location, routeState;
 
       return _regeneratorRuntime.wrap(function _callee4$(_context4) {
         while (1) {
@@ -322,7 +375,7 @@ export var BaseRouter = function () {
                 n = 1;
               }
 
-              stack = internal ? this.history.getCurrentInternalHistory().getAction(n) : this.history.getAction(n);
+              stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
               if (stack) {
                 _context4.next = 4;
@@ -333,26 +386,30 @@ export var BaseRouter = function () {
 
             case 4:
               uri = stack.uri;
-              _uriToLocation = uriToLocation(uri), key = _uriToLocation.key, paLocation = _uriToLocation.location;
-              routeState = this.locationToRouteState(paLocation, 'BACK', key);
+              _uriToLocation = uriToLocation(uri), key = _uriToLocation.key, location = _uriToLocation.location;
+              routeState = Object.assign({}, location, {
+                action: 'BACK',
+                key: key
+              });
               _context4.next = 9;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 9:
-              this._routeState = routeState;
+              this.routeState = routeState;
               this.store.dispatch(routeChangeAction(routeState));
+              this.nativeLocation = this.locationTransform.out(location);
+              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().back(n);
               } else {
                 this.history.back(n);
-                nativeLocation = extractNativeLocation(routeState);
-                this.nativeRouter.back(nativeLocation, n, key);
               }
 
+              this.nativeRouter.back(this.url, n, key, !!internal);
               return _context4.abrupt("return", routeState);
 
-            case 13:
+            case 16:
             case "end":
               return _context4.stop();
           }
@@ -369,7 +426,7 @@ export var BaseRouter = function () {
 
   _proto.pop = function () {
     var _pop = _asyncToGenerator(_regeneratorRuntime.mark(function _callee5(n, internal) {
-      var stack, uri, _uriToLocation2, key, paLocation, routeState, nativeLocation;
+      var stack, uri, _uriToLocation2, key, location, routeState;
 
       return _regeneratorRuntime.wrap(function _callee5$(_context5) {
         while (1) {
@@ -379,7 +436,7 @@ export var BaseRouter = function () {
                 n = 1;
               }
 
-              stack = internal ? this.history.getCurrentInternalHistory().getGroup(n) : this.history.getGroup(n);
+              stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
               if (stack) {
                 _context5.next = 4;
@@ -390,26 +447,30 @@ export var BaseRouter = function () {
 
             case 4:
               uri = stack.uri;
-              _uriToLocation2 = uriToLocation(uri), key = _uriToLocation2.key, paLocation = _uriToLocation2.location;
-              routeState = this.locationToRouteState(paLocation, 'POP', key);
+              _uriToLocation2 = uriToLocation(uri), key = _uriToLocation2.key, location = _uriToLocation2.location;
+              routeState = Object.assign({}, location, {
+                action: 'POP',
+                key: key
+              });
               _context5.next = 9;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 9:
-              this._routeState = routeState;
+              this.routeState = routeState;
               this.store.dispatch(routeChangeAction(routeState));
+              this.nativeLocation = this.locationTransform.out(location);
+              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().pop(n);
               } else {
                 this.history.pop(n);
-                nativeLocation = extractNativeLocation(routeState);
-                this.nativeRouter.pop(nativeLocation, n, key);
               }
 
+              this.nativeRouter.pop(this.url, n, key, !!internal);
               return _context5.abrupt("return", routeState);
 
-            case 13:
+            case 16:
             case "end":
               return _context5.stop();
           }

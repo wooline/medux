@@ -9,23 +9,16 @@ export function setRouteConfig(conf) {
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
   conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
-export function extractNativeLocation(routeState) {
-  const data = Object.assign({}, routeState);
-  ['tag', 'params', 'action', 'key'].forEach(key => {
-    delete data[key];
-  });
-  return data;
-}
 
 function locationToUri(location, key) {
   const {
-    tag,
+    pagename,
     params
   } = location;
   const query = params ? JSON.stringify(params) : '';
   return {
-    uri: [key, tag, query].join(routeConfig.RSP),
-    tag,
+    uri: [key, pagename, query].join(routeConfig.RSP),
+    pagename,
     query,
     key
   };
@@ -36,7 +29,7 @@ function splitUri(...args) {
   const arr = uri.split(routeConfig.RSP, 3);
   const index = {
     key: 0,
-    tag: 1,
+    pagename: 1,
     query: 2
   };
 
@@ -48,9 +41,9 @@ function splitUri(...args) {
 }
 
 export function uriToLocation(uri) {
-  const [key, tag, query] = splitUri(uri);
+  const [key, pagename, query] = splitUri(uri);
   const location = {
-    tag,
+    pagename,
     params: JSON.parse(query)
   };
   return {
@@ -60,16 +53,16 @@ export function uriToLocation(uri) {
 }
 export class History {
   constructor() {
-    _defineProperty(this, "groupMax", 10);
+    _defineProperty(this, "pagesMax", 10);
 
     _defineProperty(this, "actionsMax", 10);
 
-    _defineProperty(this, "groups", []);
+    _defineProperty(this, "pages", []);
 
     _defineProperty(this, "actions", []);
   }
 
-  getAction(keyOrIndex) {
+  getActionRecord(keyOrIndex) {
     if (keyOrIndex === undefined) {
       keyOrIndex = 0;
     }
@@ -81,161 +74,159 @@ export class History {
     return this.actions.find(item => item.key === keyOrIndex);
   }
 
-  getGroup(keyOrIndex) {
+  getPageRecord(keyOrIndex) {
     if (keyOrIndex === undefined) {
       keyOrIndex = 0;
     }
 
     if (typeof keyOrIndex === 'number') {
-      return this.groups[keyOrIndex];
+      return this.pages[keyOrIndex];
     }
 
-    return this.groups.find(item => item.key === keyOrIndex);
+    return this.pages.find(item => item.key === keyOrIndex);
   }
 
   getActionIndex(key) {
     return this.actions.findIndex(item => item.key === key);
   }
 
-  getGroupIndex(key) {
-    return this.groups.findIndex(item => item.key === key);
+  getPageIndex(key) {
+    return this.pages.findIndex(item => item.key === key);
   }
 
   getCurrentInternalHistory() {
     return this.actions[0].sub;
   }
 
-  findTag(tag) {}
-
   getUriStack() {
     return {
       actions: this.actions.map(item => item.uri),
-      groups: this.groups.map(item => item.uri)
+      pages: this.pages.map(item => item.uri)
     };
   }
 
   push(location, key) {
-    var _groups$;
+    var _pages$;
 
     const {
       uri,
-      tag,
+      pagename,
       query
     } = locationToUri(location, key);
     const newStack = {
       uri,
-      tag,
+      pagename,
       query,
       key,
       sub: new History()
     };
-    const groups = [...this.groups];
+    const pages = [...this.pages];
     const actions = [...this.actions];
     const actionsMax = this.actionsMax;
-    const groupMax = this.groupMax;
+    const pagesMax = this.pagesMax;
     actions.unshift(newStack);
 
     if (actions.length > actionsMax) {
       actions.length = actionsMax;
     }
 
-    if (splitUri((_groups$ = groups[0]) === null || _groups$ === void 0 ? void 0 : _groups$.uri, 'tag') !== tag) {
-      groups.unshift(newStack);
+    if (splitUri((_pages$ = pages[0]) === null || _pages$ === void 0 ? void 0 : _pages$.uri, 'pagename') !== pagename) {
+      pages.unshift(newStack);
 
-      if (groups.length > groupMax) {
-        groups.length = groupMax;
+      if (pages.length > pagesMax) {
+        pages.length = pagesMax;
       }
     } else {
-      groups[0] = newStack;
+      pages[0] = newStack;
     }
 
     this.actions = actions;
-    this.groups = groups;
+    this.pages = pages;
   }
 
   replace(location, key) {
-    var _groups$2;
+    var _pages$2;
 
     const {
       uri,
-      tag,
+      pagename,
       query
     } = locationToUri(location, key);
     const newStack = {
       uri,
-      tag,
+      pagename,
       query,
       key,
       sub: new History()
     };
-    const groups = [...this.groups];
+    const pages = [...this.pages];
     const actions = [...this.actions];
-    const groupMax = this.groupMax;
+    const pagesMax = this.pagesMax;
     actions[0] = newStack;
-    groups[0] = newStack;
+    pages[0] = newStack;
 
-    if (tag === splitUri((_groups$2 = groups[1]) === null || _groups$2 === void 0 ? void 0 : _groups$2.uri, 'tag')) {
-      groups.splice(1, 1);
+    if (pagename === splitUri((_pages$2 = pages[1]) === null || _pages$2 === void 0 ? void 0 : _pages$2.uri, 'pagename')) {
+      pages.splice(1, 1);
     }
 
-    if (groups.length > groupMax) {
-      groups.length = groupMax;
+    if (pages.length > pagesMax) {
+      pages.length = pagesMax;
     }
 
     this.actions = actions;
-    this.groups = groups;
+    this.pages = pages;
   }
 
   relaunch(location, key) {
     const {
       uri,
-      tag,
+      pagename,
       query
     } = locationToUri(location, key);
     const newStack = {
       uri,
-      tag,
+      pagename,
       query,
       key,
       sub: new History()
     };
     const actions = [newStack];
-    const groups = [newStack];
+    const pages = [newStack];
     this.actions = actions;
-    this.groups = groups;
+    this.pages = pages;
   }
 
   pop(n) {
-    const historyRecord = this.getGroup(n);
+    const historyRecord = this.getPageRecord(n);
 
     if (!historyRecord) {
       return false;
     }
 
-    const groups = [...this.groups];
+    const pages = [...this.pages];
     const actions = [];
-    groups.splice(0, n);
+    pages.splice(0, n);
     this.actions = actions;
-    this.groups = groups;
+    this.pages = pages;
     return true;
   }
 
   back(n) {
-    var _actions$, _groups$3;
+    var _actions$, _pages$3;
 
-    const historyRecord = this.getAction(n);
+    const historyRecord = this.getActionRecord(n);
 
     if (!historyRecord) {
       return false;
     }
 
     const uri = historyRecord.uri;
-    const tag = splitUri(uri, 'tag');
-    const groups = [...this.groups];
+    const pagename = splitUri(uri, 'pagename');
+    const pages = [...this.pages];
     const actions = [...this.actions];
     const deleteActions = actions.splice(0, n + 1, historyRecord);
     const arr = deleteActions.reduce((pre, curStack) => {
-      const ctag = splitUri(curStack.uri, 'tag');
+      const ctag = splitUri(curStack.uri, 'pagename');
 
       if (pre[pre.length - 1] !== ctag) {
         pre.push(ctag);
@@ -244,18 +235,18 @@ export class History {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) === null || _actions$ === void 0 ? void 0 : _actions$.uri, 'tag')) {
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) === null || _actions$ === void 0 ? void 0 : _actions$.uri, 'pagename')) {
       arr.pop();
     }
 
-    groups.splice(0, arr.length, historyRecord);
+    pages.splice(0, arr.length, historyRecord);
 
-    if (tag === splitUri((_groups$3 = groups[1]) === null || _groups$3 === void 0 ? void 0 : _groups$3.uri, 'tag')) {
-      groups.splice(1, 1);
+    if (pagename === splitUri((_pages$3 = pages[1]) === null || _pages$3 === void 0 ? void 0 : _pages$3.uri, 'pagename')) {
+      pages.splice(1, 1);
     }
 
     this.actions = actions;
-    this.groups = groups;
+    this.pages = pages;
     return true;
   }
 
