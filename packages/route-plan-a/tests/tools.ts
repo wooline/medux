@@ -1,49 +1,49 @@
-import {BaseRouter, NativeRouter, PathnameRules, createWebLocationTransform} from 'src/index';
+import {BaseRouter, NativeRouter, createLocationTransform, createPathnameTransform, PagenameMap, DeepPartial} from 'src/index';
 
 import nativeRouterMock from './nativeRouter';
 
 jest.mock('./nativeRouter');
 
 interface MemberRouteParams {
-  listParams: {pageSize: number; pageCurrent: number; term?: string};
   listView: string;
-  _listVer: number;
-  id: string;
+  listSearchPre: {pageSize: number; pageCurrent: number; term?: string};
+  _listVerPre: number;
   itemView: string;
-  _itemVer: number;
+  itemIdPre: string;
+  _itemVerPre: number;
 }
 
 const defaultMemberRouteParams: MemberRouteParams = {
-  listParams: {
+  listSearchPre: {
     pageSize: 10,
     pageCurrent: 1,
     term: undefined,
   },
   listView: '',
-  _listVer: 0,
-  id: '',
+  _listVerPre: 0,
+  itemIdPre: '',
   itemView: '',
-  _itemVer: 0,
+  _itemVerPre: 0,
 };
 interface ArticleRouteParams {
-  listParams: {pageSize: number; pageCurrent: number; term?: string};
   listView: string;
-  _listVer: number;
-  id: string;
+  listSearchPre: {pageSize: number; pageCurrent: number; term?: string};
+  _listVerPre: number;
   itemView: string;
-  _itemVer: number;
+  itemIdPre: string;
+  _itemVerPre: number;
 }
 const defaultArticleRouteParams: ArticleRouteParams = {
-  listParams: {
+  listSearchPre: {
     pageSize: 10,
     pageCurrent: 1,
     term: undefined,
   },
   listView: '',
-  _listVer: 0,
-  id: '',
+  _listVerPre: 0,
+  itemIdPre: '',
   itemView: '',
-  _itemVer: 0,
+  _itemVerPre: 0,
 };
 export const defaultRouteParams = {
   admin: {},
@@ -52,30 +52,52 @@ export const defaultRouteParams = {
 };
 
 type RouteParams = typeof defaultRouteParams;
+type PartialRouteParams = DeepPartial<RouteParams>;
 
-const pathnameRules: PathnameRules<RouteParams> = {
-  '/$': () => {
+const pathnameIn = (pathname: string) => {
+  if (pathname === '/' || pathname === '/admin') {
     return '/admin/member';
+  }
+  return pathname;
+};
+
+const pagenameMap: PagenameMap<PartialRouteParams> = {
+  '/admin/member': {
+    in() {
+      return {admin: {}, member: {}};
+    },
+    out() {
+      return [];
+    },
   },
-  '/:layoutModule$': ({layoutModule}: {layoutModule: string}) => {
-    return `/${layoutModule}/${layoutModule}Home`;
+  '/admin/member/list': {
+    in([pageCurrent, term]) {
+      const pathParams: PartialRouteParams = {admin: {}, member: {listView: 'list', listSearchPre: {}}};
+      if (pageCurrent) {
+        pathParams.member!.listSearchPre!.pageCurrent = parseInt(pageCurrent, 10);
+      }
+      if (term) {
+        pathParams.member!.listSearchPre!.term = term;
+      }
+      return pathParams;
+    },
+    out(params) {
+      const {pageCurrent, term} = params.member?.listSearchPre || {};
+      return [pageCurrent, term];
+    },
   },
-  '/:layoutModule/:module': ({layoutModule, module}: {layoutModule: string; module: string}, params) => {
-    params[layoutModule] = {};
-    params[module] = {};
-    return {
-      '/:listView$': ({listView}: {listView: string}) => {
-        params[module].listView = listView;
-      },
-      '/:itemView/:id': ({itemView, id}: {itemView: string; id: string}) => {
-        params[module].itemView = itemView;
-        params[module].id = id;
-      },
-    };
+  '/admin/member/detail': {
+    in([itemIdPre]) {
+      return {admin: {}, member: {itemView: 'detail', itemIdPre}};
+    },
+    out(params) {
+      const {itemIdPre} = params.member || {};
+      return [itemIdPre];
+    },
   },
 };
 
-export const locationTransform = createWebLocationTransform(defaultRouteParams, pathnameRules);
+export const locationTransform = createLocationTransform(createPathnameTransform(pathnameIn, pagenameMap), defaultRouteParams);
 export class Router extends BaseRouter<RouteParams> {
   destroy() {}
 }

@@ -5,11 +5,11 @@ import {uriToLocation, extractNativeLocation, History} from './basic';
 import type {LocationTransform} from './transform';
 import type {RootParams, Location, NativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
 
-export {createWebLocationTransform} from './transform';
 export {PathnameRules, extractPathParams} from './matchPath';
 export {setRouteConfig} from './basic';
-export type {LocationMap, LocationTransform} from './transform';
-export type {RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload} from './basic';
+export {PagenameMap, createLocationTransform, createPathnameTransform} from './transform';
+export type {LocationTransform, PathnameTransform} from './transform';
+export type {RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload, DeepPartial} from './basic';
 
 interface Store {
   dispatch(action: {type: string}): any;
@@ -33,7 +33,7 @@ export const RouteActionTypes = {
   BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`,
 };
 
-export function beforeRouteChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
+export function beforeRouteChangeAction<P extends {[key: string]: any}, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
   return {
     type: RouteActionTypes.BeforeRouteChange,
     payload: [routeState],
@@ -47,7 +47,7 @@ export function routeParamsAction(moduleName: string, params: any, action: Histo
   };
 }
 
-export function routeChangeAction<P extends RootParams, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
+export function routeChangeAction<P extends {[key: string]: any}, NL extends NativeLocation>(routeState: RouteState<P, NL>) {
   return {
     type: RouteActionTypes.RouteChange,
     payload: [routeState],
@@ -129,17 +129,17 @@ export abstract class BaseRouter<P extends RootParams, NL extends NativeLocation
       const nativeLocation = this.nativeRouter.parseUrl(data);
       return this.locationTransform.in(nativeLocation);
     }
-    const {tag} = data;
+    const {pagename} = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
     const params: P = extendParams && data.params ? (deepMerge({}, extendParams, data.params) as any) : data.params;
-    return {tag: tag || this._routeState.tag || '/', params};
+    return {pagename: pagename || this._routeState.pagename || '/', params};
   }
 
   locationToUrl(data: RoutePayload<P>): string {
-    const {tag} = data;
+    const {pagename} = data;
     const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
     const params: P = extendParams && data.params ? (deepMerge({}, extendParams, data.params) as any) : data.params;
-    const nativeLocation = this.locationTransform.out({tag: tag || this._routeState.tag || '/', params});
+    const nativeLocation = this.locationTransform.out({pagename: pagename || this._routeState.pagename || '/', params});
     return this.nativeRouter.toUrl(nativeLocation);
   }
 
@@ -201,7 +201,7 @@ export abstract class BaseRouter<P extends RootParams, NL extends NativeLocation
   }
 
   async back(n: number = 1, internal?: boolean): Promise<RouteState<P, NL>> {
-    const stack = internal ? this.history.getCurrentInternalHistory().getAction(n) : this.history.getAction(n);
+    const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
     if (!stack) {
       return Promise.reject(1);
     }
@@ -222,7 +222,7 @@ export abstract class BaseRouter<P extends RootParams, NL extends NativeLocation
   }
 
   async pop(n: number = 1, internal?: boolean): Promise<RouteState<P, NL>> {
-    const stack = internal ? this.history.getCurrentInternalHistory().getGroup(n) : this.history.getGroup(n);
+    const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
     if (!stack) {
       return Promise.reject(1);
     }

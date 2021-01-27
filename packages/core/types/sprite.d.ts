@@ -39,8 +39,6 @@ export declare class TaskCounter extends PDispatcher {
 export declare function isPlainObject(obj: any): boolean;
 export declare function deepMerge(target: {
     [key: string]: any;
-}, ...args: {
-    [key: string]: any;
-}[]): {
+}, ...args: any[]): {
     [key: string]: any;
 };

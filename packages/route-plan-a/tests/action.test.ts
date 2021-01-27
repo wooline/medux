@@ -1,4 +1,4 @@
-import {createWebLocationTransform} from 'src/index';
+import {createLocationTransform} from 'src/index';
 import {Router, nativeRouter} from './tools';
 import nativeRouterMock from './nativeRouter';
 
@@ -23,7 +23,17 @@ describe('actions', () => {
       hash: '',
     },
     nativeRouter,
-    createWebLocationTransform(defaultRouteParams)
+    createLocationTransform(
+      {
+        in(pathname) {
+          return {pagename: pathname, pathParams: {}};
+        },
+        out(pagename: string, params) {
+          return {pathname: pagename, pathParams: {}};
+        },
+      },
+      defaultRouteParams
+    )
   );
   router.setStore({
     dispatch() {
@@ -40,7 +50,7 @@ describe('actions', () => {
       pathname: '/',
       search: '',
       hash: '',
-      tag: '/',
+      pagename: '/',
       params: {},
       action: 'RELAUNCH',
       key: '1',
@@ -48,7 +58,7 @@ describe('actions', () => {
     expect(nativeRouterMock.relaunch).toHaveBeenCalledWith({pathname: '/', search: '', hash: ''}, '1');
     expect(router.history.getUriStack()).toEqual({
       actions: ['1|/|{}'],
-      groups: ['1|/|{}'],
+      pages: ['1|/|{}'],
     });
   });
   test('push /photos/2', async () => {
@@ -57,7 +67,7 @@ describe('actions', () => {
       pathname: '/photos/2',
       search: '',
       hash: '',
-      tag: '/photos/2',
+      pagename: '/photos/2',
       params: {},
       action: 'PUSH',
       key: '2',
@@ -65,7 +75,7 @@ describe('actions', () => {
     expect(nativeRouterMock.push).toHaveBeenCalledWith({pathname: '/photos/2', search: '', hash: ''}, '2');
     expect(router.history.getUriStack()).toEqual({
       actions: ['2|/photos/2|{}', '1|/|{}'],
-      groups: ['2|/photos/2|{}', '1|/|{}'],
+      pages: ['2|/photos/2|{}', '1|/|{}'],
     });
   });
   test('push /photos/2?_={"photos":{"listSearch":{"page":2}}}', async () => {
@@ -74,14 +84,14 @@ describe('actions', () => {
       pathname: '/photos/2',
       search: '_={"photos":{"listSearch":{"page":2}}}',
       hash: '',
-      tag: '/photos/2',
+      pagename: '/photos/2',
       params: {photos: {_detailKey: '', _listKey: '', itemId: '', listSearch: {title: '', page: 2, pageSize: 10}}},
       action: 'PUSH',
       key: '3',
     });
     expect(router.history.getUriStack()).toEqual({
       actions: ['3|/photos/2|{"photos":{"_detailKey":"","_listKey":"","itemId":"","listSearch":{"title":"","page":2,"pageSize":10}}}', '2|/photos/2|{}', '1|/|{}'],
-      groups: ['3|/photos/2|{"photos":{"_detailKey":"","_listKey":"","itemId":"","listSearch":{"title":"","page":2,"pageSize":10}}}', '1|/|{}'],
+      pages: ['3|/photos/2|{"photos":{"_detailKey":"","_listKey":"","itemId":"","listSearch":{"title":"","page":2,"pageSize":10}}}', '1|/|{}'],
     });
   });
   test('push /photos/2?_={"photos":{"listSearch":{"page":3}}}', async () => {
@@ -90,7 +100,7 @@ describe('actions', () => {
       pathname: '/photos/2',
       search: '_={"photos":{"listSearch":{"page":3}}}',
       hash: '',
-      tag: '/photos/2',
+      pagename: '/photos/2',
       params: {photos: {_detailKey: '', _listKey: '', itemId: '', listSearch: {title: '', page: 3, pageSize: 10}}},
       action: 'PUSH',
       key: '4',
@@ -102,7 +112,7 @@ describe('actions', () => {
         '2|/photos/2|{}',
         '1|/|{}',
       ],
-      groups: ['4|/photos/2|{"photos":{"_detailKey":"","_listKey":"","itemId":"","listSearch":{"title":"","page":3,"pageSize":10}}}', '1|/|{}'],
+      pages: ['4|/photos/2|{"photos":{"_detailKey":"","_listKey":"","itemId":"","listSearch":{"title":"","page":3,"pageSize":10}}}', '1|/|{}'],
     });
   });
 });
