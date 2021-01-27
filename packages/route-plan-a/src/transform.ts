@@ -1,4 +1,4 @@
-import {deepMerge, env} from '@medux/core';
+import {deepMerge} from '@medux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
 import type {Location, NativeLocation} from './basic';
 

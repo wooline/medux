@@ -38,8 +38,7 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-beta.3.7",
-    "path-to-regexp": "~6.2.0"
+    "@medux/core": "^2.0.0-beta.3.7"
   },
   "gitHead": "5638ad91c6d59f14b7083b832629db5eca9195ef"
 }

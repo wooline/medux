@@ -5,7 +5,6 @@ import {uriToLocation, extractNativeLocation, History} from './basic';
 import type {LocationTransform} from './transform';
 import type {RootParams, Location, NativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
 
-export {PathnameRules, extractPathParams} from './matchPath';
 export {setRouteConfig} from './basic';
 export {PagenameMap, createLocationTransform, createPathnameTransform} from './transform';
 export type {LocationTransform, PathnameTransform} from './transform';
