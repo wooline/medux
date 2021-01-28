@@ -6,7 +6,7 @@ exports.__esModule = true;
 exports.beforeRouteChangeAction = beforeRouteChangeAction;
 exports.routeParamsAction = routeParamsAction;
 exports.routeChangeAction = routeChangeAction;
-exports.BaseRouter = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.createPathnameTransform = exports.createLocationTransform = exports.PagenameMap = exports.setRouteConfig = void 0;
+exports.BaseRouter = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.createPathnameTransform = exports.createLocationTransform = exports.PagenameMap = exports.routeConfig = exports.setRouteConfig = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
@@ -25,6 +25,7 @@ var _core = require("@medux/core");
 var _basic = require("./basic");
 
 exports.setRouteConfig = _basic.setRouteConfig;
+exports.routeConfig = _basic.routeConfig;
 
 var _transform = require("./transform");
 

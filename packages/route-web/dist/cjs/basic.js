@@ -11,15 +11,17 @@ var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/de
 
 var routeConfig = {
   RSP: '|',
-  historyMax: 10,
-  homeUri: '|home|{app:{}}'
+  actionMaxHistory: 10,
+  pagesMaxHistory: 10,
+  pagenames: {}
 };
 exports.routeConfig = routeConfig;
 
 function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
+  conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
+  conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function locationToUri(location, key) {
@@ -74,8 +76,6 @@ function uriToLocation(uri) {
 
 var History = function () {
   function History() {
-    (0, _defineProperty2.default)(this, "pagesMax", 10);
-    (0, _defineProperty2.default)(this, "actionsMax", 10);
     (0, _defineProperty2.default)(this, "pages", []);
     (0, _defineProperty2.default)(this, "actions", []);
   }
@@ -154,8 +154,8 @@ var History = function () {
     };
     var pages = [].concat(this.pages);
     var actions = [].concat(this.actions);
-    var actionsMax = this.actionsMax;
-    var pagesMax = this.pagesMax;
+    var actionsMax = routeConfig.actionMaxHistory;
+    var pagesMax = routeConfig.pagesMaxHistory;
     actions.unshift(newStack);
 
     if (actions.length > actionsMax) {
@@ -193,7 +193,7 @@ var History = function () {
     };
     var pages = [].concat(this.pages);
     var actions = [].concat(this.actions);
-    var pagesMax = this.pagesMax;
+    var pagesMax = routeConfig.pagesMaxHistory;
     actions[0] = newStack;
     pages[0] = newStack;
 

@@ -1,18 +1,25 @@
-import React, {ComponentType, useEffect, useState, ForwardRefRenderFunction} from 'react';
+import React, {ComponentType, useEffect, useState, ForwardRefRenderFunction, ReactElement} from 'react';
 import {RootModuleFacade, getView, isPromise, env} from '@medux/core';
 import type {BaseLoadView} from '@medux/core';
 
-export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, ComponentType<any>>;
+export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {OnError?: ReactElement; OnLoading?: ReactElement}>;
 
-const LoadViewOnError: ComponentType<any> = () => {
-  return <div>error</div>;
+const loadViewDefaultOptions: {LoadViewOnError: ReactElement; LoadViewOnLoading: ReactElement} = {
+  LoadViewOnError: <div>error</div>,
+  LoadViewOnLoading: <div></div>,
 };
+export function setLoadViewOptions({LoadViewOnError, LoadViewOnLoading}: {LoadViewOnError?: ReactElement; LoadViewOnLoading?: ReactElement}) {
+  LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);
+  LoadViewOnLoading && (loadViewDefaultOptions.LoadViewOnLoading = LoadViewOnLoading);
+}
 
 export const loadView: LoadView = (moduleName, viewName, options) => {
   const {OnLoading, OnError} = options || {};
   // Can't perform a React state update on an unmounted component.
   let active = true;
   const Loader: ForwardRefRenderFunction<any> = function ViewLoader(props, ref) {
+    const OnErrorComponent = OnError || loadViewDefaultOptions.LoadViewOnError;
+    const OnLoadingComponent = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
     useEffect(() => {
       return () => {
         active = false;
@@ -31,7 +38,7 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
             active && setView({Component});
           })
           .catch((e: any) => {
-            active && setView({Component: OnError || LoadViewOnError});
+            active && setView({Component: () => OnErrorComponent});
             env.console.error(e);
           });
         return null;
@@ -43,8 +50,7 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
       // Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
       return {Component: moduleViewResult};
     });
-    // eslint-disable-next-line no-nested-ternary
-    return view ? <view.Component {...props} ref={ref} /> : OnLoading ? <OnLoading {...props} /> : null;
+    return view ? <view.Component {...props} ref={ref} /> : OnLoadingComponent;
   };
   const Component = React.forwardRef(Loader);
 

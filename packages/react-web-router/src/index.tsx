@@ -5,9 +5,10 @@ import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-web';
 import {env, renderApp, renderSSR, mergeState, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
 import {createRouter} from '@medux/route-browser';
 
-import type {ComponentType} from 'react';
+import type {ComponentType, ReactElement} from 'react';
 import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
 import type {LocationTransform} from '@medux/route-web';
+import {setLoadViewOptions} from './loadView';
 import {appExports} from './sington';
 import type {ServerRequest, ServerResponse} from './sington';
 
@@ -17,6 +18,7 @@ export type {
   RouteModuleState as BaseModuleState,
   RootState,
   RouteState,
+  RoutePayload,
   LocationTransform,
   PathnameTransform,
   NativeLocation,
@@ -54,9 +56,22 @@ export {Else} from './components/Else';
 export {Switch} from './components/Switch';
 export {Link} from './components/Link';
 
-export function setConfig(conf: {connect?: Function; RSP?: string; historyMax?: number; homeUri?: string; NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DEVTOOLS?: boolean}) {
+export function setConfig(conf: {
+  RSP?: string;
+  actionMaxHistory?: number;
+  pagesMaxHistory?: number;
+  pagenames?: {[key: string]: string};
+  NSP?: string;
+  MSP?: string;
+  SSRKey?: string;
+  MutableData?: boolean;
+  DEVTOOLS?: boolean;
+  LoadViewOnError?: ReactElement;
+  LoadViewOnLoading?: ReactElement;
+}) {
   setCoreConfig(conf);
   setRouteConfig(conf);
+  setLoadViewOptions(conf);
 }
 
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
@@ -80,6 +95,7 @@ export function buildApp(
   }
 ) {
   appExports.router = createRouter(historyType, locationTransform);
+
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
   }

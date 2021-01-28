@@ -6,7 +6,7 @@ import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMerge, deepMergeState, mergeState } from '@medux/core';
 import { uriToLocation, History } from './basic';
-export { setRouteConfig } from './basic';
+export { setRouteConfig, routeConfig } from './basic';
 export { PagenameMap, createLocationTransform, createPathnameTransform } from './transform';
 export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   var RouteModuleHandlers = function (_CoreModuleHandlers2) {

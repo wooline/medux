@@ -2,7 +2,7 @@ import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMerge, deepMergeState, mergeState } from '@medux/core';
 import { uriToLocation, History } from './basic';
-export { setRouteConfig } from './basic';
+export { setRouteConfig, routeConfig } from './basic';
 export { PagenameMap, createLocationTransform, createPathnameTransform } from './transform';
 export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   class RouteModuleHandlers extends _CoreModuleHandlers {

@@ -79,7 +79,7 @@ export class BrowserNativeRouter implements NativeRouter {
     !internal && this.history.push(url, key as any);
   }
 }
-export class Router<P extends RootParams = RootParams> extends BaseRouter<P> {
+export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
   private _unlistenHistory: UnregisterCallback;
 
   private _timer: number = 0;
@@ -128,8 +128,8 @@ export class Router<P extends RootParams = RootParams> extends BaseRouter<P> {
   }
 }
 
-export function createRouter<P extends RootParams = RootParams>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>) {
+export function createRouter<P extends RootParams, N extends string>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>) {
   const browserNativeRouter = new BrowserNativeRouter(createHistory);
-  const router = new Router(browserNativeRouter, locationTransform);
+  const router = new Router<P, N>(browserNativeRouter, locationTransform);
   return router;
 }

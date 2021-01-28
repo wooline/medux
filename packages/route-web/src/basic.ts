@@ -2,27 +2,22 @@ import {CoreRootState, RootModuleFacade} from '@medux/core';
 
 export const routeConfig = {
   RSP: '|',
-  historyMax: 10,
-  homeUri: '|home|{app:{}}',
+  actionMaxHistory: 10,
+  pagesMaxHistory: 10,
+  pagenames: {} as {[key: string]: string},
 };
 
-/**
- * 可以配置的参数
- * - escape 是否对生成的url进行escape编码
- * - dateParse 是否自动解析url中的日期格式
- * - splitKey 使用一个key来作为数据的载体
- * - VSP 默认为. ModuleName${VSP}ViewName 用于路由ViewName的连接
- */
-export function setRouteConfig(conf: {RSP?: string; historyMax?: number; homeUri?: string}) {
+export function setRouteConfig(conf: {RSP?: string; actionMaxHistory?: number; pagesMaxHistory?: number; homeUri?: string; pagenames?: {[key: string]: string}}) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
+  conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
+  conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 export type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
 
 export type ModuleParams = {[key: string]: any};
-export type RootParams = {[moduleName: string]: ModuleParams | undefined};
+export type RootParams = {[moduleName: string]: ModuleParams};
 
 export interface NativeLocation {
   pathname: string;
@@ -30,9 +25,9 @@ export interface NativeLocation {
   hash: string;
 }
 
-export interface Location<P extends RootParams = {}, N extends string = string> {
-  pagename: N;
-  params: P;
+export interface Location<P extends RootParams = {}> {
+  pagename: string;
+  params: Partial<P>;
 }
 
 export type RouteState<P extends RootParams = {}> = Location<P> & {
@@ -53,7 +48,7 @@ export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 export interface RoutePayload<P extends RootParams = RootParams, N extends string = string> {
   pagename?: N;
   params?: DeepPartial<P>;
-  extendParams?: P | true;
+  extendParams?: Partial<P> | true;
 }
 
 function locationToUri(location: Location, key: string): {uri: string; pagename: string; query: string; key: string} {
@@ -87,10 +82,6 @@ interface HistoryRecord {
   sub: History;
 }
 export class History {
-  pagesMax: number = 10;
-
-  actionsMax: number = 10;
-
   private pages: HistoryRecord[] = [];
 
   private actions: HistoryRecord[] = [];
@@ -136,8 +127,8 @@ export class History {
     const newStack: HistoryRecord = {uri, pagename, query, key, sub: new History()};
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const actionsMax = this.actionsMax;
-    const pagesMax = this.pagesMax;
+    const actionsMax = routeConfig.actionMaxHistory;
+    const pagesMax = routeConfig.pagesMaxHistory;
     actions.unshift(newStack);
     if (actions.length > actionsMax) {
       actions.length = actionsMax;
@@ -159,7 +150,7 @@ export class History {
     const newStack: HistoryRecord = {uri, pagename, query, key, sub: new History()};
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const pagesMax = this.pagesMax;
+    const pagesMax = routeConfig.pagesMaxHistory;
     actions[0] = newStack;
     pages[0] = newStack;
     if (pagename === splitUri(pages[1]?.uri, 'pagename')) {

@@ -1,29 +1,36 @@
 import { CoreRootState, RootModuleFacade } from '@medux/core';
 export declare const routeConfig: {
     RSP: string;
-    historyMax: number;
-    homeUri: string;
+    actionMaxHistory: number;
+    pagesMaxHistory: number;
+    pagenames: {
+        [key: string]: string;
+    };
 };
 export declare function setRouteConfig(conf: {
     RSP?: string;
-    historyMax?: number;
+    actionMaxHistory?: number;
+    pagesMaxHistory?: number;
     homeUri?: string;
+    pagenames?: {
+        [key: string]: string;
+    };
 }): void;
 export declare type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
 export declare type ModuleParams = {
     [key: string]: any;
 };
 export declare type RootParams = {
-    [moduleName: string]: ModuleParams | undefined;
+    [moduleName: string]: ModuleParams;
 };
 export interface NativeLocation {
     pathname: string;
     search: string;
     hash: string;
 }
-export interface Location<P extends RootParams = {}, N extends string = string> {
-    pagename: N;
-    params: P;
+export interface Location<P extends RootParams = {}> {
+    pagename: string;
+    params: Partial<P>;
 }
 export declare type RouteState<P extends RootParams = {}> = Location<P> & {
     action: HistoryAction;
@@ -47,7 +54,7 @@ export declare type DeepPartial<T> = {
 export interface RoutePayload<P extends RootParams = RootParams, N extends string = string> {
     pagename?: N;
     params?: DeepPartial<P>;
-    extendParams?: P | true;
+    extendParams?: Partial<P> | true;
 }
 export declare function uriToLocation<P extends {
     [key: string]: any;
@@ -63,8 +70,6 @@ interface HistoryRecord {
     sub: History;
 }
 export declare class History {
-    pagesMax: number;
-    actionsMax: number;
     private pages;
     private actions;
     getActionRecord(keyOrIndex?: number | string): HistoryRecord | undefined;

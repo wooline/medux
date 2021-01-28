@@ -1,5 +1,6 @@
 import { deepMerge } from '@medux/core';
 import { extendDefault, excludeDefault, splitPrivate } from './deep-extend';
+import { routeConfig } from './basic';
 
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce(function (params, moduleName) {
@@ -74,6 +75,10 @@ export function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
     var fullPagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
     map[fullPagename] = pagenameMap[pagename];
     return map;
+  }, {});
+  routeConfig.pagenames = Object.keys(pagenameMap).reduce(function (obj, key) {
+    obj[key] = key;
+    return obj;
   }, {});
   return {
     in: function _in(pathname) {

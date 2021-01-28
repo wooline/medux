@@ -5,7 +5,7 @@ import {uriToLocation, History} from './basic';
 import type {LocationTransform} from './transform';
 import type {RootParams, Location, NativeLocation, RouteState, HistoryAction, RoutePayload} from './basic';
 
-export {setRouteConfig} from './basic';
+export {setRouteConfig, routeConfig} from './basic';
 export {PagenameMap, createLocationTransform, createPathnameTransform} from './transform';
 export type {LocationTransform, PathnameTransform} from './transform';
 export type {RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload, DeepPartial} from './basic';
@@ -84,7 +84,7 @@ export interface NativeRouter {
   pop(url: string, n: number, key: string, internal: boolean): void;
 }
 
-export abstract class BaseRouter<P extends RootParams> {
+export abstract class BaseRouter<P extends RootParams, N extends string> {
   private _tid = 0;
 
   private routeState: RouteState<P>;
@@ -133,7 +133,7 @@ export abstract class BaseRouter<P extends RootParams> {
     return `${this._tid}`;
   }
 
-  payloadToLocation(data: RoutePayload<P>): Location<P> {
+  payloadToLocation(data: RoutePayload<P, N>): Location<P> {
     const {pagename} = data;
     const extendParams = data.extendParams === true ? this.routeState.params : data.extendParams;
     const params: P = extendParams && data.params ? (deepMerge({}, extendParams, data.params) as any) : data.params;
@@ -180,7 +180,7 @@ export abstract class BaseRouter<P extends RootParams> {
     return this.nativeLocationToUrl(nativeLocation);
   }
 
-  async relaunch(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>> {
+  async relaunch(data: RoutePayload<P, N> | string, internal?: boolean): Promise<RouteState<P>> {
     const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
@@ -198,7 +198,7 @@ export abstract class BaseRouter<P extends RootParams> {
     return routeState;
   }
 
-  async push(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>> {
+  async push(data: RoutePayload<P, N> | string, internal?: boolean): Promise<RouteState<P>> {
     const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'PUSH', key};
@@ -216,7 +216,7 @@ export abstract class BaseRouter<P extends RootParams> {
     return routeState;
   }
 
-  async replace(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>> {
+  async replace(data: RoutePayload<P, N> | string, internal?: boolean): Promise<RouteState<P>> {
     const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'REPLACE', key};

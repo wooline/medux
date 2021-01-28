@@ -8,6 +8,8 @@ var _core = require("@medux/core");
 
 var _deepExtend = require("./deep-extend");
 
+var _basic = require("./basic");
+
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce(function (params, moduleName) {
     if (def.hasOwnProperty(moduleName)) {
@@ -81,6 +83,10 @@ function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
     var fullPagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
     map[fullPagename] = pagenameMap[pagename];
     return map;
+  }, {});
+  _basic.routeConfig.pagenames = Object.keys(pagenameMap).reduce(function (obj, key) {
+    obj[key] = key;
+    return obj;
   }, {});
   return {
     in: function _in(pathname) {

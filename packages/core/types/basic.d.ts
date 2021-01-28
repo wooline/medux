@@ -15,9 +15,7 @@ export declare function setConfig(_config: {
     DEVTOOLS?: boolean;
 }): void;
 export declare function warn(str: string): void;
-export declare function deepMergeState(target?: any, ...args: any[]): {
-    [key: string]: any;
-};
+export declare function deepMergeState(target?: any, ...args: any[]): any;
 export declare function mergeState(target?: any, ...args: any[]): any;
 export declare function snapshotState(target: any): any;
 export interface CommonModule<ModuleName extends string = string> {

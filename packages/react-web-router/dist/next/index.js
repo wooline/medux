@@ -2093,13 +2093,15 @@ async function renderSSR(render, moduleGetter, appModuleName, appViewName, store
 
 const routeConfig = {
   RSP: '|',
-  historyMax: 10,
-  homeUri: '|home|{app:{}}'
+  actionMaxHistory: 10,
+  pagesMaxHistory: 10,
+  pagenames: {}
 };
 function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
+  conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
+  conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function locationToUri(location, key) {
@@ -2145,10 +2147,6 @@ function uriToLocation(uri) {
 }
 class History {
   constructor() {
-    _defineProperty(this, "pagesMax", 10);
-
-    _defineProperty(this, "actionsMax", 10);
-
     _defineProperty(this, "pages", []);
 
     _defineProperty(this, "actions", []);
@@ -2214,8 +2212,8 @@ class History {
     };
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const actionsMax = this.actionsMax;
-    const pagesMax = this.pagesMax;
+    const actionsMax = routeConfig.actionMaxHistory;
+    const pagesMax = routeConfig.pagesMaxHistory;
     actions.unshift(newStack);
 
     if (actions.length > actionsMax) {
@@ -2253,7 +2251,7 @@ class History {
     };
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const pagesMax = this.pagesMax;
+    const pagesMax = routeConfig.pagesMaxHistory;
     actions[0] = newStack;
     pages[0] = newStack;
 
@@ -2574,6 +2572,10 @@ function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
     const fullPagename = `/${pagename}/`.replace('//', '/').replace('//', '/');
     map[fullPagename] = pagenameMap[pagename];
     return map;
+  }, {});
+  routeConfig.pagenames = Object.keys(pagenameMap).reduce((obj, key) => {
+    obj[key] = key;
+    return obj;
   }, {});
   return {
     in(pathname) {
@@ -4192,10 +4194,17 @@ function createRouter(createHistory, locationTransform) {
   return router;
 }
 
-const LoadViewOnError = () => {
-  return React.createElement("div", null, "error");
+const loadViewDefaultOptions = {
+  LoadViewOnError: React.createElement("div", null, "error"),
+  LoadViewOnLoading: React.createElement("div", null)
 };
-
+function setLoadViewOptions({
+  LoadViewOnError,
+  LoadViewOnLoading
+}) {
+  LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);
+  LoadViewOnLoading && (loadViewDefaultOptions.LoadViewOnLoading = LoadViewOnLoading);
+}
 const loadView = (moduleName, viewName, options) => {
   const {
     OnLoading,
@@ -4204,6 +4213,8 @@ const loadView = (moduleName, viewName, options) => {
   let active = true;
 
   const Loader = function ViewLoader(props, ref) {
+    const OnErrorComponent = OnError || loadViewDefaultOptions.LoadViewOnError;
+    const OnLoadingComponent = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
     useEffect(() => {
       return () => {
         active = false;
@@ -4219,7 +4230,7 @@ const loadView = (moduleName, viewName, options) => {
           });
         }).catch(e => {
           active && setView({
-            Component: OnError || LoadViewOnError
+            Component: () => OnErrorComponent
           });
           env.console.error(e);
         });
@@ -4232,7 +4243,7 @@ const loadView = (moduleName, viewName, options) => {
     });
     return view ? React.createElement(view.Component, _extends({}, props, {
       ref: ref
-    })) : OnLoading ? React.createElement(OnLoading, props) : null;
+    })) : OnLoadingComponent;
   };
 
   const Component = React.forwardRef(Loader);
@@ -4266,7 +4277,8 @@ function exportApp() {
   return {
     App: appExports,
     Modules: modules,
-    Actions: {}
+    Actions: {},
+    Pagenames: routeConfig.pagenames
   };
 }
 
@@ -4382,6 +4394,7 @@ const Link = React.forwardRef((_ref, ref) => {
 function setConfig$1(conf) {
   setConfig(conf);
   setRouteConfig(conf);
+  setLoadViewOptions(conf);
 }
 const exportModule$1 = exportModule;
 function buildApp(moduleGetter, {

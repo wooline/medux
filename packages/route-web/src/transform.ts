@@ -1,18 +1,18 @@
 import {deepMerge} from '@medux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
-import type {Location, NativeLocation, DeepPartial, RootParams} from './basic';
+import {Location, NativeLocation, DeepPartial, RootParams, routeConfig} from './basic';
 
 export type LocationTransform<P extends RootParams> = {in: (nativeLocation: NativeLocation) => Location<P>; out: (meduxLocation: Location<P>) => NativeLocation};
 
-export type PathnameTransform<DP extends {[key: string]: any}> = {
-  in(pathname: string): {pagename: string; pathParams: DP};
-  out(pagename: string, params: DP): {pathname: string; pathParams: DP};
+export type PathnameTransform<P extends RootParams> = {
+  in(pathname: string): {pagename: string; pathParams: DeepPartial<P>};
+  out(pagename: string, params: DeepPartial<P>): {pathname: string; pathParams: DeepPartial<P>};
 };
 
-export type PagenameMap<DP extends {[key: string]: any}> = {
+export type PagenameMap<P extends RootParams> = {
   [pagename: string]: {
-    in(pathParams: Array<string | undefined>): DP;
-    out(params: DP): Array<any>;
+    in(pathParams: Array<string | undefined>): DeepPartial<P>;
+    out(params: DeepPartial<P>): Array<any>;
   };
 };
 
@@ -67,11 +67,7 @@ function toNativeLocation(pathname: string, search: any, hash: any, paramsKey: s
   return {pathname: pathname.replace(/\/*$/, '') || '/', search: searchStr && `${paramsKey}=${searchStr}`, hash: hashStr && `${paramsKey}=${hashStr}`};
 }
 
-export function createPathnameTransform<DP extends {[key: string]: any}>(
-  pathnameIn: (pathname: string) => string,
-  pagenameMap: PagenameMap<DP>,
-  pathnameOut?: (pathname: string) => string
-): PathnameTransform<DP> {
+export function createPathnameTransform<P extends RootParams>(pathnameIn: (pathname: string) => string, pagenameMap: PagenameMap<P>, pathnameOut?: (pathname: string) => string): PathnameTransform<P> {
   pagenameMap = Object.keys(pagenameMap)
     .sort((a, b) => b.length - a.length)
     .reduce((map, pagename) => {
@@ -79,6 +75,10 @@ export function createPathnameTransform<DP extends {[key: string]: any}>(
       map[fullPagename] = pagenameMap[pagename];
       return map;
     }, {});
+  routeConfig.pagenames = Object.keys(pagenameMap).reduce((obj, key) => {
+    obj[key] = key;
+    return obj;
+  }, {});
   return {
     in(pathname) {
       pathname = pathnameIn(pathname);
@@ -86,10 +86,10 @@ export function createPathnameTransform<DP extends {[key: string]: any}>(
         pathname = `${pathname}/`;
       }
       let pagename = Object.keys(pagenameMap).find((name) => pathname.startsWith(name));
-      let pathParams: DP;
+      let pathParams: DeepPartial<P>;
       if (!pagename) {
         pagename = pathname.replace(/\/*$/, '');
-        pathParams = {} as DP;
+        pathParams = {} as DeepPartial<P>;
       } else {
         const args = pathname
           .replace(pagename, '')
@@ -124,7 +124,7 @@ export function createPathnameTransform<DP extends {[key: string]: any}>(
   };
 }
 export function createLocationTransform<P extends RootParams>(
-  pathnameTransform: PathnameTransform<DeepPartial<P>>,
+  pathnameTransform: PathnameTransform<P>,
   defaultData: P,
   base64: boolean = false,
   serialization: {parse(str: string): any; stringify(data: any): string} = JSON,

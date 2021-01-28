@@ -3,7 +3,7 @@ import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
 import { History } from './basic';
 import type { LocationTransform } from './transform';
 import type { RootParams, Location, NativeLocation, RouteState, HistoryAction, RoutePayload } from './basic';
-export { setRouteConfig } from './basic';
+export { setRouteConfig, routeConfig } from './basic';
 export { PagenameMap, createLocationTransform, createPathnameTransform } from './transform';
 export type { LocationTransform, PathnameTransform } from './transform';
 export type { RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, RoutePayload, DeepPartial } from './basic';
@@ -49,7 +49,7 @@ export interface NativeRouter {
     back(url: string, n: number, key: string, internal: boolean): void;
     pop(url: string, n: number, key: string, internal: boolean): void;
 }
-export declare abstract class BaseRouter<P extends RootParams> {
+export declare abstract class BaseRouter<P extends RootParams, N extends string> {
     nativeRouter: NativeRouter;
     protected locationTransform: LocationTransform<P>;
     private _tid;
@@ -65,14 +65,14 @@ export declare abstract class BaseRouter<P extends RootParams> {
     setStore(_store: Store): void;
     protected getCurKey(): string;
     private _createKey;
-    payloadToLocation(data: RoutePayload<P>): Location<P>;
+    payloadToLocation(data: RoutePayload<P, N>): Location<P>;
     urlToToLocation(url: string): Location<P>;
     urlToNativeLocation(url: string): NativeLocation;
     nativeLocationToUrl(nativeLocation: NativeLocation): string;
     locationToUrl(location: Location<P>): string;
-    relaunch(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>>;
-    push(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>>;
-    replace(data: RoutePayload<P> | string, internal?: boolean): Promise<RouteState<P>>;
+    relaunch(data: RoutePayload<P, N> | string, internal?: boolean): Promise<RouteState<P>>;
+    push(data: RoutePayload<P, N> | string, internal?: boolean): Promise<RouteState<P>>;
+    replace(data: RoutePayload<P, N> | string, internal?: boolean): Promise<RouteState<P>>;
     back(n?: number, internal?: boolean): Promise<RouteState<P>>;
     pop(n?: number, internal?: boolean): Promise<RouteState<P>>;
     abstract destroy(): void;

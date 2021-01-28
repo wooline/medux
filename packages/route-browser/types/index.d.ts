@@ -12,10 +12,10 @@ export declare class BrowserNativeRouter implements NativeRouter {
     back(url: string, n: number, key: string, internal: boolean): void;
     pop(url: string, n: number, key: string, internal: boolean): void;
 }
-export declare class Router<P extends RootParams = RootParams> extends BaseRouter<P> {
+export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
     private _unlistenHistory;
     private _timer;
     constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>);
     destroy(): void;
 }
-export declare function createRouter<P extends RootParams = RootParams>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>): Router<P>;
+export declare function createRouter<P extends RootParams, N extends string>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>): Router<P, N>;

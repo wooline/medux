@@ -11,12 +11,12 @@ export interface ServerResponse {
 }
 export declare type FacadeExports<APP extends RootModuleFacade, RouteParams extends {
     [K in keyof APP]: any;
-}, Request extends ServerRequest = ServerRequest, Response extends ServerResponse = ServerResponse> = {
+}, Pagename extends string, Request extends ServerRequest = ServerRequest, Response extends ServerResponse = ServerResponse> = {
     App: {
         store: Store;
         state: RootState<APP, RouteParams>;
         loadView: LoadView<APP>;
-        router: Router<RouteParams>;
+        router: Router<RouteParams, Pagename>;
         getActions<N extends keyof APP>(...args: N[]): {
             [K in N]: APP[K]['actions'];
         };
@@ -25,13 +25,16 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
     };
     Modules: RootModuleAPI<APP>;
     Actions: RootModuleActions<APP>;
+    Pagenames: {
+        [K in Pagename]: K;
+    };
 };
 export declare const appExports: {
     store: any;
     state: any;
     loadView: any;
     getActions: any;
-    router: Router;
+    router: Router<any, string>;
     request: ServerRequest;
     response: ServerResponse;
 };

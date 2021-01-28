@@ -1,13 +1,15 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 export const routeConfig = {
   RSP: '|',
-  historyMax: 10,
-  homeUri: '|home|{app:{}}'
+  actionMaxHistory: 10,
+  pagesMaxHistory: 10,
+  pagenames: {}
 };
 export function setRouteConfig(conf) {
   conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-  conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
+  conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
+  conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function locationToUri(location, key) {
@@ -53,10 +55,6 @@ export function uriToLocation(uri) {
 }
 export class History {
   constructor() {
-    _defineProperty(this, "pagesMax", 10);
-
-    _defineProperty(this, "actionsMax", 10);
-
     _defineProperty(this, "pages", []);
 
     _defineProperty(this, "actions", []);
@@ -122,8 +120,8 @@ export class History {
     };
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const actionsMax = this.actionsMax;
-    const pagesMax = this.pagesMax;
+    const actionsMax = routeConfig.actionMaxHistory;
+    const pagesMax = routeConfig.pagesMaxHistory;
     actions.unshift(newStack);
 
     if (actions.length > actionsMax) {
@@ -161,7 +159,7 @@ export class History {
     };
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const pagesMax = this.pagesMax;
+    const pagesMax = routeConfig.pagesMaxHistory;
     actions[0] = newStack;
     pages[0] = newStack;
 

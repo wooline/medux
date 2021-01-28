@@ -3062,13 +3062,15 @@
 
 	var routeConfig = {
 	  RSP: '|',
-	  historyMax: 10,
-	  homeUri: '|home|{app:{}}'
+	  actionMaxHistory: 10,
+	  pagesMaxHistory: 10,
+	  pagenames: {}
 	};
 	function setRouteConfig(conf) {
 	  conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
-	  conf.historyMax && (routeConfig.historyMax = conf.historyMax);
-	  conf.homeUri && (routeConfig.homeUri = conf.homeUri);
+	  conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
+	  conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+	  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 	}
 
 	function locationToUri(location, key) {
@@ -3122,10 +3124,6 @@
 	}
 	var History = function () {
 	  function History() {
-	    _defineProperty(this, "pagesMax", 10);
-
-	    _defineProperty(this, "actionsMax", 10);
-
 	    _defineProperty(this, "pages", []);
 
 	    _defineProperty(this, "actions", []);
@@ -3205,8 +3203,8 @@
 	    };
 	    var pages = [].concat(this.pages);
 	    var actions = [].concat(this.actions);
-	    var actionsMax = this.actionsMax;
-	    var pagesMax = this.pagesMax;
+	    var actionsMax = routeConfig.actionMaxHistory;
+	    var pagesMax = routeConfig.pagesMaxHistory;
 	    actions.unshift(newStack);
 
 	    if (actions.length > actionsMax) {
@@ -3244,7 +3242,7 @@
 	    };
 	    var pages = [].concat(this.pages);
 	    var actions = [].concat(this.actions);
-	    var pagesMax = this.pagesMax;
+	    var pagesMax = routeConfig.pagesMaxHistory;
 	    actions[0] = newStack;
 	    pages[0] = newStack;
 
@@ -3570,6 +3568,10 @@
 	    var fullPagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
 	    map[fullPagename] = pagenameMap[pagename];
 	    return map;
+	  }, {});
+	  routeConfig.pagenames = Object.keys(pagenameMap).reduce(function (obj, key) {
+	    obj[key] = key;
+	    return obj;
 	  }, {});
 	  return {
 	    in: function _in(pathname) {
@@ -5360,18 +5362,26 @@
 	  return router;
 	}
 
-	var LoadViewOnError = function LoadViewOnError() {
-	  return React__default['default'].createElement("div", null, "error");
+	var loadViewDefaultOptions = {
+	  LoadViewOnError: React__default['default'].createElement("div", null, "error"),
+	  LoadViewOnLoading: React__default['default'].createElement("div", null)
 	};
-
+	function setLoadViewOptions(_ref) {
+	  var LoadViewOnError = _ref.LoadViewOnError,
+	      LoadViewOnLoading = _ref.LoadViewOnLoading;
+	  LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);
+	  LoadViewOnLoading && (loadViewDefaultOptions.LoadViewOnLoading = LoadViewOnLoading);
+	}
 	var loadView = function loadView(moduleName, viewName, options) {
-	  var _ref = options || {},
-	      OnLoading = _ref.OnLoading,
-	      OnError = _ref.OnError;
+	  var _ref2 = options || {},
+	      OnLoading = _ref2.OnLoading,
+	      OnError = _ref2.OnError;
 
 	  var active = true;
 
 	  var Loader = function ViewLoader(props, ref) {
+	    var OnErrorComponent = OnError || loadViewDefaultOptions.LoadViewOnError;
+	    var OnLoadingComponent = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
 	    React.useEffect(function () {
 	      return function () {
 	        active = false;
@@ -5388,7 +5398,9 @@
 	          });
 	        }).catch(function (e) {
 	          active && setView({
-	            Component: OnError || LoadViewOnError
+	            Component: function Component() {
+	              return OnErrorComponent;
+	            }
 	          });
 	          env.console.error(e);
 	        });
@@ -5404,7 +5416,7 @@
 
 	    return view ? React__default['default'].createElement(view.Component, _extends({}, props, {
 	      ref: ref
-	    })) : OnLoading ? React__default['default'].createElement(OnLoading, props) : null;
+	    })) : OnLoadingComponent;
 	  };
 
 	  var Component = React__default['default'].forwardRef(Loader);
@@ -5442,7 +5454,8 @@
 	  return {
 	    App: appExports,
 	    Modules: modules,
-	    Actions: {}
+	    Actions: {},
+	    Pagenames: routeConfig.pagenames
 	  };
 	}
 
@@ -5551,6 +5564,7 @@
 	function setConfig$1(conf) {
 	  setConfig(conf);
 	  setRouteConfig(conf);
+	  setLoadViewOptions(conf);
 	}
 	var exportModule$1 = exportModule;
 	function buildApp(moduleGetter, _ref) {

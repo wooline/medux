@@ -1,4 +1,4 @@
-import {BaseRouter, NativeRouter, createLocationTransform, createPathnameTransform, PagenameMap, DeepPartial} from 'src/index';
+import {BaseRouter, NativeRouter, createLocationTransform, createPathnameTransform, DeepPartial, RootParams} from 'src/index';
 
 import nativeRouterMock from './nativeRouter';
 
@@ -51,7 +51,7 @@ export const defaultRouteParams = {
   article: defaultArticleRouteParams,
 };
 
-type RouteParams = Partial<typeof defaultRouteParams>;
+type RouteParams = typeof defaultRouteParams;
 type PartialRouteParams = DeepPartial<RouteParams>;
 
 const pathnameIn = (pathname: string) => {
@@ -61,7 +61,7 @@ const pathnameIn = (pathname: string) => {
   return pathname;
 };
 
-const pagenameMap: PagenameMap<PartialRouteParams> = {
+const pagenameMap = {
   '/admin/member': {
     in() {
       return {admin: {}, member: {}};
@@ -71,7 +71,7 @@ const pagenameMap: PagenameMap<PartialRouteParams> = {
     },
   },
   '/admin/member/list': {
-    in([pageCurrent, term]) {
+    in([pageCurrent, term]: string[]) {
       const pathParams: PartialRouteParams = {admin: {}, member: {listView: 'list', listSearchPre: {}}};
       if (pageCurrent) {
         pathParams.member!.listSearchPre!.pageCurrent = parseInt(pageCurrent, 10);
@@ -81,24 +81,26 @@ const pagenameMap: PagenameMap<PartialRouteParams> = {
       }
       return pathParams;
     },
-    out(params) {
+    out(params: PartialRouteParams) {
       const {pageCurrent, term} = params.member?.listSearchPre || {};
       return [pageCurrent, term];
     },
   },
   '/admin/member/detail': {
-    in([itemIdPre]) {
+    in([itemIdPre]: string[]) {
       return {admin: {}, member: {itemView: 'detail', itemIdPre}};
     },
-    out(params) {
+    out(params: PartialRouteParams) {
       const {itemIdPre} = params.member || {};
       return [itemIdPre];
     },
   },
 };
 
+export type Pagename = keyof typeof pagenameMap;
+
 export const locationTransform = createLocationTransform(createPathnameTransform(pathnameIn, pagenameMap), defaultRouteParams);
-export class Router extends BaseRouter<RouteParams> {
+export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
   destroy() {}
 }
 
