@@ -26,7 +26,13 @@ export declare type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade>
 export declare type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {
     [key in keyof A]: A[key]['state'];
 };
-export declare type BaseLoadView<A extends RootModuleFacade = {}, Options = any, Comp = any> = <M extends keyof A, V extends A[M]['viewName']>(moduleName: M, viewName: V, options?: Options, loading?: Comp, error?: Comp) => A[M]['views'][V];
+export declare type BaseLoadView<A extends RootModuleFacade = {}, Comp = any, Options extends {
+    OnLoading?: Comp;
+    OnError?: Comp;
+} = {
+    OnLoading?: Comp;
+    OnError?: Comp;
+}> = <M extends keyof A, V extends A[M]['viewName']>(moduleName: M, viewName: V, options?: Options) => A[M]['views'][V];
 export declare function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {
     [moduleName: string]: string[];
 }): RootModuleAPI<T>;

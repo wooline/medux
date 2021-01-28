@@ -169,7 +169,7 @@ function __deepMerge(optimize: boolean | null, target: {[key: string]: any}, inj
   return target;
 }
 
-export function deepMerge(target: {[key: string]: any}, ...args: any[]): {[key: string]: any} {
+export function deepMerge(target: {[key: string]: any}, ...args: any[]): any {
   if (!isPlainObject(target)) {
     target = {};
   }

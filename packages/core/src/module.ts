@@ -33,12 +33,13 @@ export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[key
 
 export type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: A[key]['state']};
 
-export type BaseLoadView<A extends RootModuleFacade = {}, Options = any, Comp = any> = <M extends keyof A, V extends A[M]['viewName']>(
+export type BaseLoadView<A extends RootModuleFacade = {}, Comp = any, Options extends {OnLoading?: Comp; OnError?: Comp} = {OnLoading?: Comp; OnError?: Comp}> = <
+  M extends keyof A,
+  V extends A[M]['viewName']
+>(
   moduleName: M,
   viewName: V,
-  options?: Options,
-  loading?: Comp,
-  error?: Comp
+  options?: Options
 ) => A[M]['views'][V];
 
 export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {[moduleName: string]: string[]}): RootModuleAPI<T> {

@@ -1,6 +1,7 @@
 import type { RootModuleFacade, RootModuleAPI, RootModuleActions } from '@medux/core';
 import type { Store } from 'redux';
-import type { RootState, HistoryActions } from '@medux/web';
+import type { RootState } from '@medux/route-web';
+import type { Router } from '@medux/route-browser';
 import { LoadView } from './loadView';
 export interface ServerRequest {
     url: string;
@@ -15,7 +16,7 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
         store: Store;
         state: RootState<APP, RouteParams>;
         loadView: LoadView<APP>;
-        history: HistoryActions<RouteParams>;
+        router: Router<RouteParams>;
         getActions<N extends keyof APP>(...args: N[]): {
             [K in N]: APP[K]['actions'];
         };
@@ -30,7 +31,7 @@ export declare const appExports: {
     state: any;
     loadView: any;
     getActions: any;
-    history: HistoryActions;
+    router: Router;
     request: ServerRequest;
     response: ServerResponse;
 };

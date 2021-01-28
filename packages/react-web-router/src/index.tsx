@@ -1,15 +1,32 @@
 /// <reference path="../env/global.d.ts" />
 import React from 'react';
 import {unmountComponentAtNode, hydrate, render} from 'react-dom';
-import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-plan-a';
+import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-web';
 import {env, renderApp, renderSSR, mergeState, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
-import {createRouter} from '@medux/web';
+import {createRouter} from '@medux/route-browser';
+
 import type {ComponentType} from 'react';
 import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
-import type {LocationTransform} from '@medux/web';
+import type {LocationTransform} from '@medux/route-web';
 import {appExports} from './sington';
-
 import type {ServerRequest, ServerResponse} from './sington';
+
+export type {RootModuleFacade, Dispatch} from '@medux/core';
+export type {Store} from 'redux';
+export type {
+  RouteModuleState as BaseModuleState,
+  RootState,
+  RouteState,
+  LocationTransform,
+  PathnameTransform,
+  NativeLocation,
+  PagenameMap,
+  HistoryAction,
+  Location,
+  DeepPartial,
+} from '@medux/route-web';
+export type {LoadView} from './loadView';
+export type {FacadeExports, ServerRequest, ServerResponse} from './sington';
 
 export {
   ActionTypes,
@@ -30,18 +47,12 @@ export {
   isProcessedError,
   setProcessedError,
 } from '@medux/core';
-export {RouteModuleHandlers as BaseModuleHandlers, createWebLocationTransform} from '@medux/route-plan-a';
+export {RouteModuleHandlers as BaseModuleHandlers, createLocationTransform, createPathnameTransform} from '@medux/route-web';
 export {exportApp, patchActions} from './sington';
 export {DocumentHead} from './components/DocumentHead';
 export {Else} from './components/Else';
 export {Switch} from './components/Switch';
 export {Link} from './components/Link';
-export type {RootModuleFacade, Dispatch} from '@medux/core';
-export type {Store} from 'redux';
-export type {RouteModuleState as BaseModuleState, LocationMap, HistoryAction, Location, PathnameRules} from '@medux/route-plan-a';
-export type {RootState, RouteState, LocationTransform} from '@medux/web';
-export type {LoadView} from './loadView';
-export type {FacadeExports, ServerRequest, ServerResponse} from './sington';
 
 export function setConfig(conf: {connect?: Function; RSP?: string; historyMax?: number; homeUri?: string; NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DEVTOOLS?: boolean}) {
   setCoreConfig(conf);
@@ -68,7 +79,7 @@ export function buildApp(
     container?: string | Element;
   }
 ) {
-  appExports.history = createRouter(historyType, locationTransform);
+  appExports.router = createRouter(historyType, locationTransform);
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
   }
@@ -80,7 +91,7 @@ export function buildApp(
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.history.getRouteState()});
+  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.router.getRouteState()});
 
   return renderApp<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
@@ -99,8 +110,8 @@ export function buildApp(
     storeOptions,
     (store) => {
       appExports.store = store as any;
-      appExports.history.setStore(store);
-      const routeState = appExports.history.getRouteState();
+      appExports.router.setStore(store);
+      const routeState = appExports.router.getRouteState();
       return Object.keys(routeState.params);
     }
   );
@@ -138,11 +149,11 @@ export function buildSSR(
   }
   appExports.request = request;
   appExports.response = response;
-  appExports.history = createRouter(request.url, locationTransform);
+  appExports.router = createRouter(request.url, locationTransform);
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
-  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.history.getRouteState()});
+  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.router.getRouteState()});
   return renderSSR<ComponentType<any>>(
     (store, appModel, AppView, ssrInitStoreKey) => {
       const data = store.getState();
@@ -165,8 +176,8 @@ export function buildSSR(
           return store.getState();
         },
       });
-      appExports.history.setStore(store);
-      const routeState = appExports.history.getRouteState();
+      appExports.router.setStore(store);
+      const routeState = appExports.router.getRouteState();
       return Object.keys(routeState.params);
     }
   ).then(({html, data, ssrInitStoreKey}) => {

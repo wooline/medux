@@ -13,8 +13,8 @@
   "keywords": [],
   "workspaces": [
     "packages/core",
-    "packages/route-plan-a",
-    "packages/web",
+    "packages/route-web",
+    "packages/route-browser",
     "packages/react-web-router"
   ],
   "scripts": {

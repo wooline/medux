@@ -28,7 +28,7 @@ export const Link = React.forwardRef<HTMLAnchorElement, Props>(({onClick, replac
         !isModifiedEvent(event) // ignore clicks with modifier keys
       ) {
         event.preventDefault();
-        replace ? appExports.history.replace(rest.href!) : appExports.history.push(rest.href!);
+        replace ? appExports.router.replace(rest.href!) : appExports.router.push(rest.href!);
       }
     },
   };

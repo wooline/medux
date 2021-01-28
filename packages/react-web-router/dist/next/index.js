@@ -2101,23 +2101,27 @@ function setRouteConfig(conf) {
   conf.historyMax && (routeConfig.historyMax = conf.historyMax);
   conf.homeUri && (routeConfig.homeUri = conf.homeUri);
 }
-function extractNativeLocation(routeState) {
-  const data = Object.assign({}, routeState);
-  ['tag', 'params', 'action', 'key', 'history', 'stack'].forEach(key => {
-    delete data[key];
-  });
-  return data;
-}
+
 function locationToUri(location, key) {
-  return [key, location.tag, JSON.stringify(location.params)].join(routeConfig.RSP);
+  const {
+    pagename,
+    params
+  } = location;
+  const query = params ? JSON.stringify(params) : '';
+  return {
+    uri: [key, pagename, query].join(routeConfig.RSP),
+    pagename,
+    query,
+    key
+  };
 }
 
 function splitUri(...args) {
-  const [uri, name] = args;
+  const [uri = '', name] = args;
   const arr = uri.split(routeConfig.RSP, 3);
   const index = {
     key: 0,
-    tag: 1,
+    pagename: 1,
     query: 2
   };
 
@@ -2129,9 +2133,9 @@ function splitUri(...args) {
 }
 
 function uriToLocation(uri) {
-  const [key, tag, query] = splitUri(uri);
+  const [key, pagename, query] = splitUri(uri);
   const location = {
-    tag,
+    pagename,
     params: JSON.parse(query)
   };
   return {
@@ -2139,81 +2143,205 @@ function uriToLocation(uri) {
     location
   };
 }
-function buildHistoryStack(location, action, key, curData) {
-  const maxLength = routeConfig.historyMax;
-  const tag = location.tag;
-  const uri = locationToUri(location, key);
-  const {
-    history,
-    stack
-  } = curData;
-  let historyList = [...history];
-  let stackList = [...stack];
+class History {
+  constructor() {
+    _defineProperty(this, "pagesMax", 10);
 
-  if (action === 'RELAUNCH') {
-    historyList = [uri];
-    stackList = [uri];
-  } else if (action === 'PUSH') {
-    historyList.unshift(uri);
+    _defineProperty(this, "actionsMax", 10);
 
-    if (historyList.length > maxLength) {
-      historyList.length = maxLength;
-    }
+    _defineProperty(this, "pages", []);
 
-    if (splitUri(stackList[0], 'tag') !== tag) {
-      stackList.unshift(uri);
-
-      if (stackList.length > maxLength) {
-        stackList.length = maxLength;
-      }
-    } else {
-      stackList[0] = uri;
-    }
-  } else if (action === 'REPLACE') {
-    historyList[0] = uri;
-    stackList[0] = uri;
-
-    if (tag === splitUri(stackList[1], 'tag')) {
-      stackList.splice(1, 1);
-    }
-
-    if (stackList.length > maxLength) {
-      stackList.length = maxLength;
-    }
-  } else if (action.startsWith('POP')) {
-    const n = parseInt(action.replace('POP', ''), 10) || 1;
-    const useStack = n > 1000;
-
-    if (useStack) {
-      historyList = [];
-      stackList.splice(0, n - 1000);
-    } else {
-      const arr = historyList.splice(0, n + 1, uri).reduce((pre, curUri) => {
-        const ctag = splitUri(curUri, 'tag');
-
-        if (pre[pre.length - 1] !== ctag) {
-          pre.push(ctag);
-        }
-
-        return pre;
-      }, []);
-
-      if (arr[arr.length - 1] === splitUri(historyList[1], 'tag')) {
-        arr.pop();
-      }
-
-      stackList.splice(0, arr.length, uri);
-
-      if (tag === splitUri(stackList[1], 'tag')) {
-        stackList.splice(1, 1);
-      }
-    }
+    _defineProperty(this, "actions", []);
   }
 
-  return {
-    history: historyList,
-    stack: stackList
-  };
+  getActionRecord(keyOrIndex) {
+    if (keyOrIndex === undefined) {
+      keyOrIndex = 0;
+    }
+
+    if (typeof keyOrIndex === 'number') {
+      return this.actions[keyOrIndex];
+    }
+
+    return this.actions.find(item => item.key === keyOrIndex);
+  }
+
+  getPageRecord(keyOrIndex) {
+    if (keyOrIndex === undefined) {
+      keyOrIndex = 0;
+    }
+
+    if (typeof keyOrIndex === 'number') {
+      return this.pages[keyOrIndex];
+    }
+
+    return this.pages.find(item => item.key === keyOrIndex);
+  }
+
+  getActionIndex(key) {
+    return this.actions.findIndex(item => item.key === key);
+  }
+
+  getPageIndex(key) {
+    return this.pages.findIndex(item => item.key === key);
+  }
+
+  getCurrentInternalHistory() {
+    return this.actions[0].sub;
+  }
+
+  getUriStack() {
+    return {
+      actions: this.actions.map(item => item.uri),
+      pages: this.pages.map(item => item.uri)
+    };
+  }
+
+  push(location, key) {
+    var _pages$;
+
+    const {
+      uri,
+      pagename,
+      query
+    } = locationToUri(location, key);
+    const newStack = {
+      uri,
+      pagename,
+      query,
+      key,
+      sub: new History()
+    };
+    const pages = [...this.pages];
+    const actions = [...this.actions];
+    const actionsMax = this.actionsMax;
+    const pagesMax = this.pagesMax;
+    actions.unshift(newStack);
+
+    if (actions.length > actionsMax) {
+      actions.length = actionsMax;
+    }
+
+    if (splitUri((_pages$ = pages[0]) === null || _pages$ === void 0 ? void 0 : _pages$.uri, 'pagename') !== pagename) {
+      pages.unshift(newStack);
+
+      if (pages.length > pagesMax) {
+        pages.length = pagesMax;
+      }
+    } else {
+      pages[0] = newStack;
+    }
+
+    this.actions = actions;
+    this.pages = pages;
+  }
+
+  replace(location, key) {
+    var _pages$2;
+
+    const {
+      uri,
+      pagename,
+      query
+    } = locationToUri(location, key);
+    const newStack = {
+      uri,
+      pagename,
+      query,
+      key,
+      sub: new History()
+    };
+    const pages = [...this.pages];
+    const actions = [...this.actions];
+    const pagesMax = this.pagesMax;
+    actions[0] = newStack;
+    pages[0] = newStack;
+
+    if (pagename === splitUri((_pages$2 = pages[1]) === null || _pages$2 === void 0 ? void 0 : _pages$2.uri, 'pagename')) {
+      pages.splice(1, 1);
+    }
+
+    if (pages.length > pagesMax) {
+      pages.length = pagesMax;
+    }
+
+    this.actions = actions;
+    this.pages = pages;
+  }
+
+  relaunch(location, key) {
+    const {
+      uri,
+      pagename,
+      query
+    } = locationToUri(location, key);
+    const newStack = {
+      uri,
+      pagename,
+      query,
+      key,
+      sub: new History()
+    };
+    const actions = [newStack];
+    const pages = [newStack];
+    this.actions = actions;
+    this.pages = pages;
+  }
+
+  pop(n) {
+    const historyRecord = this.getPageRecord(n);
+
+    if (!historyRecord) {
+      return false;
+    }
+
+    const pages = [...this.pages];
+    const actions = [];
+    pages.splice(0, n);
+    this.actions = actions;
+    this.pages = pages;
+    return true;
+  }
+
+  back(n) {
+    var _actions$, _pages$3;
+
+    const historyRecord = this.getActionRecord(n);
+
+    if (!historyRecord) {
+      return false;
+    }
+
+    const uri = historyRecord.uri;
+    const pagename = splitUri(uri, 'pagename');
+    const pages = [...this.pages];
+    const actions = [...this.actions];
+    const deleteActions = actions.splice(0, n + 1, historyRecord);
+    const arr = deleteActions.reduce((pre, curStack) => {
+      const ctag = splitUri(curStack.uri, 'pagename');
+
+      if (pre[pre.length - 1] !== ctag) {
+        pre.push(ctag);
+      }
+
+      return pre;
+    }, []);
+
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) === null || _actions$ === void 0 ? void 0 : _actions$.uri, 'pagename')) {
+      arr.pop();
+    }
+
+    pages.splice(0, arr.length, historyRecord);
+
+    if (pagename === splitUri((_pages$3 = pages[1]) === null || _pages$3 === void 0 ? void 0 : _pages$3.uri, 'pagename')) {
+      pages.splice(1, 1);
+    }
+
+    this.actions = actions;
+    this.pages = pages;
+    return true;
+  }
+
 }
 
 function isPlainObject$2(obj) {
@@ -2375,465 +2503,6 @@ function splitPrivate(data, deleteTopLevel) {
   return [publicData, privateData];
 }
 
-/**
- * Tokenize input string.
- */
-function lexer(str) {
-  var tokens = [];
-  var i = 0;
-
-  while (i < str.length) {
-    var char = str[i];
-
-    if (char === "*" || char === "+" || char === "?") {
-      tokens.push({
-        type: "MODIFIER",
-        index: i,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === "\\") {
-      tokens.push({
-        type: "ESCAPED_CHAR",
-        index: i++,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === "{") {
-      tokens.push({
-        type: "OPEN",
-        index: i,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === "}") {
-      tokens.push({
-        type: "CLOSE",
-        index: i,
-        value: str[i++]
-      });
-      continue;
-    }
-
-    if (char === ":") {
-      var name = "";
-      var j = i + 1;
-
-      while (j < str.length) {
-        var code = str.charCodeAt(j);
-
-        if ( // `0-9`
-        code >= 48 && code <= 57 || // `A-Z`
-        code >= 65 && code <= 90 || // `a-z`
-        code >= 97 && code <= 122 || // `_`
-        code === 95) {
-          name += str[j++];
-          continue;
-        }
-
-        break;
-      }
-
-      if (!name) throw new TypeError("Missing parameter name at " + i);
-      tokens.push({
-        type: "NAME",
-        index: i,
-        value: name
-      });
-      i = j;
-      continue;
-    }
-
-    if (char === "(") {
-      var count = 1;
-      var pattern = "";
-      var j = i + 1;
-
-      if (str[j] === "?") {
-        throw new TypeError("Pattern cannot start with \"?\" at " + j);
-      }
-
-      while (j < str.length) {
-        if (str[j] === "\\") {
-          pattern += str[j++] + str[j++];
-          continue;
-        }
-
-        if (str[j] === ")") {
-          count--;
-
-          if (count === 0) {
-            j++;
-            break;
-          }
-        } else if (str[j] === "(") {
-          count++;
-
-          if (str[j + 1] !== "?") {
-            throw new TypeError("Capturing groups are not allowed at " + j);
-          }
-        }
-
-        pattern += str[j++];
-      }
-
-      if (count) throw new TypeError("Unbalanced pattern at " + i);
-      if (!pattern) throw new TypeError("Missing pattern at " + i);
-      tokens.push({
-        type: "PATTERN",
-        index: i,
-        value: pattern
-      });
-      i = j;
-      continue;
-    }
-
-    tokens.push({
-      type: "CHAR",
-      index: i,
-      value: str[i++]
-    });
-  }
-
-  tokens.push({
-    type: "END",
-    index: i,
-    value: ""
-  });
-  return tokens;
-}
-/**
- * Parse a string for the raw tokens.
- */
-
-
-function parse(str, options) {
-  if (options === void 0) {
-    options = {};
-  }
-
-  var tokens = lexer(str);
-  var _a = options.prefixes,
-      prefixes = _a === void 0 ? "./" : _a;
-  var defaultPattern = "[^" + escapeString(options.delimiter || "/#?") + "]+?";
-  var result = [];
-  var key = 0;
-  var i = 0;
-  var path = "";
-
-  var tryConsume = function (type) {
-    if (i < tokens.length && tokens[i].type === type) return tokens[i++].value;
-  };
-
-  var mustConsume = function (type) {
-    var value = tryConsume(type);
-    if (value !== undefined) return value;
-    var _a = tokens[i],
-        nextType = _a.type,
-        index = _a.index;
-    throw new TypeError("Unexpected " + nextType + " at " + index + ", expected " + type);
-  };
-
-  var consumeText = function () {
-    var result = "";
-    var value; // tslint:disable-next-line
-
-    while (value = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
-      result += value;
-    }
-
-    return result;
-  };
-
-  while (i < tokens.length) {
-    var char = tryConsume("CHAR");
-    var name = tryConsume("NAME");
-    var pattern = tryConsume("PATTERN");
-
-    if (name || pattern) {
-      var prefix = char || "";
-
-      if (prefixes.indexOf(prefix) === -1) {
-        path += prefix;
-        prefix = "";
-      }
-
-      if (path) {
-        result.push(path);
-        path = "";
-      }
-
-      result.push({
-        name: name || key++,
-        prefix: prefix,
-        suffix: "",
-        pattern: pattern || defaultPattern,
-        modifier: tryConsume("MODIFIER") || ""
-      });
-      continue;
-    }
-
-    var value = char || tryConsume("ESCAPED_CHAR");
-
-    if (value) {
-      path += value;
-      continue;
-    }
-
-    if (path) {
-      result.push(path);
-      path = "";
-    }
-
-    var open = tryConsume("OPEN");
-
-    if (open) {
-      var prefix = consumeText();
-      var name_1 = tryConsume("NAME") || "";
-      var pattern_1 = tryConsume("PATTERN") || "";
-      var suffix = consumeText();
-      mustConsume("CLOSE");
-      result.push({
-        name: name_1 || (pattern_1 ? key++ : ""),
-        pattern: name_1 && !pattern_1 ? defaultPattern : pattern_1,
-        prefix: prefix,
-        suffix: suffix,
-        modifier: tryConsume("MODIFIER") || ""
-      });
-      continue;
-    }
-
-    mustConsume("END");
-  }
-
-  return result;
-}
-/**
- * Escape a regular expression string.
- */
-
-function escapeString(str) {
-  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
-}
-/**
- * Get the flags for a regexp from the options.
- */
-
-
-function flags(options) {
-  return options && options.sensitive ? "" : "i";
-}
-/**
- * Pull out keys from a regexp.
- */
-
-
-function regexpToRegexp(path, keys) {
-  if (!keys) return path;
-  var groupsRegex = /\((?:\?<(.*?)>)?(?!\?)/g;
-  var index = 0;
-  var execResult = groupsRegex.exec(path.source);
-
-  while (execResult) {
-    keys.push({
-      // Use parenthesized substring match if available, index otherwise
-      name: execResult[1] || index++,
-      prefix: "",
-      suffix: "",
-      modifier: "",
-      pattern: ""
-    });
-    execResult = groupsRegex.exec(path.source);
-  }
-
-  return path;
-}
-/**
- * Transform an array into a regexp.
- */
-
-
-function arrayToRegexp(paths, keys, options) {
-  var parts = paths.map(function (path) {
-    return pathToRegexp(path, keys, options).source;
-  });
-  return new RegExp("(?:" + parts.join("|") + ")", flags(options));
-}
-/**
- * Create a path regexp from string input.
- */
-
-
-function stringToRegexp(path, keys, options) {
-  return tokensToRegexp(parse(path, options), keys, options);
-}
-/**
- * Expose a function for taking tokens and returning a RegExp.
- */
-
-
-function tokensToRegexp(tokens, keys, options) {
-  if (options === void 0) {
-    options = {};
-  }
-
-  var _a = options.strict,
-      strict = _a === void 0 ? false : _a,
-      _b = options.start,
-      start = _b === void 0 ? true : _b,
-      _c = options.end,
-      end = _c === void 0 ? true : _c,
-      _d = options.encode,
-      encode = _d === void 0 ? function (x) {
-    return x;
-  } : _d;
-  var endsWith = "[" + escapeString(options.endsWith || "") + "]|$";
-  var delimiter = "[" + escapeString(options.delimiter || "/#?") + "]";
-  var route = start ? "^" : ""; // Iterate over the tokens and create our regexp string.
-
-  for (var _i = 0, tokens_1 = tokens; _i < tokens_1.length; _i++) {
-    var token = tokens_1[_i];
-
-    if (typeof token === "string") {
-      route += escapeString(encode(token));
-    } else {
-      var prefix = escapeString(encode(token.prefix));
-      var suffix = escapeString(encode(token.suffix));
-
-      if (token.pattern) {
-        if (keys) keys.push(token);
-
-        if (prefix || suffix) {
-          if (token.modifier === "+" || token.modifier === "*") {
-            var mod = token.modifier === "*" ? "?" : "";
-            route += "(?:" + prefix + "((?:" + token.pattern + ")(?:" + suffix + prefix + "(?:" + token.pattern + "))*)" + suffix + ")" + mod;
-          } else {
-            route += "(?:" + prefix + "(" + token.pattern + ")" + suffix + ")" + token.modifier;
-          }
-        } else {
-          route += "(" + token.pattern + ")" + token.modifier;
-        }
-      } else {
-        route += "(?:" + prefix + suffix + ")" + token.modifier;
-      }
-    }
-  }
-
-  if (end) {
-    if (!strict) route += delimiter + "?";
-    route += !options.endsWith ? "$" : "(?=" + endsWith + ")";
-  } else {
-    var endToken = tokens[tokens.length - 1];
-    var isEndDelimited = typeof endToken === "string" ? delimiter.indexOf(endToken[endToken.length - 1]) > -1 : // tslint:disable-next-line
-    endToken === undefined;
-
-    if (!strict) {
-      route += "(?:" + delimiter + "(?=" + endsWith + "))?";
-    }
-
-    if (!isEndDelimited) {
-      route += "(?=" + delimiter + "|" + endsWith + ")";
-    }
-  }
-
-  return new RegExp(route, flags(options));
-}
-/**
- * Normalize the given path string, returning a regular expression.
- *
- * An empty array can be passed in for the keys, which will hold the
- * placeholder key descriptions. For example, using `/user/:id`, `keys` will
- * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
- */
-
-function pathToRegexp(path, keys, options) {
-  if (path instanceof RegExp) return regexpToRegexp(path, keys);
-  if (Array.isArray(path)) return arrayToRegexp(path, keys, options);
-  return stringToRegexp(path, keys, options);
-}
-
-const cache = {};
-function compilePath(rule) {
-  if (cache[rule]) {
-    return cache[rule];
-  }
-
-  const keys = [];
-  const regexp = pathToRegexp(rule.replace(/\$$/, ''), keys, {
-    end: rule.endsWith('$'),
-    strict: false,
-    sensitive: false
-  });
-  const result = {
-    regexp,
-    keys
-  };
-  const cachedRules = Object.keys(cache);
-
-  if (cachedRules.length > 1000) {
-    delete cache[cachedRules[0]];
-  }
-
-  cache[rule] = result;
-  return result;
-}
-function parseRule(rule, pathname) {
-  const {
-    regexp,
-    keys
-  } = compilePath(rule);
-  const match = regexp.exec(pathname);
-  if (!match) return null;
-  const [matchedPathname, ...values] = match;
-  const args = keys.reduce((memo, key, index) => {
-    memo[key.name] = values[index];
-    return memo;
-  }, {});
-  return {
-    args,
-    matchPathame: matchedPathname,
-    subPathname: pathname.replace(matchedPathname, '')
-  };
-}
-function extractPathParams(rules, pathname, pathParams) {
-  for (const rule in rules) {
-    if (rules.hasOwnProperty(rule)) {
-      const data = parseRule(rule, pathname);
-
-      if (data) {
-        const {
-          args,
-          matchPathame,
-          subPathname
-        } = data;
-        const result = rules[rule](args, pathParams);
-
-        if (typeof result === 'string') {
-          pathname = result;
-        } else if (result) {
-          return matchPathame + extractPathParams(result, subPathname, pathParams);
-        } else {
-          return pathname;
-        }
-      }
-    }
-  }
-
-  return pathname;
-}
-
-function splitSearch(search, key) {
-  const reg = new RegExp(`&${key}=([^&]+)`);
-  const arr = `&${search}`.match(reg);
-  return arr ? arr[1] : '';
-}
-
 function assignDefaultData(data, def) {
   return Object.keys(data).reduce((params, moduleName) => {
     if (def.hasOwnProperty(moduleName)) {
@@ -2844,6 +2513,12 @@ function assignDefaultData(data, def) {
   }, {});
 }
 
+function splitSearch(search, paramsKey) {
+  const reg = new RegExp(`&${paramsKey}=([^&]+)`);
+  const arr = `&${search}`.match(reg);
+  return arr ? arr[1] : '';
+}
+
 function encodeBas64(str) {
   return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
 }
@@ -2852,129 +2527,134 @@ function decodeBas64(str) {
   return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
 }
 
-function parseWebNativeLocation(nativeLocation, key, base64, parse) {
-  let search = splitSearch(nativeLocation.search, key);
-  let hash = splitSearch(nativeLocation.hash, key);
+function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
+  let search = splitSearch(nativeLocation.search, paramsKey);
+  let hash = splitSearch(nativeLocation.hash, paramsKey);
 
   if (base64) {
-    search = search ? decodeBas64(search) : '';
-    hash = hash ? decodeBas64(hash) : '';
+    search = search && decodeBas64(search);
+    hash = hash && decodeBas64(hash);
   }
 
-  const pathname = `/${nativeLocation.pathname}`.replace(/\/+/g, '/');
+  let pathname = nativeLocation.pathname;
+
+  if (!pathname.startsWith('/')) {
+    pathname = `/${pathname}`;
+  }
+
   return {
-    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    search: search ? parse(search) : undefined,
-    hash: hash ? parse(hash) : undefined
+    pathname: pathname.replace(/\/*$/, '') || '/',
+    searchParams: search ? parse(search) : undefined,
+    hashParams: hash ? parse(hash) : undefined
   };
 }
 
-function toNativeLocation(tag, search, hash, key, base64, stringify) {
+function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) {
   let searchStr = search ? stringify(search) : '';
   let hashStr = hash ? stringify(hash) : '';
 
   if (base64) {
-    searchStr = searchStr ? encodeBas64(searchStr) : '';
-    hashStr = hashStr ? encodeBas64(hashStr) : '';
+    searchStr = searchStr && encodeBas64(searchStr);
+    hashStr = hashStr && encodeBas64(hashStr);
   }
 
-  const pathname = `/${tag}`.replace(/\/+/g, '/');
+  if (!pathname.startsWith('/')) {
+    pathname = `/${pathname}`;
+  }
+
   return {
-    pathname: pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname,
-    search: searchStr ? `${key}=${searchStr}` : '',
-    hash: hashStr ? `${key}=${hashStr}` : ''
+    pathname: pathname.replace(/\/*$/, '') || '/',
+    search: searchStr && `${paramsKey}=${searchStr}`,
+    hash: hashStr && `${paramsKey}=${hashStr}`
   };
 }
-function createWebLocationTransform(defaultData, pathnameRules, base64 = false, serialization = JSON, key = '_') {
-  const matchCache = {
-    _cache: {},
 
-    get(pathname) {
-      if (this._cache[pathname]) {
-        const {
-          tag,
-          pathParams
-        } = this._cache[pathname];
-        return {
-          tag,
-          pathParams: JSON.parse(pathParams)
-        };
+function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
+  pagenameMap = Object.keys(pagenameMap).sort((a, b) => b.length - a.length).reduce((map, pagename) => {
+    const fullPagename = `/${pagename}/`.replace('//', '/').replace('//', '/');
+    map[fullPagename] = pagenameMap[pagename];
+    return map;
+  }, {});
+  return {
+    in(pathname) {
+      pathname = pathnameIn(pathname);
+
+      if (!pathname.endsWith('/')) {
+        pathname = `${pathname}/`;
       }
 
-      return undefined;
+      let pagename = Object.keys(pagenameMap).find(name => pathname.startsWith(name));
+      let pathParams;
+
+      if (!pagename) {
+        pagename = pathname.replace(/\/*$/, '');
+        pathParams = {};
+      } else {
+        const args = pathname.replace(pagename, '').split('/').map(item => item ? decodeURIComponent(item) : undefined);
+        pathParams = pagenameMap[pagename].in(args);
+        pagename = pagename.replace(/\/$/, '');
+      }
+
+      return {
+        pagename,
+        pathParams
+      };
     },
 
-    set(pathname, tag, pathParams) {
-      const keys = Object.keys(this._cache);
+    out(pagename, params) {
+      pagename = `/${pagename}/`.replace('//', '/').replace('//', '/');
+      let pathname;
 
-      if (keys.length > 100) {
-        delete this._cache[keys[0]];
+      if (!pagenameMap[pagename]) {
+        pathname = pagename.replace(/\/$/, '');
+      } else {
+        const args = pagenameMap[pagename].out(params);
+        pathname = pagename + args.map(item => item && encodeURIComponent(item)).join('/').replace(/\/*$/, '');
       }
 
-      this._cache[pathname] = {
-        tag,
-        pathParams: JSON.stringify(pathParams)
+      if (pathnameOut) {
+        pathname = pathnameOut(pathname);
+      }
+
+      const data = this.in(pathname);
+      const pathParams = data.pathParams;
+      return {
+        pathname,
+        pathParams
       };
     }
 
   };
+}
+function createLocationTransform(pathnameTransform, defaultData, base64 = false, serialization = JSON, paramsKey = '_') {
   return {
     in(nativeLocation) {
       const {
         pathname,
-        search,
-        hash
-      } = parseWebNativeLocation(nativeLocation, key, base64, serialization.parse);
-      const data = {
-        tag: pathname,
-        params: {}
+        searchParams,
+        hashParams
+      } = parseNativeLocation(nativeLocation, paramsKey, base64, serialization.parse);
+      const {
+        pagename,
+        pathParams
+      } = pathnameTransform.in(pathname);
+      let params = deepMerge(pathParams, searchParams, hashParams);
+      params = assignDefaultData(params, defaultData);
+      return {
+        pagename,
+        params
       };
-
-      if (pathnameRules) {
-        let {
-          pathParams,
-          tag
-        } = matchCache.get(pathname) || {};
-
-        if (!tag || !pathParams) {
-          pathParams = {};
-          tag = extractPathParams(pathnameRules, pathname, pathParams);
-          matchCache.set(pathname, tag, pathParams);
-        }
-
-        data.tag = tag;
-        data.params = deepMerge(pathParams, search, hash);
-      } else {
-        data.params = deepMerge(search, hash);
-      }
-
-      data.params = assignDefaultData(data.params, defaultData);
-      return data;
     },
 
     out(meduxLocation) {
       let params = excludeDefault(meduxLocation.params, defaultData, true);
-      let result;
-
-      if (pathnameRules) {
-        let {
-          pathParams,
-          tag
-        } = matchCache.get(meduxLocation.tag) || {};
-
-        if (!tag || !pathParams) {
-          pathParams = {};
-          tag = extractPathParams(pathnameRules, meduxLocation.tag, pathParams);
-          matchCache.set(meduxLocation.tag, tag, pathParams);
-        }
-
-        params = excludeDefault(params, pathParams, false);
-        result = splitPrivate(params, pathParams);
-      } else {
-        result = splitPrivate(params, {});
-      }
-
-      return toNativeLocation(meduxLocation.tag, result[0], result[1], key, base64, serialization.stringify);
+      const {
+        pathname,
+        pathParams
+      } = pathnameTransform.out(meduxLocation.pagename, params);
+      params = excludeDefault(params, pathParams, false);
+      const result = splitPrivate(params, pathParams);
+      return toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
     }
 
   };
@@ -3063,32 +2743,48 @@ const routeReducer = (state, action) => {
 
   return state;
 };
-class BaseHistoryActions {
-  constructor(nativeHistory, locationTransform) {
-    this.nativeHistory = nativeHistory;
+class BaseRouter {
+  constructor(initUrl, nativeRouter, locationTransform) {
+    this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
 
     _defineProperty(this, "_tid", 0);
 
-    _defineProperty(this, "_routeState", void 0);
+    _defineProperty(this, "routeState", void 0);
 
-    _defineProperty(this, "_startupUri", void 0);
+    _defineProperty(this, "nativeLocation", void 0);
+
+    _defineProperty(this, "url", void 0);
 
     _defineProperty(this, "store", void 0);
 
-    const location = this.locationTransform.in(nativeHistory.getInitLocation());
+    _defineProperty(this, "history", void 0);
+
+    this.nativeLocation = this.urlToNativeLocation(initUrl);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
+    const location = this.locationTransform.in(this.nativeLocation);
 
     const key = this._createKey();
 
-    const routeState = this.locationToRouteState(location, 'RELAUNCH', key);
-    this._routeState = routeState;
-    this._startupUri = locationToUri(location, key);
-    const nativeLocation = extractNativeLocation(routeState);
-    nativeHistory.relaunch(nativeLocation, key);
+    this.history = new History();
+    const routeState = Object.assign({}, location, {
+      action: 'RELAUNCH',
+      key
+    });
+    this.routeState = routeState;
+    this.history.relaunch(location, key);
   }
 
   getRouteState() {
-    return this._routeState;
+    return this.routeState;
+  }
+
+  getNativeLocation() {
+    return this.nativeLocation;
+  }
+
+  getUrl() {
+    return this.url;
   }
 
   setStore(_store) {
@@ -3096,7 +2792,7 @@ class BaseHistoryActions {
   }
 
   getCurKey() {
-    return this._routeState.key;
+    return this.routeState.key;
   }
 
   _createKey() {
@@ -3104,125 +2800,204 @@ class BaseHistoryActions {
     return `${this._tid}`;
   }
 
-  findHistoryByKey(key) {
-    const {
-      history
-    } = this._routeState;
-    return history.findIndex(uri => uri.startsWith(`${key}${routeConfig.RSP}`));
-  }
-
   payloadToLocation(data) {
-    if (typeof data === 'string') {
-      const nativeLocation = this.nativeHistory.parseUrl(data);
-      return this.locationTransform.in(nativeLocation);
-    }
-
     const {
-      tag
+      pagename
     } = data;
-    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
+    const extendParams = data.extendParams === true ? this.routeState.params : data.extendParams;
     const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
     return {
-      tag: tag || this._routeState.tag || '/',
+      pagename: pagename || this.routeState.pagename || '/',
       params
     };
   }
 
-  locationToUrl(data) {
-    const {
-      tag
-    } = data;
-    const extendParams = data.extendParams === true ? this._routeState.params : data.extendParams;
-    const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
-    const nativeLocation = this.locationTransform.out({
-      tag: tag || this._routeState.tag || '/',
-      params
-    });
-    return this.nativeHistory.toUrl(nativeLocation);
+  urlToToLocation(url) {
+    const nativeLocation = this.urlToNativeLocation(url);
+    return this.locationTransform.in(nativeLocation);
   }
 
-  locationToRouteState(location, action, key) {
-    const {
-      history,
-      stack
-    } = buildHistoryStack(location, action, key, this._routeState || {
-      history: [],
-      stack: []
-    });
-    const natvieLocation = this.locationTransform.out(location);
-    return Object.assign({}, location, {
-      action,
-      key,
-      history,
-      stack
-    }, natvieLocation);
-  }
-
-  async dispatch(location, action, key = '', callNative) {
-    key = key || this._createKey();
-    const routeState = this.locationToRouteState(location, action, key);
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
-    this._routeState = routeState;
-    await this.store.dispatch(routeChangeAction(routeState));
-
-    if (callNative) {
-      const nativeLocation = extractNativeLocation(routeState);
-
-      if (typeof callNative === 'number') {
-        this.nativeHistory.pop && this.nativeHistory.pop(nativeLocation, callNative, key);
-      } else {
-        this.nativeHistory[callNative] && this.nativeHistory[callNative](nativeLocation, key);
-      }
+  urlToNativeLocation(url) {
+    if (!url) {
+      return {
+        pathname: '/',
+        search: '',
+        hash: ''
+      };
     }
 
+    const arr = url.split(/[?#]/);
+
+    if (arr.length === 2 && url.indexOf('?') < 0) {
+      arr.splice(1, 0, '');
+    }
+
+    const [path, search = '', hash = ''] = arr;
+    let pathname = path;
+
+    if (!pathname.startsWith('/')) {
+      pathname = `/${pathname}`;
+    }
+
+    pathname = pathname.replace(/\/*$/, '') || '/';
+    return {
+      pathname,
+      search,
+      hash
+    };
+  }
+
+  nativeLocationToUrl(nativeLocation) {
+    const {
+      pathname,
+      search,
+      hash
+    } = nativeLocation;
+    return [pathname && pathname.replace(/\/*$/, ''), search && `?${search}`, hash && `#${hash}`].join('');
+  }
+
+  locationToUrl(location) {
+    const nativeLocation = this.locationTransform.out(location);
+    return this.nativeLocationToUrl(nativeLocation);
+  }
+
+  async relaunch(data, internal) {
+    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+
+    const key = this._createKey();
+
+    const routeState = Object.assign({}, location, {
+      action: 'RELAUNCH',
+      key
+    });
+    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    this.routeState = routeState;
+    this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
+
+    if (internal) {
+      this.history.getCurrentInternalHistory().relaunch(location, key);
+    } else {
+      this.history.relaunch(location, key);
+    }
+
+    this.nativeRouter.relaunch(this.url, key, !!internal);
     return routeState;
   }
 
-  relaunch(data, disableNative) {
-    const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'RELAUNCH', '', disableNative ? '' : 'relaunch');
-  }
+  async push(data, internal) {
+    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
 
-  push(data, disableNative) {
-    const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'PUSH', '', disableNative ? '' : 'push');
-  }
+    const key = this._createKey();
 
-  replace(data, disableNative) {
-    const paLocation = this.payloadToLocation(data);
-    return this.dispatch(paLocation, 'REPLACE', '', disableNative ? '' : 'replace');
-  }
+    const routeState = Object.assign({}, location, {
+      action: 'PUSH',
+      key
+    });
+    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    this.routeState = routeState;
+    this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
-  pop(n = 1, root = 'FIRST', disableNative, useStack) {
-    n = n || 1;
-    let uri = useStack ? this._routeState.stack[n] : this._routeState.history[n];
-    let k = useStack ? 1000 + n : n;
-
-    if (!uri) {
-      k = 1000000;
-
-      if (root === 'HOME') {
-        uri = routeConfig.homeUri;
-      } else if (root === 'FIRST') {
-        uri = this._startupUri;
-      } else {
-        return Promise.reject(1);
-      }
+    if (internal) {
+      this.history.getCurrentInternalHistory().push(location, key);
+    } else {
+      this.history.push(location, key);
     }
 
+    this.nativeRouter.push(this.url, key, !!internal);
+    return routeState;
+  }
+
+  async replace(data, internal) {
+    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+
+    const key = this._createKey();
+
+    const routeState = Object.assign({}, location, {
+      action: 'REPLACE',
+      key
+    });
+    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    this.routeState = routeState;
+    this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
+
+    if (internal) {
+      this.history.getCurrentInternalHistory().replace(location, key);
+    } else {
+      this.history.replace(location, key);
+    }
+
+    this.nativeRouter.replace(this.url, key, !!internal);
+    return routeState;
+  }
+
+  async back(n = 1, internal) {
+    const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
+
+    if (!stack) {
+      return Promise.reject(1);
+    }
+
+    const uri = stack.uri;
     const {
       key,
       location
     } = uriToLocation(uri);
-    return this.dispatch(location, `POP${k}`, key, disableNative ? '' : k);
+    const routeState = Object.assign({}, location, {
+      action: 'BACK',
+      key
+    });
+    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    this.routeState = routeState;
+    this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
+
+    if (internal) {
+      this.history.getCurrentInternalHistory().back(n);
+    } else {
+      this.history.back(n);
+    }
+
+    this.nativeRouter.back(this.url, n, key, !!internal);
+    return routeState;
   }
 
-  back(n = 1, root = 'FIRST', disableNative) {
-    return this.pop(n, root, disableNative, true);
-  }
+  async pop(n = 1, internal) {
+    const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
-  home(root = 'FIRST', disableNative) {
-    return this.relaunch(root === 'HOME' ? routeConfig.homeUri : this._startupUri, disableNative);
+    if (!stack) {
+      return Promise.reject(1);
+    }
+
+    const uri = stack.uri;
+    const {
+      key,
+      location
+    } = uriToLocation(uri);
+    const routeState = Object.assign({}, location, {
+      action: 'POP',
+      key
+    });
+    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    this.routeState = routeState;
+    this.store.dispatch(routeChangeAction(routeState));
+    this.nativeLocation = this.locationTransform.out(location);
+    this.url = this.nativeLocationToUrl(this.nativeLocation);
+
+    if (internal) {
+      this.history.getCurrentInternalHistory().pop(n);
+    } else {
+      this.history.pop(n);
+    }
+
+    this.nativeRouter.pop(this.url, n, key, !!internal);
+    return routeState;
   }
 
 }
@@ -4264,7 +4039,7 @@ function createMemoryHistory(props) {
   return history;
 }
 
-class WebNativeHistory {
+class BrowserNativeRouter {
   constructor(createHistory) {
     _defineProperty(this, "history", void 0);
 
@@ -4311,19 +4086,6 @@ class WebNativeHistory {
     }
   }
 
-  getInitLocation() {
-    const {
-      pathname = '',
-      search = '',
-      hash = ''
-    } = this.history.location;
-    return {
-      pathname,
-      search: decodeURIComponent(search).replace('?', ''),
-      hash: decodeURIComponent(hash).replace('#', '')
-    };
-  }
-
   getUrl() {
     const {
       pathname = '',
@@ -4331,33 +4093,6 @@ class WebNativeHistory {
       hash = ''
     } = this.history.location;
     return [pathname, search, hash].join('');
-  }
-
-  parseUrl(url) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: ''
-      };
-    }
-
-    const arr = url.split(/[?#]/);
-
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-
-    const [pathname, search = '', hash = ''] = arr;
-    return {
-      pathname,
-      search,
-      hash
-    };
-  }
-
-  toUrl(location) {
-    return [location.pathname, location.search && `?${location.search}`, location.hash && `#${location.hash}`].join('');
   }
 
   block(blocker) {
@@ -4375,49 +4110,48 @@ class WebNativeHistory {
     return location.state || '';
   }
 
-  push(location, key) {
-    this.history.push(this.toUrl(location), key);
+  push(url, key, internal) {
+    !internal && this.history.push(url, key);
   }
 
-  replace(location, key) {
-    this.history.replace(this.toUrl(location), key);
+  replace(url, key, internal) {
+    !internal && this.history.replace(url, key);
   }
 
-  relaunch(location, key) {
-    this.history.push(this.toUrl(location), key);
+  relaunch(url, key, internal) {
+    !internal && this.history.push(url, key);
   }
 
-  pop(location, n, key) {
-    if (n < 500) {
-      this.history.go(-n);
-    } else {
-      this.history.push(this.toUrl(location), key);
-    }
+  back(url, n, key, internal) {
+    !internal && this.history.go(-n);
+  }
+
+  pop(url, n, key, internal) {
+    !internal && this.history.push(url, key);
   }
 
 }
-class HistoryActions extends BaseHistoryActions {
-  constructor(nativeHistory, locationTransform) {
-    super(nativeHistory, locationTransform);
-    this.nativeHistory = nativeHistory;
+class Router extends BaseRouter {
+  constructor(browserNativeRouter, locationTransform) {
+    super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
 
     _defineProperty(this, "_unlistenHistory", void 0);
 
     _defineProperty(this, "_timer", 0);
 
-    this._unlistenHistory = this.nativeHistory.block((url, key, action) => {
+    this._unlistenHistory = browserNativeRouter.block((url, key, action) => {
       if (key !== this.getCurKey()) {
         let callback;
         let index = 0;
 
         if (action === 'POP') {
-          index = this.findHistoryByKey(key);
+          index = this.history.getActionIndex(key);
         }
 
         if (index > 0) {
           callback = () => {
             this._timer = 0;
-            this.pop(index);
+            this.back(index);
           };
         } else if (action === 'REPLACE') {
           callback = () => {
@@ -4447,32 +4181,25 @@ class HistoryActions extends BaseHistoryActions {
     });
   }
 
-  getNativeHistory() {
-    return this.nativeHistory.history;
-  }
-
   destroy() {
     this._unlistenHistory();
   }
 
-  refresh() {
-    this.nativeHistory.history.go(0);
-  }
-
 }
 function createRouter(createHistory, locationTransform) {
-  const nativeHistory = new WebNativeHistory(createHistory);
-  const historyActions = new HistoryActions(nativeHistory, locationTransform);
-  return historyActions;
+  const browserNativeRouter = new BrowserNativeRouter(createHistory);
+  const router = new Router(browserNativeRouter, locationTransform);
+  return router;
 }
 
 const LoadViewOnError = () => {
   return React.createElement("div", null, "error");
 };
 
-const loadView = (moduleName, viewName, options, Loading, Error) => {
+const loadView = (moduleName, viewName, options) => {
   const {
-    forwardRef
+    OnLoading,
+    OnError
   } = options || {};
   let active = true;
 
@@ -4492,7 +4219,7 @@ const loadView = (moduleName, viewName, options, Loading, Error) => {
           });
         }).catch(e => {
           active && setView({
-            Component: Error || LoadViewOnError
+            Component: OnError || LoadViewOnError
           });
           env.console.error(e);
         });
@@ -4505,10 +4232,10 @@ const loadView = (moduleName, viewName, options, Loading, Error) => {
     });
     return view ? React.createElement(view.Component, _extends({}, props, {
       ref: ref
-    })) : Loading ? React.createElement(Loading, props) : null;
+    })) : OnLoading ? React.createElement(OnLoading, props) : null;
   };
 
-  const Component = forwardRef ? React.forwardRef(Loader) : Loader;
+  const Component = React.forwardRef(Loader);
   return Component;
 };
 
@@ -4517,7 +4244,7 @@ const appExports = {
   getActions: undefined,
   state: undefined,
   store: undefined,
-  history: undefined,
+  router: undefined,
   request: undefined,
   response: undefined
 };
@@ -4643,7 +4370,7 @@ const Link = React.forwardRef((_ref, ref) => {
 
       if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
           event.preventDefault();
-          replace ? appExports.history.replace(rest.href) : appExports.history.push(rest.href);
+          replace ? appExports.router.replace(rest.href) : appExports.router.push(rest.href);
         }
     }
   });
@@ -4665,7 +4392,7 @@ function buildApp(moduleGetter, {
   storeOptions = {},
   container = 'root'
 }) {
-  appExports.history = createRouter(historyType, locationTransform);
+  appExports.router = createRouter(historyType, locationTransform);
 
   if (!storeOptions.middlewares) {
     storeOptions.middlewares = [];
@@ -4684,7 +4411,7 @@ function buildApp(moduleGetter, {
   }
 
   storeOptions.initData = mergeState(storeOptions.initData, {
-    route: appExports.history.getRouteState()
+    route: appExports.router.getRouteState()
   });
   return renderApp((store, appModel, AppView, ssrInitStoreKey) => {
     const reRender = View => {
@@ -4700,8 +4427,8 @@ function buildApp(moduleGetter, {
     return reRender;
   }, moduleGetter, appModuleName, appViewName, storeOptions, store => {
     appExports.store = store;
-    appExports.history.setStore(store);
-    const routeState = appExports.history.getRouteState();
+    appExports.router.setStore(store);
+    const routeState = appExports.router.getRouteState();
     return Object.keys(routeState.params);
   });
 }
@@ -4724,14 +4451,14 @@ function buildSSR(moduleGetter, {
 
   appExports.request = request;
   appExports.response = response;
-  appExports.history = createRouter(request.url, locationTransform);
+  appExports.router = createRouter(request.url, locationTransform);
 
   if (!storeOptions.initData) {
     storeOptions.initData = {};
   }
 
   storeOptions.initData = mergeState(storeOptions.initData, {
-    route: appExports.history.getRouteState()
+    route: appExports.router.getRouteState()
   });
   return renderSSR((store, appModel, AppView, ssrInitStoreKey) => {
     const data = store.getState();
@@ -4750,8 +4477,8 @@ function buildSSR(moduleGetter, {
         return store.getState();
       }
     });
-    appExports.history.setStore(store);
-    const routeState = appExports.history.getRouteState();
+    appExports.router.setStore(store);
+    const routeState = appExports.router.getRouteState();
     return Object.keys(routeState.params);
   }).then(({
     html,
@@ -4770,4 +4497,4 @@ function buildSSR(moduleGetter, {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createWebLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createLocationTransform, createPathnameTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
