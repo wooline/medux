@@ -40,5 +40,5 @@
     "@babel/runtime": "~7.12.5",
     "@medux/core": "^2.0.0-beta.3.8"
   },
-  "gitHead": "5638ad91c6d59f14b7083b832629db5eca9195ef"
+  "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }
