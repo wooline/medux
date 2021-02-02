@@ -3527,6 +3527,9 @@ function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
   if (base64) {
     search = search && decodeBas64(search);
     hash = hash && decodeBas64(hash);
+  } else {
+    search = search && decodeURIComponent(search);
+    hash = hash && decodeURIComponent(hash);
   }
 
   var pathname = nativeLocation.pathname;
@@ -3549,6 +3552,9 @@ function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) 
   if (base64) {
     searchStr = searchStr && encodeBas64(searchStr);
     hashStr = hashStr && encodeBas64(hashStr);
+  } else {
+    searchStr = searchStr && encodeURIComponent(searchStr);
+    hashStr = hashStr && encodeURIComponent(hashStr);
   }
 
   if (!pathname.startsWith('/')) {
@@ -5288,6 +5294,10 @@ var BrowserNativeRouter = function () {
     !internal && this.history.push(url, key);
   };
 
+  _proto.refresh = function refresh() {
+    this.history.go(0);
+  };
+
   return BrowserNativeRouter;
 }();
 var Router = function (_BaseRouter) {
@@ -5302,6 +5312,9 @@ var Router = function (_BaseRouter) {
 
     _defineProperty(_assertThisInitialized(_this2), "_timer", 0);
 
+    _defineProperty(_assertThisInitialized(_this2), "nativeRouter", void 0);
+
+    _this2.nativeRouter = browserNativeRouter;
     _this2._unlistenHistory = browserNativeRouter.block(function (url, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;
@@ -5680,8 +5693,8 @@ function buildSSR(moduleGetter, _ref2) {
 
     if (match) {
       var pageHead = html.split(/<head>|<\/head>/, 3);
-      html = pageHead[0] + pageHead[2];
-      return SSRTPL.replace('</head>', pageHead[1] + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+      html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+      return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
     }
 
     return html;

@@ -2532,6 +2532,9 @@ function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
   if (base64) {
     search = search && decodeBas64(search);
     hash = hash && decodeBas64(hash);
+  } else {
+    search = search && decodeURIComponent(search);
+    hash = hash && decodeURIComponent(hash);
   }
 
   let pathname = nativeLocation.pathname;
@@ -2554,6 +2557,9 @@ function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) 
   if (base64) {
     searchStr = searchStr && encodeBas64(searchStr);
     hashStr = hashStr && encodeBas64(hashStr);
+  } else {
+    searchStr = searchStr && encodeURIComponent(searchStr);
+    hashStr = hashStr && encodeURIComponent(hashStr);
   }
 
   if (!pathname.startsWith('/')) {
@@ -4132,6 +4138,10 @@ class BrowserNativeRouter {
     !internal && this.history.push(url, key);
   }
 
+  refresh() {
+    this.history.go(0);
+  }
+
 }
 class Router extends BaseRouter {
   constructor(browserNativeRouter, locationTransform) {
@@ -4141,6 +4151,9 @@ class Router extends BaseRouter {
 
     _defineProperty(this, "_timer", 0);
 
+    _defineProperty(this, "nativeRouter", void 0);
+
+    this.nativeRouter = browserNativeRouter;
     this._unlistenHistory = browserNativeRouter.block((url, key, action) => {
       if (key !== this.getCurKey()) {
         let callback;
@@ -4502,8 +4515,8 @@ function buildSSR(moduleGetter, {
 
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
-      html = pageHead[0] + pageHead[2];
-      return SSRTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+      html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+      return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
     }
 
     return html;

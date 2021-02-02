@@ -39,4 +39,4 @@ export declare const appExports: {
     response: ServerResponse;
 };
 export declare function patchActions(typeName: string, json?: string): void;
-export declare function exportApp(): FacadeExports<any, any, any, any>;
+export declare function exportApp(): FacadeExports<any, any, any, any, any>;

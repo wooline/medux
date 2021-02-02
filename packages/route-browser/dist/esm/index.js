@@ -101,6 +101,10 @@ export var BrowserNativeRouter = function () {
     !internal && this.history.push(url, key);
   };
 
+  _proto.refresh = function refresh() {
+    this.history.go(0);
+  };
+
   return BrowserNativeRouter;
 }();
 export var Router = function (_BaseRouter) {
@@ -115,6 +119,9 @@ export var Router = function (_BaseRouter) {
 
     _defineProperty(_assertThisInitialized(_this2), "_timer", 0);
 
+    _defineProperty(_assertThisInitialized(_this2), "nativeRouter", void 0);
+
+    _this2.nativeRouter = browserNativeRouter;
     _this2._unlistenHistory = browserNativeRouter.block(function (url, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;

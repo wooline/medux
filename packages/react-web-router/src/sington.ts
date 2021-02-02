@@ -51,7 +51,7 @@ export function patchActions(typeName: string, json?: string): void {
   }
 }
 
-export function exportApp(): FacadeExports<any, any, any, any> {
+export function exportApp(): FacadeExports<any, any, any, any, any> {
   const modules = getRootModuleAPI();
   appExports.getActions = (...args: string[]) => {
     return args.reduce((prev, moduleName) => {

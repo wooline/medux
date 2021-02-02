@@ -115,6 +115,10 @@ var BrowserNativeRouter = function () {
     !internal && this.history.push(url, key);
   };
 
+  _proto.refresh = function refresh() {
+    this.history.go(0);
+  };
+
   return BrowserNativeRouter;
 }();
 
@@ -129,6 +133,8 @@ var Router = function (_BaseRouter) {
     _this2 = _BaseRouter.call(this, browserNativeRouter.getUrl(), browserNativeRouter, locationTransform) || this;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_unlistenHistory", void 0);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "_timer", 0);
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "nativeRouter", void 0);
+    _this2.nativeRouter = browserNativeRouter;
     _this2._unlistenHistory = browserNativeRouter.block(function (url, key, action) {
       if (key !== _this2.getCurKey()) {
         var callback;

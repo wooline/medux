@@ -200,8 +200,8 @@ export function buildSSR(
     const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
-      html = pageHead[0] + pageHead[2];
-      return SSRTPL.replace('</head>', `${pageHead[1]}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+      html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+      return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
     }
     return html;
   });

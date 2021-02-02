@@ -33,6 +33,9 @@ function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
   if (base64) {
     search = search && decodeBas64(search);
     hash = hash && decodeBas64(hash);
+  } else {
+    search = search && decodeURIComponent(search);
+    hash = hash && decodeURIComponent(hash);
   }
 
   let pathname = nativeLocation.pathname;
@@ -55,6 +58,9 @@ function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) 
   if (base64) {
     searchStr = searchStr && encodeBas64(searchStr);
     hashStr = hashStr && encodeBas64(hashStr);
+  } else {
+    searchStr = searchStr && encodeURIComponent(searchStr);
+    hashStr = hashStr && encodeURIComponent(hashStr);
   }
 
   if (!pathname.startsWith('/')) {

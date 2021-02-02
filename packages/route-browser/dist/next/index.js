@@ -93,6 +93,10 @@ export class BrowserNativeRouter {
     !internal && this.history.push(url, key);
   }
 
+  refresh() {
+    this.history.go(0);
+  }
+
 }
 export class Router extends BaseRouter {
   constructor(browserNativeRouter, locationTransform) {
@@ -102,6 +106,9 @@ export class Router extends BaseRouter {
 
     _defineProperty(this, "_timer", 0);
 
+    _defineProperty(this, "nativeRouter", void 0);
+
+    this.nativeRouter = browserNativeRouter;
     this._unlistenHistory = browserNativeRouter.block((url, key, action) => {
       if (key !== this.getCurKey()) {
         let callback;

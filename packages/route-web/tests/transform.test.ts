@@ -276,8 +276,8 @@ describe('locationTransform', () => {
       })
     ).toEqual({
       pathname: '/admin/member',
-      search: '_={"member":{"listSearchPre":{"pageCurrent":2,"term":"aaa"}}}',
-      hash: '_={"member":{"_listVerPre":2}}',
+      search: `_=${encodeURIComponent('{"member":{"listSearchPre":{"pageCurrent":2,"term":"aaa"}}}')}`,
+      hash: `_=${encodeURIComponent('{"member":{"_listVerPre":2}}')}`,
     });
   });
   test('out admin/member/list', () => {
@@ -303,7 +303,7 @@ describe('locationTransform', () => {
     ).toEqual({
       pathname: '/admin/member/list/2/aaa',
       search: '',
-      hash: '_={"member":{"_listVerPre":2}}',
+      hash: `_=${encodeURIComponent('{"member":{"_listVerPre":2}}')}`,
     });
   });
   test('out /admin/member/list', () => {

@@ -11,10 +11,12 @@ export declare class BrowserNativeRouter implements NativeRouter {
     relaunch(url: string, key: string, internal: boolean): void;
     back(url: string, n: number, key: string, internal: boolean): void;
     pop(url: string, n: number, key: string, internal: boolean): void;
+    refresh(): void;
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
     private _unlistenHistory;
     private _timer;
+    nativeRouter: BrowserNativeRouter;
     constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>);
     destroy(): void;
 }

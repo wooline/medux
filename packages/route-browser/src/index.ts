@@ -78,14 +78,21 @@ export class BrowserNativeRouter implements NativeRouter {
   pop(url: string, n: number, key: string, internal: boolean) {
     !internal && this.history.push(url, key as any);
   }
+
+  refresh() {
+    this.history.go(0);
+  }
 }
 export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
   private _unlistenHistory: UnregisterCallback;
 
   private _timer: number = 0;
 
+  public nativeRouter: BrowserNativeRouter;
+
   constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>) {
     super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
+    this.nativeRouter = browserNativeRouter;
     this._unlistenHistory = browserNativeRouter.block((url, key, action) => {
       if (key !== this.getCurKey()) {
         let callback: (() => void) | undefined;
