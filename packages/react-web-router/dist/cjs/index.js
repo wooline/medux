@@ -2437,13 +2437,6 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       decorators: [reducer],
-      key: "ReInit",
-      value: function ReInit(initState) {
-        return initState;
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
       key: "Update",
       value: function Update(payload, key) {
         return mergeState(this.state, payload);
