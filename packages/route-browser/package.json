@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-browser",
-  "version": "2.0.0-beta.3.10",
+  "version": "2.0.0-beta.3.11",
   "description": "Using @medux/route-web in browser",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-browser",
   "author": "wooline <wooline@qq.com>",
@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-beta.3.9",
-    "@medux/route-web": "^2.0.0-beta.3.10",
+    "@medux/core": "^2.0.0-beta.3.11",
+    "@medux/route-web": "^2.0.0-beta.3.11",
     "@types/history": "~4.7.7",
     "history": "~4.10.1"
   },

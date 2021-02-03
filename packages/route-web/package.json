@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-web",
-  "version": "2.0.0-beta.3.10",
+  "version": "2.0.0-beta.3.11",
   "description": "The practice of @medux/core in web route",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-web",
   "author": "wooline <wooline@qq.com>",
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-beta.3.9"
+    "@medux/core": "^2.0.0-beta.3.11"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }
