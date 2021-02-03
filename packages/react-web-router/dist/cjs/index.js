@@ -1597,6 +1597,7 @@ function snapshotState(target) {
 var ActionTypes = {
   MLoading: 'Loading',
   MInit: 'Init',
+  MReInit: 'ReInit',
   Error: "medux" + config.NSP + "Error"
 };
 var MetaData = {
@@ -1753,6 +1754,13 @@ function serverSide(callback) {
 
   return undefined;
 }
+function clientSide(callback) {
+  if (!isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
+}
 
 function errorAction(reason) {
   return {
@@ -1763,6 +1771,12 @@ function errorAction(reason) {
 function moduleInitAction(moduleName, initState) {
   return {
     type: "" + moduleName + config.NSP + ActionTypes.MInit,
+    payload: [initState]
+  };
+}
+function moduleReInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MReInit,
     payload: [initState]
   };
 }
@@ -2342,6 +2356,11 @@ function _loadModel(moduleName, store) {
 
   if (!hasInjected) {
     var moduleGetter = MetaData.moduleGetter;
+
+    if (!moduleGetter[moduleName]) {
+      return undefined;
+    }
+
     var result = moduleGetter[moduleName]();
 
     if (isPromise(result)) {
@@ -2418,6 +2437,13 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       decorators: [reducer],
+      key: "ReInit",
+      value: function ReInit(initState) {
+        return initState;
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
       key: "Update",
       value: function Update(payload, key) {
         return mergeState(this.state, payload);
@@ -2450,10 +2476,12 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       var preModuleState = store.getState()[moduleName] || {};
       var moduleState = Object.assign({}, _initState, preModuleState);
 
-      if (!moduleState.initialized) {
-        moduleState.initialized = true;
-        return store.dispatch(moduleInitAction(moduleName, moduleState));
+      if (moduleState.initialized) {
+        return store.dispatch(moduleReInitAction(moduleName, moduleState));
       }
+
+      moduleState.initialized = true;
+      return store.dispatch(moduleInitAction(moduleName, moduleState));
     }
 
     return undefined;
@@ -2611,7 +2639,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          var node = fun.apply(void 0, actionData.concat([currentState]));
+          var node = fun.apply(void 0, actionData.concat([currentState, action.type]));
 
           if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             warn('Use rewrite instead of replace to update state in MutableData');
@@ -2681,7 +2709,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun.apply(void 0, _actionData.concat([currentState]));
+              var effectResult = fun.apply(void 0, _actionData.concat([currentState, action.type]));
               var decorators = fun.__decorators__;
 
               if (decorators) {
@@ -2935,8 +2963,8 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 }
 
 function _renderApp() {
-  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-    var appModuleName, ssrInitStoreKey, initData, store, preModuleNames, modules, appModule;
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
+    var appModuleName, ssrInitStoreKey, initData, store, appModule;
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -2967,32 +2995,22 @@ function _renderApp() {
             }
 
             store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            preModuleNames = beforeRender(store).filter(function (name) {
-              return name !== appModuleName;
-            });
-            preModuleNames.unshift(appModuleName);
-            _context.next = 15;
-            return Promise.all(preModuleNames.map(function (moduleName) {
-              if (moduleGetter[moduleName]) {
-                return getModuleByName(moduleName, moduleGetter);
-              }
+            _context.next = 13;
+            return getModuleByName(appModuleName, moduleGetter);
 
-              return undefined;
-            }));
-
-          case 15:
-            modules = _context.sent;
-            appModule = modules[0];
-            _context.next = 19;
+          case 13:
+            appModule = _context.sent;
+            startup(store, appModule);
+            _context.next = 17;
             return appModule.default.model(store);
 
-          case 19:
-            reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+          case 17:
+            reRender = render(store, appModule.default.views[appViewName], ssrInitStoreKey);
             return _context.abrupt("return", {
               store: store
             });
 
-          case 21:
+          case 19:
           case "end":
             return _context.stop();
         }
@@ -3011,8 +3029,8 @@ function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
 }
 
 function _renderSSR() {
-  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-    var ssrInitStoreKey, store, preModuleNames, modules, appModule;
+  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
+    var appModuleName, ssrInitStoreKey, store, appModule;
     return regenerator.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
@@ -3021,35 +3039,29 @@ function _renderSSR() {
               storeOptions = {};
             }
 
+            appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
             MetaData.appModuleName = appModuleName;
             MetaData.appViewName = appViewName;
             MetaData.moduleGetter = moduleGetter;
+
+            if (typeof appModuleOrName !== 'string') {
+              cacheModule(appModuleOrName);
+            }
+
             ssrInitStoreKey = config.SSRKey;
             store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            preModuleNames = beforeRender(store).filter(function (name) {
-              return name !== appModuleName;
-            });
-            preModuleNames.unshift(appModuleName);
             _context2.next = 10;
-            return Promise.all(preModuleNames.map(function (moduleName) {
-              if (moduleGetter[moduleName]) {
-                return getModuleByName(moduleName, moduleGetter);
-              }
-
-              return null;
-            }));
+            return getModuleByName(appModuleName, moduleGetter);
 
           case 10:
-            modules = _context2.sent;
-            appModule = modules[0];
+            appModule = _context2.sent;
+            startup(store, appModule);
             _context2.next = 14;
-            return Promise.all(modules.map(function (module) {
-              return module && module.default.model(store);
-            }));
+            return appModule.default.model(store);
 
           case 14:
             store.dispatch = defFun;
-            return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
+            return _context2.abrupt("return", render(store, appModule.default.views[appViewName], ssrInitStoreKey));
 
           case 16:
           case "end":
@@ -5614,7 +5626,7 @@ function buildApp(moduleGetter, _ref) {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.router.getRouteState()
   });
-  return renderApp(function (store, appModel, AppView, ssrInitStoreKey) {
+  return renderApp(function (store, AppView, ssrInitStoreKey) {
     var reRender = function reRender(View) {
       var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
       reactDom.unmountComponentAtNode(panel);
@@ -5629,8 +5641,11 @@ function buildApp(moduleGetter, _ref) {
   }, moduleGetter, appModuleName, appViewName, storeOptions, function (store) {
     appExports.store = store;
     appExports.router.setStore(store);
-    var routeState = appExports.router.getRouteState();
-    return Object.keys(routeState.params);
+    Object.defineProperty(appExports, 'state', {
+      get: function get() {
+        return store.getState();
+      }
+    });
   });
 }
 var SSRTPL;
@@ -5665,7 +5680,7 @@ function buildSSR(moduleGetter, _ref2) {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.router.getRouteState()
   });
-  return renderSSR(function (store, appModel, AppView, ssrInitStoreKey) {
+  return renderSSR(function (store, AppView, ssrInitStoreKey) {
     var data = store.getState();
     return {
       store: store,
@@ -5677,14 +5692,12 @@ function buildSSR(moduleGetter, _ref2) {
     };
   }, moduleGetter, appModuleName, appViewName, storeOptions, function (store) {
     appExports.store = store;
+    appExports.router.setStore(store);
     Object.defineProperty(appExports, 'state', {
       get: function get() {
         return store.getState();
       }
     });
-    appExports.router.setStore(store);
-    var routeState = appExports.router.getRouteState();
-    return Object.keys(routeState.params);
   }).then(function (_ref3) {
     var html = _ref3.html,
         data = _ref3.data,
@@ -5709,6 +5722,7 @@ exports.Link = Link;
 exports.Switch = Switch;
 exports.buildApp = buildApp;
 exports.buildSSR = buildSSR;
+exports.clientSide = clientSide;
 exports.createLocationTransform = createLocationTransform;
 exports.createPathnameTransform = createPathnameTransform;
 exports.deepMerge = deepMerge;

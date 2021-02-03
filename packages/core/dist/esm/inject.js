@@ -1,6 +1,6 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { MetaData, config, reducer, isPromise, mergeState } from './basic';
-import { moduleInitAction } from './actions';
+import { moduleInitAction, moduleReInitAction } from './actions';
 import { isServerEnv } from './env';
 export function cacheModule(module) {
   var moduleName = module.default.moduleName;
@@ -74,6 +74,11 @@ function _loadModel(moduleName, store) {
 
   if (!hasInjected) {
     var moduleGetter = MetaData.moduleGetter;
+
+    if (!moduleGetter[moduleName]) {
+      return undefined;
+    }
+
     var result = moduleGetter[moduleName]();
 
     if (isPromise(result)) {
@@ -184,10 +189,12 @@ export var exportModule = function exportModule(moduleName, ModuleHandles, views
       var preModuleState = store.getState()[moduleName] || {};
       var moduleState = Object.assign({}, _initState, preModuleState);
 
-      if (!moduleState.initialized) {
-        moduleState.initialized = true;
-        return store.dispatch(moduleInitAction(moduleName, moduleState));
+      if (moduleState.initialized) {
+        return store.dispatch(moduleReInitAction(moduleName, moduleState));
       }
+
+      moduleState.initialized = true;
+      return store.dispatch(moduleInitAction(moduleName, moduleState));
     }
 
     return undefined;

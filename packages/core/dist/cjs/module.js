@@ -158,8 +158,8 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 }
 
 function _renderApp() {
-  _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, beforeRender) {
-    var appModuleName, ssrInitStoreKey, initData, store, preModuleNames, modules, appModule;
+  _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
+    var appModuleName, ssrInitStoreKey, initData, store, appModule;
     return _regenerator.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -191,32 +191,22 @@ function _renderApp() {
             }
 
             store = (0, _store.buildStore)(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            preModuleNames = beforeRender(store).filter(function (name) {
-              return name !== appModuleName;
-            });
-            preModuleNames.unshift(appModuleName);
-            _context.next = 15;
-            return Promise.all(preModuleNames.map(function (moduleName) {
-              if (moduleGetter[moduleName]) {
-                return (0, _inject.getModuleByName)(moduleName, moduleGetter);
-              }
+            _context.next = 13;
+            return (0, _inject.getModuleByName)(appModuleName, moduleGetter);
 
-              return undefined;
-            }));
-
-          case 15:
-            modules = _context.sent;
-            appModule = modules[0];
-            _context.next = 19;
+          case 13:
+            appModule = _context.sent;
+            startup(store, appModule);
+            _context.next = 17;
             return appModule.default.model(store);
 
-          case 19:
-            reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+          case 17:
+            reRender = render(store, appModule.default.views[appViewName], ssrInitStoreKey);
             return _context.abrupt("return", {
               store: store
             });
 
-          case 21:
+          case 19:
           case "end":
             return _context.stop();
         }
@@ -235,8 +225,8 @@ function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
 }
 
 function _renderSSR() {
-  _renderSSR = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(render, moduleGetter, appModuleName, appViewName, storeOptions, beforeRender) {
-    var ssrInitStoreKey, store, preModuleNames, modules, appModule;
+  _renderSSR = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
+    var appModuleName, ssrInitStoreKey, store, appModule;
     return _regenerator.default.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
@@ -245,35 +235,29 @@ function _renderSSR() {
               storeOptions = {};
             }
 
+            appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
             _basic.MetaData.appModuleName = appModuleName;
             _basic.MetaData.appViewName = appViewName;
             _basic.MetaData.moduleGetter = moduleGetter;
+
+            if (typeof appModuleOrName !== 'string') {
+              (0, _inject.cacheModule)(appModuleOrName);
+            }
+
             ssrInitStoreKey = _basic.config.SSRKey;
             store = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            preModuleNames = beforeRender(store).filter(function (name) {
-              return name !== appModuleName;
-            });
-            preModuleNames.unshift(appModuleName);
             _context2.next = 10;
-            return Promise.all(preModuleNames.map(function (moduleName) {
-              if (moduleGetter[moduleName]) {
-                return (0, _inject.getModuleByName)(moduleName, moduleGetter);
-              }
-
-              return null;
-            }));
+            return (0, _inject.getModuleByName)(appModuleName, moduleGetter);
 
           case 10:
-            modules = _context2.sent;
-            appModule = modules[0];
+            appModule = _context2.sent;
+            startup(store, appModule);
             _context2.next = 14;
-            return Promise.all(modules.map(function (module) {
-              return module && module.default.model(store);
-            }));
+            return appModule.default.model(store);
 
           case 14:
             store.dispatch = defFun;
-            return _context2.abrupt("return", render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey));
+            return _context2.abrupt("return", render(store, appModule.default.views[appViewName], ssrInitStoreKey));
 
           case 16:
           case "end":

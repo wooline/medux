@@ -44,6 +44,7 @@ export {
   setLoadingDepthTime,
   isServer,
   serverSide,
+  clientSide,
   deepMerge,
   deepMergeState,
   isProcessedError,
@@ -110,7 +111,7 @@ export function buildApp(
   storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.router.getRouteState()});
 
   return renderApp<ComponentType<any>>(
-    (store, appModel, AppView, ssrInitStoreKey) => {
+    (store, AppView, ssrInitStoreKey) => {
       const reRender = (View: ComponentType<any>) => {
         const panel: any = typeof container === 'string' ? env.document.getElementById(container) : container;
         unmountComponentAtNode(panel!);
@@ -127,8 +128,11 @@ export function buildApp(
     (store) => {
       appExports.store = store as any;
       appExports.router.setStore(store);
-      const routeState = appExports.router.getRouteState();
-      return Object.keys(routeState.params);
+      Object.defineProperty(appExports, 'state', {
+        get: () => {
+          return store.getState();
+        },
+      });
     }
   );
 }
@@ -171,7 +175,7 @@ export function buildSSR(
   }
   storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.router.getRouteState()});
   return renderSSR<ComponentType<any>>(
-    (store, appModel, AppView, ssrInitStoreKey) => {
+    (store, AppView, ssrInitStoreKey) => {
       const data = store.getState();
       return {
         store,
@@ -187,14 +191,12 @@ export function buildSSR(
     storeOptions,
     (store) => {
       appExports.store = store as any;
+      appExports.router.setStore(store);
       Object.defineProperty(appExports, 'state', {
         get: () => {
           return store.getState();
         },
       });
-      appExports.router.setStore(store);
-      const routeState = appExports.router.getRouteState();
-      return Object.keys(routeState.params);
     }
   ).then(({html, data, ssrInitStoreKey}) => {
     const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));

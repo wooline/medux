@@ -16,6 +16,7 @@ exports.delayPromise = delayPromise;
 exports.isPromise = isPromise;
 exports.isServer = isServer;
 exports.serverSide = serverSide;
+exports.clientSide = clientSide;
 exports.MetaData = exports.ActionTypes = exports.config = void 0;
 
 var _sprite = require("./sprite");
@@ -88,6 +89,7 @@ function snapshotState(target) {
 var ActionTypes = {
   MLoading: 'Loading',
   MInit: 'Init',
+  MReInit: 'ReInit',
   Error: "medux" + config.NSP + "Error"
 };
 exports.ActionTypes = ActionTypes;
@@ -255,6 +257,14 @@ function isServer() {
 
 function serverSide(callback) {
   if (_env.isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
+}
+
+function clientSide(callback) {
+  if (!_env.isServerEnv) {
     return callback();
   }
 

@@ -118,7 +118,7 @@ export function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, beforeRender) {
+export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -141,20 +141,10 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   }
 
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store).filter(name => {
-    return name !== appModuleName;
-  });
-  preModuleNames.unshift(appModuleName);
-  const modules = await Promise.all(preModuleNames.map(moduleName => {
-    if (moduleGetter[moduleName]) {
-      return getModuleByName(moduleName, moduleGetter);
-    }
-
-    return undefined;
-  }));
-  const appModule = modules[0];
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  startup(store, appModule);
   await appModule.default.model(store);
-  reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  reRender = render(store, appModule.default.views[appViewName], ssrInitStoreKey);
   return {
     store
   };
@@ -162,27 +152,21 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
 
 const defFun = () => undefined;
 
-export async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
+export async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
+  const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   MetaData.moduleGetter = moduleGetter;
+
+  if (typeof appModuleOrName !== 'string') {
+    cacheModule(appModuleOrName);
+  }
+
   const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store).filter(name => {
-    return name !== appModuleName;
-  });
-  preModuleNames.unshift(appModuleName);
-  const modules = await Promise.all(preModuleNames.map(moduleName => {
-    if (moduleGetter[moduleName]) {
-      return getModuleByName(moduleName, moduleGetter);
-    }
-
-    return null;
-  }));
-  const appModule = modules[0];
-  await Promise.all(modules.map(module => {
-    return module && module.default.model(store);
-  }));
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  startup(store, appModule);
+  await appModule.default.model(store);
   store.dispatch = defFun;
-  return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  return render(store, appModule.default.views[appViewName], ssrInitStoreKey);
 }

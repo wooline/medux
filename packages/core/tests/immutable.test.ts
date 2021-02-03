@@ -14,7 +14,7 @@ describe('init', () => {
 
   beforeAll(() => {
     return renderApp<() => void>(
-      (store, appModel, appView, ssrKey) => {
+      (store, appView, ssrKey) => {
         return (appView2) => {
           appView2();
         };

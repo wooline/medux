@@ -34,6 +34,7 @@ export interface CommonModule<ModuleName extends string = string> {
 export declare const ActionTypes: {
     MLoading: string;
     MInit: string;
+    MReInit: string;
     Error: string;
 };
 export declare type ModuleGetter = {
@@ -140,4 +141,5 @@ export declare function delayPromise(second: number): (target: any, key: string,
 export declare function isPromise(data: any): data is Promise<any>;
 export declare function isServer(): boolean;
 export declare function serverSide<T>(callback: () => T): T | undefined;
+export declare function clientSide<T>(callback: () => T): T | undefined;
 export {};

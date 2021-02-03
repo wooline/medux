@@ -13,6 +13,7 @@ export {
   setLoadingDepthTime,
   isServer,
   serverSide,
+  clientSide,
   isPromise,
   getAppModuleName,
 } from './basic';

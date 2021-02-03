@@ -93,6 +93,10 @@ export const ActionTypes = {
    */
   MInit: 'Init',
   /**
+   * 模块初始化时使用ActionType：{moduleName}.{MReInit}
+   */
+  MReInit: 'ReInit',
+  /**
    * 全局捕获到错误时使用ActionType：{Error}
    */
   Error: `medux${config.NSP}Error`,
@@ -231,9 +235,6 @@ export interface ModuleStore extends Store {
  * 所有ModuleState的固定属性
  */
 export interface CoreModuleState {
-  /**
-   * 如果已经初始化(如：SSR)，该值为true
-   */
   initialized?: boolean;
   /**
    * 该模块的各种loading状态，执行effect时会自动注入loading状态
@@ -377,6 +378,12 @@ export function isServer(): boolean {
 }
 export function serverSide<T>(callback: () => T) {
   if (isServerEnv) {
+    return callback();
+  }
+  return undefined;
+}
+export function clientSide<T>(callback: () => T) {
+  if (!isServerEnv) {
     return callback();
   }
   return undefined;

@@ -11,3 +11,9 @@ export function moduleInitAction(moduleName, initState) {
     payload: [initState]
   };
 }
+export function moduleReInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MReInit,
+    payload: [initState]
+  };
+}

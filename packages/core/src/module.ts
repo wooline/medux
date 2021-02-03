@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore, ModuleModel} from './basic';
+import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore} from './basic';
 import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName} from './inject';
 import {buildStore, StoreOptions} from './store';
 import {client, env} from './env';
@@ -174,15 +174,15 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
  * @param moduleGetter 模块的获取方式
  * @param appModuleName 模块的主入口模块名称
  * @param storeOptions store的参数，参见StoreOptions
- * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
+ * @param startup 此钩子之前为static代码，此钩子之后开始正式启动
  */
 export async function renderApp<V>(
-  render: (store: ModuleStore, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
+  render: (store: ModuleStore, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
   moduleGetter: ModuleGetter,
   appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender: (store: ModuleStore) => string[]
+  startup: (store: ModuleStore, app: CommonModule) => void
 ): Promise<{store: ModuleStore}> {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
@@ -201,23 +201,10 @@ export async function renderApp<V>(
     initData = {...initData, ...client![ssrInitStoreKey]};
   }
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store).filter((name) => {
-    return name !== appModuleName;
-  });
-  preModuleNames.unshift(appModuleName);
-
-  // 预加载模块，以防止loading与SSR不一致
-  const modules = await Promise.all(
-    preModuleNames.map((moduleName) => {
-      if (moduleGetter[moduleName]) {
-        return getModuleByName(moduleName, moduleGetter);
-      }
-      return undefined;
-    })
-  );
-  const appModule = modules[0]!;
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  startup(store, appModule);
   await appModule.default.model(store);
-  reRender = render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
+  reRender = render(store, appModule!.default.views[appViewName], ssrInitStoreKey);
   return {store};
 }
 const defFun: any = () => undefined;
@@ -228,40 +215,28 @@ const defFun: any = () => undefined;
  * @param moduleGetter 模块的获取方式
  * @param appModuleName 模块的主入口模块名称
  * @param storeOptions store的参数，参见StoreOptions
- * @param beforeRender 渲染前的钩子，通过该钩子你可以保存或修改store
+ * @param startup 此钩子之前为static代码，此钩子之后开始正式启动
  */
 export async function renderSSR<V>(
-  render: (store: ModuleStore, appModel: ModuleModel, appView: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: ModuleStore},
+  render: (store: ModuleStore, appView: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: ModuleStore},
   moduleGetter: ModuleGetter,
-  appModuleName: string,
+  appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  beforeRender: (store: ModuleStore) => string[]
+  startup: (store: ModuleStore, app: CommonModule) => void
 ) {
+  const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   MetaData.moduleGetter = moduleGetter;
+  if (typeof appModuleOrName !== 'string') {
+    cacheModule(appModuleOrName);
+  }
   const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store).filter((name) => {
-    return name !== appModuleName;
-  });
-  preModuleNames.unshift(appModuleName);
-
-  const modules = await Promise.all(
-    preModuleNames.map((moduleName) => {
-      if (moduleGetter[moduleName]) {
-        return getModuleByName(moduleName, moduleGetter);
-      }
-      return null;
-    })
-  );
-  const appModule = modules[0]!;
-  await Promise.all(
-    modules.map((module) => {
-      return module && module.default.model(store);
-    })
-  );
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  startup(store, appModule);
+  await appModule.default.model(store);
   store.dispatch = defFun;
-  return render(store, appModule!.default.model, appModule!.default.views[appViewName], ssrInitStoreKey);
+  return render(store, appModule!.default.views[appViewName], ssrInitStoreKey);
 }

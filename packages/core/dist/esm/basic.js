@@ -59,6 +59,7 @@ export function snapshotState(target) {
 export var ActionTypes = {
   MLoading: 'Loading',
   MInit: 'Init',
+  MReInit: 'ReInit',
   Error: "medux" + config.NSP + "Error"
 };
 export var MetaData = {
@@ -213,6 +214,13 @@ export function isServer() {
 }
 export function serverSide(callback) {
   if (isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
+}
+export function clientSide(callback) {
+  if (!isServerEnv) {
     return callback();
   }
 

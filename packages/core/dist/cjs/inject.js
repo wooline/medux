@@ -92,6 +92,11 @@ function _loadModel(moduleName, store) {
 
   if (!hasInjected) {
     var moduleGetter = _basic.MetaData.moduleGetter;
+
+    if (!moduleGetter[moduleName]) {
+      return undefined;
+    }
+
     var result = moduleGetter[moduleName]();
 
     if ((0, _basic.isPromise)(result)) {
@@ -203,10 +208,12 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       var preModuleState = store.getState()[moduleName] || {};
       var moduleState = Object.assign({}, _initState, preModuleState);
 
-      if (!moduleState.initialized) {
-        moduleState.initialized = true;
-        return store.dispatch((0, _actions.moduleInitAction)(moduleName, moduleState));
+      if (moduleState.initialized) {
+        return store.dispatch((0, _actions.moduleReInitAction)(moduleName, moduleState));
       }
+
+      moduleState.initialized = true;
+      return store.dispatch((0, _actions.moduleInitAction)(moduleName, moduleState));
     }
 
     return undefined;

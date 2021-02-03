@@ -745,6 +745,7 @@ function snapshotState(target) {
 const ActionTypes = {
   MLoading: 'Loading',
   MInit: 'Init',
+  MReInit: 'ReInit',
   Error: `medux${config.NSP}Error`
 };
 const MetaData = {
@@ -886,6 +887,13 @@ function serverSide(callback) {
 
   return undefined;
 }
+function clientSide(callback) {
+  if (!isServerEnv) {
+    return callback();
+  }
+
+  return undefined;
+}
 
 function errorAction(reason) {
   return {
@@ -896,6 +904,12 @@ function errorAction(reason) {
 function moduleInitAction(moduleName, initState) {
   return {
     type: `${moduleName}${config.NSP}${ActionTypes.MInit}`,
+    payload: [initState]
+  };
+}
+function moduleReInitAction(moduleName, initState) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes.MReInit}`,
     payload: [initState]
   };
 }
@@ -1471,6 +1485,11 @@ function _loadModel(moduleName, store) {
 
   if (!hasInjected) {
     const moduleGetter = MetaData.moduleGetter;
+
+    if (!moduleGetter[moduleName]) {
+      return undefined;
+    }
+
     const result = moduleGetter[moduleName]();
 
     if (isPromise(result)) {
@@ -1556,6 +1575,13 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
     }, {
       kind: "method",
       decorators: [reducer],
+      key: "ReInit",
+      value: function ReInit(initState) {
+        return initState;
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
       key: "Update",
       value: function Update(payload, key) {
         return mergeState(this.state, payload);
@@ -1588,10 +1614,12 @@ const exportModule = (moduleName, ModuleHandles, views) => {
       const preModuleState = store.getState()[moduleName] || {};
       const moduleState = Object.assign({}, initState, preModuleState);
 
-      if (!moduleState.initialized) {
-        moduleState.initialized = true;
-        return store.dispatch(moduleInitAction(moduleName, moduleState));
+      if (moduleState.initialized) {
+        return store.dispatch(moduleReInitAction(moduleName, moduleState));
       }
+
+      moduleState.initialized = true;
+      return store.dispatch(moduleInitAction(moduleName, moduleState));
     }
 
     return undefined;
@@ -1729,7 +1757,7 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const node = fun(...actionData, currentState);
+          const node = fun(...actionData, currentState, action.type);
 
           if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             warn('Use rewrite instead of replace to update state in MutableData');
@@ -1797,7 +1825,7 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(...actionData, currentState);
+          const effectResult = fun(...actionData, currentState, action.type);
           const decorators = fun.__decorators__;
 
           if (decorators) {
@@ -2022,7 +2050,7 @@ function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, beforeRender) {
+async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -2045,20 +2073,10 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
   }
 
   const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store).filter(name => {
-    return name !== appModuleName;
-  });
-  preModuleNames.unshift(appModuleName);
-  const modules = await Promise.all(preModuleNames.map(moduleName => {
-    if (moduleGetter[moduleName]) {
-      return getModuleByName(moduleName, moduleGetter);
-    }
-
-    return undefined;
-  }));
-  const appModule = modules[0];
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  startup(store, appModule);
   await appModule.default.model(store);
-  reRender = render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  reRender = render(store, appModule.default.views[appViewName], ssrInitStoreKey);
   return {
     store
   };
@@ -2066,29 +2084,23 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
 
 const defFun = () => undefined;
 
-async function renderSSR(render, moduleGetter, appModuleName, appViewName, storeOptions = {}, beforeRender) {
+async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
+  const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   MetaData.moduleGetter = moduleGetter;
+
+  if (typeof appModuleOrName !== 'string') {
+    cacheModule(appModuleOrName);
+  }
+
   const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const preModuleNames = beforeRender(store).filter(name => {
-    return name !== appModuleName;
-  });
-  preModuleNames.unshift(appModuleName);
-  const modules = await Promise.all(preModuleNames.map(moduleName => {
-    if (moduleGetter[moduleName]) {
-      return getModuleByName(moduleName, moduleGetter);
-    }
-
-    return null;
-  }));
-  const appModule = modules[0];
-  await Promise.all(modules.map(module => {
-    return module && module.default.model(store);
-  }));
+  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  startup(store, appModule);
+  await appModule.default.model(store);
   store.dispatch = defFun;
-  return render(store, appModule.default.model, appModule.default.views[appViewName], ssrInitStoreKey);
+  return render(store, appModule.default.views[appViewName], ssrInitStoreKey);
 }
 
 const routeConfig = {
@@ -4439,7 +4451,7 @@ function buildApp(moduleGetter, {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.router.getRouteState()
   });
-  return renderApp((store, appModel, AppView, ssrInitStoreKey) => {
+  return renderApp((store, AppView, ssrInitStoreKey) => {
     const reRender = View => {
       const panel = typeof container === 'string' ? env.document.getElementById(container) : container;
       unmountComponentAtNode(panel);
@@ -4454,8 +4466,11 @@ function buildApp(moduleGetter, {
   }, moduleGetter, appModuleName, appViewName, storeOptions, store => {
     appExports.store = store;
     appExports.router.setStore(store);
-    const routeState = appExports.router.getRouteState();
-    return Object.keys(routeState.params);
+    Object.defineProperty(appExports, 'state', {
+      get: () => {
+        return store.getState();
+      }
+    });
   });
 }
 let SSRTPL;
@@ -4486,7 +4501,7 @@ function buildSSR(moduleGetter, {
   storeOptions.initData = mergeState(storeOptions.initData, {
     route: appExports.router.getRouteState()
   });
-  return renderSSR((store, appModel, AppView, ssrInitStoreKey) => {
+  return renderSSR((store, AppView, ssrInitStoreKey) => {
     const data = store.getState();
     return {
       store,
@@ -4498,14 +4513,12 @@ function buildSSR(moduleGetter, {
     };
   }, moduleGetter, appModuleName, appViewName, storeOptions, store => {
     appExports.store = store;
+    appExports.router.setStore(store);
     Object.defineProperty(appExports, 'state', {
       get: () => {
         return store.getState();
       }
     });
-    appExports.router.setStore(store);
-    const routeState = appExports.router.getRouteState();
-    return Object.keys(routeState.params);
   }).then(({
     html,
     data,
@@ -4523,4 +4536,4 @@ function buildSSR(moduleGetter, {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, createLocationTransform, createPathnameTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, clientSide, createLocationTransform, createPathnameTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };

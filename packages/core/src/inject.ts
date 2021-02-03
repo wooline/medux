@@ -14,7 +14,7 @@ import {
   isPromise,
   mergeState,
 } from './basic';
-import {moduleInitAction} from './actions';
+import {moduleInitAction, moduleReInitAction} from './actions';
 import {isServerEnv} from './env';
 
 export function cacheModule<T extends CommonModule>(module: T): () => T {
@@ -107,6 +107,9 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
   const hasInjected = !!store._medux_.injectedModules[moduleName];
   if (!hasInjected) {
     const moduleGetter = MetaData.moduleGetter;
+    if (!moduleGetter[moduleName]) {
+      return undefined;
+    }
     const result = moduleGetter[moduleName]();
     if (isPromise(result)) {
       return result.then((module) => {
@@ -259,10 +262,11 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
       injectActions(store, moduleName, moduleHandles as any);
       const preModuleState: CoreModuleState = store.getState()[moduleName] || {};
       const moduleState: CoreModuleState = {...initState, ...preModuleState};
-      if (!moduleState.initialized) {
-        moduleState.initialized = true;
-        return store.dispatch(moduleInitAction(moduleName, moduleState)) as any;
+      if (moduleState.initialized) {
+        return store.dispatch(moduleReInitAction(moduleName, moduleState)) as any;
       }
+      moduleState.initialized = true;
+      return store.dispatch(moduleInitAction(moduleName, moduleState)) as any;
     }
     return undefined;
   };
