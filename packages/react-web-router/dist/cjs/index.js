@@ -3822,9 +3822,9 @@ var BaseRouter = function () {
 
     _defineProperty(this, "history", void 0);
 
-    this.nativeLocation = this.urlToNativeLocation(initUrl);
+    var location = this.urlToToLocation(initUrl);
+    this.nativeLocation = this.locationTransform.out(location);
     this.url = this.nativeLocationToUrl(this.nativeLocation);
-    var location = this.locationTransform.in(this.nativeLocation);
 
     var key = this._createKey();
 
@@ -3835,6 +3835,7 @@ var BaseRouter = function () {
     });
     this.routeState = routeState;
     this.history.relaunch(location, key);
+    this.nativeRouter.relaunch(this.url, key, false);
   }
 
   var _proto = BaseRouter.prototype;
@@ -3917,7 +3918,7 @@ var BaseRouter = function () {
     var pathname = nativeLocation.pathname,
         search = nativeLocation.search,
         hash = nativeLocation.hash;
-    return [pathname && pathname.replace(/\/*$/, ''), search && "?" + search, hash && "#" + hash].join('');
+    return [pathname && (pathname.replace(/\/*$/, '') || '/'), search && "?" + search, hash && "#" + hash].join('');
   };
 
   _proto.locationToUrl = function locationToUrl(location) {

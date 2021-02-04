@@ -104,9 +104,9 @@ export class BaseRouter {
 
     _defineProperty(this, "history", void 0);
 
-    this.nativeLocation = this.urlToNativeLocation(initUrl);
+    const location = this.urlToToLocation(initUrl);
+    this.nativeLocation = this.locationTransform.out(location);
     this.url = this.nativeLocationToUrl(this.nativeLocation);
-    const location = this.locationTransform.in(this.nativeLocation);
 
     const key = this._createKey();
 
@@ -117,6 +117,7 @@ export class BaseRouter {
     });
     this.routeState = routeState;
     this.history.relaunch(location, key);
+    this.nativeRouter.relaunch(this.url, key, false);
   }
 
   getRouteState() {
@@ -197,7 +198,7 @@ export class BaseRouter {
       search,
       hash
     } = nativeLocation;
-    return [pathname && pathname.replace(/\/*$/, ''), search && `?${search}`, hash && `#${hash}`].join('');
+    return [pathname && (pathname.replace(/\/*$/, '') || '/'), search && `?${search}`, hash && `#${hash}`].join('');
   }
 
   locationToUrl(location) {

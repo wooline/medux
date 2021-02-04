@@ -98,14 +98,15 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   public readonly history: History;
 
   constructor(initUrl: string, public nativeRouter: NativeRouter, protected locationTransform: LocationTransform<P>) {
-    this.nativeLocation = this.urlToNativeLocation(initUrl);
+    const location = this.urlToToLocation(initUrl);
+    this.nativeLocation = this.locationTransform.out(location);
     this.url = this.nativeLocationToUrl(this.nativeLocation);
-    const location = this.locationTransform.in(this.nativeLocation);
     const key = this._createKey();
     this.history = new History();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     this.routeState = routeState;
     this.history.relaunch(location, key);
+    this.nativeRouter.relaunch(this.url, key, false);
   }
 
   getRouteState(): RouteState<P> {
@@ -172,7 +173,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
 
   nativeLocationToUrl(nativeLocation: NativeLocation): string {
     const {pathname, search, hash} = nativeLocation;
-    return [pathname && pathname.replace(/\/*$/, ''), search && `?${search}`, hash && `#${hash}`].join('');
+    return [pathname && (pathname.replace(/\/*$/, '') || '/'), search && `?${search}`, hash && `#${hash}`].join('');
   }
 
   locationToUrl(location: Location<P>): string {
