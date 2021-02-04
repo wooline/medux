@@ -85,6 +85,7 @@ export function createPathnameTransform<P extends RootParams>(pathnameIn: (pathn
     obj[key] = key;
     return obj;
   }, {});
+  routeConfig.pagenames['/'] = '/';
   return {
     in(pathname) {
       pathname = pathnameIn(pathname);
@@ -94,7 +95,7 @@ export function createPathnameTransform<P extends RootParams>(pathnameIn: (pathn
       let pagename = Object.keys(pagenameMap).find((name) => pathname.startsWith(name));
       let pathParams: DeepPartial<P>;
       if (!pagename) {
-        pagename = pathname.replace(/\/*$/, '');
+        pagename = '/';
         pathParams = {} as DeepPartial<P>;
       } else {
         const args = pathname
@@ -102,7 +103,7 @@ export function createPathnameTransform<P extends RootParams>(pathnameIn: (pathn
           .split('/')
           .map((item) => (item ? decodeURIComponent(item) : undefined));
         pathParams = pagenameMap[pagename].in(args);
-        pagename = pagename.replace(/\/$/, '');
+        pagename = pagename.replace(/\/$/, '') || '/';
       }
       return {pagename, pathParams};
     },
@@ -110,7 +111,7 @@ export function createPathnameTransform<P extends RootParams>(pathnameIn: (pathn
       pagename = `/${pagename}/`.replace('//', '/').replace('//', '/');
       let pathname: string;
       if (!pagenameMap[pagename]) {
-        pathname = pagename.replace(/\/$/, '');
+        pathname = '/';
       } else {
         const args = pagenameMap[pagename].out(params);
         pathname =

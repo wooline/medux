@@ -21,15 +21,9 @@ describe('locationTransform', () => {
       },
     });
   });
-  test('in /admin2//', () => {
-    expect(locationTransform.in({pathname: '/admin2//', search: '', hash: ''})).toEqual({
-      pagename: '/admin2',
-      params: {},
-    });
-  });
   test('in /admin2/', () => {
     expect(locationTransform.in({pathname: '/admin2/', search: '', hash: ''})).toEqual({
-      pagename: '/admin2',
+      pagename: '/',
       params: {},
     });
   });

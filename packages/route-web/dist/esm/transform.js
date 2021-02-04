@@ -86,6 +86,7 @@ export function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
     obj[key] = key;
     return obj;
   }, {});
+  routeConfig.pagenames['/'] = '/';
   return {
     in: function _in(pathname) {
       pathname = pathnameIn(pathname);
@@ -100,14 +101,14 @@ export function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
       var pathParams;
 
       if (!pagename) {
-        pagename = pathname.replace(/\/*$/, '');
+        pagename = '/';
         pathParams = {};
       } else {
         var args = pathname.replace(pagename, '').split('/').map(function (item) {
           return item ? decodeURIComponent(item) : undefined;
         });
         pathParams = pagenameMap[pagename].in(args);
-        pagename = pagename.replace(/\/$/, '');
+        pagename = pagename.replace(/\/$/, '') || '/';
       }
 
       return {
@@ -120,7 +121,7 @@ export function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
       var pathname;
 
       if (!pagenameMap[pagename]) {
-        pathname = pagename.replace(/\/$/, '');
+        pathname = '/';
       } else {
         var args = pagenameMap[pagename].out(params);
         pathname = pagename + args.map(function (item) {

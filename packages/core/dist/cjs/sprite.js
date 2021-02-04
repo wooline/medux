@@ -244,6 +244,8 @@ function deepMerge(target) {
     target = {};
   }
 
+  args = args.filter(Boolean);
+
   if (args.length < 1) {
     return target;
   }

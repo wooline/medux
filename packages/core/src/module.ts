@@ -2,7 +2,7 @@
 import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore} from './basic';
 import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName} from './inject';
 import {buildStore, StoreOptions} from './store';
-import {client, env} from './env';
+import {env} from './env';
 
 export type ReturnModule<T> = T extends Promise<infer R> ? R : T;
 // export type ModuleName<M extends CommonModule> = M['default']['moduleName'];
@@ -177,7 +177,7 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
  * @param startup 此钩子之前为static代码，此钩子之后开始正式启动
  */
 export async function renderApp<V>(
-  render: (store: ModuleStore, appView: V, ssrInitStoreKey: string) => (appView: V) => void,
+  render: (store: ModuleStore, appView: V) => (appView: V) => void,
   moduleGetter: ModuleGetter,
   appModuleOrName: string | CommonModule,
   appViewName: string,
@@ -195,16 +195,11 @@ export async function renderApp<V>(
   if (typeof appModuleOrName !== 'string') {
     cacheModule(appModuleOrName);
   }
-  const ssrInitStoreKey = config.SSRKey;
-  let initData = storeOptions.initData || {};
-  if (client![ssrInitStoreKey]) {
-    initData = {...initData, ...client![ssrInitStoreKey]};
-  }
-  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = await getModuleByName(appModuleName, moduleGetter);
   startup(store, appModule);
   await appModule.default.model(store);
-  reRender = render(store, appModule!.default.views[appViewName], ssrInitStoreKey);
+  reRender = render(store, appModule!.default.views[appViewName]);
   return {store};
 }
 const defFun: any = () => undefined;
@@ -218,7 +213,7 @@ const defFun: any = () => undefined;
  * @param startup 此钩子之前为static代码，此钩子之后开始正式启动
  */
 export async function renderSSR<V>(
-  render: (store: ModuleStore, appView: V, ssrInitStoreKey: string) => {html: any; data: any; ssrInitStoreKey: string; store: ModuleStore},
+  render: (store: ModuleStore, appView: V) => {html: any; data: any; store: ModuleStore},
   moduleGetter: ModuleGetter,
   appModuleOrName: string | CommonModule,
   appViewName: string,
@@ -232,11 +227,10 @@ export async function renderSSR<V>(
   if (typeof appModuleOrName !== 'string') {
     cacheModule(appModuleOrName);
   }
-  const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = await getModuleByName(appModuleName, moduleGetter);
   startup(store, appModule);
   await appModule.default.model(store);
   store.dispatch = defFun;
-  return render(store, appModule!.default.views[appViewName], ssrInitStoreKey);
+  return render(store, appModule!.default.views[appViewName]);
 }

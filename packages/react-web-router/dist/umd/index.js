@@ -1503,6 +1503,8 @@
 	    target = {};
 	  }
 
+	  args = args.filter(Boolean);
+
 	  if (args.length < 1) {
 	    return target;
 	  }
@@ -1540,14 +1542,12 @@
 	var config = {
 	  NSP: '.',
 	  MSP: ',',
-	  SSRKey: 'meduxInitStore',
 	  MutableData: false,
 	  DEVTOOLS: process.env.NODE_ENV === 'development'
 	};
 	function setConfig(_config) {
 	  _config.NSP !== undefined && (config.NSP = _config.NSP);
 	  _config.MSP !== undefined && (config.MSP = _config.MSP);
-	  _config.SSRKey !== undefined && (config.SSRKey = _config.SSRKey);
 	  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
 	  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
 	}
@@ -2956,7 +2956,7 @@
 
 	function _renderApp() {
 	  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
-	    var appModuleName, ssrInitStoreKey, initData, store, appModule;
+	    var appModuleName, store, appModule;
 	    return regenerator.wrap(function _callee$(_context) {
 	      while (1) {
 	        switch (_context.prev = _context.next) {
@@ -2979,30 +2979,23 @@
 	              cacheModule(appModuleOrName);
 	            }
 
-	            ssrInitStoreKey = config.SSRKey;
-	            initData = storeOptions.initData || {};
-
-	            if (client[ssrInitStoreKey]) {
-	              initData = Object.assign({}, initData, client[ssrInitStoreKey]);
-	            }
-
-	            store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-	            _context.next = 13;
+	            store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+	            _context.next = 10;
 	            return getModuleByName(appModuleName, moduleGetter);
 
-	          case 13:
+	          case 10:
 	            appModule = _context.sent;
 	            startup(store, appModule);
-	            _context.next = 17;
+	            _context.next = 14;
 	            return appModule.default.model(store);
 
-	          case 17:
-	            reRender = render(store, appModule.default.views[appViewName], ssrInitStoreKey);
+	          case 14:
+	            reRender = render(store, appModule.default.views[appViewName]);
 	            return _context.abrupt("return", {
 	              store: store
 	            });
 
-	          case 19:
+	          case 16:
 	          case "end":
 	            return _context.stop();
 	        }
@@ -3022,7 +3015,7 @@
 
 	function _renderSSR() {
 	  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
-	    var appModuleName, ssrInitStoreKey, store, appModule;
+	    var appModuleName, store, appModule;
 	    return regenerator.wrap(function _callee2$(_context2) {
 	      while (1) {
 	        switch (_context2.prev = _context2.next) {
@@ -3040,22 +3033,21 @@
 	              cacheModule(appModuleOrName);
 	            }
 
-	            ssrInitStoreKey = config.SSRKey;
 	            store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-	            _context2.next = 10;
+	            _context2.next = 9;
 	            return getModuleByName(appModuleName, moduleGetter);
 
-	          case 10:
+	          case 9:
 	            appModule = _context2.sent;
 	            startup(store, appModule);
-	            _context2.next = 14;
+	            _context2.next = 13;
 	            return appModule.default.model(store);
 
-	          case 14:
+	          case 13:
 	            store.dispatch = defFun;
-	            return _context2.abrupt("return", render(store, appModule.default.views[appViewName], ssrInitStoreKey));
+	            return _context2.abrupt("return", render(store, appModule.default.views[appViewName]));
 
-	          case 16:
+	          case 15:
 	          case "end":
 	            return _context2.stop();
 	        }
@@ -3584,6 +3576,7 @@
 	    obj[key] = key;
 	    return obj;
 	  }, {});
+	  routeConfig.pagenames['/'] = '/';
 	  return {
 	    in: function _in(pathname) {
 	      pathname = pathnameIn(pathname);
@@ -3598,14 +3591,14 @@
 	      var pathParams;
 
 	      if (!pagename) {
-	        pagename = pathname.replace(/\/*$/, '');
+	        pagename = '/';
 	        pathParams = {};
 	      } else {
 	        var args = pathname.replace(pagename, '').split('/').map(function (item) {
 	          return item ? decodeURIComponent(item) : undefined;
 	        });
 	        pathParams = pagenameMap[pagename].in(args);
-	        pagename = pagename.replace(/\/$/, '');
+	        pagename = pagename.replace(/\/$/, '') || '/';
 	      }
 
 	      return {
@@ -3618,7 +3611,7 @@
 	      var pathname;
 
 	      if (!pagenameMap[pagename]) {
-	        pathname = pagename.replace(/\/$/, '');
+	        pathname = '/';
 	      } else {
 	        var args = pagenameMap[pagename].out(params);
 	        pathname = pagename + args.map(function (item) {
@@ -5579,10 +5572,12 @@
 	  }));
 	});
 
+	var SSRKey = 'meduxInitStore';
 	function setConfig$1(conf) {
 	  setConfig(conf);
 	  setRouteConfig(conf);
 	  setLoadViewOptions(conf);
+	  conf.SSRKey && (SSRKey = conf.SSRKey);
 	}
 	var exportModule$1 = exportModule;
 	function buildApp(moduleGetter, _ref) {
@@ -5597,32 +5592,23 @@
 	      storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
 	      _ref$container = _ref.container,
 	      container = _ref$container === void 0 ? 'root' : _ref$container;
-	  appExports.router = createRouter(historyType, locationTransform);
-
-	  if (!storeOptions.middlewares) {
-	    storeOptions.middlewares = [];
-	  }
-
-	  storeOptions.middlewares.unshift(routeMiddleware);
-
-	  if (!storeOptions.reducers) {
-	    storeOptions.reducers = {};
-	  }
-
-	  storeOptions.reducers.route = routeReducer;
-
-	  if (!storeOptions.initData) {
-	    storeOptions.initData = {};
-	  }
-
-	  storeOptions.initData = mergeState(storeOptions.initData, {
-	    route: appExports.router.getRouteState()
-	  });
-	  return renderApp(function (store, AppView, ssrInitStoreKey) {
+	  var router = createRouter(historyType, locationTransform);
+	  appExports.router = router;
+	  var _storeOptions$middlew = storeOptions.middlewares,
+	      middlewares = _storeOptions$middlew === void 0 ? [] : _storeOptions$middlew,
+	      _storeOptions$reducer = storeOptions.reducers,
+	      reducers = _storeOptions$reducer === void 0 ? {} : _storeOptions$reducer,
+	      _storeOptions$initDat = storeOptions.initData,
+	      initData = _storeOptions$initDat === void 0 ? {} : _storeOptions$initDat;
+	  middlewares.unshift(routeMiddleware);
+	  reducers.route = routeReducer;
+	  var ssrData = env[SSRKey];
+	  initData.route = router.getRouteState();
+	  return renderApp(function (store, AppView) {
 	    var reRender = function reRender(View) {
 	      var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
 	      reactDom.unmountComponentAtNode(panel);
-	      var renderFun = env[ssrInitStoreKey] ? reactDom.hydrate : reactDom.render;
+	      var renderFun = ssrData ? reactDom.hydrate : reactDom.render;
 	      renderFun(React__default['default'].createElement(View, {
 	        store: store
 	      }), panel);
@@ -5630,9 +5616,13 @@
 
 	    reRender(AppView);
 	    return reRender;
-	  }, moduleGetter, appModuleName, appViewName, storeOptions, function (store) {
+	  }, moduleGetter, appModuleName, appViewName, Object.assign({}, storeOptions, {
+	    middlewares: middlewares,
+	    reducers: reducers,
+	    initData: mergeState(initData, ssrData)
+	  }), function (store) {
+	    router.setStore(store);
 	    appExports.store = store;
-	    appExports.router.setStore(store);
 	    Object.defineProperty(appExports, 'state', {
 	      get: function get() {
 	        return store.getState();
@@ -5663,28 +5653,25 @@
 
 	  appExports.request = request;
 	  appExports.response = response;
-	  appExports.router = createRouter(request.url, locationTransform);
-
-	  if (!storeOptions.initData) {
-	    storeOptions.initData = {};
-	  }
-
-	  storeOptions.initData = mergeState(storeOptions.initData, {
-	    route: appExports.router.getRouteState()
-	  });
-	  return renderSSR(function (store, AppView, ssrInitStoreKey) {
+	  var router = createRouter(request.url, locationTransform);
+	  appExports.router = router;
+	  var _storeOptions$initDat2 = storeOptions.initData,
+	      initData = _storeOptions$initDat2 === void 0 ? {} : _storeOptions$initDat2;
+	  initData.route = router.getRouteState();
+	  return renderSSR(function (store, AppView) {
 	    var data = store.getState();
 	    return {
 	      store: store,
-	      ssrInitStoreKey: ssrInitStoreKey,
 	      data: data,
 	      html: require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
 	        store: store
 	      }))
 	    };
-	  }, moduleGetter, appModuleName, appViewName, storeOptions, function (store) {
+	  }, moduleGetter, appModuleName, appViewName, Object.assign({}, storeOptions, {
+	    initData: initData
+	  }), function (store) {
+	    router.setStore(store);
 	    appExports.store = store;
-	    appExports.router.setStore(store);
 	    Object.defineProperty(appExports, 'state', {
 	      get: function get() {
 	        return store.getState();
@@ -5692,14 +5679,13 @@
 	    });
 	  }).then(function (_ref3) {
 	    var html = _ref3.html,
-	        data = _ref3.data,
-	        ssrInitStoreKey = _ref3.ssrInitStoreKey;
+	        data = _ref3.data;
 	    var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
 
 	    if (match) {
 	      var pageHead = html.split(/<head>|<\/head>/, 3);
 	      html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-	      return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrInitStoreKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+	      return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + SSRKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
 	    }
 
 	    return html;

@@ -57,6 +57,8 @@ export {Else} from './components/Else';
 export {Switch} from './components/Switch';
 export {Link} from './components/Link';
 
+let SSRKey = 'meduxInitStore';
+
 export function setConfig(conf: {
   RSP?: string;
   actionMaxHistory?: number;
@@ -73,6 +75,7 @@ export function setConfig(conf: {
   setCoreConfig(conf);
   setRouteConfig(conf);
   setLoadViewOptions(conf);
+  conf.SSRKey && (SSRKey = conf.SSRKey);
 }
 
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
@@ -95,27 +98,20 @@ export function buildApp(
     container?: string | Element;
   }
 ) {
-  appExports.router = createRouter(historyType, locationTransform);
-
-  if (!storeOptions.middlewares) {
-    storeOptions.middlewares = [];
-  }
-  storeOptions.middlewares.unshift(routeMiddleware);
-  if (!storeOptions.reducers) {
-    storeOptions.reducers = {};
-  }
-  storeOptions.reducers.route = routeReducer;
-  if (!storeOptions.initData) {
-    storeOptions.initData = {};
-  }
-  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.router.getRouteState()});
+  const router = createRouter(historyType, locationTransform);
+  appExports.router = router;
+  const {middlewares = [], reducers = {}, initData = {}} = storeOptions;
+  middlewares.unshift(routeMiddleware);
+  reducers.route = routeReducer;
+  const ssrData = env[SSRKey];
+  initData.route = router.getRouteState();
 
   return renderApp<ComponentType<any>>(
-    (store, AppView, ssrInitStoreKey) => {
+    (store, AppView) => {
       const reRender = (View: ComponentType<any>) => {
         const panel: any = typeof container === 'string' ? env.document.getElementById(container) : container;
         unmountComponentAtNode(panel!);
-        const renderFun = env[ssrInitStoreKey] ? hydrate : render;
+        const renderFun = ssrData ? hydrate : render;
         renderFun(<View store={store} />, panel);
       };
       reRender(AppView);
@@ -124,10 +120,10 @@ export function buildApp(
     moduleGetter,
     appModuleName,
     appViewName,
-    storeOptions,
+    {...storeOptions, middlewares, reducers, initData: mergeState(initData, ssrData)},
     (store) => {
+      router.setStore(store);
       appExports.store = store as any;
-      appExports.router.setStore(store);
       Object.defineProperty(appExports, 'state', {
         get: () => {
           return store.getState();
@@ -169,17 +165,16 @@ export function buildSSR(
   }
   appExports.request = request;
   appExports.response = response;
-  appExports.router = createRouter(request.url, locationTransform);
-  if (!storeOptions.initData) {
-    storeOptions.initData = {};
-  }
-  storeOptions.initData = mergeState(storeOptions.initData, {route: appExports.router.getRouteState()});
+  const router = createRouter(request.url, locationTransform);
+  appExports.router = router;
+  const {initData = {}} = storeOptions;
+  initData.route = router.getRouteState();
+
   return renderSSR<ComponentType<any>>(
-    (store, AppView, ssrInitStoreKey) => {
+    (store, AppView) => {
       const data = store.getState();
       return {
         store,
-        ssrInitStoreKey,
         data,
         // @ts-ignore
         html: require('react-dom/server').renderToString(<AppView store={store} />),
@@ -188,22 +183,22 @@ export function buildSSR(
     moduleGetter,
     appModuleName,
     appViewName,
-    storeOptions,
+    {...storeOptions, initData},
     (store) => {
+      router.setStore(store);
       appExports.store = store as any;
-      appExports.router.setStore(store);
       Object.defineProperty(appExports, 'state', {
         get: () => {
           return store.getState();
         },
       });
     }
-  ).then(({html, data, ssrInitStoreKey}) => {
+  ).then(({html, data}) => {
     const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
       html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-      return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrInitStoreKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+      return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${SSRKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
     }
     return html;
   });

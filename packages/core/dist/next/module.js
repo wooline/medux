@@ -1,7 +1,7 @@
 import { MetaData, config } from './basic';
 import { cacheModule, injectActions, getModuleByName } from './inject';
 import { buildStore } from './store';
-import { client, env } from './env';
+import { env } from './env';
 export function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {
@@ -133,18 +133,11 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
     cacheModule(appModuleOrName);
   }
 
-  const ssrInitStoreKey = config.SSRKey;
-  let initData = storeOptions.initData || {};
-
-  if (client[ssrInitStoreKey]) {
-    initData = Object.assign({}, initData, client[ssrInitStoreKey]);
-  }
-
-  const store = buildStore(initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
+  const store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = await getModuleByName(appModuleName, moduleGetter);
   startup(store, appModule);
   await appModule.default.model(store);
-  reRender = render(store, appModule.default.views[appViewName], ssrInitStoreKey);
+  reRender = render(store, appModule.default.views[appViewName]);
   return {
     store
   };
@@ -162,11 +155,10 @@ export async function renderSSR(render, moduleGetter, appModuleOrName, appViewNa
     cacheModule(appModuleOrName);
   }
 
-  const ssrInitStoreKey = config.SSRKey;
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
   const appModule = await getModuleByName(appModuleName, moduleGetter);
   startup(store, appModule);
   await appModule.default.model(store);
   store.dispatch = defFun;
-  return render(store, appModule.default.views[appViewName], ssrInitStoreKey);
+  return render(store, appModule.default.views[appViewName]);
 }

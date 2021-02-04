@@ -13,7 +13,7 @@ describe('init', () => {
 
   beforeAll(() => {
     return renderApp<() => void>(
-      (store, appView, ssrKey) => {
+      (store, appView) => {
         return (appView2) => {
           appView2();
         };

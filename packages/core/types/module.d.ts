@@ -42,18 +42,16 @@ export declare function modelHotReplacement(moduleName: string, ActionHandles: {
 export declare function viewHotReplacement(moduleName: string, views: {
     [key: string]: any;
 }): void;
-export declare function renderApp<V>(render: (store: ModuleStore, appView: V, ssrInitStoreKey: string) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string, storeOptions: StoreOptions | undefined, startup: (store: ModuleStore, app: CommonModule) => void): Promise<{
+export declare function renderApp<V>(render: (store: ModuleStore, appView: V) => (appView: V) => void, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string, storeOptions: StoreOptions | undefined, startup: (store: ModuleStore, app: CommonModule) => void): Promise<{
     store: ModuleStore;
 }>;
-export declare function renderSSR<V>(render: (store: ModuleStore, appView: V, ssrInitStoreKey: string) => {
+export declare function renderSSR<V>(render: (store: ModuleStore, appView: V) => {
     html: any;
     data: any;
-    ssrInitStoreKey: string;
     store: ModuleStore;
 }, moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string, storeOptions: StoreOptions | undefined, startup: (store: ModuleStore, app: CommonModule) => void): Promise<{
     html: any;
     data: any;
-    ssrInitStoreKey: string;
     store: ModuleStore;
 }>;
 export {};

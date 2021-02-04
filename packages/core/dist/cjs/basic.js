@@ -26,7 +26,6 @@ var _env = require("./env");
 var config = {
   NSP: '.',
   MSP: ',',
-  SSRKey: 'meduxInitStore',
   MutableData: false,
   DEVTOOLS: process.env.NODE_ENV === 'development'
 };
@@ -35,7 +34,6 @@ exports.config = config;
 function setConfig(_config) {
   _config.NSP !== undefined && (config.NSP = _config.NSP);
   _config.MSP !== undefined && (config.MSP = _config.MSP);
-  _config.SSRKey !== undefined && (config.SSRKey = _config.SSRKey);
   _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
   _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
 }

@@ -184,6 +184,8 @@ export function deepMerge(target, ...args) {
     target = {};
   }
 
+  args = args.filter(Boolean);
+
   if (args.length < 1) {
     return target;
   }

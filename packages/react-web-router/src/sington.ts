@@ -25,14 +25,14 @@ export type FacadeExports<
     store: Store;
     state: RootState<APP, RouteParams>;
     loadView: LoadView<APP>;
-    router: Router<RouteParams, Pagename>;
+    router: Router<RouteParams, Pagename | '/'>;
     getActions<N extends keyof APP>(...args: N[]): {[K in N]: APP[K]['actions']};
     request: Request;
     response: Response;
   };
   Modules: RootModuleAPI<APP>;
   Actions: RootModuleActions<APP>;
-  Pagenames: {[K in Pagename]: K};
+  Pagenames: {[K in Pagename | '/']: K};
 };
 
 export const appExports: {store: any; state: any; loadView: any; getActions: any; router: Router<any, string>; request: ServerRequest; response: ServerResponse} = {

@@ -3,7 +3,6 @@ import { LoadingState } from './sprite';
 export declare const config: {
     NSP: string;
     MSP: string;
-    SSRKey: string;
     MutableData: boolean;
     DEVTOOLS: boolean;
 };
