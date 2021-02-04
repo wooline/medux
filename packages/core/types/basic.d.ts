@@ -54,6 +54,10 @@ export declare const MetaData: {
     appModuleName: string;
     appViewName: string;
     moduleGetter: ModuleGetter;
+    currentData: {
+        actionName: string;
+        prevState: any;
+    };
 };
 export declare function getAppModuleName(): string;
 export declare function setLoadingDepthTime(second: number): void;

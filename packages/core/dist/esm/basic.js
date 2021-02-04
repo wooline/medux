@@ -65,7 +65,11 @@ export var MetaData = {
   facadeMap: null,
   clientStore: null,
   appModuleName: null,
-  moduleGetter: null
+  moduleGetter: null,
+  currentData: {
+    actionName: '',
+    prevState: null
+  }
 };
 export function getAppModuleName() {
   return MetaData.appModuleName;

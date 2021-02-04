@@ -17,19 +17,21 @@ export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
   }
 
   @reducer
-  public add2(prevState?: any): State {
+  public add2(): State {
     this.state.count += 1;
     return this.state;
   }
 
   @effect()
-  protected async ['moduleA.add'](prevState: any) {
+  protected async ['moduleA.add']() {
+    const prevState = this.prevRootState;
     this.dispatch(this.actions.add());
     messages.push(['moduleC/moduleA.add', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
   }
 
   @effect()
-  protected async ['moduleA.add2'](prevState: any) {
+  protected async ['moduleA.add2']() {
+    const prevState = this.prevRootState;
     this.dispatch(this.actions.add2());
     messages.push(['moduleC/moduleA.add2', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
   }

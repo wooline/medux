@@ -154,6 +154,24 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       }
     }, {
       kind: "method",
+      key: "getCurrentActionName",
+      value: function getCurrentActionName() {
+        return _basic.MetaData.currentData.actionName;
+      }
+    }, {
+      kind: "get",
+      key: "prevRootState",
+      value: function prevRootState() {
+        return _basic.MetaData.currentData.prevState;
+      }
+    }, {
+      kind: "get",
+      key: "prevState",
+      value: function prevState() {
+        return _basic.MetaData.currentData.prevState[this.moduleName];
+      }
+    }, {
+      kind: "method",
       key: "dispatch",
       value: function dispatch(action) {
         return this.store.dispatch(action);

@@ -96,7 +96,11 @@ var MetaData = {
   facadeMap: null,
   clientStore: null,
   appModuleName: null,
-  moduleGetter: null
+  moduleGetter: null,
+  currentData: {
+    actionName: '',
+    prevState: null
+  }
 };
 exports.MetaData = MetaData;
 

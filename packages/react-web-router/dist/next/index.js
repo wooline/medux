@@ -753,7 +753,11 @@ const MetaData = {
   facadeMap: null,
   clientStore: null,
   appModuleName: null,
-  moduleGetter: null
+  moduleGetter: null,
+  currentData: {
+    actionName: '',
+    prevState: null
+  }
 };
 const loadings = {};
 let depthTime = 2;
@@ -1555,6 +1559,24 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "method",
+      key: "getCurrentActionName",
+      value: function getCurrentActionName() {
+        return MetaData.currentData.actionName;
+      }
+    }, {
+      kind: "get",
+      key: "prevRootState",
+      value: function prevRootState() {
+        return MetaData.currentData.prevState;
+      }
+    }, {
+      kind: "get",
+      key: "prevState",
+      value: function prevState() {
+        return MetaData.currentData.prevState[this.moduleName];
+      }
+    }, {
+      kind: "method",
       key: "dispatch",
       value: function dispatch(action) {
         return this.store.dispatch(action);
@@ -1750,7 +1772,11 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const node = fun(...actionData, currentState, action.type);
+          MetaData.currentData = {
+            actionName: action.type,
+            prevState: currentState
+          };
+          const node = fun(...actionData);
 
           if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             warn('Use rewrite instead of replace to update state in MutableData');
@@ -1818,7 +1844,11 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult = fun(...actionData, currentState, action.type);
+          MetaData.currentData = {
+            actionName: action.type,
+            prevState: currentState
+          };
+          const effectResult = fun(...actionData);
           const decorators = fun.__decorators__;
 
           if (decorators) {

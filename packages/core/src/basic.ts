@@ -114,12 +114,17 @@ export const MetaData: {
   appModuleName: string;
   appViewName: string;
   moduleGetter: ModuleGetter;
+  currentData: {
+    actionName: string;
+    prevState: any;
+  };
 } = {
   appViewName: null as any,
   facadeMap: null as any,
   clientStore: null as any,
   appModuleName: null as any,
   moduleGetter: null as any,
+  currentData: {actionName: '', prevState: null},
 };
 
 export function getAppModuleName(): string {

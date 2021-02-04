@@ -1604,7 +1604,11 @@
 	  facadeMap: null,
 	  clientStore: null,
 	  appModuleName: null,
-	  moduleGetter: null
+	  moduleGetter: null,
+	  currentData: {
+	    actionName: '',
+	    prevState: null
+	  }
 	};
 	var loadings = {};
 	var depthTime = 2;
@@ -2416,6 +2420,24 @@
 	      }
 	    }, {
 	      kind: "method",
+	      key: "getCurrentActionName",
+	      value: function getCurrentActionName() {
+	        return MetaData.currentData.actionName;
+	      }
+	    }, {
+	      kind: "get",
+	      key: "prevRootState",
+	      value: function prevRootState() {
+	        return MetaData.currentData.prevState;
+	      }
+	    }, {
+	      kind: "get",
+	      key: "prevState",
+	      value: function prevState() {
+	        return MetaData.currentData.prevState[this.moduleName];
+	      }
+	    }, {
+	      kind: "method",
 	      key: "dispatch",
 	      value: function dispatch(action) {
 	        return this.store.dispatch(action);
@@ -2631,7 +2653,11 @@
 	        if (!moduleNameMap[moduleName]) {
 	          moduleNameMap[moduleName] = true;
 	          var fun = handlers[moduleName];
-	          var node = fun.apply(void 0, actionData.concat([currentState, action.type]));
+	          MetaData.currentData = {
+	            actionName: action.type,
+	            prevState: currentState
+	          };
+	          var node = fun.apply(void 0, actionData);
 
 	          if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
 	            warn('Use rewrite instead of replace to update state in MutableData');
@@ -2701,7 +2727,11 @@
 	            if (!moduleNameMap[moduleName]) {
 	              moduleNameMap[moduleName] = true;
 	              var fun = handlers[moduleName];
-	              var effectResult = fun.apply(void 0, _actionData.concat([currentState, action.type]));
+	              MetaData.currentData = {
+	                actionName: action.type,
+	                prevState: currentState
+	              };
+	              var effectResult = fun.apply(void 0, _actionData);
 	              var decorators = fun.__decorators__;
 
 	              if (decorators) {

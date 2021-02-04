@@ -99,7 +99,8 @@ export function buildStore(
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const node = fun(...actionData, currentState, action.type);
+          MetaData.currentData = {actionName: action.type, prevState: currentState};
+          const node = fun(...actionData);
           if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             warn('Use rewrite instead of replace to update state in MutableData');
           }
@@ -157,7 +158,8 @@ export function buildStore(
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           const fun = handlers[moduleName];
-          const effectResult: Promise<any> = fun(...actionData, currentState, action.type);
+          MetaData.currentData = {actionName: action.type, prevState: currentState};
+          const effectResult: Promise<any> = fun(...actionData);
           const decorators = fun.__decorators__;
           if (decorators) {
             const results: any[] = [];

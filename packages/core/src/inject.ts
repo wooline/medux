@@ -154,6 +154,18 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
     return this.store._medux_.realtimeState as R;
   }
 
+  protected getCurrentActionName(): string {
+    return MetaData.currentData.actionName;
+  }
+
+  protected get prevRootState(): S {
+    return MetaData.currentData.prevState;
+  }
+
+  protected get prevState(): S {
+    return MetaData.currentData.prevState[this.moduleName] as S;
+  }
+
   /**
    * store.dispatch的引用
    */

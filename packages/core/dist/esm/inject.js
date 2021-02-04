@@ -137,6 +137,24 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "method",
+      key: "getCurrentActionName",
+      value: function getCurrentActionName() {
+        return MetaData.currentData.actionName;
+      }
+    }, {
+      kind: "get",
+      key: "prevRootState",
+      value: function prevRootState() {
+        return MetaData.currentData.prevState;
+      }
+    }, {
+      kind: "get",
+      key: "prevState",
+      value: function prevState() {
+        return MetaData.currentData.prevState[this.moduleName];
+      }
+    }, {
+      kind: "method",
       key: "dispatch",
       value: function dispatch(action) {
         return this.store.dispatch(action);

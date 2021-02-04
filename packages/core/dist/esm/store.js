@@ -91,7 +91,11 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
         if (!moduleNameMap[moduleName]) {
           moduleNameMap[moduleName] = true;
           var fun = handlers[moduleName];
-          var node = fun.apply(void 0, actionData.concat([currentState, action.type]));
+          MetaData.currentData = {
+            actionName: action.type,
+            prevState: currentState
+          };
+          var node = fun.apply(void 0, actionData);
 
           if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
             warn('Use rewrite instead of replace to update state in MutableData');
@@ -161,7 +165,11 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
             if (!moduleNameMap[moduleName]) {
               moduleNameMap[moduleName] = true;
               var fun = handlers[moduleName];
-              var effectResult = fun.apply(void 0, _actionData.concat([currentState, action.type]));
+              MetaData.currentData = {
+                actionName: action.type,
+                prevState: currentState
+              };
+              var effectResult = fun.apply(void 0, _actionData);
               var decorators = fun.__decorators__;
 
               if (decorators) {
