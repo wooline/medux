@@ -1,15 +1,13 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 export var routeConfig = {
-  RSP: '|',
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
-  pagenames: {}
+  pagenames: {},
+  defaultParams: {}
 };
 export function setRouteConfig(conf) {
-  conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
-  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function locationToUri(location, key) {
@@ -17,7 +15,7 @@ function locationToUri(location, key) {
       params = location.params;
   var query = params ? JSON.stringify(params) : '';
   return {
-    uri: [key, pagename, query].join(routeConfig.RSP),
+    uri: [key, pagename, query].join('|'),
     pagename: pagename,
     query: query,
     key: key
@@ -32,7 +30,13 @@ function splitUri() {
   var _args$ = args[0],
       uri = _args$ === void 0 ? '' : _args$,
       name = args[1];
-  var arr = uri.split(routeConfig.RSP, 3);
+
+  var _uri$split = uri.split('|'),
+      key = _uri$split[0],
+      pagename = _uri$split[1],
+      others = _uri$split.slice(2);
+
+  var arr = [key, pagename, others.join('|')];
   var index = {
     key: 0,
     pagename: 1,

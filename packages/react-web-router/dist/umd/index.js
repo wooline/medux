@@ -1281,6 +1281,22 @@
 	var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 	var client = isServerEnv ? undefined : env;
 
+	env.encodeBas64 = function (str) {
+	  if (!str) {
+	    return '';
+	  }
+
+	  return typeof btoa === 'function' ? btoa(str) : typeof Buffer !== 'undefined' ? Buffer.from(str).toString('base64') : str;
+	};
+
+	env.decodeBas64 = function (str) {
+	  if (!str) {
+	    return '';
+	  }
+
+	  return typeof atob === 'function' ? atob(str) : typeof Buffer !== 'undefined' ? Buffer.from(str, 'base64').toString() : str;
+	};
+
 	var TaskCountEvent = 'TaskCountEvent';
 
 	(function (LoadingState) {
@@ -1503,7 +1519,9 @@
 	    target = {};
 	  }
 
-	  args = args.filter(Boolean);
+	  args = args.filter(function (item) {
+	    return isPlainObject(item) && Object.keys(item).length;
+	  });
 
 	  if (args.length < 1) {
 	    return target;
@@ -3088,16 +3106,14 @@
 	}
 
 	var routeConfig = {
-	  RSP: '|',
 	  actionMaxHistory: 10,
 	  pagesMaxHistory: 10,
-	  pagenames: {}
+	  pagenames: {},
+	  defaultParams: {}
 	};
 	function setRouteConfig(conf) {
-	  conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
 	  conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
 	  conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
-	  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 	}
 
 	function locationToUri(location, key) {
@@ -3105,7 +3121,7 @@
 	      params = location.params;
 	  var query = params ? JSON.stringify(params) : '';
 	  return {
-	    uri: [key, pagename, query].join(routeConfig.RSP),
+	    uri: [key, pagename, query].join('|'),
 	    pagename: pagename,
 	    query: query,
 	    key: key
@@ -3120,7 +3136,13 @@
 	  var _args$ = args[0],
 	      uri = _args$ === void 0 ? '' : _args$,
 	      name = args[1];
-	  var arr = uri.split(routeConfig.RSP, 3);
+
+	  var _uri$split = uri.split('|'),
+	      key = _uri$split[0],
+	      pagename = _uri$split[1],
+	      others = _uri$split.slice(2);
+
+	  var arr = [key, pagename, others.join('|')];
 	  var index = {
 	    key: 0,
 	    pagename: 1,
@@ -3368,7 +3390,7 @@
 	function __extendDefault(target, def) {
 	  var clone = {};
 	  Object.keys(def).forEach(function (key) {
-	    if (!target.hasOwnProperty(key)) {
+	    if (target[key] === undefined) {
 	      clone[key] = def[key];
 	    } else {
 	      var tval = target[key];
@@ -3522,7 +3544,8 @@
 	  return [publicData, privateData];
 	}
 
-	function assignDefaultData(data, def) {
+	function assignDefaultData(data) {
+	  var def = routeConfig.defaultParams;
 	  return Object.keys(data).reduce(function (params, moduleName) {
 	    if (def.hasOwnProperty(moduleName)) {
 	      params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
@@ -3538,34 +3561,19 @@
 	  return arr ? arr[1] : '';
 	}
 
-	function encodeBas64(str) {
-	  return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
-	}
-
-	function decodeBas64(str) {
-	  return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
-	}
-
 	function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
 	  var search = splitSearch(nativeLocation.search, paramsKey);
 	  var hash = splitSearch(nativeLocation.hash, paramsKey);
 
 	  if (base64) {
-	    search = search && decodeBas64(search);
-	    hash = hash && decodeBas64(hash);
+	    search = env.decodeBas64(search);
+	    hash = env.decodeBas64(hash);
 	  } else {
 	    search = search && decodeURIComponent(search);
 	    hash = hash && decodeURIComponent(hash);
 	  }
 
-	  var pathname = nativeLocation.pathname;
-
-	  if (!pathname.startsWith('/')) {
-	    pathname = "/" + pathname;
-	  }
-
 	  return {
-	    pathname: pathname.replace(/\/*$/, '') || '/',
 	    searchParams: search ? parse(search) : undefined,
 	    hashParams: hash ? parse(hash) : undefined
 	  };
@@ -3576,93 +3584,29 @@
 	  var hashStr = hash ? stringify(hash) : '';
 
 	  if (base64) {
-	    searchStr = searchStr && encodeBas64(searchStr);
-	    hashStr = hashStr && encodeBas64(hashStr);
+	    searchStr = env.encodeBas64(searchStr);
+	    hashStr = env.encodeBas64(hashStr);
 	  } else {
 	    searchStr = searchStr && encodeURIComponent(searchStr);
 	    hashStr = hashStr && encodeURIComponent(hashStr);
 	  }
 
-	  if (!pathname.startsWith('/')) {
-	    pathname = "/" + pathname;
-	  }
-
 	  return {
-	    pathname: pathname.replace(/\/*$/, '') || '/',
+	    pathname: "/" + pathname.replace(/^\/+|\/+$/g, ''),
 	    search: searchStr && paramsKey + "=" + searchStr,
 	    hash: hashStr && paramsKey + "=" + hashStr
 	  };
 	}
 
-	function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
-	  pagenameMap = Object.keys(pagenameMap).sort(function (a, b) {
-	    return b.length - a.length;
-	  }).reduce(function (map, pagename) {
-	    var fullPagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
-	    map[fullPagename] = pagenameMap[pagename];
-	    return map;
-	  }, {});
-	  routeConfig.pagenames = Object.keys(pagenameMap).reduce(function (obj, key) {
-	    obj[key] = key;
-	    return obj;
-	  }, {});
-	  routeConfig.pagenames['/'] = '/';
-	  return {
-	    in: function _in(pathname) {
-	      pathname = pathnameIn(pathname);
-
-	      if (!pathname.endsWith('/')) {
-	        pathname = pathname + "/";
-	      }
-
-	      var pagename = Object.keys(pagenameMap).find(function (name) {
-	        return pathname.startsWith(name);
-	      });
-	      var pathParams;
-
-	      if (!pagename) {
-	        pagename = '/';
-	        pathParams = {};
-	      } else {
-	        var args = pathname.replace(pagename, '').split('/').map(function (item) {
-	          return item ? decodeURIComponent(item) : undefined;
-	        });
-	        pathParams = pagenameMap[pagename].in(args);
-	        pagename = pagename.replace(/\/$/, '') || '/';
-	      }
-
-	      return {
-	        pagename: pagename,
-	        pathParams: pathParams
-	      };
-	    },
-	    out: function out(pagename, params) {
-	      pagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
-	      var pathname;
-
-	      if (!pagenameMap[pagename]) {
-	        pathname = '/';
-	      } else {
-	        var args = pagenameMap[pagename].out(params);
-	        pathname = pagename + args.map(function (item) {
-	          return item && encodeURIComponent(item);
-	        }).join('/').replace(/\/*$/, '');
-	      }
-
-	      if (pathnameOut) {
-	        pathname = pathnameOut(pathname);
-	      }
-
-	      var data = this.in(pathname);
-	      var pathParams = data.pathParams;
-	      return {
-	        pathname: pathname,
-	        pathParams: pathParams
-	      };
-	    }
-	  };
+	function dataIsNativeLocation(data) {
+	  return data['pathname'];
 	}
-	function createLocationTransform(pathnameTransform, defaultData, base64, serialization, paramsKey) {
+
+	function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, base64, serialization, paramsKey) {
+	  if (notfoundPagename === void 0) {
+	    notfoundPagename = '/404';
+	  }
+
 	  if (base64 === void 0) {
 	    base64 = false;
 	  }
@@ -3675,34 +3619,97 @@
 	    paramsKey = '_';
 	  }
 
+	  routeConfig.defaultParams = defaultParams;
+	  var pagenames = Object.keys(pagenameMap);
+	  pagenameMap = pagenames.sort(function (a, b) {
+	    return b.length - a.length;
+	  }).reduce(function (map, pagename) {
+	    var fullPagename = ("/" + pagename + "/").replace(/^\/+|\/+$/g, '/');
+	    map[fullPagename] = pagenameMap[pagename];
+	    return map;
+	  }, {});
+	  routeConfig.pagenames = pagenames.reduce(function (obj, key) {
+	    obj[key] = key;
+	    return obj;
+	  }, {});
+	  pagenames = Object.keys(pagenameMap);
+
+	  function toStringArgs(arr) {
+	    return arr.map(function (item) {
+	      if (item === null || item === undefined) {
+	        return undefined;
+	      }
+
+	      return item.toString();
+	    });
+	  }
+
 	  return {
-	    in: function _in(nativeLocation) {
-	      var _parseNativeLocation = parseNativeLocation(nativeLocation, paramsKey, base64, serialization.parse),
-	          pathname = _parseNativeLocation.pathname,
-	          searchParams = _parseNativeLocation.searchParams,
-	          hashParams = _parseNativeLocation.hashParams;
+	    in: function _in(data) {
+	      var path;
 
-	      var _pathnameTransform$in = pathnameTransform.in(pathname),
-	          pagename = _pathnameTransform$in.pagename,
-	          pathParams = _pathnameTransform$in.pathParams;
+	      if (dataIsNativeLocation(data)) {
+	        data = nativeLocationMap.in(data);
+	        path = data.pathname;
+	      } else {
+	        path = data.pagename;
+	      }
 
-	      var params = deepMerge(pathParams, searchParams, hashParams);
-	      params = assignDefaultData(params, defaultData);
+	      path = ("/" + path + "/").replace(/^\/+|\/+$/g, '/');
+	      var pagename = pagenames.find(function (name) {
+	        return path.startsWith(name);
+	      });
+	      var params;
+
+	      if (pagename) {
+	        if (dataIsNativeLocation(data)) {
+	          var _parseNativeLocation = parseNativeLocation(data, paramsKey, base64, serialization.parse),
+	              searchParams = _parseNativeLocation.searchParams,
+	              hashParams = _parseNativeLocation.hashParams;
+
+	          var _pathArgs = path.replace(pagename, '').split('/').map(function (item) {
+	            return item ? decodeURIComponent(item) : undefined;
+	          });
+
+	          var pathParams = pagenameMap[pagename].argsToParams(_pathArgs);
+	          params = deepMerge(pathParams, searchParams, hashParams);
+	        } else {
+	          var _pathParams = pagenameMap[pagename].argsToParams([]);
+
+	          params = deepMerge(_pathParams, data.params);
+	        }
+	      } else {
+	        pagename = notfoundPagename + "/";
+	        params = pagenameMap[pagename] ? pagenameMap[pagename].argsToParams([path.replace(/\/$/, '')]) : {};
+	      }
+
 	      return {
-	        pagename: pagename,
-	        params: params
+	        pagename: "/" + pagename.replace(/^\/+|\/+$/g, ''),
+	        params: assignDefaultData(params)
 	      };
 	    },
 	    out: function out(meduxLocation) {
-	      var params = excludeDefault(meduxLocation.params, defaultData, true);
+	      var params = excludeDefault(meduxLocation.params, defaultParams, true);
+	      var pagename = ("/" + meduxLocation.pagename + "/").replace(/^\/+|\/+$/g, '/');
+	      var pathParams;
+	      var pathname;
 
-	      var _pathnameTransform$ou = pathnameTransform.out(meduxLocation.pagename, params),
-	          pathname = _pathnameTransform$ou.pathname,
-	          pathParams = _pathnameTransform$ou.pathParams;
+	      if (pagenameMap[pagename]) {
+	        var _pathArgs2 = toStringArgs(pagenameMap[pagename].paramsToArgs(params));
+
+	        pathParams = pagenameMap[pagename].argsToParams(_pathArgs2);
+	        pathname = pagename + _pathArgs2.map(function (item) {
+	          return item && encodeURIComponent(item);
+	        }).join('/').replace(/\/*$/, '');
+	      } else {
+	        pathParams = {};
+	        pathname = pagename;
+	      }
 
 	      params = excludeDefault(params, pathParams, false);
 	      var result = splitPrivate(params, pathParams);
-	      return toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+	      var nativeLocation = toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+	      return nativeLocationMap.out(nativeLocation);
 	    }
 	  };
 	}
@@ -3805,15 +3812,17 @@
 	  return state;
 	};
 	var BaseRouter = function () {
-	  function BaseRouter(initUrl, nativeRouter, locationTransform) {
+	  function BaseRouter(nativeUrl, nativeRouter, locationTransform) {
 	    this.nativeRouter = nativeRouter;
 	    this.locationTransform = locationTransform;
 
 	    _defineProperty(this, "_tid", 0);
 
-	    _defineProperty(this, "routeState", void 0);
+	    _defineProperty(this, "_nativeData", void 0);
 
-	    _defineProperty(this, "nativeLocation", void 0);
+	    _defineProperty(this, "_getNativeUrl", this.getNativeUrl.bind(this));
+
+	    _defineProperty(this, "routeState", void 0);
 
 	    _defineProperty(this, "url", void 0);
 
@@ -3821,20 +3830,20 @@
 
 	    _defineProperty(this, "history", void 0);
 
-	    var location = this.urlToToLocation(initUrl);
-	    this.nativeLocation = this.locationTransform.out(location);
-	    this.url = this.nativeLocationToUrl(this.nativeLocation);
+	    var location = this.urlToLocation(nativeUrl);
 
 	    var key = this._createKey();
 
-	    this.history = new History();
 	    var routeState = Object.assign({}, location, {
 	      action: 'RELAUNCH',
 	      key: key
 	    });
 	    this.routeState = routeState;
+	    this.url = this.locationToUrl(routeState);
+	    this._nativeData = undefined;
+	    this.history = new History();
 	    this.history.relaunch(location, key);
-	    this.nativeRouter.relaunch(this.url, key, false);
+	    this.nativeRouter.relaunch(this._getNativeUrl, key, false);
 	  }
 
 	  var _proto = BaseRouter.prototype;
@@ -3843,12 +3852,42 @@
 	    return this.routeState;
 	  };
 
-	  _proto.getNativeLocation = function getNativeLocation() {
-	    return this.nativeLocation;
+	  _proto.getPagename = function getPagename() {
+	    return this.routeState.pagename;
+	  };
+
+	  _proto.getParams = function getParams() {
+	    return this.routeState.params;
 	  };
 
 	  _proto.getUrl = function getUrl() {
 	    return this.url;
+	  };
+
+	  _proto.getNativeLocation = function getNativeLocation() {
+	    if (!this._nativeData) {
+	      var nativeLocation = this.locationTransform.out(this.routeState);
+	      var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+	      this._nativeData = {
+	        nativeLocation: nativeLocation,
+	        nativeUrl: nativeUrl
+	      };
+	    }
+
+	    return this._nativeData.nativeLocation;
+	  };
+
+	  _proto.getNativeUrl = function getNativeUrl() {
+	    if (!this._nativeData) {
+	      var nativeLocation = this.locationTransform.out(this.routeState);
+	      var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+	      this._nativeData = {
+	        nativeLocation: nativeLocation,
+	        nativeUrl: nativeUrl
+	      };
+	    }
+
+	    return this._nativeData.nativeUrl;
 	  };
 
 	  _proto.setStore = function setStore(_store) {
@@ -3864,22 +3903,7 @@
 	    return "" + this._tid;
 	  };
 
-	  _proto.payloadToLocation = function payloadToLocation(data) {
-	    var pagename = data.pagename;
-	    var extendParams = data.extendParams === true ? this.routeState.params : data.extendParams;
-	    var params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
-	    return {
-	      pagename: pagename || this.routeState.pagename || '/',
-	      params: params
-	    };
-	  };
-
-	  _proto.urlToToLocation = function urlToToLocation(url) {
-	    var nativeLocation = this.urlToNativeLocation(url);
-	    return this.locationTransform.in(nativeLocation);
-	  };
-
-	  _proto.urlToNativeLocation = function urlToNativeLocation(url) {
+	  _proto.nativeUrlToNativeLocation = function nativeUrlToNativeLocation(url) {
 	    if (!url) {
 	      return {
 	        pathname: '/',
@@ -3899,30 +3923,73 @@
 	        search = _arr$ === void 0 ? '' : _arr$,
 	        _arr$2 = arr[2],
 	        hash = _arr$2 === void 0 ? '' : _arr$2;
-	    var pathname = path;
-
-	    if (!pathname.startsWith('/')) {
-	      pathname = "/" + pathname;
-	    }
-
-	    pathname = pathname.replace(/\/*$/, '') || '/';
 	    return {
-	      pathname: pathname,
+	      pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
 	      search: search,
 	      hash: hash
 	    };
 	  };
 
-	  _proto.nativeLocationToUrl = function nativeLocationToUrl(nativeLocation) {
+	  _proto.urlToLocation = function urlToLocation(url) {
+	    var _url$split = url.split('?'),
+	        pathname = _url$split[0],
+	        others = _url$split.slice(1);
+
+	    var query = others.join('?');
+	    var location;
+
+	    try {
+	      if (query.startsWith('{')) {
+	        var data = JSON.parse(query);
+	        location = this.locationTransform.in({
+	          pagename: pathname,
+	          params: data
+	        });
+	      } else {
+	        var nativeLocation = this.nativeUrlToNativeLocation(url);
+	        location = this.locationTransform.in(nativeLocation);
+	      }
+	    } catch (error) {
+	      env.console.warn(error);
+	      location = {
+	        pagename: '/',
+	        params: {}
+	      };
+	    }
+
+	    return location;
+	  };
+
+	  _proto.nativeLocationToNativeUrl = function nativeLocationToNativeUrl(nativeLocation) {
 	    var pathname = nativeLocation.pathname,
 	        search = nativeLocation.search,
 	        hash = nativeLocation.hash;
-	    return [pathname && (pathname.replace(/\/*$/, '') || '/'), search && "?" + search, hash && "#" + hash].join('');
+	    return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+	  };
+
+	  _proto.locationToNativeUrl = function locationToNativeUrl(location) {
+	    var nativeLocation = this.locationTransform.out(location);
+	    return this.nativeLocationToNativeUrl(nativeLocation);
 	  };
 
 	  _proto.locationToUrl = function locationToUrl(location) {
-	    var nativeLocation = this.locationTransform.out(location);
-	    return this.nativeLocationToUrl(nativeLocation);
+	    return [location.pagename, JSON.stringify(location.params || {})].join('?');
+	  };
+
+	  _proto.payloadToPartial = function payloadToPartial(payload) {
+	    var params = payload.params;
+	    var extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
+
+	    if (extendParams && params) {
+	      params = deepMerge({}, extendParams, params);
+	    } else if (extendParams) {
+	      params = extendParams;
+	    }
+
+	    return {
+	      pagename: payload.pagename || this.routeState.pagename,
+	      params: params || {}
+	    };
 	  };
 
 	  _proto.relaunch = function () {
@@ -3932,7 +3999,12 @@
 	        while (1) {
 	          switch (_context.prev = _context.next) {
 	            case 0:
-	              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+	              if (typeof data === 'string') {
+	                location = this.urlToLocation(data);
+	              } else {
+	                location = this.locationTransform.in(this.payloadToPartial(data));
+	              }
+
 	              key = this._createKey();
 	              routeState = Object.assign({}, location, {
 	                action: 'RELAUNCH',
@@ -3943,9 +4015,9 @@
 
 	            case 5:
 	              this.routeState = routeState;
+	              this.url = this.locationToUrl(routeState);
+	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
-	              this.nativeLocation = this.locationTransform.out(location);
-	              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
 	              if (internal) {
 	                this.history.getCurrentInternalHistory().relaunch(location, key);
@@ -3953,7 +4025,7 @@
 	                this.history.relaunch(location, key);
 	              }
 
-	              this.nativeRouter.relaunch(this.url, key, !!internal);
+	              this.nativeRouter.relaunch(this._getNativeUrl, key, !!internal);
 	              return _context.abrupt("return", routeState);
 
 	            case 12:
@@ -3978,7 +4050,12 @@
 	        while (1) {
 	          switch (_context2.prev = _context2.next) {
 	            case 0:
-	              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+	              if (typeof data === 'string') {
+	                location = this.urlToLocation(data);
+	              } else {
+	                location = this.locationTransform.in(this.payloadToPartial(data));
+	              }
+
 	              key = this._createKey();
 	              routeState = Object.assign({}, location, {
 	                action: 'PUSH',
@@ -3989,9 +4066,9 @@
 
 	            case 5:
 	              this.routeState = routeState;
+	              this.url = this.locationToUrl(routeState);
+	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
-	              this.nativeLocation = this.locationTransform.out(location);
-	              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
 	              if (internal) {
 	                this.history.getCurrentInternalHistory().push(location, key);
@@ -3999,7 +4076,7 @@
 	                this.history.push(location, key);
 	              }
 
-	              this.nativeRouter.push(this.url, key, !!internal);
+	              this.nativeRouter.push(this._getNativeUrl, key, !!internal);
 	              return _context2.abrupt("return", routeState);
 
 	            case 12:
@@ -4024,7 +4101,12 @@
 	        while (1) {
 	          switch (_context3.prev = _context3.next) {
 	            case 0:
-	              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+	              if (typeof data === 'string') {
+	                location = this.urlToLocation(data);
+	              } else {
+	                location = this.locationTransform.in(this.payloadToPartial(data));
+	              }
+
 	              key = this._createKey();
 	              routeState = Object.assign({}, location, {
 	                action: 'REPLACE',
@@ -4035,9 +4117,9 @@
 
 	            case 5:
 	              this.routeState = routeState;
+	              this.url = this.locationToUrl(routeState);
+	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
-	              this.nativeLocation = this.locationTransform.out(location);
-	              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
 	              if (internal) {
 	                this.history.getCurrentInternalHistory().replace(location, key);
@@ -4045,7 +4127,7 @@
 	                this.history.replace(location, key);
 	              }
 
-	              this.nativeRouter.replace(this.url, key, !!internal);
+	              this.nativeRouter.replace(this._getNativeUrl, key, !!internal);
 	              return _context3.abrupt("return", routeState);
 
 	            case 12:
@@ -4096,9 +4178,9 @@
 
 	            case 9:
 	              this.routeState = routeState;
+	              this.url = this.locationToUrl(routeState);
+	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
-	              this.nativeLocation = this.locationTransform.out(location);
-	              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
 	              if (internal) {
 	                this.history.getCurrentInternalHistory().back(n);
@@ -4106,7 +4188,7 @@
 	                this.history.back(n);
 	              }
 
-	              this.nativeRouter.back(this.url, n, key, !!internal);
+	              this.nativeRouter.back(this._getNativeUrl, n, key, !!internal);
 	              return _context4.abrupt("return", routeState);
 
 	            case 16:
@@ -4157,9 +4239,9 @@
 
 	            case 9:
 	              this.routeState = routeState;
+	              this.url = this.locationToUrl(routeState);
+	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
-	              this.nativeLocation = this.locationTransform.out(location);
-	              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
 	              if (internal) {
 	                this.history.getCurrentInternalHistory().pop(n);
@@ -4167,7 +4249,7 @@
 	                this.history.pop(n);
 	              }
 
-	              this.nativeRouter.pop(this.url, n, key, !!internal);
+	              this.nativeRouter.pop(this._getNativeUrl, n, key, !!internal);
 	              return _context5.abrupt("return", routeState);
 
 	            case 16:
@@ -5229,6 +5311,8 @@
 	  function BrowserNativeRouter(createHistory) {
 	    _defineProperty(this, "history", void 0);
 
+	    _defineProperty(this, "serverSide", false);
+
 	    if (createHistory === 'Hash') {
 	      this.history = createHashHistory();
 	    } else if (createHistory === 'Memory') {
@@ -5236,6 +5320,8 @@
 	    } else if (createHistory === 'Browser') {
 	      this.history = createBrowserHistory();
 	    } else {
+	      this.serverSide = true;
+
 	      var _createHistory$split = createHistory.split('?'),
 	          pathname = _createHistory$split[0],
 	          _createHistory$split$ = _createHistory$split[1],
@@ -5302,24 +5388,24 @@
 	    return location.state || '';
 	  };
 
-	  _proto.push = function push(url, key, internal) {
-	    !internal && this.history.push(url, key);
+	  _proto.push = function push(getUrl, key, internal) {
+	    !internal && !this.serverSide && this.history.push(getUrl(), key);
 	  };
 
-	  _proto.replace = function replace(url, key, internal) {
-	    !internal && this.history.replace(url, key);
+	  _proto.replace = function replace(getUrl, key, internal) {
+	    !internal && !this.serverSide && this.history.replace(getUrl(), key);
 	  };
 
-	  _proto.relaunch = function relaunch(url, key, internal) {
-	    !internal && this.history.push(url, key);
+	  _proto.relaunch = function relaunch(getUrl, key, internal) {
+	    !internal && !this.serverSide && this.history.push(getUrl(), key);
 	  };
 
-	  _proto.back = function back(url, n, key, internal) {
-	    !internal && this.history.go(-n);
+	  _proto.back = function back(getUrl, n, key, internal) {
+	    !internal && !this.serverSide && this.history.go(-n);
 	  };
 
-	  _proto.pop = function pop(url, n, key, internal) {
-	    !internal && this.history.push(url, key);
+	  _proto.pop = function pop(getUrl, n, key, internal) {
+	    !internal && !this.serverSide && this.history.push(getUrl(), key);
 	  };
 
 	  _proto.refresh = function refresh() {
@@ -5679,7 +5765,7 @@
 	      container = _ref2$container === void 0 ? 'root' : _ref2$container;
 
 	  if (!SSRTPL) {
-	    SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
+	    SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
 	  }
 
 	  appExports.request = request;
@@ -5733,7 +5819,6 @@
 	exports.buildSSR = buildSSR;
 	exports.clientSide = clientSide;
 	exports.createLocationTransform = createLocationTransform;
-	exports.createPathnameTransform = createPathnameTransform;
 	exports.deepMerge = deepMerge;
 	exports.deepMergeState = deepMergeState;
 	exports.delayPromise = delayPromise;

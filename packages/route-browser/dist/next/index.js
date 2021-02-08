@@ -6,6 +6,8 @@ export class BrowserNativeRouter {
   constructor(createHistory) {
     _defineProperty(this, "history", void 0);
 
+    _defineProperty(this, "serverSide", false);
+
     if (createHistory === 'Hash') {
       this.history = createHashHistory();
     } else if (createHistory === 'Memory') {
@@ -13,6 +15,7 @@ export class BrowserNativeRouter {
     } else if (createHistory === 'Browser') {
       this.history = createBrowserHistory();
     } else {
+      this.serverSide = true;
       const [pathname, search = ''] = createHistory.split('?');
       this.history = {
         action: 'PUSH',
@@ -73,24 +76,24 @@ export class BrowserNativeRouter {
     return location.state || '';
   }
 
-  push(url, key, internal) {
-    !internal && this.history.push(url, key);
+  push(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   }
 
-  replace(url, key, internal) {
-    !internal && this.history.replace(url, key);
+  replace(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.replace(getUrl(), key);
   }
 
-  relaunch(url, key, internal) {
-    !internal && this.history.push(url, key);
+  relaunch(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   }
 
-  back(url, n, key, internal) {
-    !internal && this.history.go(-n);
+  back(getUrl, n, key, internal) {
+    !internal && !this.serverSide && this.history.go(-n);
   }
 
-  pop(url, n, key, internal) {
-    !internal && this.history.push(url, key);
+  pop(getUrl, n, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   }
 
   refresh() {

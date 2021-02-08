@@ -1,17 +1,16 @@
 import {CoreRootState, RootModuleFacade} from '@medux/core';
 
 export const routeConfig = {
-  RSP: '|',
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
   pagenames: {} as {[key: string]: string},
+  defaultParams: {} as any,
 };
 
-export function setRouteConfig(conf: {RSP?: string; actionMaxHistory?: number; pagesMaxHistory?: number; homeUri?: string; pagenames?: {[key: string]: string}}) {
-  conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
+export function setRouteConfig(conf: {actionMaxHistory?: number; pagesMaxHistory?: number; homeUri?: string; pagenames?: {[key: string]: string}}) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
-  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
+  // conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 export type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
@@ -29,6 +28,15 @@ export interface Location<P extends RootParams = {}> {
   pagename: string;
   params: Partial<P>;
 }
+export interface PayloadLocation<P extends RootParams = {}, N extends string = string> {
+  pagename?: N;
+  params?: DeepPartial<P>;
+  extendParams?: DeepPartial<P> | 'current';
+}
+export interface PartialLocation<P extends RootParams = {}> {
+  pagename: string;
+  params: DeepPartial<P>;
+}
 
 export type RouteState<P extends RootParams = {}> = Location<P> & {
   action: HistoryAction;
@@ -45,23 +53,18 @@ export type RootState<A extends RootModuleFacade, P extends {[key: string]: any}
 
 export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
-export interface RoutePayload<P extends RootParams = RootParams, N extends string = string> {
-  pagename?: N;
-  params?: DeepPartial<P>;
-  extendParams?: Partial<P> | true;
-}
-
 function locationToUri(location: Location, key: string): {uri: string; pagename: string; query: string; key: string} {
   const {pagename, params} = location;
   const query = params ? JSON.stringify(params) : '';
-  return {uri: [key, pagename, query].join(routeConfig.RSP), pagename, query, key};
+  return {uri: [key, pagename, query].join('|'), pagename, query, key};
 }
 
 function splitUri(uri: string): [string, string, string];
 function splitUri(uri: string, name: 'key' | 'pagename' | 'query'): string;
 function splitUri(...args: any): [string, string, string] | string {
   const [uri = '', name] = args;
-  const arr = uri.split(routeConfig.RSP, 3);
+  const [key, pagename, ...others] = uri.split('|');
+  const arr = [key, pagename, others.join('|')];
   const index = {key: 0, pagename: 1, query: 2};
   if (name) {
     return arr[index[name]];

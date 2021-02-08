@@ -16,7 +16,7 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
         store: Store;
         state: RootState<APP, RouteParams>;
         loadView: LoadView<APP>;
-        router: Router<RouteParams, Pagename | '/'>;
+        router: Router<RouteParams, Pagename>;
         getActions<N extends keyof APP>(...args: N[]): {
             [K in N]: APP[K]['actions'];
         };
@@ -26,7 +26,7 @@ export declare type FacadeExports<APP extends RootModuleFacade, RouteParams exte
     Modules: RootModuleAPI<APP>;
     Actions: RootModuleActions<APP>;
     Pagenames: {
-        [K in Pagename | '/']: K;
+        [K in Pagename]: K;
     };
 };
 export declare const appExports: {

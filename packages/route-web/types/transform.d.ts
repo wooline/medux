@@ -1,26 +1,24 @@
-import { Location, NativeLocation, DeepPartial, RootParams } from './basic';
+import { Location, NativeLocation, DeepPartial, RootParams, PartialLocation } from './basic';
 export declare type LocationTransform<P extends RootParams> = {
-    in: (nativeLocation: NativeLocation) => Location<P>;
-    out: (meduxLocation: Location<P>) => NativeLocation;
-};
-export declare type PathnameTransform<P extends RootParams> = {
-    in(pathname: string): {
-        pagename: string;
-        pathParams: DeepPartial<P>;
-    };
-    out(pagename: string, params: DeepPartial<P>): {
-        pathname: string;
-        pathParams: DeepPartial<P>;
-    };
+    in: (nativeLocation: NativeLocation | PartialLocation<P>) => Location<P>;
+    out: (meduxLocation: PartialLocation<P>) => NativeLocation;
 };
 export declare type PagenameMap<P extends RootParams> = {
     [pagename: string]: {
-        in(pathParams: Array<string | undefined>): DeepPartial<P>;
-        out(params: DeepPartial<P>): Array<any>;
+        argsToParams(pathArgs: Array<string | undefined>): DeepPartial<P>;
+        paramsToArgs(params: DeepPartial<P>): Array<any>;
     };
 };
-export declare function createPathnameTransform<P extends RootParams>(pathnameIn: (pathname: string) => string, pagenameMap: PagenameMap<P>, pathnameOut?: (pathname: string) => string): PathnameTransform<P>;
-export declare function createLocationTransform<P extends RootParams>(pathnameTransform: PathnameTransform<P>, defaultData: P, base64?: boolean, serialization?: {
+export declare type NativeLocationMap = {
+    in(nativeLocation: NativeLocation): NativeLocation;
+    out(nativeLocation: NativeLocation): NativeLocation;
+};
+export declare function assignDefaultData(data: {
+    [moduleName: string]: any;
+}): {
+    [moduleName: string]: any;
+};
+export declare function createLocationTransform<P extends RootParams>(defaultParams: P, pagenameMap: PagenameMap<P>, nativeLocationMap: NativeLocationMap, notfoundPagename?: string, base64?: boolean, serialization?: {
     parse(str: string): any;
     stringify(data: any): string;
 }, paramsKey?: string): LocationTransform<P>;

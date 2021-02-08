@@ -173,7 +173,7 @@ export function deepMerge(target: {[key: string]: any}, ...args: any[]): any {
   if (!isPlainObject(target)) {
     target = {};
   }
-  args = args.filter(Boolean);
+  args = args.filter((item) => isPlainObject(item) && Object.keys(item).length);
   if (args.length < 1) {
     return target;
   }

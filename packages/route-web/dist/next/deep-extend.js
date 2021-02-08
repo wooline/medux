@@ -5,7 +5,7 @@ export function isPlainObject(obj) {
 function __extendDefault(target, def) {
   const clone = {};
   Object.keys(def).forEach(function (key) {
-    if (!target.hasOwnProperty(key)) {
+    if (target[key] === undefined) {
       clone[key] = def[key];
     } else {
       const tval = target[key];

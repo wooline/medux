@@ -16,5 +16,8 @@ declare namespace meduxCore {
     setTimeout: SetTimeout;
     clearTimeout: ClearTimeout;
     console: Console;
+    encodeBas64(str: string): string;
+    decodeBas64(str: string): string;
+    encodeURIComponent(str: string): string;
   }
 }

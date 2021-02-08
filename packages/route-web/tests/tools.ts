@@ -1,4 +1,4 @@
-import {BaseRouter, NativeRouter, createLocationTransform, createPathnameTransform, DeepPartial, RootParams} from 'src/index';
+import {BaseRouter, NativeRouter, createLocationTransform, DeepPartial, RootParams} from 'src/index';
 
 import nativeRouterMock from './nativeRouter';
 
@@ -6,7 +6,7 @@ jest.mock('./nativeRouter');
 
 interface MemberRouteParams {
   listView: string;
-  listSearchPre: {pageSize: number; pageCurrent: number; term?: string};
+  listSearchPre: {pageSize: number; pageCurrent: number; term: string | null};
   _listVerPre: number;
   itemView: string;
   itemIdPre: string;
@@ -17,7 +17,7 @@ const defaultMemberRouteParams: MemberRouteParams = {
   listSearchPre: {
     pageSize: 10,
     pageCurrent: 1,
-    term: undefined,
+    term: null,
   },
   listView: '',
   _listVerPre: 0,
@@ -27,7 +27,7 @@ const defaultMemberRouteParams: MemberRouteParams = {
 };
 interface ArticleRouteParams {
   listView: string;
-  listSearchPre: {pageSize: number; pageCurrent: number; term?: string};
+  listSearchPre: {pageSize: number; pageCurrent: number; term: string | null};
   _listVerPre: number;
   itemView: string;
   itemIdPre: string;
@@ -37,7 +37,7 @@ const defaultArticleRouteParams: ArticleRouteParams = {
   listSearchPre: {
     pageSize: 10,
     pageCurrent: 1,
-    term: undefined,
+    term: null,
   },
   listView: '',
   _listVerPre: 0,
@@ -54,43 +54,38 @@ export const defaultRouteParams = {
 type RouteParams = typeof defaultRouteParams;
 type PartialRouteParams = DeepPartial<RouteParams>;
 
-const pathnameIn = (pathname: string) => {
-  if (pathname === '/' || pathname === '/admin') {
-    return '/admin/member';
-  }
-  return pathname;
-};
-
 const pagenameMap = {
   '/admin/member': {
-    in() {
-      return {admin: {}, member: {}};
+    argsToParams() {
+      const params: PartialRouteParams = {admin: {}, member: {}};
+      return params;
     },
-    out() {
+    paramsToArgs() {
       return [];
     },
   },
   '/admin/member/list': {
-    in([pageCurrent, term]: string[]) {
-      const pathParams: PartialRouteParams = {admin: {}, member: {listView: 'list', listSearchPre: {}}};
+    argsToParams([pageCurrent, term]: Array<string | undefined>) {
+      const params: PartialRouteParams = {admin: {}, member: {listView: 'list', listSearchPre: {}}};
       if (pageCurrent) {
-        pathParams.member!.listSearchPre!.pageCurrent = parseInt(pageCurrent, 10);
+        params.member!.listSearchPre!.pageCurrent = parseInt(pageCurrent, 10);
       }
       if (term) {
-        pathParams.member!.listSearchPre!.term = term;
+        params.member!.listSearchPre!.term = term;
       }
-      return pathParams;
+      return params;
     },
-    out(params: PartialRouteParams) {
+    paramsToArgs(params: PartialRouteParams) {
       const {pageCurrent, term} = params.member?.listSearchPre || {};
       return [pageCurrent, term];
     },
   },
   '/admin/member/detail': {
-    in([itemIdPre]: string[]) {
-      return {admin: {}, member: {itemView: 'detail', itemIdPre}};
+    argsToParams([itemIdPre]: Array<string | undefined>) {
+      const params: PartialRouteParams = {admin: {}, member: {itemView: 'detail', itemIdPre}};
+      return params;
     },
-    out(params: PartialRouteParams) {
+    paramsToArgs(params: PartialRouteParams) {
       const {itemIdPre} = params.member || {};
       return [itemIdPre];
     },
@@ -99,25 +94,44 @@ const pagenameMap = {
 
 export type Pagename = keyof typeof pagenameMap;
 
-export const locationTransform = createLocationTransform(createPathnameTransform(pathnameIn, pagenameMap), defaultRouteParams);
+export const locationTransform = createLocationTransform(defaultRouteParams, pagenameMap, {
+  in(nativeLocation) {
+    let pathname = nativeLocation.pathname;
+    if (pathname === '/' || pathname === '/admin2') {
+      pathname = '/admin/member2';
+    }
+    return {...nativeLocation, pathname: pathname.replace('/member2', '/member')};
+  },
+  out(nativeLocation) {
+    const pathname = nativeLocation.pathname;
+    return {...nativeLocation, pathname: pathname.replace('/member', '/member2')};
+  },
+});
 export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
   destroy() {}
 }
 
 export const nativeRouter: NativeRouter = {
-  push(location, key, internal) {
-    nativeRouterMock.push(location, key, internal);
+  push(getUrl, key, internal) {
+    nativeRouterMock.push(getUrl(), key, internal);
   },
-  replace(location, key, internal) {
-    nativeRouterMock.replace(location, key, internal);
+  replace(getUrl, key, internal) {
+    nativeRouterMock.replace(getUrl(), key, internal);
   },
-  relaunch(location, key, internal) {
-    nativeRouterMock.relaunch(location, key, internal);
+  relaunch(getUrl, key, internal) {
+    nativeRouterMock.relaunch(getUrl(), key, internal);
   },
-  back(location, n, key, internal) {
-    nativeRouterMock.back(location, n, key, internal);
+  back(getUrl, n, key, internal) {
+    nativeRouterMock.back(getUrl(), n, key, internal);
   },
-  pop(location, n, key, internal) {
-    nativeRouterMock.pop(location, n, key, internal);
+  pop(getUrl, n, key, internal) {
+    nativeRouterMock.pop(getUrl(), n, key, internal);
   },
 };
+
+export const router = new Router('/', nativeRouter, locationTransform);
+router.setStore({
+  dispatch() {
+    return undefined;
+  },
+});

@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.createPathnameTransform = createPathnameTransform;
+exports.assignDefaultData = assignDefaultData;
 exports.createLocationTransform = createLocationTransform;
 
 var _core = require("@medux/core");
@@ -10,7 +10,8 @@ var _deepExtend = require("./deep-extend");
 
 var _basic = require("./basic");
 
-function assignDefaultData(data, def) {
+function assignDefaultData(data) {
+  var def = _basic.routeConfig.defaultParams;
   return Object.keys(data).reduce(function (params, moduleName) {
     if (def.hasOwnProperty(moduleName)) {
       params[moduleName] = (0, _deepExtend.extendDefault)(data[moduleName], def[moduleName]);
@@ -26,34 +27,19 @@ function splitSearch(search, paramsKey) {
   return arr ? arr[1] : '';
 }
 
-function encodeBas64(str) {
-  return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
-}
-
-function decodeBas64(str) {
-  return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
-}
-
 function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
   var search = splitSearch(nativeLocation.search, paramsKey);
   var hash = splitSearch(nativeLocation.hash, paramsKey);
 
   if (base64) {
-    search = search && decodeBas64(search);
-    hash = hash && decodeBas64(hash);
+    search = _core.env.decodeBas64(search);
+    hash = _core.env.decodeBas64(hash);
   } else {
     search = search && decodeURIComponent(search);
     hash = hash && decodeURIComponent(hash);
   }
 
-  var pathname = nativeLocation.pathname;
-
-  if (!pathname.startsWith('/')) {
-    pathname = "/" + pathname;
-  }
-
   return {
-    pathname: pathname.replace(/\/*$/, '') || '/',
     searchParams: search ? parse(search) : undefined,
     hashParams: hash ? parse(hash) : undefined
   };
@@ -64,94 +50,29 @@ function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) 
   var hashStr = hash ? stringify(hash) : '';
 
   if (base64) {
-    searchStr = searchStr && encodeBas64(searchStr);
-    hashStr = hashStr && encodeBas64(hashStr);
+    searchStr = _core.env.encodeBas64(searchStr);
+    hashStr = _core.env.encodeBas64(hashStr);
   } else {
     searchStr = searchStr && encodeURIComponent(searchStr);
     hashStr = hashStr && encodeURIComponent(hashStr);
   }
 
-  if (!pathname.startsWith('/')) {
-    pathname = "/" + pathname;
-  }
-
   return {
-    pathname: pathname.replace(/\/*$/, '') || '/',
+    pathname: "/" + pathname.replace(/^\/+|\/+$/g, ''),
     search: searchStr && paramsKey + "=" + searchStr,
     hash: hashStr && paramsKey + "=" + hashStr
   };
 }
 
-function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
-  pagenameMap = Object.keys(pagenameMap).sort(function (a, b) {
-    return b.length - a.length;
-  }).reduce(function (map, pagename) {
-    var fullPagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
-    map[fullPagename] = pagenameMap[pagename];
-    return map;
-  }, {});
-  _basic.routeConfig.pagenames = Object.keys(pagenameMap).reduce(function (obj, key) {
-    obj[key] = key;
-    return obj;
-  }, {});
-  _basic.routeConfig.pagenames['/'] = '/';
-  return {
-    in: function _in(pathname) {
-      pathname = pathnameIn(pathname);
-
-      if (!pathname.endsWith('/')) {
-        pathname = pathname + "/";
-      }
-
-      var pagename = Object.keys(pagenameMap).find(function (name) {
-        return pathname.startsWith(name);
-      });
-      var pathParams;
-
-      if (!pagename) {
-        pagename = '/';
-        pathParams = {};
-      } else {
-        var args = pathname.replace(pagename, '').split('/').map(function (item) {
-          return item ? decodeURIComponent(item) : undefined;
-        });
-        pathParams = pagenameMap[pagename].in(args);
-        pagename = pagename.replace(/\/$/, '') || '/';
-      }
-
-      return {
-        pagename: pagename,
-        pathParams: pathParams
-      };
-    },
-    out: function out(pagename, params) {
-      pagename = ("/" + pagename + "/").replace('//', '/').replace('//', '/');
-      var pathname;
-
-      if (!pagenameMap[pagename]) {
-        pathname = '/';
-      } else {
-        var args = pagenameMap[pagename].out(params);
-        pathname = pagename + args.map(function (item) {
-          return item && encodeURIComponent(item);
-        }).join('/').replace(/\/*$/, '');
-      }
-
-      if (pathnameOut) {
-        pathname = pathnameOut(pathname);
-      }
-
-      var data = this.in(pathname);
-      var pathParams = data.pathParams;
-      return {
-        pathname: pathname,
-        pathParams: pathParams
-      };
-    }
-  };
+function dataIsNativeLocation(data) {
+  return data['pathname'];
 }
 
-function createLocationTransform(pathnameTransform, defaultData, base64, serialization, paramsKey) {
+function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, base64, serialization, paramsKey) {
+  if (notfoundPagename === void 0) {
+    notfoundPagename = '/404';
+  }
+
   if (base64 === void 0) {
     base64 = false;
   }
@@ -164,34 +85,97 @@ function createLocationTransform(pathnameTransform, defaultData, base64, seriali
     paramsKey = '_';
   }
 
+  _basic.routeConfig.defaultParams = defaultParams;
+  var pagenames = Object.keys(pagenameMap);
+  pagenameMap = pagenames.sort(function (a, b) {
+    return b.length - a.length;
+  }).reduce(function (map, pagename) {
+    var fullPagename = ("/" + pagename + "/").replace(/^\/+|\/+$/g, '/');
+    map[fullPagename] = pagenameMap[pagename];
+    return map;
+  }, {});
+  _basic.routeConfig.pagenames = pagenames.reduce(function (obj, key) {
+    obj[key] = key;
+    return obj;
+  }, {});
+  pagenames = Object.keys(pagenameMap);
+
+  function toStringArgs(arr) {
+    return arr.map(function (item) {
+      if (item === null || item === undefined) {
+        return undefined;
+      }
+
+      return item.toString();
+    });
+  }
+
   return {
-    in: function _in(nativeLocation) {
-      var _parseNativeLocation = parseNativeLocation(nativeLocation, paramsKey, base64, serialization.parse),
-          pathname = _parseNativeLocation.pathname,
-          searchParams = _parseNativeLocation.searchParams,
-          hashParams = _parseNativeLocation.hashParams;
+    in: function _in(data) {
+      var path;
 
-      var _pathnameTransform$in = pathnameTransform.in(pathname),
-          pagename = _pathnameTransform$in.pagename,
-          pathParams = _pathnameTransform$in.pathParams;
+      if (dataIsNativeLocation(data)) {
+        data = nativeLocationMap.in(data);
+        path = data.pathname;
+      } else {
+        path = data.pagename;
+      }
 
-      var params = (0, _core.deepMerge)(pathParams, searchParams, hashParams);
-      params = assignDefaultData(params, defaultData);
+      path = ("/" + path + "/").replace(/^\/+|\/+$/g, '/');
+      var pagename = pagenames.find(function (name) {
+        return path.startsWith(name);
+      });
+      var params;
+
+      if (pagename) {
+        if (dataIsNativeLocation(data)) {
+          var _parseNativeLocation = parseNativeLocation(data, paramsKey, base64, serialization.parse),
+              searchParams = _parseNativeLocation.searchParams,
+              hashParams = _parseNativeLocation.hashParams;
+
+          var _pathArgs = path.replace(pagename, '').split('/').map(function (item) {
+            return item ? decodeURIComponent(item) : undefined;
+          });
+
+          var pathParams = pagenameMap[pagename].argsToParams(_pathArgs);
+          params = (0, _core.deepMerge)(pathParams, searchParams, hashParams);
+        } else {
+          var _pathParams = pagenameMap[pagename].argsToParams([]);
+
+          params = (0, _core.deepMerge)(_pathParams, data.params);
+        }
+      } else {
+        pagename = notfoundPagename + "/";
+        params = pagenameMap[pagename] ? pagenameMap[pagename].argsToParams([path.replace(/\/$/, '')]) : {};
+      }
+
       return {
-        pagename: pagename,
-        params: params
+        pagename: "/" + pagename.replace(/^\/+|\/+$/g, ''),
+        params: assignDefaultData(params)
       };
     },
     out: function out(meduxLocation) {
-      var params = (0, _deepExtend.excludeDefault)(meduxLocation.params, defaultData, true);
+      var params = (0, _deepExtend.excludeDefault)(meduxLocation.params, defaultParams, true);
+      var pagename = ("/" + meduxLocation.pagename + "/").replace(/^\/+|\/+$/g, '/');
+      var pathParams;
+      var pathname;
 
-      var _pathnameTransform$ou = pathnameTransform.out(meduxLocation.pagename, params),
-          pathname = _pathnameTransform$ou.pathname,
-          pathParams = _pathnameTransform$ou.pathParams;
+      if (pagenameMap[pagename]) {
+        var _pathArgs2 = toStringArgs(pagenameMap[pagename].paramsToArgs(params));
+
+        pathParams = pagenameMap[pagename].argsToParams(_pathArgs2);
+        pathname = pagename + _pathArgs2.map(function (item) {
+          return item && encodeURIComponent(item);
+        }).join('/').replace(/\/*$/, '');
+      } else {
+        pathParams = {};
+        pathname = pagename;
+      }
 
       params = (0, _deepExtend.excludeDefault)(params, pathParams, false);
       var result = (0, _deepExtend.splitPrivate)(params, pathParams);
-      return toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+      var nativeLocation = toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+      return nativeLocationMap.out(nativeLocation);
     }
   };
 }

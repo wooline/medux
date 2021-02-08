@@ -484,6 +484,22 @@ const env = typeof window === 'object' && window.window || typeof global === 'ob
 const isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 const client = isServerEnv ? undefined : env;
 
+env.encodeBas64 = function (str) {
+  if (!str) {
+    return '';
+  }
+
+  return typeof btoa === 'function' ? btoa(str) : typeof Buffer !== 'undefined' ? Buffer.from(str).toString('base64') : str;
+};
+
+env.decodeBas64 = function (str) {
+  if (!str) {
+    return '';
+  }
+
+  return typeof atob === 'function' ? atob(str) : typeof Buffer !== 'undefined' ? Buffer.from(str, 'base64').toString() : str;
+};
+
 const TaskCountEvent = 'TaskCountEvent';
 let LoadingState;
 
@@ -668,7 +684,7 @@ function deepMerge(target, ...args) {
     target = {};
   }
 
-  args = args.filter(Boolean);
+  args = args.filter(item => isPlainObject(item) && Object.keys(item).length);
 
   if (args.length < 1) {
     return target;
@@ -2119,16 +2135,14 @@ async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, sto
 }
 
 const routeConfig = {
-  RSP: '|',
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
-  pagenames: {}
+  pagenames: {},
+  defaultParams: {}
 };
 function setRouteConfig(conf) {
-  conf.RSP !== undefined && (routeConfig.RSP = conf.RSP);
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
-  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function locationToUri(location, key) {
@@ -2138,7 +2152,7 @@ function locationToUri(location, key) {
   } = location;
   const query = params ? JSON.stringify(params) : '';
   return {
-    uri: [key, pagename, query].join(routeConfig.RSP),
+    uri: [key, pagename, query].join('|'),
     pagename,
     query,
     key
@@ -2147,7 +2161,8 @@ function locationToUri(location, key) {
 
 function splitUri(...args) {
   const [uri = '', name] = args;
-  const arr = uri.split(routeConfig.RSP, 3);
+  const [key, pagename, ...others] = uri.split('|');
+  const arr = [key, pagename, others.join('|')];
   const index = {
     key: 0,
     pagename: 1,
@@ -2376,7 +2391,7 @@ function isPlainObject$2(obj) {
 function __extendDefault(target, def) {
   const clone = {};
   Object.keys(def).forEach(function (key) {
-    if (!target.hasOwnProperty(key)) {
+    if (target[key] === undefined) {
       clone[key] = def[key];
     } else {
       const tval = target[key];
@@ -2528,7 +2543,8 @@ function splitPrivate(data, deleteTopLevel) {
   return [publicData, privateData];
 }
 
-function assignDefaultData(data, def) {
+function assignDefaultData(data) {
+  const def = routeConfig.defaultParams;
   return Object.keys(data).reduce((params, moduleName) => {
     if (def.hasOwnProperty(moduleName)) {
       params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
@@ -2544,34 +2560,19 @@ function splitSearch(search, paramsKey) {
   return arr ? arr[1] : '';
 }
 
-function encodeBas64(str) {
-  return typeof btoa === 'function' ? btoa(str) : typeof Buffer === 'object' ? Buffer.from(str).toString('base64') : str;
-}
-
-function decodeBas64(str) {
-  return typeof atob === 'function' ? atob(str) : typeof Buffer === 'object' ? Buffer.from(str, 'base64').toString() : str;
-}
-
 function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
   let search = splitSearch(nativeLocation.search, paramsKey);
   let hash = splitSearch(nativeLocation.hash, paramsKey);
 
   if (base64) {
-    search = search && decodeBas64(search);
-    hash = hash && decodeBas64(hash);
+    search = env.decodeBas64(search);
+    hash = env.decodeBas64(hash);
   } else {
     search = search && decodeURIComponent(search);
     hash = hash && decodeURIComponent(hash);
   }
 
-  let pathname = nativeLocation.pathname;
-
-  if (!pathname.startsWith('/')) {
-    pathname = `/${pathname}`;
-  }
-
   return {
-    pathname: pathname.replace(/\/*$/, '') || '/',
     searchParams: search ? parse(search) : undefined,
     hashParams: hash ? parse(hash) : undefined
   };
@@ -2582,115 +2583,106 @@ function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) 
   let hashStr = hash ? stringify(hash) : '';
 
   if (base64) {
-    searchStr = searchStr && encodeBas64(searchStr);
-    hashStr = hashStr && encodeBas64(hashStr);
+    searchStr = env.encodeBas64(searchStr);
+    hashStr = env.encodeBas64(hashStr);
   } else {
     searchStr = searchStr && encodeURIComponent(searchStr);
     hashStr = hashStr && encodeURIComponent(hashStr);
   }
 
-  if (!pathname.startsWith('/')) {
-    pathname = `/${pathname}`;
-  }
-
   return {
-    pathname: pathname.replace(/\/*$/, '') || '/',
+    pathname: `/${pathname.replace(/^\/+|\/+$/g, '')}`,
     search: searchStr && `${paramsKey}=${searchStr}`,
     hash: hashStr && `${paramsKey}=${hashStr}`
   };
 }
 
-function createPathnameTransform(pathnameIn, pagenameMap, pathnameOut) {
-  pagenameMap = Object.keys(pagenameMap).sort((a, b) => b.length - a.length).reduce((map, pagename) => {
-    const fullPagename = `/${pagename}/`.replace('//', '/').replace('//', '/');
+function dataIsNativeLocation(data) {
+  return data['pathname'];
+}
+
+function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', base64 = false, serialization = JSON, paramsKey = '_') {
+  routeConfig.defaultParams = defaultParams;
+  let pagenames = Object.keys(pagenameMap);
+  pagenameMap = pagenames.sort((a, b) => b.length - a.length).reduce((map, pagename) => {
+    const fullPagename = `/${pagename}/`.replace(/^\/+|\/+$/g, '/');
     map[fullPagename] = pagenameMap[pagename];
     return map;
   }, {});
-  routeConfig.pagenames = Object.keys(pagenameMap).reduce((obj, key) => {
+  routeConfig.pagenames = pagenames.reduce((obj, key) => {
     obj[key] = key;
     return obj;
   }, {});
-  routeConfig.pagenames['/'] = '/';
+  pagenames = Object.keys(pagenameMap);
+
+  function toStringArgs(arr) {
+    return arr.map(item => {
+      if (item === null || item === undefined) {
+        return undefined;
+      }
+
+      return item.toString();
+    });
+  }
+
   return {
-    in(pathname) {
-      pathname = pathnameIn(pathname);
+    in(data) {
+      let path;
 
-      if (!pathname.endsWith('/')) {
-        pathname = `${pathname}/`;
-      }
-
-      let pagename = Object.keys(pagenameMap).find(name => pathname.startsWith(name));
-      let pathParams;
-
-      if (!pagename) {
-        pagename = '/';
-        pathParams = {};
+      if (dataIsNativeLocation(data)) {
+        data = nativeLocationMap.in(data);
+        path = data.pathname;
       } else {
-        const args = pathname.replace(pagename, '').split('/').map(item => item ? decodeURIComponent(item) : undefined);
-        pathParams = pagenameMap[pagename].in(args);
-        pagename = pagename.replace(/\/$/, '') || '/';
+        path = data.pagename;
       }
 
-      return {
-        pagename,
-        pathParams
-      };
-    },
+      path = `/${path}/`.replace(/^\/+|\/+$/g, '/');
+      let pagename = pagenames.find(name => path.startsWith(name));
+      let params;
 
-    out(pagename, params) {
-      pagename = `/${pagename}/`.replace('//', '/').replace('//', '/');
-      let pathname;
-
-      if (!pagenameMap[pagename]) {
-        pathname = '/';
+      if (pagename) {
+        if (dataIsNativeLocation(data)) {
+          const {
+            searchParams,
+            hashParams
+          } = parseNativeLocation(data, paramsKey, base64, serialization.parse);
+          const pathArgs = path.replace(pagename, '').split('/').map(item => item ? decodeURIComponent(item) : undefined);
+          const pathParams = pagenameMap[pagename].argsToParams(pathArgs);
+          params = deepMerge(pathParams, searchParams, hashParams);
+        } else {
+          const pathParams = pagenameMap[pagename].argsToParams([]);
+          params = deepMerge(pathParams, data.params);
+        }
       } else {
-        const args = pagenameMap[pagename].out(params);
-        pathname = pagename + args.map(item => item && encodeURIComponent(item)).join('/').replace(/\/*$/, '');
+        pagename = `${notfoundPagename}/`;
+        params = pagenameMap[pagename] ? pagenameMap[pagename].argsToParams([path.replace(/\/$/, '')]) : {};
       }
 
-      if (pathnameOut) {
-        pathname = pathnameOut(pathname);
-      }
-
-      const data = this.in(pathname);
-      const pathParams = data.pathParams;
       return {
-        pathname,
-        pathParams
-      };
-    }
-
-  };
-}
-function createLocationTransform(pathnameTransform, defaultData, base64 = false, serialization = JSON, paramsKey = '_') {
-  return {
-    in(nativeLocation) {
-      const {
-        pathname,
-        searchParams,
-        hashParams
-      } = parseNativeLocation(nativeLocation, paramsKey, base64, serialization.parse);
-      const {
-        pagename,
-        pathParams
-      } = pathnameTransform.in(pathname);
-      let params = deepMerge(pathParams, searchParams, hashParams);
-      params = assignDefaultData(params, defaultData);
-      return {
-        pagename,
-        params
+        pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`,
+        params: assignDefaultData(params)
       };
     },
 
     out(meduxLocation) {
-      let params = excludeDefault(meduxLocation.params, defaultData, true);
-      const {
-        pathname,
-        pathParams
-      } = pathnameTransform.out(meduxLocation.pagename, params);
+      let params = excludeDefault(meduxLocation.params, defaultParams, true);
+      const pagename = `/${meduxLocation.pagename}/`.replace(/^\/+|\/+$/g, '/');
+      let pathParams;
+      let pathname;
+
+      if (pagenameMap[pagename]) {
+        const pathArgs = toStringArgs(pagenameMap[pagename].paramsToArgs(params));
+        pathParams = pagenameMap[pagename].argsToParams(pathArgs);
+        pathname = pagename + pathArgs.map(item => item && encodeURIComponent(item)).join('/').replace(/\/*$/, '');
+      } else {
+        pathParams = {};
+        pathname = pagename;
+      }
+
       params = excludeDefault(params, pathParams, false);
       const result = splitPrivate(params, pathParams);
-      return toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+      const nativeLocation = toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+      return nativeLocationMap.out(nativeLocation);
     }
 
   };
@@ -2780,15 +2772,17 @@ const routeReducer = (state, action) => {
   return state;
 };
 class BaseRouter {
-  constructor(initUrl, nativeRouter, locationTransform) {
+  constructor(nativeUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
 
     _defineProperty(this, "_tid", 0);
 
-    _defineProperty(this, "routeState", void 0);
+    _defineProperty(this, "_nativeData", void 0);
 
-    _defineProperty(this, "nativeLocation", void 0);
+    _defineProperty(this, "_getNativeUrl", this.getNativeUrl.bind(this));
+
+    _defineProperty(this, "routeState", void 0);
 
     _defineProperty(this, "url", void 0);
 
@@ -2796,32 +2790,62 @@ class BaseRouter {
 
     _defineProperty(this, "history", void 0);
 
-    const location = this.urlToToLocation(initUrl);
-    this.nativeLocation = this.locationTransform.out(location);
-    this.url = this.nativeLocationToUrl(this.nativeLocation);
+    const location = this.urlToLocation(nativeUrl);
 
     const key = this._createKey();
 
-    this.history = new History();
     const routeState = Object.assign({}, location, {
       action: 'RELAUNCH',
       key
     });
     this.routeState = routeState;
+    this.url = this.locationToUrl(routeState);
+    this._nativeData = undefined;
+    this.history = new History();
     this.history.relaunch(location, key);
-    this.nativeRouter.relaunch(this.url, key, false);
+    this.nativeRouter.relaunch(this._getNativeUrl, key, false);
   }
 
   getRouteState() {
     return this.routeState;
   }
 
-  getNativeLocation() {
-    return this.nativeLocation;
+  getPagename() {
+    return this.routeState.pagename;
+  }
+
+  getParams() {
+    return this.routeState.params;
   }
 
   getUrl() {
     return this.url;
+  }
+
+  getNativeLocation() {
+    if (!this._nativeData) {
+      const nativeLocation = this.locationTransform.out(this.routeState);
+      const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      this._nativeData = {
+        nativeLocation,
+        nativeUrl
+      };
+    }
+
+    return this._nativeData.nativeLocation;
+  }
+
+  getNativeUrl() {
+    if (!this._nativeData) {
+      const nativeLocation = this.locationTransform.out(this.routeState);
+      const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      this._nativeData = {
+        nativeLocation,
+        nativeUrl
+      };
+    }
+
+    return this._nativeData.nativeUrl;
   }
 
   setStore(_store) {
@@ -2837,24 +2861,7 @@ class BaseRouter {
     return `${this._tid}`;
   }
 
-  payloadToLocation(data) {
-    const {
-      pagename
-    } = data;
-    const extendParams = data.extendParams === true ? this.routeState.params : data.extendParams;
-    const params = extendParams && data.params ? deepMerge({}, extendParams, data.params) : data.params;
-    return {
-      pagename: pagename || this.routeState.pagename || '/',
-      params
-    };
-  }
-
-  urlToToLocation(url) {
-    const nativeLocation = this.urlToNativeLocation(url);
-    return this.locationTransform.in(nativeLocation);
-  }
-
-  urlToNativeLocation(url) {
+  nativeUrlToNativeLocation(url) {
     if (!url) {
       return {
         pathname: '/',
@@ -2870,36 +2877,82 @@ class BaseRouter {
     }
 
     const [path, search = '', hash = ''] = arr;
-    let pathname = path;
-
-    if (!pathname.startsWith('/')) {
-      pathname = `/${pathname}`;
-    }
-
-    pathname = pathname.replace(/\/*$/, '') || '/';
     return {
-      pathname,
+      pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
       search,
       hash
     };
   }
 
-  nativeLocationToUrl(nativeLocation) {
+  urlToLocation(url) {
+    const [pathname, ...others] = url.split('?');
+    const query = others.join('?');
+    let location;
+
+    try {
+      if (query.startsWith('{')) {
+        const data = JSON.parse(query);
+        location = this.locationTransform.in({
+          pagename: pathname,
+          params: data
+        });
+      } else {
+        const nativeLocation = this.nativeUrlToNativeLocation(url);
+        location = this.locationTransform.in(nativeLocation);
+      }
+    } catch (error) {
+      env.console.warn(error);
+      location = {
+        pagename: '/',
+        params: {}
+      };
+    }
+
+    return location;
+  }
+
+  nativeLocationToNativeUrl(nativeLocation) {
     const {
       pathname,
       search,
       hash
     } = nativeLocation;
-    return [pathname && (pathname.replace(/\/*$/, '') || '/'), search && `?${search}`, hash && `#${hash}`].join('');
+    return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+  }
+
+  locationToNativeUrl(location) {
+    const nativeLocation = this.locationTransform.out(location);
+    return this.nativeLocationToNativeUrl(nativeLocation);
   }
 
   locationToUrl(location) {
-    const nativeLocation = this.locationTransform.out(location);
-    return this.nativeLocationToUrl(nativeLocation);
+    return [location.pagename, JSON.stringify(location.params || {})].join('?');
+  }
+
+  payloadToPartial(payload) {
+    let params = payload.params;
+    const extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
+
+    if (extendParams && params) {
+      params = deepMerge({}, extendParams, params);
+    } else if (extendParams) {
+      params = extendParams;
+    }
+
+    return {
+      pagename: payload.pagename || this.routeState.pagename,
+      params: params || {}
+    };
   }
 
   async relaunch(data, internal) {
-    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+    let location;
+
+    if (typeof data === 'string') {
+      location = this.urlToLocation(data);
+    } else {
+      location = this.locationTransform.in(this.payloadToPartial(data));
+    }
 
     const key = this._createKey();
 
@@ -2909,9 +2962,9 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
+    this.url = this.locationToUrl(routeState);
+    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
-    this.nativeLocation = this.locationTransform.out(location);
-    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
       this.history.getCurrentInternalHistory().relaunch(location, key);
@@ -2919,12 +2972,18 @@ class BaseRouter {
       this.history.relaunch(location, key);
     }
 
-    this.nativeRouter.relaunch(this.url, key, !!internal);
+    this.nativeRouter.relaunch(this._getNativeUrl, key, !!internal);
     return routeState;
   }
 
   async push(data, internal) {
-    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+    let location;
+
+    if (typeof data === 'string') {
+      location = this.urlToLocation(data);
+    } else {
+      location = this.locationTransform.in(this.payloadToPartial(data));
+    }
 
     const key = this._createKey();
 
@@ -2934,9 +2993,9 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
+    this.url = this.locationToUrl(routeState);
+    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
-    this.nativeLocation = this.locationTransform.out(location);
-    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
       this.history.getCurrentInternalHistory().push(location, key);
@@ -2944,12 +3003,18 @@ class BaseRouter {
       this.history.push(location, key);
     }
 
-    this.nativeRouter.push(this.url, key, !!internal);
+    this.nativeRouter.push(this._getNativeUrl, key, !!internal);
     return routeState;
   }
 
   async replace(data, internal) {
-    const location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+    let location;
+
+    if (typeof data === 'string') {
+      location = this.urlToLocation(data);
+    } else {
+      location = this.locationTransform.in(this.payloadToPartial(data));
+    }
 
     const key = this._createKey();
 
@@ -2959,9 +3024,9 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
+    this.url = this.locationToUrl(routeState);
+    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
-    this.nativeLocation = this.locationTransform.out(location);
-    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
       this.history.getCurrentInternalHistory().replace(location, key);
@@ -2969,7 +3034,7 @@ class BaseRouter {
       this.history.replace(location, key);
     }
 
-    this.nativeRouter.replace(this.url, key, !!internal);
+    this.nativeRouter.replace(this._getNativeUrl, key, !!internal);
     return routeState;
   }
 
@@ -2991,9 +3056,9 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
+    this.url = this.locationToUrl(routeState);
+    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
-    this.nativeLocation = this.locationTransform.out(location);
-    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);
@@ -3001,7 +3066,7 @@ class BaseRouter {
       this.history.back(n);
     }
 
-    this.nativeRouter.back(this.url, n, key, !!internal);
+    this.nativeRouter.back(this._getNativeUrl, n, key, !!internal);
     return routeState;
   }
 
@@ -3023,9 +3088,9 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
+    this.url = this.locationToUrl(routeState);
+    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
-    this.nativeLocation = this.locationTransform.out(location);
-    this.url = this.nativeLocationToUrl(this.nativeLocation);
 
     if (internal) {
       this.history.getCurrentInternalHistory().pop(n);
@@ -3033,7 +3098,7 @@ class BaseRouter {
       this.history.pop(n);
     }
 
-    this.nativeRouter.pop(this.url, n, key, !!internal);
+    this.nativeRouter.pop(this._getNativeUrl, n, key, !!internal);
     return routeState;
   }
 
@@ -4080,6 +4145,8 @@ class BrowserNativeRouter {
   constructor(createHistory) {
     _defineProperty(this, "history", void 0);
 
+    _defineProperty(this, "serverSide", false);
+
     if (createHistory === 'Hash') {
       this.history = createHashHistory();
     } else if (createHistory === 'Memory') {
@@ -4087,6 +4154,7 @@ class BrowserNativeRouter {
     } else if (createHistory === 'Browser') {
       this.history = createBrowserHistory();
     } else {
+      this.serverSide = true;
       const [pathname, search = ''] = createHistory.split('?');
       this.history = {
         action: 'PUSH',
@@ -4147,24 +4215,24 @@ class BrowserNativeRouter {
     return location.state || '';
   }
 
-  push(url, key, internal) {
-    !internal && this.history.push(url, key);
+  push(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   }
 
-  replace(url, key, internal) {
-    !internal && this.history.replace(url, key);
+  replace(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.replace(getUrl(), key);
   }
 
-  relaunch(url, key, internal) {
-    !internal && this.history.push(url, key);
+  relaunch(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   }
 
-  back(url, n, key, internal) {
-    !internal && this.history.go(-n);
+  back(getUrl, n, key, internal) {
+    !internal && !this.serverSide && this.history.go(-n);
   }
 
-  pop(url, n, key, internal) {
-    !internal && this.history.push(url, key);
+  pop(getUrl, n, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   }
 
   refresh() {
@@ -4500,7 +4568,7 @@ function buildSSR(moduleGetter, {
   container = 'root'
 }) {
   if (!SSRTPL) {
-    SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
+    SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
   }
 
   appExports.request = request;
@@ -4546,4 +4614,4 @@ function buildSSR(moduleGetter, {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, clientSide, createLocationTransform, createPathnameTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, clientSide, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };

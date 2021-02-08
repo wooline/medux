@@ -6,7 +6,7 @@ exports.__esModule = true;
 exports.beforeRouteChangeAction = beforeRouteChangeAction;
 exports.routeParamsAction = routeParamsAction;
 exports.routeChangeAction = routeChangeAction;
-exports.BaseRouter = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.createPathnameTransform = exports.createLocationTransform = exports.PagenameMap = exports.routeConfig = exports.setRouteConfig = void 0;
+exports.BaseRouter = exports.routeReducer = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = exports.createLocationTransform = exports.PagenameMap = exports.routeConfig = exports.setRouteConfig = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
@@ -31,7 +31,6 @@ var _transform = require("./transform");
 
 exports.PagenameMap = _transform.PagenameMap;
 exports.createLocationTransform = _transform.createLocationTransform;
-exports.createPathnameTransform = _transform.createPathnameTransform;
 var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _CoreModuleHandlers) {
   var RouteModuleHandlers = function (_CoreModuleHandlers2) {
     (0, _inheritsLoose2.default)(RouteModuleHandlers, _CoreModuleHandlers2);
@@ -142,29 +141,30 @@ var routeReducer = function routeReducer(state, action) {
 exports.routeReducer = routeReducer;
 
 var BaseRouter = function () {
-  function BaseRouter(initUrl, nativeRouter, locationTransform) {
+  function BaseRouter(nativeUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     (0, _defineProperty2.default)(this, "_tid", 0);
+    (0, _defineProperty2.default)(this, "_nativeData", void 0);
+    (0, _defineProperty2.default)(this, "_getNativeUrl", this.getNativeUrl.bind(this));
     (0, _defineProperty2.default)(this, "routeState", void 0);
-    (0, _defineProperty2.default)(this, "nativeLocation", void 0);
     (0, _defineProperty2.default)(this, "url", void 0);
     (0, _defineProperty2.default)(this, "store", void 0);
     (0, _defineProperty2.default)(this, "history", void 0);
-    var location = this.urlToToLocation(initUrl);
-    this.nativeLocation = this.locationTransform.out(location);
-    this.url = this.nativeLocationToUrl(this.nativeLocation);
+    var location = this.urlToLocation(nativeUrl);
 
     var key = this._createKey();
 
-    this.history = new _basic.History();
     var routeState = Object.assign({}, location, {
       action: 'RELAUNCH',
       key: key
     });
     this.routeState = routeState;
+    this.url = this.locationToUrl(routeState);
+    this._nativeData = undefined;
+    this.history = new _basic.History();
     this.history.relaunch(location, key);
-    this.nativeRouter.relaunch(this.url, key, false);
+    this.nativeRouter.relaunch(this._getNativeUrl, key, false);
   }
 
   var _proto = BaseRouter.prototype;
@@ -173,12 +173,42 @@ var BaseRouter = function () {
     return this.routeState;
   };
 
-  _proto.getNativeLocation = function getNativeLocation() {
-    return this.nativeLocation;
+  _proto.getPagename = function getPagename() {
+    return this.routeState.pagename;
+  };
+
+  _proto.getParams = function getParams() {
+    return this.routeState.params;
   };
 
   _proto.getUrl = function getUrl() {
     return this.url;
+  };
+
+  _proto.getNativeLocation = function getNativeLocation() {
+    if (!this._nativeData) {
+      var nativeLocation = this.locationTransform.out(this.routeState);
+      var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      this._nativeData = {
+        nativeLocation: nativeLocation,
+        nativeUrl: nativeUrl
+      };
+    }
+
+    return this._nativeData.nativeLocation;
+  };
+
+  _proto.getNativeUrl = function getNativeUrl() {
+    if (!this._nativeData) {
+      var nativeLocation = this.locationTransform.out(this.routeState);
+      var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      this._nativeData = {
+        nativeLocation: nativeLocation,
+        nativeUrl: nativeUrl
+      };
+    }
+
+    return this._nativeData.nativeUrl;
   };
 
   _proto.setStore = function setStore(_store) {
@@ -194,22 +224,7 @@ var BaseRouter = function () {
     return "" + this._tid;
   };
 
-  _proto.payloadToLocation = function payloadToLocation(data) {
-    var pagename = data.pagename;
-    var extendParams = data.extendParams === true ? this.routeState.params : data.extendParams;
-    var params = extendParams && data.params ? (0, _core.deepMerge)({}, extendParams, data.params) : data.params;
-    return {
-      pagename: pagename || this.routeState.pagename || '/',
-      params: params
-    };
-  };
-
-  _proto.urlToToLocation = function urlToToLocation(url) {
-    var nativeLocation = this.urlToNativeLocation(url);
-    return this.locationTransform.in(nativeLocation);
-  };
-
-  _proto.urlToNativeLocation = function urlToNativeLocation(url) {
+  _proto.nativeUrlToNativeLocation = function nativeUrlToNativeLocation(url) {
     if (!url) {
       return {
         pathname: '/',
@@ -229,30 +244,74 @@ var BaseRouter = function () {
         search = _arr$ === void 0 ? '' : _arr$,
         _arr$2 = arr[2],
         hash = _arr$2 === void 0 ? '' : _arr$2;
-    var pathname = path;
-
-    if (!pathname.startsWith('/')) {
-      pathname = "/" + pathname;
-    }
-
-    pathname = pathname.replace(/\/*$/, '') || '/';
     return {
-      pathname: pathname,
+      pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
       search: search,
       hash: hash
     };
   };
 
-  _proto.nativeLocationToUrl = function nativeLocationToUrl(nativeLocation) {
+  _proto.urlToLocation = function urlToLocation(url) {
+    var _url$split = url.split('?'),
+        pathname = _url$split[0],
+        others = _url$split.slice(1);
+
+    var query = others.join('?');
+    var location;
+
+    try {
+      if (query.startsWith('{')) {
+        var data = JSON.parse(query);
+        location = this.locationTransform.in({
+          pagename: pathname,
+          params: data
+        });
+      } else {
+        var nativeLocation = this.nativeUrlToNativeLocation(url);
+        location = this.locationTransform.in(nativeLocation);
+      }
+    } catch (error) {
+      _core.env.console.warn(error);
+
+      location = {
+        pagename: '/',
+        params: {}
+      };
+    }
+
+    return location;
+  };
+
+  _proto.nativeLocationToNativeUrl = function nativeLocationToNativeUrl(nativeLocation) {
     var pathname = nativeLocation.pathname,
         search = nativeLocation.search,
         hash = nativeLocation.hash;
-    return [pathname && (pathname.replace(/\/*$/, '') || '/'), search && "?" + search, hash && "#" + hash].join('');
+    return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+  };
+
+  _proto.locationToNativeUrl = function locationToNativeUrl(location) {
+    var nativeLocation = this.locationTransform.out(location);
+    return this.nativeLocationToNativeUrl(nativeLocation);
   };
 
   _proto.locationToUrl = function locationToUrl(location) {
-    var nativeLocation = this.locationTransform.out(location);
-    return this.nativeLocationToUrl(nativeLocation);
+    return [location.pagename, JSON.stringify(location.params || {})].join('?');
+  };
+
+  _proto.payloadToPartial = function payloadToPartial(payload) {
+    var params = payload.params;
+    var extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
+
+    if (extendParams && params) {
+      params = (0, _core.deepMerge)({}, extendParams, params);
+    } else if (extendParams) {
+      params = extendParams;
+    }
+
+    return {
+      pagename: payload.pagename || this.routeState.pagename,
+      params: params || {}
+    };
   };
 
   _proto.relaunch = function () {
@@ -262,7 +321,12 @@ var BaseRouter = function () {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+              if (typeof data === 'string') {
+                location = this.urlToLocation(data);
+              } else {
+                location = this.locationTransform.in(this.payloadToPartial(data));
+              }
+
               key = this._createKey();
               routeState = Object.assign({}, location, {
                 action: 'RELAUNCH',
@@ -273,9 +337,9 @@ var BaseRouter = function () {
 
             case 5:
               this.routeState = routeState;
+              this.url = this.locationToUrl(routeState);
+              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
-              this.nativeLocation = this.locationTransform.out(location);
-              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().relaunch(location, key);
@@ -283,7 +347,7 @@ var BaseRouter = function () {
                 this.history.relaunch(location, key);
               }
 
-              this.nativeRouter.relaunch(this.url, key, !!internal);
+              this.nativeRouter.relaunch(this._getNativeUrl, key, !!internal);
               return _context.abrupt("return", routeState);
 
             case 12:
@@ -308,7 +372,12 @@ var BaseRouter = function () {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+              if (typeof data === 'string') {
+                location = this.urlToLocation(data);
+              } else {
+                location = this.locationTransform.in(this.payloadToPartial(data));
+              }
+
               key = this._createKey();
               routeState = Object.assign({}, location, {
                 action: 'PUSH',
@@ -319,9 +388,9 @@ var BaseRouter = function () {
 
             case 5:
               this.routeState = routeState;
+              this.url = this.locationToUrl(routeState);
+              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
-              this.nativeLocation = this.locationTransform.out(location);
-              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().push(location, key);
@@ -329,7 +398,7 @@ var BaseRouter = function () {
                 this.history.push(location, key);
               }
 
-              this.nativeRouter.push(this.url, key, !!internal);
+              this.nativeRouter.push(this._getNativeUrl, key, !!internal);
               return _context2.abrupt("return", routeState);
 
             case 12:
@@ -354,7 +423,12 @@ var BaseRouter = function () {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
-              location = typeof data === 'string' ? this.urlToToLocation(data) : this.payloadToLocation(data);
+              if (typeof data === 'string') {
+                location = this.urlToLocation(data);
+              } else {
+                location = this.locationTransform.in(this.payloadToPartial(data));
+              }
+
               key = this._createKey();
               routeState = Object.assign({}, location, {
                 action: 'REPLACE',
@@ -365,9 +439,9 @@ var BaseRouter = function () {
 
             case 5:
               this.routeState = routeState;
+              this.url = this.locationToUrl(routeState);
+              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
-              this.nativeLocation = this.locationTransform.out(location);
-              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().replace(location, key);
@@ -375,7 +449,7 @@ var BaseRouter = function () {
                 this.history.replace(location, key);
               }
 
-              this.nativeRouter.replace(this.url, key, !!internal);
+              this.nativeRouter.replace(this._getNativeUrl, key, !!internal);
               return _context3.abrupt("return", routeState);
 
             case 12:
@@ -426,9 +500,9 @@ var BaseRouter = function () {
 
             case 9:
               this.routeState = routeState;
+              this.url = this.locationToUrl(routeState);
+              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
-              this.nativeLocation = this.locationTransform.out(location);
-              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().back(n);
@@ -436,7 +510,7 @@ var BaseRouter = function () {
                 this.history.back(n);
               }
 
-              this.nativeRouter.back(this.url, n, key, !!internal);
+              this.nativeRouter.back(this._getNativeUrl, n, key, !!internal);
               return _context4.abrupt("return", routeState);
 
             case 16:
@@ -487,9 +561,9 @@ var BaseRouter = function () {
 
             case 9:
               this.routeState = routeState;
+              this.url = this.locationToUrl(routeState);
+              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
-              this.nativeLocation = this.locationTransform.out(location);
-              this.url = this.nativeLocationToUrl(this.nativeLocation);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().pop(n);
@@ -497,7 +571,7 @@ var BaseRouter = function () {
                 this.history.pop(n);
               }
 
-              this.nativeRouter.pop(this.url, n, key, !!internal);
+              this.nativeRouter.pop(this._getNativeUrl, n, key, !!internal);
               return _context5.abrupt("return", routeState);
 
             case 16:

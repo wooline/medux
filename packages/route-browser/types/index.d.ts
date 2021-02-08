@@ -2,15 +2,16 @@ import { BaseRouter, NativeRouter, RootParams, LocationTransform } from '@medux/
 import { History } from 'history';
 export declare class BrowserNativeRouter implements NativeRouter {
     history: History<never>;
+    private serverSide;
     constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string);
     getUrl(): string;
     block(blocker: (url: string, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void): import("history").UnregisterCallback;
     private getKey;
-    push(url: string, key: string, internal: boolean): void;
-    replace(url: string, key: string, internal: boolean): void;
-    relaunch(url: string, key: string, internal: boolean): void;
-    back(url: string, n: number, key: string, internal: boolean): void;
-    pop(url: string, n: number, key: string, internal: boolean): void;
+    push(getUrl: () => string, key: string, internal: boolean): void;
+    replace(getUrl: () => string, key: string, internal: boolean): void;
+    relaunch(getUrl: () => string, key: string, internal: boolean): void;
+    back(getUrl: () => string, n: number, key: string, internal: boolean): void;
+    pop(getUrl: () => string, n: number, key: string, internal: boolean): void;
     refresh(): void;
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {

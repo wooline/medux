@@ -2,24 +2,27 @@ import {extendDefault, excludeDefault, splitPrivate} from 'src/deep-extend';
 
 describe('extendDefault', () => {
   test('过滤def中未定义的key', () => {
-    const target = {aa: {bb: {cc: 1}}};
-    const def = {bb: true};
+    let target: any = {aa: {bb: {cc: 1}}};
+    let def: any = {bb: true};
     expect(extendDefault(target, def)).toEqual({bb: true});
-  });
-  test('过滤def中未定义的key', () => {
-    const target = {aa: {bb: {cc: 1}}};
-    const def = {aa: true};
+    target = {aa: {bb: {cc: 1}}};
+    def = {aa: true};
     expect(extendDefault(target, def)).toEqual({aa: {bb: {cc: 1}}});
-  });
-  test('过滤def中未定义的key', () => {
-    const target = {aa: {bb: {cc: 1}}};
-    const def = {aa: {dd: 1}};
+    target = {aa: {bb: {cc: 1}}};
+    def = {aa: undefined};
+    expect(extendDefault(target, def)).toEqual({aa: {bb: {cc: 1}}});
+    target = {aa: {bb: {cc: 1}}};
+    def = {aa: {dd: 1}};
     expect(extendDefault(target, def)).toEqual({aa: {dd: 1}});
-  });
-  test('过滤def中未定义的key', () => {
-    const target = {aa: {bb: {cc: 1, cc2: 2}}};
-    const def = {aa: {bb: {cc: 2}}};
+    target = {aa: {bb: {cc: 1, cc2: 2}}};
+    def = {aa: {bb: {cc: 2}}};
     expect(extendDefault(target, def)).toEqual({aa: {bb: {cc: 1}}});
+    target = {aa: {bb: {cc2: 2}}};
+    def = {aa: {bb: {cc: 2}}};
+    expect(extendDefault(target, def)).toEqual({aa: {bb: {cc: 2}}});
+    target = {aa: {bb: {cc: undefined, cc2: 2}}};
+    def = {aa: {bb: {cc: 2}}};
+    expect(extendDefault(target, def)).toEqual({aa: {bb: {cc: 2}}});
   });
 });
 

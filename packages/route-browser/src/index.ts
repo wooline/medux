@@ -8,6 +8,8 @@ type UnregisterCallback = () => void;
 export class BrowserNativeRouter implements NativeRouter {
   public history: History<never>;
 
+  private serverSide: boolean = false;
+
   constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string) {
     if (createHistory === 'Hash') {
       this.history = createHashHistory();
@@ -16,6 +18,7 @@ export class BrowserNativeRouter implements NativeRouter {
     } else if (createHistory === 'Browser') {
       this.history = createBrowserHistory();
     } else {
+      this.serverSide = true;
       const [pathname, search = ''] = createHistory.split('?');
       this.history = {
         action: 'PUSH',
@@ -59,24 +62,24 @@ export class BrowserNativeRouter implements NativeRouter {
     return (location.state || '') as string;
   }
 
-  push(url: string, key: string, internal: boolean): void {
-    !internal && this.history.push(url, key as any);
+  push(getUrl: () => string, key: string, internal: boolean): void {
+    !internal && !this.serverSide && this.history.push(getUrl(), key as any);
   }
 
-  replace(url: string, key: string, internal: boolean): void {
-    !internal && this.history.replace(url, key as any);
+  replace(getUrl: () => string, key: string, internal: boolean): void {
+    !internal && !this.serverSide && this.history.replace(getUrl(), key as any);
   }
 
-  relaunch(url: string, key: string, internal: boolean): void {
-    !internal && this.history.push(url, key as any);
+  relaunch(getUrl: () => string, key: string, internal: boolean): void {
+    !internal && !this.serverSide && this.history.push(getUrl(), key as any);
   }
 
-  back(url: string, n: number, key: string, internal: boolean): void {
-    !internal && this.history.go(-n);
+  back(getUrl: () => string, n: number, key: string, internal: boolean): void {
+    !internal && !this.serverSide && this.history.go(-n);
   }
 
-  pop(url: string, n: number, key: string, internal: boolean) {
-    !internal && this.history.push(url, key as any);
+  pop(getUrl: () => string, n: number, key: string, internal: boolean) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key as any);
   }
 
   refresh() {

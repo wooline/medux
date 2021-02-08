@@ -1,19 +1,17 @@
-import {NativeRouter} from 'src/index';
-
-const nativeRouter: NativeRouter = {
-  push(location, key) {
+const nativeRouter = {
+  push(location: string, key: string, internal: boolean) {
     console.log('push', key);
   },
-  replace(location, key) {
+  replace(location: string, key: string, internal: boolean) {
     console.log('replace', key);
   },
-  relaunch(location, key) {
+  relaunch(location: string, key: string, internal: boolean) {
     console.log('relaunch', key);
   },
-  back(location, n, key) {
+  back(location: string, n: number, key: string, internal: boolean) {
     console.log('back', n, key);
   },
-  pop(location, n, key) {
+  pop(location: string, n: number, key: string, internal: boolean) {
     console.log('pop', n, key);
   },
 };

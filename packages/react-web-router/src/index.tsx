@@ -14,19 +14,7 @@ import type {ServerRequest, ServerResponse} from './sington';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
-export type {
-  RouteModuleState as BaseModuleState,
-  RootState,
-  RouteState,
-  RoutePayload,
-  LocationTransform,
-  PathnameTransform,
-  NativeLocation,
-  PagenameMap,
-  HistoryAction,
-  Location,
-  DeepPartial,
-} from '@medux/route-web';
+export type {RouteModuleState as BaseModuleState, RootState, RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial} from '@medux/route-web';
 export type {LoadView} from './loadView';
 export type {FacadeExports, ServerRequest, ServerResponse} from './sington';
 
@@ -50,7 +38,7 @@ export {
   isProcessedError,
   setProcessedError,
 } from '@medux/core';
-export {RouteModuleHandlers as BaseModuleHandlers, createLocationTransform, createPathnameTransform} from '@medux/route-web';
+export {RouteModuleHandlers as BaseModuleHandlers, createLocationTransform} from '@medux/route-web';
 export {exportApp, patchActions} from './sington';
 export {DocumentHead} from './components/DocumentHead';
 export {Else} from './components/Else';
@@ -160,8 +148,7 @@ export function buildSSR(
   }
 ): Promise<string> {
   if (!SSRTPL) {
-    // @ts-ignore
-    SSRTPL = Buffer.from('process.env.MEDUX_ENV_SSRTPL', 'base64').toString();
+    SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
   }
   appExports.request = request;
   appExports.response = response;

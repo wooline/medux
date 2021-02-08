@@ -8,6 +8,8 @@ export var BrowserNativeRouter = function () {
   function BrowserNativeRouter(createHistory) {
     _defineProperty(this, "history", void 0);
 
+    _defineProperty(this, "serverSide", false);
+
     if (createHistory === 'Hash') {
       this.history = createHashHistory();
     } else if (createHistory === 'Memory') {
@@ -15,6 +17,8 @@ export var BrowserNativeRouter = function () {
     } else if (createHistory === 'Browser') {
       this.history = createBrowserHistory();
     } else {
+      this.serverSide = true;
+
       var _createHistory$split = createHistory.split('?'),
           pathname = _createHistory$split[0],
           _createHistory$split$ = _createHistory$split[1],
@@ -81,24 +85,24 @@ export var BrowserNativeRouter = function () {
     return location.state || '';
   };
 
-  _proto.push = function push(url, key, internal) {
-    !internal && this.history.push(url, key);
+  _proto.push = function push(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   };
 
-  _proto.replace = function replace(url, key, internal) {
-    !internal && this.history.replace(url, key);
+  _proto.replace = function replace(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.replace(getUrl(), key);
   };
 
-  _proto.relaunch = function relaunch(url, key, internal) {
-    !internal && this.history.push(url, key);
+  _proto.relaunch = function relaunch(getUrl, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   };
 
-  _proto.back = function back(url, n, key, internal) {
-    !internal && this.history.go(-n);
+  _proto.back = function back(getUrl, n, key, internal) {
+    !internal && !this.serverSide && this.history.go(-n);
   };
 
-  _proto.pop = function pop(url, n, key, internal) {
-    !internal && this.history.push(url, key);
+  _proto.pop = function pop(getUrl, n, key, internal) {
+    !internal && !this.serverSide && this.history.push(getUrl(), key);
   };
 
   _proto.refresh = function refresh() {

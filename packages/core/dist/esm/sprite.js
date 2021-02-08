@@ -225,7 +225,9 @@ export function deepMerge(target) {
     target = {};
   }
 
-  args = args.filter(Boolean);
+  args = args.filter(function (item) {
+    return isPlainObject(item) && Object.keys(item).length;
+  });
 
   if (args.length < 1) {
     return target;

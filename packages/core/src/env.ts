@@ -10,6 +10,23 @@ export const isServerEnv: boolean = typeof window === 'undefined' && typeof glob
 
 export const client: meduxCore.ENV | undefined = isServerEnv ? undefined : env;
 
+env.encodeBas64 = function (str: string) {
+  if (!str) {
+    return '';
+  }
+  // @ts-ignore
+  // eslint-disable-next-line no-nested-ternary
+  return typeof btoa === 'function' ? btoa(str) : typeof Buffer !== 'undefined' ? Buffer.from(str).toString('base64') : str;
+};
+env.decodeBas64 = function (str: string) {
+  if (!str) {
+    return '';
+  }
+  // @ts-ignore
+  // eslint-disable-next-line no-nested-ternary
+  return typeof atob === 'function' ? atob(str) : typeof Buffer !== 'undefined' ? Buffer.from(str, 'base64').toString() : str;
+};
+
 // let _MEDUX_ENV: {[key: string]: any} = {};
 // try {
 //   // @ts-ignore

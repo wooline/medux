@@ -1,14 +1,13 @@
 import { CoreRootState, RootModuleFacade } from '@medux/core';
 export declare const routeConfig: {
-    RSP: string;
     actionMaxHistory: number;
     pagesMaxHistory: number;
     pagenames: {
         [key: string]: string;
     };
+    defaultParams: any;
 };
 export declare function setRouteConfig(conf: {
-    RSP?: string;
     actionMaxHistory?: number;
     pagesMaxHistory?: number;
     homeUri?: string;
@@ -32,6 +31,15 @@ export interface Location<P extends RootParams = {}> {
     pagename: string;
     params: Partial<P>;
 }
+export interface PayloadLocation<P extends RootParams = {}, N extends string = string> {
+    pagename?: N;
+    params?: DeepPartial<P>;
+    extendParams?: DeepPartial<P> | 'current';
+}
+export interface PartialLocation<P extends RootParams = {}> {
+    pagename: string;
+    params: DeepPartial<P>;
+}
 export declare type RouteState<P extends RootParams = {}> = Location<P> & {
     action: HistoryAction;
     key: string;
@@ -51,11 +59,6 @@ export declare type RootState<A extends RootModuleFacade, P extends {
 export declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
-export interface RoutePayload<P extends RootParams = RootParams, N extends string = string> {
-    pagename?: N;
-    params?: DeepPartial<P>;
-    extendParams?: Partial<P> | true;
-}
 export declare function uriToLocation<P extends {
     [key: string]: any;
 }>(uri: string): {
