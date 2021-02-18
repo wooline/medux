@@ -10,6 +10,60 @@ export function setRouteConfig(conf) {
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
 }
 
+function splitQuery(query) {
+  return (query || '').split('&').reduce((params, str) => {
+    const sections = str.split('=');
+
+    if (sections.length > 1) {
+      const [key, ...arr] = sections;
+
+      if (!params) {
+        params = {};
+      }
+
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+
+    return params;
+  }, undefined);
+}
+
+function joinQuery(params) {
+  return Object.keys(params || {}).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+}
+
+export function nativeUrlToNativeLocation(url) {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined
+    };
+  }
+
+  const arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  const [path, search, hash] = arr;
+  return {
+    pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash)
+  };
+}
+export function nativeLocationToNativeUrl({
+  pathname,
+  searchData,
+  hashData
+}) {
+  const search = joinQuery(searchData);
+  const hash = joinQuery(hashData);
+  return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+}
+
 function locationToUri(location, key) {
   const {
     pagename,

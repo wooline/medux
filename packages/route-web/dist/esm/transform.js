@@ -1,4 +1,4 @@
-import { deepMerge, env } from '@medux/core';
+import { deepMerge } from '@medux/core';
 import { extendDefault, excludeDefault, splitPrivate } from './deep-extend';
 import { routeConfig } from './basic';
 export function assignDefaultData(data) {
@@ -12,64 +12,13 @@ export function assignDefaultData(data) {
   }, {});
 }
 
-function splitSearch(search, paramsKey) {
-  var reg = new RegExp("&" + paramsKey + "=([^&]+)");
-  var arr = ("&" + search).match(reg);
-  return arr ? arr[1] : '';
-}
-
-function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
-  var search = splitSearch(nativeLocation.search, paramsKey);
-  var hash = splitSearch(nativeLocation.hash, paramsKey);
-
-  if (base64) {
-    search = env.decodeBas64(search);
-    hash = env.decodeBas64(hash);
-  } else {
-    search = search && decodeURIComponent(search);
-    hash = hash && decodeURIComponent(hash);
-  }
-
-  return {
-    searchParams: search ? parse(search) : undefined,
-    hashParams: hash ? parse(hash) : undefined
-  };
-}
-
-function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) {
-  var searchStr = search ? stringify(search) : '';
-  var hashStr = hash ? stringify(hash) : '';
-
-  if (base64) {
-    searchStr = env.encodeBas64(searchStr);
-    hashStr = env.encodeBas64(hashStr);
-  } else {
-    searchStr = searchStr && encodeURIComponent(searchStr);
-    hashStr = hashStr && encodeURIComponent(hashStr);
-  }
-
-  return {
-    pathname: "/" + pathname.replace(/^\/+|\/+$/g, ''),
-    search: searchStr && paramsKey + "=" + searchStr,
-    hash: hashStr && paramsKey + "=" + hashStr
-  };
-}
-
 function dataIsNativeLocation(data) {
   return data['pathname'];
 }
 
-export function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, base64, serialization, paramsKey) {
+export function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
   if (notfoundPagename === void 0) {
     notfoundPagename = '/404';
-  }
-
-  if (base64 === void 0) {
-    base64 = false;
-  }
-
-  if (serialization === void 0) {
-    serialization = JSON;
   }
 
   if (paramsKey === void 0) {
@@ -120,9 +69,8 @@ export function createLocationTransform(defaultParams, pagenameMap, nativeLocati
 
       if (pagename) {
         if (dataIsNativeLocation(data)) {
-          var _parseNativeLocation = parseNativeLocation(data, paramsKey, base64, serialization.parse),
-              searchParams = _parseNativeLocation.searchParams,
-              hashParams = _parseNativeLocation.hashParams;
+          var searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
+          var hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
 
           var _pathArgs = path.replace(pagename, '').split('/').map(function (item) {
             return item ? decodeURIComponent(item) : undefined;
@@ -146,6 +94,8 @@ export function createLocationTransform(defaultParams, pagenameMap, nativeLocati
       };
     },
     out: function out(meduxLocation) {
+      var _ref, _ref2;
+
       var params = excludeDefault(meduxLocation.params, defaultParams, true);
       var pagename = ("/" + meduxLocation.pagename + "/").replace(/^\/+|\/+$/g, '/');
       var pathParams;
@@ -165,7 +115,11 @@ export function createLocationTransform(defaultParams, pagenameMap, nativeLocati
 
       params = excludeDefault(params, pathParams, false);
       var result = splitPrivate(params, pathParams);
-      var nativeLocation = toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+      var nativeLocation = {
+        pathname: "/" + pathname.replace(/^\/+|\/+$/g, ''),
+        searchData: result[0] ? (_ref = {}, _ref[paramsKey] = JSON.stringify(result[0]), _ref) : undefined,
+        hashData: result[1] ? (_ref2 = {}, _ref2[paramsKey] = JSON.stringify(result[1]), _ref2) : undefined
+      };
       return nativeLocationMap.out(nativeLocation);
     }
   };

@@ -20,8 +20,8 @@ export type RootParams = {[moduleName: string]: ModuleParams};
 
 export interface NativeLocation {
   pathname: string;
-  search: string;
-  hash: string;
+  searchData?: {[key: string]: string};
+  hashData?: {[key: string]: string};
 }
 
 export interface Location<P extends RootParams = {}> {
@@ -53,6 +53,49 @@ export type RootState<A extends RootModuleFacade, P extends {[key: string]: any}
 
 export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
+function splitQuery(query: string): {[key: string]: string} | undefined {
+  return (query || '').split('&').reduce((params, str) => {
+    const sections = str.split('=');
+    if (sections.length > 1) {
+      const [key, ...arr] = sections;
+      if (!params) {
+        params = {};
+      }
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+    return params;
+  }, undefined as {[key: string]: string} | undefined);
+}
+function joinQuery(params: {[key: string]: string} | undefined): string {
+  return Object.keys(params || {})
+    .map((key) => `${key}=${encodeURIComponent((params as any)[key])}`)
+    .join('&');
+}
+export function nativeUrlToNativeLocation(url: string): NativeLocation {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined,
+    };
+  }
+  const arr = url.split(/[?#]/);
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+  const [path, search, hash] = arr;
+  return {
+    pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash),
+  };
+}
+
+export function nativeLocationToNativeUrl({pathname, searchData, hashData}: NativeLocation): string {
+  const search = joinQuery(searchData);
+  const hash = joinQuery(hashData);
+  return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+}
 function locationToUri(location: Location, key: string): {uri: string; pagename: string; query: string; key: string} {
   const {pagename, params} = location;
   const query = params ? JSON.stringify(params) : '';

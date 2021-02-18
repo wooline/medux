@@ -1,4 +1,4 @@
-import {deepMerge, env} from '@medux/core';
+import {deepMerge} from '@medux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
 import {Location, NativeLocation, DeepPartial, RootParams, routeConfig, PartialLocation} from './basic';
 
@@ -24,38 +24,6 @@ export function assignDefaultData(data: {[moduleName: string]: any}): {[moduleNa
   }, {});
 }
 
-function splitSearch(search: string, paramsKey: string): string {
-  const reg = new RegExp(`&${paramsKey}=([^&]+)`);
-  const arr = `&${search}`.match(reg);
-  return arr ? arr[1] : '';
-}
-
-function parseNativeLocation(nativeLocation: NativeLocation, paramsKey: string, base64: boolean, parse: (str: string) => any): {searchParams: any; hashParams: any} {
-  let search = splitSearch(nativeLocation.search, paramsKey);
-  let hash = splitSearch(nativeLocation.hash, paramsKey);
-  if (base64) {
-    search = env.decodeBas64(search);
-    hash = env.decodeBas64(hash);
-  } else {
-    search = search && decodeURIComponent(search);
-    hash = hash && decodeURIComponent(hash);
-  }
-
-  return {searchParams: search ? parse(search) : undefined, hashParams: hash ? parse(hash) : undefined};
-}
-function toNativeLocation(pathname: string, search: any, hash: any, paramsKey: string, base64: boolean, stringify: (data: any) => string): NativeLocation {
-  let searchStr = search ? stringify(search) : '';
-  let hashStr = hash ? stringify(hash) : '';
-  if (base64) {
-    searchStr = env.encodeBas64(searchStr);
-    hashStr = env.encodeBas64(hashStr);
-  } else {
-    searchStr = searchStr && encodeURIComponent(searchStr);
-    hashStr = hashStr && encodeURIComponent(hashStr);
-  }
-  return {pathname: `/${pathname.replace(/^\/+|\/+$/g, '')}`, search: searchStr && `${paramsKey}=${searchStr}`, hash: hashStr && `${paramsKey}=${hashStr}`};
-}
-
 function dataIsNativeLocation(data: PartialLocation | NativeLocation): data is NativeLocation {
   return data['pathname'];
 }
@@ -65,8 +33,6 @@ export function createLocationTransform<P extends RootParams>(
   pagenameMap: PagenameMap<P>,
   nativeLocationMap: NativeLocationMap,
   notfoundPagename: string = '/404',
-  base64: boolean = false,
-  serialization: {parse(str: string): any; stringify(data: any): string} = JSON,
   paramsKey: string = '_'
 ): LocationTransform<P> {
   routeConfig.defaultParams = defaultParams;
@@ -106,7 +72,8 @@ export function createLocationTransform<P extends RootParams>(
       let params: DeepPartial<P>;
       if (pagename) {
         if (dataIsNativeLocation(data)) {
-          const {searchParams, hashParams} = parseNativeLocation(data, paramsKey, base64, serialization.parse);
+          const searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
+          const hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
           const pathArgs: Array<string | undefined> = path
             .replace(pagename, '')
             .split('/')
@@ -143,7 +110,11 @@ export function createLocationTransform<P extends RootParams>(
       }
       params = excludeDefault(params, pathParams, false) as DeepPartial<P>;
       const result = splitPrivate(params, pathParams as any);
-      const nativeLocation = toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+      const nativeLocation = {
+        pathname: `/${pathname.replace(/^\/+|\/+$/g, '')}`,
+        searchData: result[0] ? {[paramsKey]: JSON.stringify(result[0])} : undefined,
+        hashData: result[1] ? {[paramsKey]: JSON.stringify(result[1])} : undefined,
+      };
       return nativeLocationMap.out(nativeLocation);
     },
   };

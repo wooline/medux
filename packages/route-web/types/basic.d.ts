@@ -24,8 +24,12 @@ export declare type RootParams = {
 };
 export interface NativeLocation {
     pathname: string;
-    search: string;
-    hash: string;
+    searchData?: {
+        [key: string]: string;
+    };
+    hashData?: {
+        [key: string]: string;
+    };
 }
 export interface Location<P extends RootParams = {}> {
     pagename: string;
@@ -59,6 +63,8 @@ export declare type RootState<A extends RootModuleFacade, P extends {
 export declare type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
 };
+export declare function nativeUrlToNativeLocation(url: string): NativeLocation;
+export declare function nativeLocationToNativeUrl({ pathname, searchData, hashData }: NativeLocation): string;
 export declare function uriToLocation<P extends {
     [key: string]: any;
 }>(uri: string): {

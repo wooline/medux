@@ -2145,6 +2145,60 @@ function setRouteConfig(conf) {
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
 }
 
+function splitQuery(query) {
+  return (query || '').split('&').reduce((params, str) => {
+    const sections = str.split('=');
+
+    if (sections.length > 1) {
+      const [key, ...arr] = sections;
+
+      if (!params) {
+        params = {};
+      }
+
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+
+    return params;
+  }, undefined);
+}
+
+function joinQuery(params) {
+  return Object.keys(params || {}).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+}
+
+function nativeUrlToNativeLocation(url) {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined
+    };
+  }
+
+  const arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  const [path, search, hash] = arr;
+  return {
+    pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash)
+  };
+}
+function nativeLocationToNativeUrl({
+  pathname,
+  searchData,
+  hashData
+}) {
+  const search = joinQuery(searchData);
+  const hash = joinQuery(hashData);
+  return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+}
+
 function locationToUri(location, key) {
   const {
     pagename,
@@ -2554,54 +2608,11 @@ function assignDefaultData(data) {
   }, {});
 }
 
-function splitSearch(search, paramsKey) {
-  const reg = new RegExp(`&${paramsKey}=([^&]+)`);
-  const arr = `&${search}`.match(reg);
-  return arr ? arr[1] : '';
-}
-
-function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
-  let search = splitSearch(nativeLocation.search, paramsKey);
-  let hash = splitSearch(nativeLocation.hash, paramsKey);
-
-  if (base64) {
-    search = env.decodeBas64(search);
-    hash = env.decodeBas64(hash);
-  } else {
-    search = search && decodeURIComponent(search);
-    hash = hash && decodeURIComponent(hash);
-  }
-
-  return {
-    searchParams: search ? parse(search) : undefined,
-    hashParams: hash ? parse(hash) : undefined
-  };
-}
-
-function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) {
-  let searchStr = search ? stringify(search) : '';
-  let hashStr = hash ? stringify(hash) : '';
-
-  if (base64) {
-    searchStr = env.encodeBas64(searchStr);
-    hashStr = env.encodeBas64(hashStr);
-  } else {
-    searchStr = searchStr && encodeURIComponent(searchStr);
-    hashStr = hashStr && encodeURIComponent(hashStr);
-  }
-
-  return {
-    pathname: `/${pathname.replace(/^\/+|\/+$/g, '')}`,
-    search: searchStr && `${paramsKey}=${searchStr}`,
-    hash: hashStr && `${paramsKey}=${hashStr}`
-  };
-}
-
 function dataIsNativeLocation(data) {
   return data['pathname'];
 }
 
-function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', base64 = false, serialization = JSON, paramsKey = '_') {
+function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
   routeConfig.defaultParams = defaultParams;
   let pagenames = Object.keys(pagenameMap);
   pagenameMap = pagenames.sort((a, b) => b.length - a.length).reduce((map, pagename) => {
@@ -2642,10 +2653,8 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
 
       if (pagename) {
         if (dataIsNativeLocation(data)) {
-          const {
-            searchParams,
-            hashParams
-          } = parseNativeLocation(data, paramsKey, base64, serialization.parse);
+          const searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
+          const hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
           const pathArgs = path.replace(pagename, '').split('/').map(item => item ? decodeURIComponent(item) : undefined);
           const pathParams = pagenameMap[pagename].argsToParams(pathArgs);
           params = deepMerge(pathParams, searchParams, hashParams);
@@ -2681,7 +2690,15 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
 
       params = excludeDefault(params, pathParams, false);
       const result = splitPrivate(params, pathParams);
-      const nativeLocation = toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+      const nativeLocation = {
+        pathname: `/${pathname.replace(/^\/+|\/+$/g, '')}`,
+        searchData: result[0] ? {
+          [paramsKey]: JSON.stringify(result[0])
+        } : undefined,
+        hashData: result[1] ? {
+          [paramsKey]: JSON.stringify(result[1])
+        } : undefined
+      };
       return nativeLocationMap.out(nativeLocation);
     }
 
@@ -2772,7 +2789,7 @@ const routeReducer = (state, action) => {
   return state;
 };
 class BaseRouter {
-  constructor(nativeUrl, nativeRouter, locationTransform) {
+  constructor(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
 
@@ -2784,13 +2801,13 @@ class BaseRouter {
 
     _defineProperty(this, "routeState", void 0);
 
-    _defineProperty(this, "url", void 0);
+    _defineProperty(this, "meduxUrl", void 0);
 
     _defineProperty(this, "store", void 0);
 
     _defineProperty(this, "history", void 0);
 
-    const location = this.urlToLocation(nativeUrl);
+    const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
     const key = this._createKey();
 
@@ -2799,7 +2816,7 @@ class BaseRouter {
       key
     });
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
@@ -2818,8 +2835,8 @@ class BaseRouter {
     return this.routeState.params;
   }
 
-  getUrl() {
-    return this.url;
+  getMeduxUrl() {
+    return this.meduxUrl;
   }
 
   getNativeLocation() {
@@ -2862,26 +2879,27 @@ class BaseRouter {
   }
 
   nativeUrlToNativeLocation(url) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: ''
+    return nativeUrlToNativeLocation(url);
+  }
+
+  nativeLocationToLocation(nativeLocation) {
+    let location;
+
+    try {
+      location = this.locationTransform.in(nativeLocation);
+    } catch (error) {
+      env.console.warn(error);
+      location = {
+        pagename: '/',
+        params: {}
       };
     }
 
-    const arr = url.split(/[?#]/);
+    return location;
+  }
 
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-
-    const [path, search = '', hash = ''] = arr;
-    return {
-      pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
-      search,
-      hash
-    };
+  nativeUrlToLocation(nativeUrl) {
+    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
   }
 
   urlToLocation(url) {
@@ -2912,12 +2930,7 @@ class BaseRouter {
   }
 
   nativeLocationToNativeUrl(nativeLocation) {
-    const {
-      pathname,
-      search,
-      hash
-    } = nativeLocation;
-    return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+    return nativeLocationToNativeUrl(nativeLocation);
   }
 
   locationToNativeUrl(location) {
@@ -2925,7 +2938,7 @@ class BaseRouter {
     return this.nativeLocationToNativeUrl(nativeLocation);
   }
 
-  locationToUrl(location) {
+  locationToMeduxUrl(location) {
     return [location.pagename, JSON.stringify(location.params || {})].join('?');
   }
 
@@ -2962,7 +2975,7 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
@@ -2993,7 +3006,7 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
@@ -3024,7 +3037,7 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
@@ -3056,7 +3069,7 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
@@ -3088,7 +3101,7 @@ class BaseRouter {
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 

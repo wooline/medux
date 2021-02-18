@@ -5,7 +5,7 @@ import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitial
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge } from '@medux/core';
-import { uriToLocation, History } from './basic';
+import { uriToLocation, nativeUrlToNativeLocation as _nativeUrlToNativeLocation, nativeLocationToNativeUrl as _nativeLocationToNativeUrl, History } from './basic';
 export { setRouteConfig, routeConfig } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
 export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
@@ -106,7 +106,7 @@ export var routeReducer = function routeReducer(state, action) {
   return state;
 };
 export var BaseRouter = function () {
-  function BaseRouter(nativeUrl, nativeRouter, locationTransform) {
+  function BaseRouter(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
 
@@ -118,13 +118,13 @@ export var BaseRouter = function () {
 
     _defineProperty(this, "routeState", void 0);
 
-    _defineProperty(this, "url", void 0);
+    _defineProperty(this, "meduxUrl", void 0);
 
     _defineProperty(this, "store", void 0);
 
     _defineProperty(this, "history", void 0);
 
-    var location = this.urlToLocation(nativeUrl);
+    var location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
     var key = this._createKey();
 
@@ -133,7 +133,7 @@ export var BaseRouter = function () {
       key: key
     });
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
@@ -154,8 +154,8 @@ export var BaseRouter = function () {
     return this.routeState.params;
   };
 
-  _proto.getUrl = function getUrl() {
-    return this.url;
+  _proto.getMeduxUrl = function getMeduxUrl() {
+    return this.meduxUrl;
   };
 
   _proto.getNativeLocation = function getNativeLocation() {
@@ -198,30 +198,27 @@ export var BaseRouter = function () {
   };
 
   _proto.nativeUrlToNativeLocation = function nativeUrlToNativeLocation(url) {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: ''
+    return _nativeUrlToNativeLocation(url);
+  };
+
+  _proto.nativeLocationToLocation = function nativeLocationToLocation(nativeLocation) {
+    var location;
+
+    try {
+      location = this.locationTransform.in(nativeLocation);
+    } catch (error) {
+      env.console.warn(error);
+      location = {
+        pagename: '/',
+        params: {}
       };
     }
 
-    var arr = url.split(/[?#]/);
+    return location;
+  };
 
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-
-    var path = arr[0],
-        _arr$ = arr[1],
-        search = _arr$ === void 0 ? '' : _arr$,
-        _arr$2 = arr[2],
-        hash = _arr$2 === void 0 ? '' : _arr$2;
-    return {
-      pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
-      search: search,
-      hash: hash
-    };
+  _proto.nativeUrlToLocation = function nativeUrlToLocation(nativeUrl) {
+    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
   };
 
   _proto.urlToLocation = function urlToLocation(url) {
@@ -255,10 +252,7 @@ export var BaseRouter = function () {
   };
 
   _proto.nativeLocationToNativeUrl = function nativeLocationToNativeUrl(nativeLocation) {
-    var pathname = nativeLocation.pathname,
-        search = nativeLocation.search,
-        hash = nativeLocation.hash;
-    return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+    return _nativeLocationToNativeUrl(nativeLocation);
   };
 
   _proto.locationToNativeUrl = function locationToNativeUrl(location) {
@@ -266,7 +260,7 @@ export var BaseRouter = function () {
     return this.nativeLocationToNativeUrl(nativeLocation);
   };
 
-  _proto.locationToUrl = function locationToUrl(location) {
+  _proto.locationToMeduxUrl = function locationToMeduxUrl(location) {
     return [location.pagename, JSON.stringify(location.params || {})].join('?');
   };
 
@@ -309,7 +303,7 @@ export var BaseRouter = function () {
 
             case 5:
               this.routeState = routeState;
-              this.url = this.locationToUrl(routeState);
+              this.meduxUrl = this.locationToMeduxUrl(routeState);
               this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
@@ -360,7 +354,7 @@ export var BaseRouter = function () {
 
             case 5:
               this.routeState = routeState;
-              this.url = this.locationToUrl(routeState);
+              this.meduxUrl = this.locationToMeduxUrl(routeState);
               this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
@@ -411,7 +405,7 @@ export var BaseRouter = function () {
 
             case 5:
               this.routeState = routeState;
-              this.url = this.locationToUrl(routeState);
+              this.meduxUrl = this.locationToMeduxUrl(routeState);
               this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
@@ -472,7 +466,7 @@ export var BaseRouter = function () {
 
             case 9:
               this.routeState = routeState;
-              this.url = this.locationToUrl(routeState);
+              this.meduxUrl = this.locationToMeduxUrl(routeState);
               this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
@@ -533,7 +527,7 @@ export var BaseRouter = function () {
 
             case 9:
               this.routeState = routeState;
-              this.url = this.locationToUrl(routeState);
+              this.meduxUrl = this.locationToMeduxUrl(routeState);
               this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 

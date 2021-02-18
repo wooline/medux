@@ -3116,6 +3116,64 @@
 	  conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
 	}
 
+	function splitQuery(query) {
+	  return (query || '').split('&').reduce(function (params, str) {
+	    var sections = str.split('=');
+
+	    if (sections.length > 1) {
+	      var _key = sections[0],
+	          arr = sections.slice(1);
+
+	      if (!params) {
+	        params = {};
+	      }
+
+	      params[_key] = decodeURIComponent(arr.join('='));
+	    }
+
+	    return params;
+	  }, undefined);
+	}
+
+	function joinQuery(params) {
+	  return Object.keys(params || {}).map(function (key) {
+	    return key + "=" + encodeURIComponent(params[key]);
+	  }).join('&');
+	}
+
+	function nativeUrlToNativeLocation(url) {
+	  if (!url) {
+	    return {
+	      pathname: '/',
+	      searchData: undefined,
+	      hashData: undefined
+	    };
+	  }
+
+	  var arr = url.split(/[?#]/);
+
+	  if (arr.length === 2 && url.indexOf('?') < 0) {
+	    arr.splice(1, 0, '');
+	  }
+
+	  var path = arr[0],
+	      search = arr[1],
+	      hash = arr[2];
+	  return {
+	    pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
+	    searchData: splitQuery(search),
+	    hashData: splitQuery(hash)
+	  };
+	}
+	function nativeLocationToNativeUrl(_ref) {
+	  var pathname = _ref.pathname,
+	      searchData = _ref.searchData,
+	      hashData = _ref.hashData;
+	  var search = joinQuery(searchData);
+	  var hash = joinQuery(hashData);
+	  return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+	}
+
 	function locationToUri(location, key) {
 	  var pagename = location.pagename,
 	      params = location.params;
@@ -3129,8 +3187,8 @@
 	}
 
 	function splitUri() {
-	  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-	    args[_key] = arguments[_key];
+	  for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
+	    args[_key2] = arguments[_key2];
 	  }
 
 	  var _args$ = args[0],
@@ -3555,64 +3613,13 @@
 	  }, {});
 	}
 
-	function splitSearch(search, paramsKey) {
-	  var reg = new RegExp("&" + paramsKey + "=([^&]+)");
-	  var arr = ("&" + search).match(reg);
-	  return arr ? arr[1] : '';
-	}
-
-	function parseNativeLocation(nativeLocation, paramsKey, base64, parse) {
-	  var search = splitSearch(nativeLocation.search, paramsKey);
-	  var hash = splitSearch(nativeLocation.hash, paramsKey);
-
-	  if (base64) {
-	    search = env.decodeBas64(search);
-	    hash = env.decodeBas64(hash);
-	  } else {
-	    search = search && decodeURIComponent(search);
-	    hash = hash && decodeURIComponent(hash);
-	  }
-
-	  return {
-	    searchParams: search ? parse(search) : undefined,
-	    hashParams: hash ? parse(hash) : undefined
-	  };
-	}
-
-	function toNativeLocation(pathname, search, hash, paramsKey, base64, stringify) {
-	  var searchStr = search ? stringify(search) : '';
-	  var hashStr = hash ? stringify(hash) : '';
-
-	  if (base64) {
-	    searchStr = env.encodeBas64(searchStr);
-	    hashStr = env.encodeBas64(hashStr);
-	  } else {
-	    searchStr = searchStr && encodeURIComponent(searchStr);
-	    hashStr = hashStr && encodeURIComponent(hashStr);
-	  }
-
-	  return {
-	    pathname: "/" + pathname.replace(/^\/+|\/+$/g, ''),
-	    search: searchStr && paramsKey + "=" + searchStr,
-	    hash: hashStr && paramsKey + "=" + hashStr
-	  };
-	}
-
 	function dataIsNativeLocation(data) {
 	  return data['pathname'];
 	}
 
-	function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, base64, serialization, paramsKey) {
+	function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
 	  if (notfoundPagename === void 0) {
 	    notfoundPagename = '/404';
-	  }
-
-	  if (base64 === void 0) {
-	    base64 = false;
-	  }
-
-	  if (serialization === void 0) {
-	    serialization = JSON;
 	  }
 
 	  if (paramsKey === void 0) {
@@ -3663,9 +3670,8 @@
 
 	      if (pagename) {
 	        if (dataIsNativeLocation(data)) {
-	          var _parseNativeLocation = parseNativeLocation(data, paramsKey, base64, serialization.parse),
-	              searchParams = _parseNativeLocation.searchParams,
-	              hashParams = _parseNativeLocation.hashParams;
+	          var searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
+	          var hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
 
 	          var _pathArgs = path.replace(pagename, '').split('/').map(function (item) {
 	            return item ? decodeURIComponent(item) : undefined;
@@ -3689,6 +3695,8 @@
 	      };
 	    },
 	    out: function out(meduxLocation) {
+	      var _ref, _ref2;
+
 	      var params = excludeDefault(meduxLocation.params, defaultParams, true);
 	      var pagename = ("/" + meduxLocation.pagename + "/").replace(/^\/+|\/+$/g, '/');
 	      var pathParams;
@@ -3708,7 +3716,11 @@
 
 	      params = excludeDefault(params, pathParams, false);
 	      var result = splitPrivate(params, pathParams);
-	      var nativeLocation = toNativeLocation(pathname, result[0], result[1], paramsKey, base64, serialization.stringify);
+	      var nativeLocation = {
+	        pathname: "/" + pathname.replace(/^\/+|\/+$/g, ''),
+	        searchData: result[0] ? (_ref = {}, _ref[paramsKey] = JSON.stringify(result[0]), _ref) : undefined,
+	        hashData: result[1] ? (_ref2 = {}, _ref2[paramsKey] = JSON.stringify(result[1]), _ref2) : undefined
+	      };
 	      return nativeLocationMap.out(nativeLocation);
 	    }
 	  };
@@ -3812,7 +3824,7 @@
 	  return state;
 	};
 	var BaseRouter = function () {
-	  function BaseRouter(nativeUrl, nativeRouter, locationTransform) {
+	  function BaseRouter(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
 	    this.nativeRouter = nativeRouter;
 	    this.locationTransform = locationTransform;
 
@@ -3824,13 +3836,13 @@
 
 	    _defineProperty(this, "routeState", void 0);
 
-	    _defineProperty(this, "url", void 0);
+	    _defineProperty(this, "meduxUrl", void 0);
 
 	    _defineProperty(this, "store", void 0);
 
 	    _defineProperty(this, "history", void 0);
 
-	    var location = this.urlToLocation(nativeUrl);
+	    var location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
 	    var key = this._createKey();
 
@@ -3839,7 +3851,7 @@
 	      key: key
 	    });
 	    this.routeState = routeState;
-	    this.url = this.locationToUrl(routeState);
+	    this.meduxUrl = this.locationToMeduxUrl(routeState);
 	    this._nativeData = undefined;
 	    this.history = new History();
 	    this.history.relaunch(location, key);
@@ -3860,8 +3872,8 @@
 	    return this.routeState.params;
 	  };
 
-	  _proto.getUrl = function getUrl() {
-	    return this.url;
+	  _proto.getMeduxUrl = function getMeduxUrl() {
+	    return this.meduxUrl;
 	  };
 
 	  _proto.getNativeLocation = function getNativeLocation() {
@@ -3903,31 +3915,28 @@
 	    return "" + this._tid;
 	  };
 
-	  _proto.nativeUrlToNativeLocation = function nativeUrlToNativeLocation(url) {
-	    if (!url) {
-	      return {
-	        pathname: '/',
-	        search: '',
-	        hash: ''
+	  _proto.nativeUrlToNativeLocation = function nativeUrlToNativeLocation$1(url) {
+	    return nativeUrlToNativeLocation(url);
+	  };
+
+	  _proto.nativeLocationToLocation = function nativeLocationToLocation(nativeLocation) {
+	    var location;
+
+	    try {
+	      location = this.locationTransform.in(nativeLocation);
+	    } catch (error) {
+	      env.console.warn(error);
+	      location = {
+	        pagename: '/',
+	        params: {}
 	      };
 	    }
 
-	    var arr = url.split(/[?#]/);
+	    return location;
+	  };
 
-	    if (arr.length === 2 && url.indexOf('?') < 0) {
-	      arr.splice(1, 0, '');
-	    }
-
-	    var path = arr[0],
-	        _arr$ = arr[1],
-	        search = _arr$ === void 0 ? '' : _arr$,
-	        _arr$2 = arr[2],
-	        hash = _arr$2 === void 0 ? '' : _arr$2;
-	    return {
-	      pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
-	      search: search,
-	      hash: hash
-	    };
+	  _proto.nativeUrlToLocation = function nativeUrlToLocation(nativeUrl) {
+	    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
 	  };
 
 	  _proto.urlToLocation = function urlToLocation(url) {
@@ -3960,11 +3969,8 @@
 	    return location;
 	  };
 
-	  _proto.nativeLocationToNativeUrl = function nativeLocationToNativeUrl(nativeLocation) {
-	    var pathname = nativeLocation.pathname,
-	        search = nativeLocation.search,
-	        hash = nativeLocation.hash;
-	    return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+	  _proto.nativeLocationToNativeUrl = function nativeLocationToNativeUrl$1(nativeLocation) {
+	    return nativeLocationToNativeUrl(nativeLocation);
 	  };
 
 	  _proto.locationToNativeUrl = function locationToNativeUrl(location) {
@@ -3972,7 +3978,7 @@
 	    return this.nativeLocationToNativeUrl(nativeLocation);
 	  };
 
-	  _proto.locationToUrl = function locationToUrl(location) {
+	  _proto.locationToMeduxUrl = function locationToMeduxUrl(location) {
 	    return [location.pagename, JSON.stringify(location.params || {})].join('?');
 	  };
 
@@ -4015,7 +4021,7 @@
 
 	            case 5:
 	              this.routeState = routeState;
-	              this.url = this.locationToUrl(routeState);
+	              this.meduxUrl = this.locationToMeduxUrl(routeState);
 	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
 
@@ -4066,7 +4072,7 @@
 
 	            case 5:
 	              this.routeState = routeState;
-	              this.url = this.locationToUrl(routeState);
+	              this.meduxUrl = this.locationToMeduxUrl(routeState);
 	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
 
@@ -4117,7 +4123,7 @@
 
 	            case 5:
 	              this.routeState = routeState;
-	              this.url = this.locationToUrl(routeState);
+	              this.meduxUrl = this.locationToMeduxUrl(routeState);
 	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
 
@@ -4178,7 +4184,7 @@
 
 	            case 9:
 	              this.routeState = routeState;
-	              this.url = this.locationToUrl(routeState);
+	              this.meduxUrl = this.locationToMeduxUrl(routeState);
 	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
 
@@ -4239,7 +4245,7 @@
 
 	            case 9:
 	              this.routeState = routeState;
-	              this.url = this.locationToUrl(routeState);
+	              this.meduxUrl = this.locationToMeduxUrl(routeState);
 	              this._nativeData = undefined;
 	              this.store.dispatch(routeChangeAction(routeState));
 

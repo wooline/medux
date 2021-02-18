@@ -18,7 +18,4 @@ export declare function assignDefaultData(data: {
 }): {
     [moduleName: string]: any;
 };
-export declare function createLocationTransform<P extends RootParams>(defaultParams: P, pagenameMap: PagenameMap<P>, nativeLocationMap: NativeLocationMap, notfoundPagename?: string, base64?: boolean, serialization?: {
-    parse(str: string): any;
-    stringify(data: any): string;
-}, paramsKey?: string): LocationTransform<P>;
+export declare function createLocationTransform<P extends RootParams>(defaultParams: P, pagenameMap: PagenameMap<P>, nativeLocationMap: NativeLocationMap, notfoundPagename?: string, paramsKey?: string): LocationTransform<P>;

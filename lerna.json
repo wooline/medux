@@ -3,7 +3,9 @@
     "packages/core",
     "packages/route-web",
     "packages/route-browser",
-    "packages/react-web-router"
+    "packages/route-mp",
+    "packages/react-web-router",
+    "packages/react-taro-router"
   ],
   "command": {
     "publish": {

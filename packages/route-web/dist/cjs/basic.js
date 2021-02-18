@@ -4,6 +4,8 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 exports.__esModule = true;
 exports.setRouteConfig = setRouteConfig;
+exports.nativeUrlToNativeLocation = nativeUrlToNativeLocation;
+exports.nativeLocationToNativeUrl = nativeLocationToNativeUrl;
 exports.uriToLocation = uriToLocation;
 exports.History = exports.routeConfig = void 0;
 
@@ -22,6 +24,65 @@ function setRouteConfig(conf) {
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
 }
 
+function splitQuery(query) {
+  return (query || '').split('&').reduce(function (params, str) {
+    var sections = str.split('=');
+
+    if (sections.length > 1) {
+      var _key = sections[0],
+          arr = sections.slice(1);
+
+      if (!params) {
+        params = {};
+      }
+
+      params[_key] = decodeURIComponent(arr.join('='));
+    }
+
+    return params;
+  }, undefined);
+}
+
+function joinQuery(params) {
+  return Object.keys(params || {}).map(function (key) {
+    return key + "=" + encodeURIComponent(params[key]);
+  }).join('&');
+}
+
+function nativeUrlToNativeLocation(url) {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined
+    };
+  }
+
+  var arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  var path = arr[0],
+      search = arr[1],
+      hash = arr[2];
+  return {
+    pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash)
+  };
+}
+
+function nativeLocationToNativeUrl(_ref) {
+  var pathname = _ref.pathname,
+      searchData = _ref.searchData,
+      hashData = _ref.hashData;
+  var search = joinQuery(searchData);
+  var hash = joinQuery(hashData);
+  return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+}
+
 function locationToUri(location, key) {
   var pagename = location.pagename,
       params = location.params;
@@ -35,8 +96,8 @@ function locationToUri(location, key) {
 }
 
 function splitUri() {
-  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-    args[_key] = arguments[_key];
+  for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
+    args[_key2] = arguments[_key2];
   }
 
   var _args$ = args[0],

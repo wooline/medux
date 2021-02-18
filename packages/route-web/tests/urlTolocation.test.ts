@@ -2,14 +2,14 @@ import {router} from './tools';
 
 describe('init', () => {
   test('init', () => {
-    expect(router.getUrl()).toBe(
+    expect(router.getMeduxUrl()).toBe(
       '/admin/member?{"admin":{},"member":{"listSearchPre":{"pageSize":10,"pageCurrent":1,"term":null},"listView":"","_listVerPre":0,"itemIdPre":"","itemView":"","_itemVerPre":0}}'
     );
     expect(router.getNativeUrl()).toBe('/admin/member2');
     expect(router.getNativeLocation()).toEqual({
       pathname: '/admin/member2',
-      search: '',
-      hash: '',
+      searchData: undefined,
+      hashData: undefined,
     });
     expect(router.getRouteState()).toEqual({
       pagename: '/admin/member',

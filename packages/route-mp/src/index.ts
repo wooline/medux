@@ -1,50 +1,50 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /// <reference path="../env/global.d.ts" />
-import {BaseRouter, NativeRouter, RootParams, LocationTransform} from '@medux/route-web';
+import {BaseRouter, NativeRouter, RootParams, LocationTransform, NativeLocation} from '@medux/route-web';
 import {env} from '@medux/core';
 
 export class MPNativeRouter implements NativeRouter {
-  getUrl(): string {
-    return env.getCurrentUrl();
+  getLocation(): NativeLocation {
+    return env.getLocation();
+  }
+
+  toUrl(url: string, key: string): string {
+    return url.indexOf('?') > -1 ? `${url}&__key__=${key}` : `${url}?__key__=${key}`;
   }
 
   onChange(callback: (pathname: string, query: {[key: string]: string}, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => void) {
-    return env.onRouteChange((pathname, query, action) => {
-      callback(pathname, query, query['__'], action);
+    env.onRouteChange((pathname, query, action) => {
+      callback(pathname, query, query['__key__'], action);
     });
   }
 
   push(getUrl: () => string, key: string, internal: boolean): void {
-    !internal && this.history.push(getUrl(), key as any);
+    !internal && env.navigateTo({url: this.toUrl(getUrl(), key)});
   }
 
   replace(getUrl: () => string, key: string, internal: boolean): void {
-    !internal && this.history.replace(getUrl(), key as any);
+    !internal && env.redirectTo({url: this.toUrl(getUrl(), key)});
   }
 
   relaunch(getUrl: () => string, key: string, internal: boolean): void {
-    !internal && this.history.push(getUrl(), key as any);
+    !internal && env.reLaunch({url: this.toUrl(getUrl(), key)});
   }
 
   back(getUrl: () => string, n: number, key: string, internal: boolean): void {
-    !internal && this.history.go(-n);
+    !internal && env.navigateBack({delta: n});
   }
 
   pop(getUrl: () => string, n: number, key: string, internal: boolean) {
-    !internal && this.history.push(getUrl(), key as any);
-  }
-
-  refresh() {
-    this.history.go(0);
+    !internal && env.navigateTo({url: this.toUrl(getUrl(), key)});
   }
 }
 export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
   public nativeRouter: MPNativeRouter;
 
   constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>) {
-    super(mpNativeRouter.getUrl(), mpNativeRouter, locationTransform);
+    super(mpNativeRouter.getLocation(), mpNativeRouter, locationTransform);
     this.nativeRouter = mpNativeRouter;
-    mpNativeRouter.onChange((url, key, action) => {
+    mpNativeRouter.onChange((url, query, key, action) => {
       if (key !== this.getCurKey()) {
         if (action === 'POP') {
           const index = this.history.getActionIndex(key);

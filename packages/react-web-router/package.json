@@ -46,8 +46,8 @@
   },
   "dependencies": {
     "@medux/core": "^2.0.0-beta.3.14",
-    "@medux/route-browser": "^2.0.0-beta.3.14",
-    "@medux/route-web": "^2.0.0-beta.3.14"
+    "@medux/route-web": "^2.0.0-beta.3.14",
+    "@medux/route-browser": "^2.0.0-beta.3.14"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }

@@ -1,6 +1,6 @@
 import {Middleware, Reducer} from 'redux';
 import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMergeState, mergeState, env, deepMerge} from '@medux/core';
-import {uriToLocation, History} from './basic';
+import {uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History} from './basic';
 
 import type {LocationTransform} from './transform';
 import type {RootParams, Location, NativeLocation, RouteState, HistoryAction, PayloadLocation, PartialLocation} from './basic';
@@ -93,18 +93,18 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
 
   private routeState: RouteState<P>;
 
-  private url: string;
+  private meduxUrl: string;
 
   protected store: Store | undefined;
 
   public readonly history: History;
 
-  constructor(nativeUrl: string, public nativeRouter: NativeRouter, protected locationTransform: LocationTransform<P>) {
-    const location = this.urlToLocation(nativeUrl);
+  constructor(nativeLocationOrNativeUrl: NativeLocation | string, public nativeRouter: NativeRouter, protected locationTransform: LocationTransform<P>) {
+    const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
@@ -123,8 +123,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return this.routeState.params;
   }
 
-  getUrl() {
-    return this.url;
+  getMeduxUrl() {
+    return this.meduxUrl;
   }
 
   getNativeLocation() {
@@ -159,24 +159,22 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   nativeUrlToNativeLocation(url: string): NativeLocation {
-    if (!url) {
-      return {
-        pathname: '/',
-        search: '',
-        hash: '',
-      };
-    }
-    const arr = url.split(/[?#]/);
-    if (arr.length === 2 && url.indexOf('?') < 0) {
-      arr.splice(1, 0, '');
-    }
-    const [path, search = '', hash = ''] = arr;
+    return nativeUrlToNativeLocation(url);
+  }
 
-    return {
-      pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
-      search,
-      hash,
-    };
+  nativeLocationToLocation(nativeLocation: NativeLocation): Location<P> {
+    let location: Location<P>;
+    try {
+      location = this.locationTransform.in(nativeLocation);
+    } catch (error) {
+      env.console.warn(error);
+      location = {pagename: '/', params: {}};
+    }
+    return location;
+  }
+
+  nativeUrlToLocation(nativeUrl: string): Location<P> {
+    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
   }
 
   urlToLocation(url: string): Location<P> {
@@ -199,8 +197,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   nativeLocationToNativeUrl(nativeLocation: NativeLocation): string {
-    const {pathname, search, hash} = nativeLocation;
-    return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+    return nativeLocationToNativeUrl(nativeLocation);
   }
 
   locationToNativeUrl(location: PartialLocation<P>): string {
@@ -208,7 +205,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return this.nativeLocationToNativeUrl(nativeLocation);
   }
 
-  locationToUrl(location: PartialLocation<P>): string {
+  locationToMeduxUrl(location: PartialLocation<P>): string {
     return [location.pagename, JSON.stringify(location.params || {})].join('?');
   }
 
@@ -234,7 +231,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
@@ -257,7 +254,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'PUSH', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
@@ -280,7 +277,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'REPLACE', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
@@ -302,7 +299,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'BACK', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
@@ -324,7 +321,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'POP', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     this.routeState = routeState;
-    this.url = this.locationToUrl(routeState);
+    this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {

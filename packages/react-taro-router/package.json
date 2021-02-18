@@ -1,8 +1,8 @@
 {
-  "name": "@medux/react-taro",
-  "version": "2.0.0-alpha.5",
+  "name": "@medux/react-taro-router",
+  "version": "2.0.0-beta.3.14",
   "description": "The practice of @medux/core in taro",
-  "repository": "https://github.com/wooline/medux/tree/master/packages/react-taro",
+  "repository": "https://github.com/wooline/medux/tree/master/packages/react-taro-router",
   "author": "wooline <wooline@qq.com>",
   "license": "MIT",
   "publishConfig": {
@@ -33,15 +33,13 @@
   },
   "peerDependencies": {
     "@tarojs/taro": "^3.0.0",
-    "@types/react": "^16.8.0",
-    "@types/react-redux": "^7.0.0",
-    "react": "^16.8.0",
-    "react-redux": "^7.0.0"
+    "@types/react-redux": "~7.0.0",
+    "react-redux": "~7.0.0"
   },
   "dependencies": {
-    "@babel/runtime": "~7.12.5",
-    "@medux/core": "^2.0.0-alpha.5",
-    "@medux/mini-program": "^2.0.0-alpha.5"
+    "@medux/core": "^2.0.0-beta.3.14",
+    "@medux/route-web": "^2.0.0-beta.3.14",
+    "@medux/route-mp": "^2.0.0-beta.3.14"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

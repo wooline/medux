@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {BaseRouter, NativeRouter, RootParams, LocationTransform} from '@medux/route-web';
-import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
+import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation, Action} from 'history';
 import {env} from '@medux/core';
 
 type UnregisterCallback = () => void;
@@ -51,7 +51,7 @@ export class BrowserNativeRouter implements NativeRouter {
     return [pathname, search, hash].join('');
   }
 
-  block(blocker: (url: string, key: string, action: 'PUSH' | 'POP' | 'REPLACE') => false | void) {
+  block(blocker: (url: string, key: string, action: Action) => false | void) {
     return this.history.block((location, action) => {
       const {pathname = '', search = '', hash = ''} = location;
       return blocker([pathname, search, hash].join(''), this.getKey(location), action);
