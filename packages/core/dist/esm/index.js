@@ -4,4 +4,4 @@ export { getActionData, setProcessedError, isProcessedError } from './store';
 export { CoreModuleHandlers, cacheModule, loadModel, getClientStore, exportModule, getView } from './inject';
 export { LoadingState, deepMerge } from './sprite';
 export { getRootModuleAPI, renderApp, renderSSR, modelHotReplacement, viewHotReplacement } from './module';
-export { env, client, isServerEnv } from './env';
+export { env } from './env';

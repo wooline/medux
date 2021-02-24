@@ -1,5 +1,5 @@
 import { deepMerge, TaskCountEvent, TaskCounter } from './sprite';
-import { env, isServerEnv } from './env';
+import { env } from './env';
 export var config = {
   NSP: '.',
   MSP: ',',
@@ -88,7 +88,7 @@ export function setLoading(item, moduleName, groupName) {
     groupName = 'global';
   }
 
-  if (isServerEnv) {
+  if (env.isServer) {
     return item;
   }
 
@@ -145,7 +145,7 @@ export function effect(loadingForGroupName, loadingForModuleName) {
 
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
-        if (!isServerEnv) {
+        if (!env.isServer) {
           if (loadingForModuleName === '') {
             loadingForModuleName = MetaData.appModuleName;
           } else if (!loadingForModuleName) {
@@ -212,17 +212,17 @@ export function isPromise(data) {
   return typeof data === 'object' && typeof data.then === 'function';
 }
 export function isServer() {
-  return isServerEnv;
+  return env.isServer;
 }
 export function serverSide(callback) {
-  if (isServerEnv) {
+  if (env.isServer) {
     return callback();
   }
 
   return undefined;
 }
 export function clientSide(callback) {
-  if (!isServerEnv) {
+  if (!env.isServer) {
     return callback();
   }
 

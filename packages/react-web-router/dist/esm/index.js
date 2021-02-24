@@ -1,6 +1,2078 @@
 import React, { useEffect, useState } from 'react';
 import { unmountComponentAtNode, hydrate, render } from 'react-dom';
 
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _inheritsLoose(subClass, superClass) {
+  subClass.prototype = Object.create(superClass.prototype);
+  subClass.prototype.constructor = subClass;
+  subClass.__proto__ = superClass;
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global || {};
+env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
+
+var TaskCountEvent = 'TaskCountEvent';
+var LoadingState;
+
+(function (LoadingState) {
+  LoadingState["Start"] = "Start";
+  LoadingState["Stop"] = "Stop";
+  LoadingState["Depth"] = "Depth";
+})(LoadingState || (LoadingState = {}));
+
+var PEvent = function () {
+  function PEvent(name, data, bubbling) {
+    if (bubbling === void 0) {
+      bubbling = false;
+    }
+
+    this.name = name;
+    this.data = data;
+    this.bubbling = bubbling;
+
+    _defineProperty(this, "target", null);
+
+    _defineProperty(this, "currentTarget", null);
+  }
+
+  var _proto = PEvent.prototype;
+
+  _proto.setTarget = function setTarget(target) {
+    this.target = target;
+  };
+
+  _proto.setCurrentTarget = function setCurrentTarget(target) {
+    this.currentTarget = target;
+  };
+
+  return PEvent;
+}();
+var PDispatcher = function () {
+  function PDispatcher(parent) {
+    this.parent = parent;
+
+    _defineProperty(this, "storeHandlers", {});
+  }
+
+  var _proto2 = PDispatcher.prototype;
+
+  _proto2.addListener = function addListener(ename, handler) {
+    var dictionary = this.storeHandlers[ename];
+
+    if (!dictionary) {
+      this.storeHandlers[ename] = dictionary = [];
+    }
+
+    dictionary.push(handler);
+    return this;
+  };
+
+  _proto2.removeListener = function removeListener(ename, handler) {
+    var _this = this;
+
+    if (!ename) {
+      Object.keys(this.storeHandlers).forEach(function (key) {
+        delete _this.storeHandlers[key];
+      });
+    } else {
+      var handlers = this.storeHandlers;
+
+      if (handlers.propertyIsEnumerable(ename)) {
+        var dictionary = handlers[ename];
+
+        if (!handler) {
+          delete handlers[ename];
+        } else {
+          var n = dictionary.indexOf(handler);
+
+          if (n > -1) {
+            dictionary.splice(n, 1);
+          }
+
+          if (dictionary.length === 0) {
+            delete handlers[ename];
+          }
+        }
+      }
+    }
+
+    return this;
+  };
+
+  _proto2.dispatch = function dispatch(evt) {
+    if (!evt.target) {
+      evt.setTarget(this);
+    }
+
+    evt.setCurrentTarget(this);
+    var dictionary = this.storeHandlers[evt.name];
+
+    if (dictionary) {
+      for (var i = 0, k = dictionary.length; i < k; i++) {
+        dictionary[i](evt);
+      }
+    }
+
+    if (this.parent && evt.bubbling) {
+      this.parent.dispatch(evt);
+    }
+
+    return this;
+  };
+
+  _proto2.setParent = function setParent(parent) {
+    this.parent = parent;
+    return this;
+  };
+
+  return PDispatcher;
+}();
+var TaskCounter = function (_PDispatcher) {
+  _inheritsLoose(TaskCounter, _PDispatcher);
+
+  function TaskCounter(deferSecond) {
+    var _this2;
+
+    _this2 = _PDispatcher.call(this) || this;
+    _this2.deferSecond = deferSecond;
+
+    _defineProperty(_assertThisInitialized(_this2), "list", []);
+
+    _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
+
+    return _this2;
+  }
+
+  var _proto3 = TaskCounter.prototype;
+
+  _proto3.addItem = function addItem(promise, note) {
+    var _this3 = this;
+
+    if (note === void 0) {
+      note = '';
+    }
+
+    if (!this.list.some(function (item) {
+      return item.promise === promise;
+    })) {
+      this.list.push({
+        promise: promise,
+        note: note
+      });
+      promise.then(function () {
+        return _this3.completeItem(promise);
+      }, function () {
+        return _this3.completeItem(promise);
+      });
+
+      if (this.list.length === 1) {
+        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
+        this.ctimer = env.setTimeout(function () {
+          _this3.ctimer = null;
+
+          if (_this3.list.length > 0) {
+            _this3.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
+          }
+        }, this.deferSecond * 1000);
+      }
+    }
+
+    return promise;
+  };
+
+  _proto3.completeItem = function completeItem(promise) {
+    var i = this.list.findIndex(function (item) {
+      return item.promise === promise;
+    });
+
+    if (i > -1) {
+      this.list.splice(i, 1);
+
+      if (this.list.length === 0) {
+        if (this.ctimer) {
+          env.clearTimeout.call(null, this.ctimer);
+          this.ctimer = null;
+        }
+
+        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
+      }
+    }
+
+    return this;
+  };
+
+  return TaskCounter;
+}(PDispatcher);
+function isPlainObject(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __deepMerge(optimize, target, inject) {
+  Object.keys(inject).forEach(function (key) {
+    var src = target[key];
+    var val = inject[key];
+
+    if (isPlainObject(val)) {
+      if (isPlainObject(src)) {
+        target[key] = __deepMerge(optimize, src, val);
+      } else {
+        target[key] = optimize ? val : __deepMerge(optimize, {}, val);
+      }
+    } else {
+      target[key] = val;
+    }
+  });
+  return target;
+}
+
+function deepMerge(target) {
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
+  }
+
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+
+  args = args.filter(function (item) {
+    return isPlainObject(item) && Object.keys(item).length;
+  });
+
+  if (args.length < 1) {
+    return target;
+  }
+
+  args.forEach(function (inject, index) {
+    if (isPlainObject(inject)) {
+      var lastArg = false;
+      var last2Arg = null;
+
+      if (index === args.length - 1) {
+        lastArg = true;
+      } else if (index === args.length - 2) {
+        last2Arg = args[index + 1];
+      }
+
+      Object.keys(inject).forEach(function (key) {
+        var src = target[key];
+        var val = inject[key];
+
+        if (isPlainObject(val)) {
+          if (isPlainObject(src)) {
+            target[key] = __deepMerge(lastArg, src, val);
+          } else {
+            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepMerge(lastArg, {}, val);
+          }
+        } else {
+          target[key] = val;
+        }
+      });
+    }
+  });
+  return target;
+}
+
+var config = {
+  NSP: '.',
+  MSP: ',',
+  MutableData: false,
+  DEVTOOLS: process.env.NODE_ENV === 'development'
+};
+function setConfig(_config) {
+  _config.NSP !== undefined && (config.NSP = _config.NSP);
+  _config.MSP !== undefined && (config.MSP = _config.MSP);
+  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
+  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
+}
+function warn(str) {
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+function deepMergeState(target) {
+  if (target === void 0) {
+    target = {};
+  }
+
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
+  }
+
+  if (config.MutableData) {
+    return deepMerge.apply(void 0, [target].concat(args));
+  }
+
+  return deepMerge.apply(void 0, [{}, target].concat(args));
+}
+function mergeState(target) {
+  if (target === void 0) {
+    target = {};
+  }
+
+  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    args[_key2 - 1] = arguments[_key2];
+  }
+
+  if (config.MutableData) {
+    return Object.assign.apply(Object, [target].concat(args));
+  }
+
+  return Object.assign.apply(Object, [{}, target].concat(args));
+}
+function snapshotState(target) {
+  if (config.MutableData) {
+    return JSON.parse(JSON.stringify(target));
+  }
+
+  return target;
+}
+var ActionTypes = {
+  MLoading: 'Loading',
+  MInit: 'Init',
+  MReInit: 'ReInit',
+  Error: "medux" + config.NSP + "Error"
+};
+var MetaData = {
+  appViewName: null,
+  facadeMap: null,
+  clientStore: null,
+  appModuleName: null,
+  moduleGetter: null,
+  currentData: {
+    actionName: '',
+    prevState: null
+  }
+};
+var loadings = {};
+var depthTime = 2;
+function setLoadingDepthTime(second) {
+  depthTime = second;
+}
+function setLoading(item, moduleName, groupName) {
+  if (moduleName === void 0) {
+    moduleName = MetaData.appModuleName;
+  }
+
+  if (groupName === void 0) {
+    groupName = 'global';
+  }
+
+  if (env.isServer) {
+    return item;
+  }
+
+  var key = moduleName + config.NSP + groupName;
+
+  if (!loadings[key]) {
+    loadings[key] = new TaskCounter(depthTime);
+    loadings[key].addListener(TaskCountEvent, function (e) {
+      var store = MetaData.clientStore;
+
+      if (store) {
+        var _actions;
+
+        var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
+
+        var _action = actions((_actions = {}, _actions[groupName] = e.data, _actions));
+
+        store.dispatch(_action);
+      }
+    });
+  }
+
+  loadings[key].addItem(item);
+  return item;
+}
+function reducer(target, key, descriptor) {
+  if (!key && !descriptor) {
+    key = target.key;
+    descriptor = target.descriptor;
+  }
+
+  var fun = descriptor.value;
+  fun.__actionName__ = key;
+  fun.__isReducer__ = true;
+  descriptor.enumerable = true;
+  return target.descriptor === descriptor ? target : descriptor;
+}
+function effect(loadingForGroupName, loadingForModuleName) {
+  if (loadingForGroupName === undefined) {
+    loadingForGroupName = 'global';
+    loadingForModuleName = MetaData.appModuleName || '';
+  }
+
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+    fun.__actionName__ = key;
+    fun.__isEffect__ = true;
+    descriptor.enumerable = true;
+
+    if (loadingForGroupName) {
+      var before = function before(curAction, moduleName, promiseResult) {
+        if (!env.isServer) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData.appModuleName;
+          } else if (!loadingForModuleName) {
+            loadingForModuleName = moduleName;
+          }
+
+          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+        }
+      };
+
+      if (!fun.__decorators__) {
+        fun.__decorators__ = [];
+      }
+
+      fun.__decorators__.push([before, null]);
+    }
+
+    return target.descriptor === descriptor ? target : descriptor;
+  };
+}
+function logger(before, after) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+
+    if (!fun.__decorators__) {
+      fun.__decorators__ = [];
+    }
+
+    fun.__decorators__.push([before, after]);
+  };
+}
+function delayPromise(second) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+
+    descriptor.value = function () {
+      var delay = new Promise(function (resolve) {
+        env.setTimeout(function () {
+          resolve(true);
+        }, second * 1000);
+      });
+
+      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
+      }
+
+      return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
+        return items[1];
+      });
+    };
+  };
+}
+function isPromise(data) {
+  return typeof data === 'object' && typeof data.then === 'function';
+}
+function isServer() {
+  return env.isServer;
+}
+function serverSide(callback) {
+  if (env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+function clientSide(callback) {
+  if (!env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+
+function errorAction(reason) {
+  return {
+    type: ActionTypes.Error,
+    payload: [reason]
+  };
+}
+function moduleInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MInit,
+    payload: [initState]
+  };
+}
+function moduleReInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MReInit,
+    payload: [initState]
+  };
+}
+
+function symbolObservablePonyfill(root) {
+  var result;
+  var Symbol = root.Symbol;
+
+  if (typeof Symbol === 'function') {
+    if (Symbol.observable) {
+      result = Symbol.observable;
+    } else {
+      result = Symbol('observable');
+      Symbol.observable = result;
+    }
+  } else {
+    result = '@@observable';
+  }
+
+  return result;
+}
+
+/* global window */
+var root;
+
+if (typeof self !== 'undefined') {
+  root = self;
+} else if (typeof window !== 'undefined') {
+  root = window;
+} else if (typeof global !== 'undefined') {
+  root = global;
+} else if (typeof module !== 'undefined') {
+  root = module;
+} else {
+  root = Function('return this')();
+}
+
+var result = symbolObservablePonyfill(root);
+
+/**
+ * These are private action types reserved by Redux.
+ * For any unknown actions, you must return the current state.
+ * If the current state is undefined, you must return the initial state.
+ * Do not reference these action types directly in your code.
+ */
+
+var randomString = function randomString() {
+  return Math.random().toString(36).substring(7).split('').join('.');
+};
+
+var ActionTypes$1 = {
+  INIT: "@@redux/INIT" + randomString(),
+  REPLACE: "@@redux/REPLACE" + randomString(),
+  PROBE_UNKNOWN_ACTION: function PROBE_UNKNOWN_ACTION() {
+    return "@@redux/PROBE_UNKNOWN_ACTION" + randomString();
+  }
+};
+/**
+ * @param {any} obj The object to inspect.
+ * @returns {boolean} True if the argument appears to be a plain object.
+ */
+
+function isPlainObject$1(obj) {
+  if (typeof obj !== 'object' || obj === null) return false;
+  var proto = obj;
+
+  while (Object.getPrototypeOf(proto) !== null) {
+    proto = Object.getPrototypeOf(proto);
+  }
+
+  return Object.getPrototypeOf(obj) === proto;
+}
+/**
+ * Creates a Redux store that holds the state tree.
+ * The only way to change the data in the store is to call `dispatch()` on it.
+ *
+ * There should only be a single store in your app. To specify how different
+ * parts of the state tree respond to actions, you may combine several reducers
+ * into a single reducer function by using `combineReducers`.
+ *
+ * @param {Function} reducer A function that returns the next state tree, given
+ * the current state tree and the action to handle.
+ *
+ * @param {any} [preloadedState] The initial state. You may optionally specify it
+ * to hydrate the state from the server in universal apps, or to restore a
+ * previously serialized user session.
+ * If you use `combineReducers` to produce the root reducer function, this must be
+ * an object with the same shape as `combineReducers` keys.
+ *
+ * @param {Function} [enhancer] The store enhancer. You may optionally specify it
+ * to enhance the store with third-party capabilities such as middleware,
+ * time travel, persistence, etc. The only store enhancer that ships with Redux
+ * is `applyMiddleware()`.
+ *
+ * @returns {Store} A Redux store that lets you read the state, dispatch actions
+ * and subscribe to changes.
+ */
+
+
+function createStore(reducer, preloadedState, enhancer) {
+  var _ref2;
+
+  if (typeof preloadedState === 'function' && typeof enhancer === 'function' || typeof enhancer === 'function' && typeof arguments[3] === 'function') {
+    throw new Error('It looks like you are passing several store enhancers to ' + 'createStore(). This is not supported. Instead, compose them ' + 'together to a single function.');
+  }
+
+  if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
+    enhancer = preloadedState;
+    preloadedState = undefined;
+  }
+
+  if (typeof enhancer !== 'undefined') {
+    if (typeof enhancer !== 'function') {
+      throw new Error('Expected the enhancer to be a function.');
+    }
+
+    return enhancer(createStore)(reducer, preloadedState);
+  }
+
+  if (typeof reducer !== 'function') {
+    throw new Error('Expected the reducer to be a function.');
+  }
+
+  var currentReducer = reducer;
+  var currentState = preloadedState;
+  var currentListeners = [];
+  var nextListeners = currentListeners;
+  var isDispatching = false;
+  /**
+   * This makes a shallow copy of currentListeners so we can use
+   * nextListeners as a temporary list while dispatching.
+   *
+   * This prevents any bugs around consumers calling
+   * subscribe/unsubscribe in the middle of a dispatch.
+   */
+
+  function ensureCanMutateNextListeners() {
+    if (nextListeners === currentListeners) {
+      nextListeners = currentListeners.slice();
+    }
+  }
+  /**
+   * Reads the state tree managed by the store.
+   *
+   * @returns {any} The current state tree of your application.
+   */
+
+
+  function getState() {
+    if (isDispatching) {
+      throw new Error('You may not call store.getState() while the reducer is executing. ' + 'The reducer has already received the state as an argument. ' + 'Pass it down from the top reducer instead of reading it from the store.');
+    }
+
+    return currentState;
+  }
+  /**
+   * Adds a change listener. It will be called any time an action is dispatched,
+   * and some part of the state tree may potentially have changed. You may then
+   * call `getState()` to read the current state tree inside the callback.
+   *
+   * You may call `dispatch()` from a change listener, with the following
+   * caveats:
+   *
+   * 1. The subscriptions are snapshotted just before every `dispatch()` call.
+   * If you subscribe or unsubscribe while the listeners are being invoked, this
+   * will not have any effect on the `dispatch()` that is currently in progress.
+   * However, the next `dispatch()` call, whether nested or not, will use a more
+   * recent snapshot of the subscription list.
+   *
+   * 2. The listener should not expect to see all state changes, as the state
+   * might have been updated multiple times during a nested `dispatch()` before
+   * the listener is called. It is, however, guaranteed that all subscribers
+   * registered before the `dispatch()` started will be called with the latest
+   * state by the time it exits.
+   *
+   * @param {Function} listener A callback to be invoked on every dispatch.
+   * @returns {Function} A function to remove this change listener.
+   */
+
+
+  function subscribe(listener) {
+    if (typeof listener !== 'function') {
+      throw new Error('Expected the listener to be a function.');
+    }
+
+    if (isDispatching) {
+      throw new Error('You may not call store.subscribe() while the reducer is executing. ' + 'If you would like to be notified after the store has been updated, subscribe from a ' + 'component and invoke store.getState() in the callback to access the latest state. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
+    }
+
+    var isSubscribed = true;
+    ensureCanMutateNextListeners();
+    nextListeners.push(listener);
+    return function unsubscribe() {
+      if (!isSubscribed) {
+        return;
+      }
+
+      if (isDispatching) {
+        throw new Error('You may not unsubscribe from a store listener while the reducer is executing. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
+      }
+
+      isSubscribed = false;
+      ensureCanMutateNextListeners();
+      var index = nextListeners.indexOf(listener);
+      nextListeners.splice(index, 1);
+      currentListeners = null;
+    };
+  }
+  /**
+   * Dispatches an action. It is the only way to trigger a state change.
+   *
+   * The `reducer` function, used to create the store, will be called with the
+   * current state tree and the given `action`. Its return value will
+   * be considered the **next** state of the tree, and the change listeners
+   * will be notified.
+   *
+   * The base implementation only supports plain object actions. If you want to
+   * dispatch a Promise, an Observable, a thunk, or something else, you need to
+   * wrap your store creating function into the corresponding middleware. For
+   * example, see the documentation for the `redux-thunk` package. Even the
+   * middleware will eventually dispatch plain object actions using this method.
+   *
+   * @param {Object} action A plain object representing “what changed”. It is
+   * a good idea to keep actions serializable so you can record and replay user
+   * sessions, or use the time travelling `redux-devtools`. An action must have
+   * a `type` property which may not be `undefined`. It is a good idea to use
+   * string constants for action types.
+   *
+   * @returns {Object} For convenience, the same action object you dispatched.
+   *
+   * Note that, if you use a custom middleware, it may wrap `dispatch()` to
+   * return something else (for example, a Promise you can await).
+   */
+
+
+  function dispatch(action) {
+    if (!isPlainObject$1(action)) {
+      throw new Error('Actions must be plain objects. ' + 'Use custom middleware for async actions.');
+    }
+
+    if (typeof action.type === 'undefined') {
+      throw new Error('Actions may not have an undefined "type" property. ' + 'Have you misspelled a constant?');
+    }
+
+    if (isDispatching) {
+      throw new Error('Reducers may not dispatch actions.');
+    }
+
+    try {
+      isDispatching = true;
+      currentState = currentReducer(currentState, action);
+    } finally {
+      isDispatching = false;
+    }
+
+    var listeners = currentListeners = nextListeners;
+
+    for (var i = 0; i < listeners.length; i++) {
+      var listener = listeners[i];
+      listener();
+    }
+
+    return action;
+  }
+  /**
+   * Replaces the reducer currently used by the store to calculate the state.
+   *
+   * You might need this if your app implements code splitting and you want to
+   * load some of the reducers dynamically. You might also need this if you
+   * implement a hot reloading mechanism for Redux.
+   *
+   * @param {Function} nextReducer The reducer for the store to use instead.
+   * @returns {void}
+   */
+
+
+  function replaceReducer(nextReducer) {
+    if (typeof nextReducer !== 'function') {
+      throw new Error('Expected the nextReducer to be a function.');
+    }
+
+    currentReducer = nextReducer; // This action has a similiar effect to ActionTypes.INIT.
+    // Any reducers that existed in both the new and old rootReducer
+    // will receive the previous state. This effectively populates
+    // the new state tree with any relevant data from the old one.
+
+    dispatch({
+      type: ActionTypes$1.REPLACE
+    });
+  }
+  /**
+   * Interoperability point for observable/reactive libraries.
+   * @returns {observable} A minimal observable of state changes.
+   * For more information, see the observable proposal:
+   * https://github.com/tc39/proposal-observable
+   */
+
+
+  function observable() {
+    var _ref;
+
+    var outerSubscribe = subscribe;
+    return _ref = {
+      /**
+       * The minimal observable subscription method.
+       * @param {Object} observer Any object that can be used as an observer.
+       * The observer object should have a `next` method.
+       * @returns {subscription} An object with an `unsubscribe` method that can
+       * be used to unsubscribe the observable from the store, and prevent further
+       * emission of values from the observable.
+       */
+      subscribe: function subscribe(observer) {
+        if (typeof observer !== 'object' || observer === null) {
+          throw new TypeError('Expected the observer to be an object.');
+        }
+
+        function observeState() {
+          if (observer.next) {
+            observer.next(getState());
+          }
+        }
+
+        observeState();
+        var unsubscribe = outerSubscribe(observeState);
+        return {
+          unsubscribe: unsubscribe
+        };
+      }
+    }, _ref[result] = function () {
+      return this;
+    }, _ref;
+  } // When a store is created, an "INIT" action is dispatched so that every
+  // reducer returns their initial state. This effectively populates
+  // the initial state tree.
+
+
+  dispatch({
+    type: ActionTypes$1.INIT
+  });
+  return _ref2 = {
+    dispatch: dispatch,
+    subscribe: subscribe,
+    getState: getState,
+    replaceReducer: replaceReducer
+  }, _ref2[result] = observable, _ref2;
+}
+/**
+ * Prints a warning in the console if it exists.
+ *
+ * @param {String} message The warning message.
+ * @returns {void}
+ */
+
+
+function warning(message) {
+  /* eslint-disable no-console */
+  if (typeof console !== 'undefined' && typeof console.error === 'function') {
+    console.error(message);
+  }
+  /* eslint-enable no-console */
+
+
+  try {
+    // This error was thrown as a convenience so that if you enable
+    // "break on all exceptions" in your console,
+    // it would pause the execution at this line.
+    throw new Error(message);
+  } catch (e) {} // eslint-disable-line no-empty
+
+}
+
+function _defineProperty$1(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    keys.push.apply(keys, Object.getOwnPropertySymbols(object));
+  }
+
+  if (enumerableOnly) keys = keys.filter(function (sym) {
+    return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+  });
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(source, true).forEach(function (key) {
+        _defineProperty$1(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(source).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
+/**
+ * Composes single-argument functions from right to left. The rightmost
+ * function can take multiple arguments as it provides the signature for
+ * the resulting composite function.
+ *
+ * @param {...Function} funcs The functions to compose.
+ * @returns {Function} A function obtained by composing the argument functions
+ * from right to left. For example, compose(f, g, h) is identical to doing
+ * (...args) => f(g(h(...args))).
+ */
+
+
+function compose() {
+  for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
+    funcs[_key] = arguments[_key];
+  }
+
+  if (funcs.length === 0) {
+    return function (arg) {
+      return arg;
+    };
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0];
+  }
+
+  return funcs.reduce(function (a, b) {
+    return function () {
+      return a(b.apply(void 0, arguments));
+    };
+  });
+}
+/**
+ * Creates a store enhancer that applies middleware to the dispatch method
+ * of the Redux store. This is handy for a variety of tasks, such as expressing
+ * asynchronous actions in a concise manner, or logging every action payload.
+ *
+ * See `redux-thunk` package as an example of the Redux middleware.
+ *
+ * Because middleware is potentially asynchronous, this should be the first
+ * store enhancer in the composition chain.
+ *
+ * Note that each middleware will be given the `dispatch` and `getState` functions
+ * as named arguments.
+ *
+ * @param {...Function} middlewares The middleware chain to be applied.
+ * @returns {Function} A store enhancer applying the middleware.
+ */
+
+
+function applyMiddleware() {
+  for (var _len = arguments.length, middlewares = new Array(_len), _key = 0; _key < _len; _key++) {
+    middlewares[_key] = arguments[_key];
+  }
+
+  return function (createStore) {
+    return function () {
+      var store = createStore.apply(void 0, arguments);
+
+      var _dispatch = function dispatch() {
+        throw new Error('Dispatching while constructing your middleware is not allowed. ' + 'Other middleware would not be applied to this dispatch.');
+      };
+
+      var middlewareAPI = {
+        getState: store.getState,
+        dispatch: function dispatch() {
+          return _dispatch.apply(void 0, arguments);
+        }
+      };
+      var chain = middlewares.map(function (middleware) {
+        return middleware(middlewareAPI);
+      });
+      _dispatch = compose.apply(void 0, chain)(store.dispatch);
+      return _objectSpread2({}, store, {
+        dispatch: _dispatch
+      });
+    };
+  };
+}
+/*
+ * This is a dummy function to check if the function name has been altered by minification.
+ * If the function has been minified and NODE_ENV !== 'production', warn the user.
+ */
+
+
+function isCrushed() {}
+
+if (process.env.NODE_ENV !== 'production' && typeof isCrushed.name === 'string' && isCrushed.name !== 'isCrushed') {
+  warning('You are currently using minified code outside of NODE_ENV === "production". ' + 'This means that you are running a slower development build of Redux. ' + 'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' + 'or setting mode to production in webpack (https://webpack.js.org/concepts/mode/) ' + 'to ensure you have the correct code for your production build.');
+}
+
+function _arrayWithHoles(arr) {
+  if (Array.isArray(arr)) return arr;
+}
+
+function _iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+}
+
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) {
+    arr2[i] = arr[i];
+  }
+
+  return arr2;
+}
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(o);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+}
+
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+
+function _toArray(arr) {
+  return _arrayWithHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableRest();
+}
+
+function _typeof(obj) {
+  "@babel/helpers - typeof";
+
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    _typeof = function _typeof(obj) {
+      return typeof obj;
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+  }
+
+  return _typeof(obj);
+}
+
+function _toPrimitive(input, hint) {
+  if (_typeof(input) !== "object" || input === null) return input;
+  var prim = input[Symbol.toPrimitive];
+
+  if (prim !== undefined) {
+    var res = prim.call(input, hint || "default");
+    if (_typeof(res) !== "object") return res;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+
+  return (hint === "string" ? String : Number)(input);
+}
+
+function _toPropertyKey(arg) {
+  var key = _toPrimitive(arg, "string");
+  return _typeof(key) === "symbol" ? key : String(key);
+}
+
+function _decorate(decorators, factory, superClass, mixins) {
+  var api = _getDecoratorsApi();
+
+  if (mixins) {
+    for (var i = 0; i < mixins.length; i++) {
+      api = mixins[i](api);
+    }
+  }
+
+  var r = factory(function initialize(O) {
+    api.initializeInstanceElements(O, decorated.elements);
+  }, superClass);
+  var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators);
+  api.initializeClassElements(r.F, decorated.elements);
+  return api.runClassFinishers(r.F, decorated.finishers);
+}
+
+function _getDecoratorsApi() {
+  _getDecoratorsApi = function _getDecoratorsApi() {
+    return api;
+  };
+
+  var api = {
+    elementsDefinitionOrder: [["method"], ["field"]],
+    initializeInstanceElements: function initializeInstanceElements(O, elements) {
+      ["method", "field"].forEach(function (kind) {
+        elements.forEach(function (element) {
+          if (element.kind === kind && element.placement === "own") {
+            this.defineClassElement(O, element);
+          }
+        }, this);
+      }, this);
+    },
+    initializeClassElements: function initializeClassElements(F, elements) {
+      var proto = F.prototype;
+      ["method", "field"].forEach(function (kind) {
+        elements.forEach(function (element) {
+          var placement = element.placement;
+
+          if (element.kind === kind && (placement === "static" || placement === "prototype")) {
+            var receiver = placement === "static" ? F : proto;
+            this.defineClassElement(receiver, element);
+          }
+        }, this);
+      }, this);
+    },
+    defineClassElement: function defineClassElement(receiver, element) {
+      var descriptor = element.descriptor;
+
+      if (element.kind === "field") {
+        var initializer = element.initializer;
+        descriptor = {
+          enumerable: descriptor.enumerable,
+          writable: descriptor.writable,
+          configurable: descriptor.configurable,
+          value: initializer === void 0 ? void 0 : initializer.call(receiver)
+        };
+      }
+
+      Object.defineProperty(receiver, element.key, descriptor);
+    },
+    decorateClass: function decorateClass(elements, decorators) {
+      var newElements = [];
+      var finishers = [];
+      var placements = {
+        "static": [],
+        prototype: [],
+        own: []
+      };
+      elements.forEach(function (element) {
+        this.addElementPlacement(element, placements);
+      }, this);
+      elements.forEach(function (element) {
+        if (!_hasDecorators(element)) return newElements.push(element);
+        var elementFinishersExtras = this.decorateElement(element, placements);
+        newElements.push(elementFinishersExtras.element);
+        newElements.push.apply(newElements, elementFinishersExtras.extras);
+        finishers.push.apply(finishers, elementFinishersExtras.finishers);
+      }, this);
+
+      if (!decorators) {
+        return {
+          elements: newElements,
+          finishers: finishers
+        };
+      }
+
+      var result = this.decorateConstructor(newElements, decorators);
+      finishers.push.apply(finishers, result.finishers);
+      result.finishers = finishers;
+      return result;
+    },
+    addElementPlacement: function addElementPlacement(element, placements, silent) {
+      var keys = placements[element.placement];
+
+      if (!silent && keys.indexOf(element.key) !== -1) {
+        throw new TypeError("Duplicated element (" + element.key + ")");
+      }
+
+      keys.push(element.key);
+    },
+    decorateElement: function decorateElement(element, placements) {
+      var extras = [];
+      var finishers = [];
+
+      for (var decorators = element.decorators, i = decorators.length - 1; i >= 0; i--) {
+        var keys = placements[element.placement];
+        keys.splice(keys.indexOf(element.key), 1);
+        var elementObject = this.fromElementDescriptor(element);
+        var elementFinisherExtras = this.toElementFinisherExtras((0, decorators[i])(elementObject) || elementObject);
+        element = elementFinisherExtras.element;
+        this.addElementPlacement(element, placements);
+
+        if (elementFinisherExtras.finisher) {
+          finishers.push(elementFinisherExtras.finisher);
+        }
+
+        var newExtras = elementFinisherExtras.extras;
+
+        if (newExtras) {
+          for (var j = 0; j < newExtras.length; j++) {
+            this.addElementPlacement(newExtras[j], placements);
+          }
+
+          extras.push.apply(extras, newExtras);
+        }
+      }
+
+      return {
+        element: element,
+        finishers: finishers,
+        extras: extras
+      };
+    },
+    decorateConstructor: function decorateConstructor(elements, decorators) {
+      var finishers = [];
+
+      for (var i = decorators.length - 1; i >= 0; i--) {
+        var obj = this.fromClassDescriptor(elements);
+        var elementsAndFinisher = this.toClassDescriptor((0, decorators[i])(obj) || obj);
+
+        if (elementsAndFinisher.finisher !== undefined) {
+          finishers.push(elementsAndFinisher.finisher);
+        }
+
+        if (elementsAndFinisher.elements !== undefined) {
+          elements = elementsAndFinisher.elements;
+
+          for (var j = 0; j < elements.length - 1; j++) {
+            for (var k = j + 1; k < elements.length; k++) {
+              if (elements[j].key === elements[k].key && elements[j].placement === elements[k].placement) {
+                throw new TypeError("Duplicated element (" + elements[j].key + ")");
+              }
+            }
+          }
+        }
+      }
+
+      return {
+        elements: elements,
+        finishers: finishers
+      };
+    },
+    fromElementDescriptor: function fromElementDescriptor(element) {
+      var obj = {
+        kind: element.kind,
+        key: element.key,
+        placement: element.placement,
+        descriptor: element.descriptor
+      };
+      var desc = {
+        value: "Descriptor",
+        configurable: true
+      };
+      Object.defineProperty(obj, Symbol.toStringTag, desc);
+      if (element.kind === "field") obj.initializer = element.initializer;
+      return obj;
+    },
+    toElementDescriptors: function toElementDescriptors(elementObjects) {
+      if (elementObjects === undefined) return;
+      return _toArray(elementObjects).map(function (elementObject) {
+        var element = this.toElementDescriptor(elementObject);
+        this.disallowProperty(elementObject, "finisher", "An element descriptor");
+        this.disallowProperty(elementObject, "extras", "An element descriptor");
+        return element;
+      }, this);
+    },
+    toElementDescriptor: function toElementDescriptor(elementObject) {
+      var kind = String(elementObject.kind);
+
+      if (kind !== "method" && kind !== "field") {
+        throw new TypeError('An element descriptor\'s .kind property must be either "method" or' + ' "field", but a decorator created an element descriptor with' + ' .kind "' + kind + '"');
+      }
+
+      var key = _toPropertyKey(elementObject.key);
+      var placement = String(elementObject.placement);
+
+      if (placement !== "static" && placement !== "prototype" && placement !== "own") {
+        throw new TypeError('An element descriptor\'s .placement property must be one of "static",' + ' "prototype" or "own", but a decorator created an element descriptor' + ' with .placement "' + placement + '"');
+      }
+
+      var descriptor = elementObject.descriptor;
+      this.disallowProperty(elementObject, "elements", "An element descriptor");
+      var element = {
+        kind: kind,
+        key: key,
+        placement: placement,
+        descriptor: Object.assign({}, descriptor)
+      };
+
+      if (kind !== "field") {
+        this.disallowProperty(elementObject, "initializer", "A method descriptor");
+      } else {
+        this.disallowProperty(descriptor, "get", "The property descriptor of a field descriptor");
+        this.disallowProperty(descriptor, "set", "The property descriptor of a field descriptor");
+        this.disallowProperty(descriptor, "value", "The property descriptor of a field descriptor");
+        element.initializer = elementObject.initializer;
+      }
+
+      return element;
+    },
+    toElementFinisherExtras: function toElementFinisherExtras(elementObject) {
+      var element = this.toElementDescriptor(elementObject);
+
+      var finisher = _optionalCallableProperty(elementObject, "finisher");
+
+      var extras = this.toElementDescriptors(elementObject.extras);
+      return {
+        element: element,
+        finisher: finisher,
+        extras: extras
+      };
+    },
+    fromClassDescriptor: function fromClassDescriptor(elements) {
+      var obj = {
+        kind: "class",
+        elements: elements.map(this.fromElementDescriptor, this)
+      };
+      var desc = {
+        value: "Descriptor",
+        configurable: true
+      };
+      Object.defineProperty(obj, Symbol.toStringTag, desc);
+      return obj;
+    },
+    toClassDescriptor: function toClassDescriptor(obj) {
+      var kind = String(obj.kind);
+
+      if (kind !== "class") {
+        throw new TypeError('A class descriptor\'s .kind property must be "class", but a decorator' + ' created a class descriptor with .kind "' + kind + '"');
+      }
+
+      this.disallowProperty(obj, "key", "A class descriptor");
+      this.disallowProperty(obj, "placement", "A class descriptor");
+      this.disallowProperty(obj, "descriptor", "A class descriptor");
+      this.disallowProperty(obj, "initializer", "A class descriptor");
+      this.disallowProperty(obj, "extras", "A class descriptor");
+
+      var finisher = _optionalCallableProperty(obj, "finisher");
+
+      var elements = this.toElementDescriptors(obj.elements);
+      return {
+        elements: elements,
+        finisher: finisher
+      };
+    },
+    runClassFinishers: function runClassFinishers(constructor, finishers) {
+      for (var i = 0; i < finishers.length; i++) {
+        var newConstructor = (0, finishers[i])(constructor);
+
+        if (newConstructor !== undefined) {
+          if (typeof newConstructor !== "function") {
+            throw new TypeError("Finishers must return a constructor.");
+          }
+
+          constructor = newConstructor;
+        }
+      }
+
+      return constructor;
+    },
+    disallowProperty: function disallowProperty(obj, name, objectType) {
+      if (obj[name] !== undefined) {
+        throw new TypeError(objectType + " can't have a ." + name + " property.");
+      }
+    }
+  };
+  return api;
+}
+
+function _createElementDescriptor(def) {
+  var key = _toPropertyKey(def.key);
+  var descriptor;
+
+  if (def.kind === "method") {
+    descriptor = {
+      value: def.value,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    };
+  } else if (def.kind === "get") {
+    descriptor = {
+      get: def.value,
+      configurable: true,
+      enumerable: false
+    };
+  } else if (def.kind === "set") {
+    descriptor = {
+      set: def.value,
+      configurable: true,
+      enumerable: false
+    };
+  } else if (def.kind === "field") {
+    descriptor = {
+      configurable: true,
+      writable: true,
+      enumerable: true
+    };
+  }
+
+  var element = {
+    kind: def.kind === "field" ? "field" : "method",
+    key: key,
+    placement: def["static"] ? "static" : def.kind === "field" ? "own" : "prototype",
+    descriptor: descriptor
+  };
+  if (def.decorators) element.decorators = def.decorators;
+  if (def.kind === "field") element.initializer = def.value;
+  return element;
+}
+
+function _coalesceGetterSetter(element, other) {
+  if (element.descriptor.get !== undefined) {
+    other.descriptor.get = element.descriptor.get;
+  } else {
+    other.descriptor.set = element.descriptor.set;
+  }
+}
+
+function _coalesceClassElements(elements) {
+  var newElements = [];
+
+  var isSameElement = function isSameElement(other) {
+    return other.kind === "method" && other.key === element.key && other.placement === element.placement;
+  };
+
+  for (var i = 0; i < elements.length; i++) {
+    var element = elements[i];
+    var other;
+
+    if (element.kind === "method" && (other = newElements.find(isSameElement))) {
+      if (_isDataDescriptor(element.descriptor) || _isDataDescriptor(other.descriptor)) {
+        if (_hasDecorators(element) || _hasDecorators(other)) {
+          throw new ReferenceError("Duplicated methods (" + element.key + ") can't be decorated.");
+        }
+
+        other.descriptor = element.descriptor;
+      } else {
+        if (_hasDecorators(element)) {
+          if (_hasDecorators(other)) {
+            throw new ReferenceError("Decorators can't be placed on different accessors with for " + "the same property (" + element.key + ").");
+          }
+
+          other.decorators = element.decorators;
+        }
+
+        _coalesceGetterSetter(element, other);
+      }
+    } else {
+      newElements.push(element);
+    }
+  }
+
+  return newElements;
+}
+
+function _hasDecorators(element) {
+  return element.decorators && element.decorators.length;
+}
+
+function _isDataDescriptor(desc) {
+  return desc !== undefined && !(desc.value === undefined && desc.writable === undefined);
+}
+
+function _optionalCallableProperty(obj, name) {
+  var value = obj[name];
+
+  if (value !== undefined && typeof value !== "function") {
+    throw new TypeError("Expected '" + name + "' to be a function");
+  }
+
+  return value;
+}
+
+function cacheModule(module) {
+  var moduleName = module.default.moduleName;
+  var moduleGetter = MetaData.moduleGetter;
+  var fn = moduleGetter[moduleName];
+
+  if (fn.__module__ === module) {
+    return fn;
+  }
+
+  fn = function fn() {
+    return module;
+  };
+
+  fn.__module__ = module;
+  moduleGetter[moduleName] = fn;
+  return fn;
+}
+
+function bindThis(fun, thisObj) {
+  var newFun = fun.bind(thisObj);
+  Object.keys(fun).forEach(function (key) {
+    newFun[key] = fun[key];
+  });
+  return newFun;
+}
+
+function transformAction(actionName, action, listenerModule, actionHandlerMap) {
+  if (!actionHandlerMap[actionName]) {
+    actionHandlerMap[actionName] = {};
+  }
+
+  if (actionHandlerMap[actionName][listenerModule]) {
+    throw new Error("Action duplicate or conflict : " + actionName + ".");
+  }
+
+  actionHandlerMap[actionName][listenerModule] = action;
+}
+
+function injectActions(store, moduleName, handlers) {
+  for (var actionNames in handlers) {
+    if (typeof handlers[actionNames] === 'function') {
+      (function () {
+        var handler = handlers[actionNames];
+
+        if (handler.__isReducer__ || handler.__isEffect__) {
+          handler = bindThis(handler, handlers);
+          actionNames.split(config.MSP).forEach(function (actionName) {
+            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
+            var arr = actionName.split(config.NSP);
+
+            if (arr[1]) {
+              handler.__isHandler__ = true;
+              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            } else {
+              handler.__isHandler__ = false;
+              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            }
+          });
+        }
+      })();
+    }
+  }
+}
+
+function _loadModel(moduleName, store) {
+  var hasInjected = !!store._medux_.injectedModules[moduleName];
+
+  if (!hasInjected) {
+    var moduleGetter = MetaData.moduleGetter;
+
+    if (!moduleGetter[moduleName]) {
+      return undefined;
+    }
+
+    var result = moduleGetter[moduleName]();
+
+    if (isPromise(result)) {
+      return result.then(function (module) {
+        cacheModule(module);
+        return module.default.model(store);
+      });
+    }
+
+    cacheModule(result);
+    return result.default.model(store);
+  }
+
+  return undefined;
+}
+var CoreModuleHandlers = _decorate(null, function (_initialize) {
+  var CoreModuleHandlers = function CoreModuleHandlers(initState) {
+    this.initState = initState;
+
+    _initialize(this);
+  };
+
+  return {
+    F: CoreModuleHandlers,
+    d: [{
+      kind: "field",
+      key: "actions",
+      value: function value() {
+        return null;
+      }
+    }, {
+      kind: "field",
+      key: "store",
+      value: function value() {
+        return null;
+      }
+    }, {
+      kind: "field",
+      key: "moduleName",
+      value: function value() {
+        return '';
+      }
+    }, {
+      kind: "get",
+      key: "state",
+      value: function state() {
+        return this.store._medux_.realtimeState[this.moduleName];
+      }
+    }, {
+      kind: "get",
+      key: "rootState",
+      value: function rootState() {
+        return this.store._medux_.realtimeState;
+      }
+    }, {
+      kind: "method",
+      key: "getCurrentActionName",
+      value: function getCurrentActionName() {
+        return MetaData.currentData.actionName;
+      }
+    }, {
+      kind: "get",
+      key: "prevRootState",
+      value: function prevRootState() {
+        return MetaData.currentData.prevState;
+      }
+    }, {
+      kind: "get",
+      key: "prevState",
+      value: function prevState() {
+        return MetaData.currentData.prevState[this.moduleName];
+      }
+    }, {
+      kind: "method",
+      key: "dispatch",
+      value: function dispatch(action) {
+        return this.store.dispatch(action);
+      }
+    }, {
+      kind: "method",
+      key: "loadModel",
+      value: function loadModel(moduleName) {
+        return _loadModel(moduleName, this.store);
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
+      key: "Init",
+      value: function Init(initState) {
+        return initState;
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
+      key: "Update",
+      value: function Update(payload, key) {
+        return mergeState(this.state, payload);
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
+      key: "Loading",
+      value: function Loading(payload) {
+        var loading = mergeState(this.state.loading, payload);
+        return mergeState(this.state, {
+          loading: loading
+        });
+      }
+    }]
+  };
+});
+var exportModule = function exportModule(moduleName, ModuleHandles, views) {
+  var model = function model(store) {
+    var hasInjected = store._medux_.injectedModules[moduleName];
+
+    if (!hasInjected) {
+      store._medux_.injectedModules[moduleName] = true;
+      var moduleHandles = new ModuleHandles();
+      moduleHandles.moduleName = moduleName;
+      moduleHandles.store = store;
+      moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
+      var _initState = moduleHandles.initState;
+      injectActions(store, moduleName, moduleHandles);
+      var preModuleState = store.getState()[moduleName] || {};
+      var moduleState = Object.assign({}, _initState, preModuleState);
+
+      if (moduleState.initialized) {
+        return store.dispatch(moduleReInitAction(moduleName, moduleState));
+      }
+
+      moduleState.initialized = true;
+      return store.dispatch(moduleInitAction(moduleName, moduleState));
+    }
+
+    return undefined;
+  };
+
+  return {
+    moduleName: moduleName,
+    model: model,
+    views: views,
+    initState: undefined,
+    actions: undefined
+  };
+};
+function getView(moduleName, viewName) {
+  var moduleGetter = MetaData.moduleGetter;
+  var result = moduleGetter[moduleName]();
+
+  if (isPromise(result)) {
+    return result.then(function (module) {
+      cacheModule(module);
+      var view = module.default.views[viewName];
+
+      if (env.isServer) {
+        return view;
+      }
+
+      var initModel = module.default.model(MetaData.clientStore);
+
+      if (isPromise(initModel)) {
+        return initModel.then(function () {
+          return view;
+        });
+      }
+
+      return view;
+    });
+  }
+
+  cacheModule(result);
+  var view = result.default.views[viewName];
+
+  if (env.isServer) {
+    return view;
+  }
+
+  var initModel = result.default.model(MetaData.clientStore);
+
+  if (isPromise(initModel)) {
+    return initModel.then(function () {
+      return view;
+    });
+  }
+
+  return view;
+}
+function getModuleByName(moduleName, moduleGetter) {
+  var result = moduleGetter[moduleName]();
+
+  if (isPromise(result)) {
+    return result.then(function (module) {
+      cacheModule(module);
+      return module;
+    });
+  }
+
+  cacheModule(result);
+  return result;
+}
+
+function getActionData(action) {
+  return Array.isArray(action.payload) ? action.payload : [];
+}
+function isProcessedError(error) {
+  return error && !!error.__meduxProcessed__;
+}
+function setProcessedError(error, meduxProcessed) {
+  if (typeof error !== 'object') {
+    error = {
+      message: error
+    };
+  }
+
+  Object.defineProperty(error, '__meduxProcessed__', {
+    value: meduxProcessed,
+    enumerable: false,
+    writable: true
+  });
+  return error;
+}
+function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
+  if (preloadedState === void 0) {
+    preloadedState = {};
+  }
+
+  if (storeReducers === void 0) {
+    storeReducers = {};
+  }
+
+  if (storeMiddlewares === void 0) {
+    storeMiddlewares = [];
+  }
+
+  if (storeEnhancers === void 0) {
+    storeEnhancers = [];
+  }
+
+  if (MetaData.clientStore) {
+    MetaData.clientStore.destroy();
+  }
+
+  var store;
+
+  var combineReducers = function combineReducers(state, action) {
+    if (!store) {
+      return state;
+    }
+
+    var meta = store._medux_;
+    var currentState = meta.currentState;
+    var realtimeState = meta.realtimeState;
+    Object.keys(storeReducers).forEach(function (moduleName) {
+      var node = storeReducers[moduleName](state[moduleName], action);
+
+      if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
+        warn('Use rewrite instead of replace to update state in MutableData');
+      }
+
+      realtimeState[moduleName] = node;
+    });
+    var handlersCommon = meta.reducerMap[action.type] || {};
+    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+    var handlers = Object.assign({}, handlersCommon, handlersEvery);
+    var handlerModules = Object.keys(handlers);
+
+    if (handlerModules.length > 0) {
+      var orderList = [];
+      var priority = action.priority ? [].concat(action.priority) : [];
+      var actionData = getActionData(action);
+      handlerModules.forEach(function (moduleName) {
+        var fun = handlers[moduleName];
+
+        if (moduleName === MetaData.appModuleName) {
+          orderList.unshift(moduleName);
+        } else {
+          orderList.push(moduleName);
+        }
+
+        if (!fun.__isHandler__) {
+          priority.unshift(moduleName);
+        }
+      });
+      orderList.unshift.apply(orderList, priority);
+      var moduleNameMap = {};
+      orderList.forEach(function (moduleName) {
+        if (!moduleNameMap[moduleName]) {
+          moduleNameMap[moduleName] = true;
+          var fun = handlers[moduleName];
+          MetaData.currentData = {
+            actionName: action.type,
+            prevState: currentState
+          };
+          var node = fun.apply(void 0, actionData);
+
+          if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
+            warn('Use rewrite instead of replace to update state in MutableData');
+          }
+
+          realtimeState[moduleName] = node;
+        }
+      });
+    }
+
+    return realtimeState;
+  };
+
+  var middleware = function middleware(_ref) {
+    var dispatch = _ref.dispatch;
+    return function (next) {
+      return function (originalAction) {
+        if (originalAction.type === ActionTypes.Error) {
+          var actionData = getActionData(originalAction);
+
+          if (isProcessedError(actionData[0])) {
+            return originalAction;
+          }
+
+          actionData[0] = setProcessedError(actionData[0], true);
+        }
+
+        if (env.isServer) {
+          if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
+            return originalAction;
+          }
+        }
+
+        var meta = store._medux_;
+        var rootState = store.getState();
+        meta.realtimeState = mergeState(rootState);
+        meta.currentState = snapshotState(rootState);
+        var currentState = meta.currentState;
+        var action = next(originalAction);
+        var handlersCommon = meta.effectMap[action.type] || {};
+        var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
+        var handlers = Object.assign({}, handlersCommon, handlersEvery);
+        var handlerModules = Object.keys(handlers);
+
+        if (handlerModules.length > 0) {
+          var _actionData = getActionData(action);
+
+          var orderList = [];
+          var priority = action.priority ? [].concat(action.priority) : [];
+          handlerModules.forEach(function (moduleName) {
+            var fun = handlers[moduleName];
+
+            if (moduleName === MetaData.appModuleName) {
+              orderList.unshift(moduleName);
+            } else {
+              orderList.push(moduleName);
+            }
+
+            if (!fun.__isHandler__) {
+              priority.unshift(moduleName);
+            }
+          });
+          orderList.unshift.apply(orderList, priority);
+          var moduleNameMap = {};
+          var promiseResults = [];
+          orderList.forEach(function (moduleName) {
+            if (!moduleNameMap[moduleName]) {
+              moduleNameMap[moduleName] = true;
+              var fun = handlers[moduleName];
+              MetaData.currentData = {
+                actionName: action.type,
+                prevState: currentState
+              };
+              var effectResult = fun.apply(void 0, _actionData);
+              var decorators = fun.__decorators__;
+
+              if (decorators) {
+                var results = [];
+                decorators.forEach(function (decorator, index) {
+                  results[index] = decorator[0](action, moduleName, effectResult);
+                });
+                fun.__decoratorResults__ = results;
+              }
+
+              var errorHandler = effectResult.then(function (reslove) {
+                if (decorators) {
+                  var _results = fun.__decoratorResults__ || [];
+
+                  decorators.forEach(function (decorator, index) {
+                    if (decorator[1]) {
+                      decorator[1]('Resolved', _results[index], reslove);
+                    }
+                  });
+                  fun.__decoratorResults__ = undefined;
+                }
+
+                return reslove;
+              }, function (reason) {
+                if (decorators) {
+                  var _results2 = fun.__decoratorResults__ || [];
+
+                  decorators.forEach(function (decorator, index) {
+                    if (decorator[1]) {
+                      decorator[1]('Rejected', _results2[index], reason);
+                    }
+                  });
+                  fun.__decoratorResults__ = undefined;
+                }
+
+                if (isProcessedError(reason)) {
+                  throw reason;
+                } else {
+                  reason = setProcessedError(reason, false);
+                  return dispatch(errorAction(reason));
+                }
+              });
+              promiseResults.push(errorHandler);
+            }
+          });
+
+          if (promiseResults.length) {
+            return Promise.all(promiseResults);
+          }
+        }
+
+        return action;
+      };
+    };
+  };
+
+  var preLoadMiddleware = function preLoadMiddleware() {
+    return function (next) {
+      return function (action) {
+        var _action$type$split = action.type.split(config.NSP),
+            moduleName = _action$type$split[0],
+            actionName = _action$type$split[1];
+
+        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+          var hasInjected = store._medux_.injectedModules[moduleName];
+
+          if (!hasInjected) {
+            if (actionName === ActionTypes.MInit) {
+              return _loadModel(moduleName, store);
+            }
+
+            var initModel = _loadModel(moduleName, store);
+
+            if (isPromise(initModel)) {
+              return initModel.then(function () {
+                return next(action);
+              });
+            }
+          }
+        }
+
+        return next(action);
+      };
+    };
+  };
+
+  var middlewareEnhancer = applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
+
+  var enhancer = function enhancer(newCreateStore) {
+    return function () {
+      var newStore = newCreateStore.apply(void 0, arguments);
+      var moduleStore = newStore;
+      moduleStore._medux_ = {
+        realtimeState: {},
+        currentState: {},
+        reducerMap: {},
+        effectMap: {},
+        injectedModules: {}
+      };
+      return newStore;
+    };
+  };
+
+  var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
+
+  if (config.DEVTOOLS && env.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  }
+
+  store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
+
+  store.destroy = function () {
+    return undefined;
+  };
+
+  if (!env.isServer) {
+    MetaData.clientStore = store;
+  }
+
+  return store;
+}
+
 function createCommonjsModule(fn, basedir, module) {
 	return module = {
 		path: basedir,
@@ -777,2095 +2849,6 @@ function _asyncToGenerator(fn) {
   };
 }
 
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-function _inheritsLoose(subClass, superClass) {
-  subClass.prototype = Object.create(superClass.prototype);
-  subClass.prototype.constructor = subClass;
-  subClass.__proto__ = superClass;
-}
-
-function _arrayWithHoles(arr) {
-  if (Array.isArray(arr)) return arr;
-}
-
-function _iterableToArray(iter) {
-  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
-}
-
-function _arrayLikeToArray(arr, len) {
-  if (len == null || len > arr.length) len = arr.length;
-
-  for (var i = 0, arr2 = new Array(len); i < len; i++) {
-    arr2[i] = arr[i];
-  }
-
-  return arr2;
-}
-
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n = Object.prototype.toString.call(o).slice(8, -1);
-  if (n === "Object" && o.constructor) n = o.constructor.name;
-  if (n === "Map" || n === "Set") return Array.from(o);
-  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-}
-
-function _nonIterableRest() {
-  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-}
-
-function _toArray(arr) {
-  return _arrayWithHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableRest();
-}
-
-function _typeof(obj) {
-  "@babel/helpers - typeof";
-
-  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-    _typeof = function _typeof(obj) {
-      return typeof obj;
-    };
-  } else {
-    _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-  }
-
-  return _typeof(obj);
-}
-
-function _toPrimitive(input, hint) {
-  if (_typeof(input) !== "object" || input === null) return input;
-  var prim = input[Symbol.toPrimitive];
-
-  if (prim !== undefined) {
-    var res = prim.call(input, hint || "default");
-    if (_typeof(res) !== "object") return res;
-    throw new TypeError("@@toPrimitive must return a primitive value.");
-  }
-
-  return (hint === "string" ? String : Number)(input);
-}
-
-function _toPropertyKey(arg) {
-  var key = _toPrimitive(arg, "string");
-  return _typeof(key) === "symbol" ? key : String(key);
-}
-
-function _decorate(decorators, factory, superClass, mixins) {
-  var api = _getDecoratorsApi();
-
-  if (mixins) {
-    for (var i = 0; i < mixins.length; i++) {
-      api = mixins[i](api);
-    }
-  }
-
-  var r = factory(function initialize(O) {
-    api.initializeInstanceElements(O, decorated.elements);
-  }, superClass);
-  var decorated = api.decorateClass(_coalesceClassElements(r.d.map(_createElementDescriptor)), decorators);
-  api.initializeClassElements(r.F, decorated.elements);
-  return api.runClassFinishers(r.F, decorated.finishers);
-}
-
-function _getDecoratorsApi() {
-  _getDecoratorsApi = function _getDecoratorsApi() {
-    return api;
-  };
-
-  var api = {
-    elementsDefinitionOrder: [["method"], ["field"]],
-    initializeInstanceElements: function initializeInstanceElements(O, elements) {
-      ["method", "field"].forEach(function (kind) {
-        elements.forEach(function (element) {
-          if (element.kind === kind && element.placement === "own") {
-            this.defineClassElement(O, element);
-          }
-        }, this);
-      }, this);
-    },
-    initializeClassElements: function initializeClassElements(F, elements) {
-      var proto = F.prototype;
-      ["method", "field"].forEach(function (kind) {
-        elements.forEach(function (element) {
-          var placement = element.placement;
-
-          if (element.kind === kind && (placement === "static" || placement === "prototype")) {
-            var receiver = placement === "static" ? F : proto;
-            this.defineClassElement(receiver, element);
-          }
-        }, this);
-      }, this);
-    },
-    defineClassElement: function defineClassElement(receiver, element) {
-      var descriptor = element.descriptor;
-
-      if (element.kind === "field") {
-        var initializer = element.initializer;
-        descriptor = {
-          enumerable: descriptor.enumerable,
-          writable: descriptor.writable,
-          configurable: descriptor.configurable,
-          value: initializer === void 0 ? void 0 : initializer.call(receiver)
-        };
-      }
-
-      Object.defineProperty(receiver, element.key, descriptor);
-    },
-    decorateClass: function decorateClass(elements, decorators) {
-      var newElements = [];
-      var finishers = [];
-      var placements = {
-        "static": [],
-        prototype: [],
-        own: []
-      };
-      elements.forEach(function (element) {
-        this.addElementPlacement(element, placements);
-      }, this);
-      elements.forEach(function (element) {
-        if (!_hasDecorators(element)) return newElements.push(element);
-        var elementFinishersExtras = this.decorateElement(element, placements);
-        newElements.push(elementFinishersExtras.element);
-        newElements.push.apply(newElements, elementFinishersExtras.extras);
-        finishers.push.apply(finishers, elementFinishersExtras.finishers);
-      }, this);
-
-      if (!decorators) {
-        return {
-          elements: newElements,
-          finishers: finishers
-        };
-      }
-
-      var result = this.decorateConstructor(newElements, decorators);
-      finishers.push.apply(finishers, result.finishers);
-      result.finishers = finishers;
-      return result;
-    },
-    addElementPlacement: function addElementPlacement(element, placements, silent) {
-      var keys = placements[element.placement];
-
-      if (!silent && keys.indexOf(element.key) !== -1) {
-        throw new TypeError("Duplicated element (" + element.key + ")");
-      }
-
-      keys.push(element.key);
-    },
-    decorateElement: function decorateElement(element, placements) {
-      var extras = [];
-      var finishers = [];
-
-      for (var decorators = element.decorators, i = decorators.length - 1; i >= 0; i--) {
-        var keys = placements[element.placement];
-        keys.splice(keys.indexOf(element.key), 1);
-        var elementObject = this.fromElementDescriptor(element);
-        var elementFinisherExtras = this.toElementFinisherExtras((0, decorators[i])(elementObject) || elementObject);
-        element = elementFinisherExtras.element;
-        this.addElementPlacement(element, placements);
-
-        if (elementFinisherExtras.finisher) {
-          finishers.push(elementFinisherExtras.finisher);
-        }
-
-        var newExtras = elementFinisherExtras.extras;
-
-        if (newExtras) {
-          for (var j = 0; j < newExtras.length; j++) {
-            this.addElementPlacement(newExtras[j], placements);
-          }
-
-          extras.push.apply(extras, newExtras);
-        }
-      }
-
-      return {
-        element: element,
-        finishers: finishers,
-        extras: extras
-      };
-    },
-    decorateConstructor: function decorateConstructor(elements, decorators) {
-      var finishers = [];
-
-      for (var i = decorators.length - 1; i >= 0; i--) {
-        var obj = this.fromClassDescriptor(elements);
-        var elementsAndFinisher = this.toClassDescriptor((0, decorators[i])(obj) || obj);
-
-        if (elementsAndFinisher.finisher !== undefined) {
-          finishers.push(elementsAndFinisher.finisher);
-        }
-
-        if (elementsAndFinisher.elements !== undefined) {
-          elements = elementsAndFinisher.elements;
-
-          for (var j = 0; j < elements.length - 1; j++) {
-            for (var k = j + 1; k < elements.length; k++) {
-              if (elements[j].key === elements[k].key && elements[j].placement === elements[k].placement) {
-                throw new TypeError("Duplicated element (" + elements[j].key + ")");
-              }
-            }
-          }
-        }
-      }
-
-      return {
-        elements: elements,
-        finishers: finishers
-      };
-    },
-    fromElementDescriptor: function fromElementDescriptor(element) {
-      var obj = {
-        kind: element.kind,
-        key: element.key,
-        placement: element.placement,
-        descriptor: element.descriptor
-      };
-      var desc = {
-        value: "Descriptor",
-        configurable: true
-      };
-      Object.defineProperty(obj, Symbol.toStringTag, desc);
-      if (element.kind === "field") obj.initializer = element.initializer;
-      return obj;
-    },
-    toElementDescriptors: function toElementDescriptors(elementObjects) {
-      if (elementObjects === undefined) return;
-      return _toArray(elementObjects).map(function (elementObject) {
-        var element = this.toElementDescriptor(elementObject);
-        this.disallowProperty(elementObject, "finisher", "An element descriptor");
-        this.disallowProperty(elementObject, "extras", "An element descriptor");
-        return element;
-      }, this);
-    },
-    toElementDescriptor: function toElementDescriptor(elementObject) {
-      var kind = String(elementObject.kind);
-
-      if (kind !== "method" && kind !== "field") {
-        throw new TypeError('An element descriptor\'s .kind property must be either "method" or' + ' "field", but a decorator created an element descriptor with' + ' .kind "' + kind + '"');
-      }
-
-      var key = _toPropertyKey(elementObject.key);
-      var placement = String(elementObject.placement);
-
-      if (placement !== "static" && placement !== "prototype" && placement !== "own") {
-        throw new TypeError('An element descriptor\'s .placement property must be one of "static",' + ' "prototype" or "own", but a decorator created an element descriptor' + ' with .placement "' + placement + '"');
-      }
-
-      var descriptor = elementObject.descriptor;
-      this.disallowProperty(elementObject, "elements", "An element descriptor");
-      var element = {
-        kind: kind,
-        key: key,
-        placement: placement,
-        descriptor: Object.assign({}, descriptor)
-      };
-
-      if (kind !== "field") {
-        this.disallowProperty(elementObject, "initializer", "A method descriptor");
-      } else {
-        this.disallowProperty(descriptor, "get", "The property descriptor of a field descriptor");
-        this.disallowProperty(descriptor, "set", "The property descriptor of a field descriptor");
-        this.disallowProperty(descriptor, "value", "The property descriptor of a field descriptor");
-        element.initializer = elementObject.initializer;
-      }
-
-      return element;
-    },
-    toElementFinisherExtras: function toElementFinisherExtras(elementObject) {
-      var element = this.toElementDescriptor(elementObject);
-
-      var finisher = _optionalCallableProperty(elementObject, "finisher");
-
-      var extras = this.toElementDescriptors(elementObject.extras);
-      return {
-        element: element,
-        finisher: finisher,
-        extras: extras
-      };
-    },
-    fromClassDescriptor: function fromClassDescriptor(elements) {
-      var obj = {
-        kind: "class",
-        elements: elements.map(this.fromElementDescriptor, this)
-      };
-      var desc = {
-        value: "Descriptor",
-        configurable: true
-      };
-      Object.defineProperty(obj, Symbol.toStringTag, desc);
-      return obj;
-    },
-    toClassDescriptor: function toClassDescriptor(obj) {
-      var kind = String(obj.kind);
-
-      if (kind !== "class") {
-        throw new TypeError('A class descriptor\'s .kind property must be "class", but a decorator' + ' created a class descriptor with .kind "' + kind + '"');
-      }
-
-      this.disallowProperty(obj, "key", "A class descriptor");
-      this.disallowProperty(obj, "placement", "A class descriptor");
-      this.disallowProperty(obj, "descriptor", "A class descriptor");
-      this.disallowProperty(obj, "initializer", "A class descriptor");
-      this.disallowProperty(obj, "extras", "A class descriptor");
-
-      var finisher = _optionalCallableProperty(obj, "finisher");
-
-      var elements = this.toElementDescriptors(obj.elements);
-      return {
-        elements: elements,
-        finisher: finisher
-      };
-    },
-    runClassFinishers: function runClassFinishers(constructor, finishers) {
-      for (var i = 0; i < finishers.length; i++) {
-        var newConstructor = (0, finishers[i])(constructor);
-
-        if (newConstructor !== undefined) {
-          if (typeof newConstructor !== "function") {
-            throw new TypeError("Finishers must return a constructor.");
-          }
-
-          constructor = newConstructor;
-        }
-      }
-
-      return constructor;
-    },
-    disallowProperty: function disallowProperty(obj, name, objectType) {
-      if (obj[name] !== undefined) {
-        throw new TypeError(objectType + " can't have a ." + name + " property.");
-      }
-    }
-  };
-  return api;
-}
-
-function _createElementDescriptor(def) {
-  var key = _toPropertyKey(def.key);
-  var descriptor;
-
-  if (def.kind === "method") {
-    descriptor = {
-      value: def.value,
-      writable: true,
-      configurable: true,
-      enumerable: false
-    };
-  } else if (def.kind === "get") {
-    descriptor = {
-      get: def.value,
-      configurable: true,
-      enumerable: false
-    };
-  } else if (def.kind === "set") {
-    descriptor = {
-      set: def.value,
-      configurable: true,
-      enumerable: false
-    };
-  } else if (def.kind === "field") {
-    descriptor = {
-      configurable: true,
-      writable: true,
-      enumerable: true
-    };
-  }
-
-  var element = {
-    kind: def.kind === "field" ? "field" : "method",
-    key: key,
-    placement: def["static"] ? "static" : def.kind === "field" ? "own" : "prototype",
-    descriptor: descriptor
-  };
-  if (def.decorators) element.decorators = def.decorators;
-  if (def.kind === "field") element.initializer = def.value;
-  return element;
-}
-
-function _coalesceGetterSetter(element, other) {
-  if (element.descriptor.get !== undefined) {
-    other.descriptor.get = element.descriptor.get;
-  } else {
-    other.descriptor.set = element.descriptor.set;
-  }
-}
-
-function _coalesceClassElements(elements) {
-  var newElements = [];
-
-  var isSameElement = function isSameElement(other) {
-    return other.kind === "method" && other.key === element.key && other.placement === element.placement;
-  };
-
-  for (var i = 0; i < elements.length; i++) {
-    var element = elements[i];
-    var other;
-
-    if (element.kind === "method" && (other = newElements.find(isSameElement))) {
-      if (_isDataDescriptor(element.descriptor) || _isDataDescriptor(other.descriptor)) {
-        if (_hasDecorators(element) || _hasDecorators(other)) {
-          throw new ReferenceError("Duplicated methods (" + element.key + ") can't be decorated.");
-        }
-
-        other.descriptor = element.descriptor;
-      } else {
-        if (_hasDecorators(element)) {
-          if (_hasDecorators(other)) {
-            throw new ReferenceError("Decorators can't be placed on different accessors with for " + "the same property (" + element.key + ").");
-          }
-
-          other.decorators = element.decorators;
-        }
-
-        _coalesceGetterSetter(element, other);
-      }
-    } else {
-      newElements.push(element);
-    }
-  }
-
-  return newElements;
-}
-
-function _hasDecorators(element) {
-  return element.decorators && element.decorators.length;
-}
-
-function _isDataDescriptor(desc) {
-  return desc !== undefined && !(desc.value === undefined && desc.writable === undefined);
-}
-
-function _optionalCallableProperty(obj, name) {
-  var value = obj[name];
-
-  if (value !== undefined && typeof value !== "function") {
-    throw new TypeError("Expected '" + name + "' to be a function");
-  }
-
-  return value;
-}
-
-var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global;
-var isServerEnv = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
-var client = isServerEnv ? undefined : env;
-
-env.encodeBas64 = function (str) {
-  if (!str) {
-    return '';
-  }
-
-  return typeof btoa === 'function' ? btoa(str) : typeof Buffer !== 'undefined' ? Buffer.from(str).toString('base64') : str;
-};
-
-env.decodeBas64 = function (str) {
-  if (!str) {
-    return '';
-  }
-
-  return typeof atob === 'function' ? atob(str) : typeof Buffer !== 'undefined' ? Buffer.from(str, 'base64').toString() : str;
-};
-
-var TaskCountEvent = 'TaskCountEvent';
-var LoadingState;
-
-(function (LoadingState) {
-  LoadingState["Start"] = "Start";
-  LoadingState["Stop"] = "Stop";
-  LoadingState["Depth"] = "Depth";
-})(LoadingState || (LoadingState = {}));
-
-var PEvent = function () {
-  function PEvent(name, data, bubbling) {
-    if (bubbling === void 0) {
-      bubbling = false;
-    }
-
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
-
-    _defineProperty(this, "target", null);
-
-    _defineProperty(this, "currentTarget", null);
-  }
-
-  var _proto = PEvent.prototype;
-
-  _proto.setTarget = function setTarget(target) {
-    this.target = target;
-  };
-
-  _proto.setCurrentTarget = function setCurrentTarget(target) {
-    this.currentTarget = target;
-  };
-
-  return PEvent;
-}();
-var PDispatcher = function () {
-  function PDispatcher(parent) {
-    this.parent = parent;
-
-    _defineProperty(this, "storeHandlers", {});
-  }
-
-  var _proto2 = PDispatcher.prototype;
-
-  _proto2.addListener = function addListener(ename, handler) {
-    var dictionary = this.storeHandlers[ename];
-
-    if (!dictionary) {
-      this.storeHandlers[ename] = dictionary = [];
-    }
-
-    dictionary.push(handler);
-    return this;
-  };
-
-  _proto2.removeListener = function removeListener(ename, handler) {
-    var _this = this;
-
-    if (!ename) {
-      Object.keys(this.storeHandlers).forEach(function (key) {
-        delete _this.storeHandlers[key];
-      });
-    } else {
-      var handlers = this.storeHandlers;
-
-      if (handlers.propertyIsEnumerable(ename)) {
-        var dictionary = handlers[ename];
-
-        if (!handler) {
-          delete handlers[ename];
-        } else {
-          var n = dictionary.indexOf(handler);
-
-          if (n > -1) {
-            dictionary.splice(n, 1);
-          }
-
-          if (dictionary.length === 0) {
-            delete handlers[ename];
-          }
-        }
-      }
-    }
-
-    return this;
-  };
-
-  _proto2.dispatch = function dispatch(evt) {
-    if (!evt.target) {
-      evt.setTarget(this);
-    }
-
-    evt.setCurrentTarget(this);
-    var dictionary = this.storeHandlers[evt.name];
-
-    if (dictionary) {
-      for (var i = 0, k = dictionary.length; i < k; i++) {
-        dictionary[i](evt);
-      }
-    }
-
-    if (this.parent && evt.bubbling) {
-      this.parent.dispatch(evt);
-    }
-
-    return this;
-  };
-
-  _proto2.setParent = function setParent(parent) {
-    this.parent = parent;
-    return this;
-  };
-
-  return PDispatcher;
-}();
-var TaskCounter = function (_PDispatcher) {
-  _inheritsLoose(TaskCounter, _PDispatcher);
-
-  function TaskCounter(deferSecond) {
-    var _this2;
-
-    _this2 = _PDispatcher.call(this) || this;
-    _this2.deferSecond = deferSecond;
-
-    _defineProperty(_assertThisInitialized(_this2), "list", []);
-
-    _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
-
-    return _this2;
-  }
-
-  var _proto3 = TaskCounter.prototype;
-
-  _proto3.addItem = function addItem(promise, note) {
-    var _this3 = this;
-
-    if (note === void 0) {
-      note = '';
-    }
-
-    if (!this.list.some(function (item) {
-      return item.promise === promise;
-    })) {
-      this.list.push({
-        promise: promise,
-        note: note
-      });
-      promise.then(function () {
-        return _this3.completeItem(promise);
-      }, function () {
-        return _this3.completeItem(promise);
-      });
-
-      if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
-        this.ctimer = env.setTimeout(function () {
-          _this3.ctimer = null;
-
-          if (_this3.list.length > 0) {
-            _this3.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
-          }
-        }, this.deferSecond * 1000);
-      }
-    }
-
-    return promise;
-  };
-
-  _proto3.completeItem = function completeItem(promise) {
-    var i = this.list.findIndex(function (item) {
-      return item.promise === promise;
-    });
-
-    if (i > -1) {
-      this.list.splice(i, 1);
-
-      if (this.list.length === 0) {
-        if (this.ctimer) {
-          env.clearTimeout.call(null, this.ctimer);
-          this.ctimer = null;
-        }
-
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
-      }
-    }
-
-    return this;
-  };
-
-  return TaskCounter;
-}(PDispatcher);
-function isPlainObject(obj) {
-  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
-}
-
-function __deepMerge(optimize, target, inject) {
-  Object.keys(inject).forEach(function (key) {
-    var src = target[key];
-    var val = inject[key];
-
-    if (isPlainObject(val)) {
-      if (isPlainObject(src)) {
-        target[key] = __deepMerge(optimize, src, val);
-      } else {
-        target[key] = optimize ? val : __deepMerge(optimize, {}, val);
-      }
-    } else {
-      target[key] = val;
-    }
-  });
-  return target;
-}
-
-function deepMerge(target) {
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
-  }
-
-  if (!isPlainObject(target)) {
-    target = {};
-  }
-
-  args = args.filter(function (item) {
-    return isPlainObject(item) && Object.keys(item).length;
-  });
-
-  if (args.length < 1) {
-    return target;
-  }
-
-  args.forEach(function (inject, index) {
-    if (isPlainObject(inject)) {
-      var lastArg = false;
-      var last2Arg = null;
-
-      if (index === args.length - 1) {
-        lastArg = true;
-      } else if (index === args.length - 2) {
-        last2Arg = args[index + 1];
-      }
-
-      Object.keys(inject).forEach(function (key) {
-        var src = target[key];
-        var val = inject[key];
-
-        if (isPlainObject(val)) {
-          if (isPlainObject(src)) {
-            target[key] = __deepMerge(lastArg, src, val);
-          } else {
-            target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepMerge(lastArg, {}, val);
-          }
-        } else {
-          target[key] = val;
-        }
-      });
-    }
-  });
-  return target;
-}
-
-var config = {
-  NSP: '.',
-  MSP: ',',
-  MutableData: false,
-  DEVTOOLS: process.env.NODE_ENV === 'development'
-};
-function setConfig(_config) {
-  _config.NSP !== undefined && (config.NSP = _config.NSP);
-  _config.MSP !== undefined && (config.MSP = _config.MSP);
-  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
-  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
-}
-function warn(str) {
-  if (process.env.NODE_ENV === 'development') {
-    env.console.warn(str);
-  }
-}
-function deepMergeState(target) {
-  if (target === void 0) {
-    target = {};
-  }
-
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
-  }
-
-  if (config.MutableData) {
-    return deepMerge.apply(void 0, [target].concat(args));
-  }
-
-  return deepMerge.apply(void 0, [{}, target].concat(args));
-}
-function mergeState(target) {
-  if (target === void 0) {
-    target = {};
-  }
-
-  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-    args[_key2 - 1] = arguments[_key2];
-  }
-
-  if (config.MutableData) {
-    return Object.assign.apply(Object, [target].concat(args));
-  }
-
-  return Object.assign.apply(Object, [{}, target].concat(args));
-}
-function snapshotState(target) {
-  if (config.MutableData) {
-    return JSON.parse(JSON.stringify(target));
-  }
-
-  return target;
-}
-var ActionTypes = {
-  MLoading: 'Loading',
-  MInit: 'Init',
-  MReInit: 'ReInit',
-  Error: "medux" + config.NSP + "Error"
-};
-var MetaData = {
-  appViewName: null,
-  facadeMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null,
-  currentData: {
-    actionName: '',
-    prevState: null
-  }
-};
-var loadings = {};
-var depthTime = 2;
-function setLoadingDepthTime(second) {
-  depthTime = second;
-}
-function setLoading(item, moduleName, groupName) {
-  if (moduleName === void 0) {
-    moduleName = MetaData.appModuleName;
-  }
-
-  if (groupName === void 0) {
-    groupName = 'global';
-  }
-
-  if (isServerEnv) {
-    return item;
-  }
-
-  var key = moduleName + config.NSP + groupName;
-
-  if (!loadings[key]) {
-    loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, function (e) {
-      var store = MetaData.clientStore;
-
-      if (store) {
-        var _actions;
-
-        var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
-
-        var _action = actions((_actions = {}, _actions[groupName] = e.data, _actions));
-
-        store.dispatch(_action);
-      }
-    });
-  }
-
-  loadings[key].addItem(item);
-  return item;
-}
-function reducer(target, key, descriptor) {
-  if (!key && !descriptor) {
-    key = target.key;
-    descriptor = target.descriptor;
-  }
-
-  var fun = descriptor.value;
-  fun.__actionName__ = key;
-  fun.__isReducer__ = true;
-  descriptor.enumerable = true;
-  return target.descriptor === descriptor ? target : descriptor;
-}
-function effect(loadingForGroupName, loadingForModuleName) {
-  if (loadingForGroupName === undefined) {
-    loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName || '';
-  }
-
-  return function (target, key, descriptor) {
-    if (!key && !descriptor) {
-      key = target.key;
-      descriptor = target.descriptor;
-    }
-
-    var fun = descriptor.value;
-    fun.__actionName__ = key;
-    fun.__isEffect__ = true;
-    descriptor.enumerable = true;
-
-    if (loadingForGroupName) {
-      var before = function before(curAction, moduleName, promiseResult) {
-        if (!isServerEnv) {
-          if (loadingForModuleName === '') {
-            loadingForModuleName = MetaData.appModuleName;
-          } else if (!loadingForModuleName) {
-            loadingForModuleName = moduleName;
-          }
-
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
-        }
-      };
-
-      if (!fun.__decorators__) {
-        fun.__decorators__ = [];
-      }
-
-      fun.__decorators__.push([before, null]);
-    }
-
-    return target.descriptor === descriptor ? target : descriptor;
-  };
-}
-function logger(before, after) {
-  return function (target, key, descriptor) {
-    if (!key && !descriptor) {
-      key = target.key;
-      descriptor = target.descriptor;
-    }
-
-    var fun = descriptor.value;
-
-    if (!fun.__decorators__) {
-      fun.__decorators__ = [];
-    }
-
-    fun.__decorators__.push([before, after]);
-  };
-}
-function delayPromise(second) {
-  return function (target, key, descriptor) {
-    if (!key && !descriptor) {
-      key = target.key;
-      descriptor = target.descriptor;
-    }
-
-    var fun = descriptor.value;
-
-    descriptor.value = function () {
-      var delay = new Promise(function (resolve) {
-        env.setTimeout(function () {
-          resolve(true);
-        }, second * 1000);
-      });
-
-      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
-      }
-
-      return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
-        return items[1];
-      });
-    };
-  };
-}
-function isPromise(data) {
-  return typeof data === 'object' && typeof data.then === 'function';
-}
-function isServer() {
-  return isServerEnv;
-}
-function serverSide(callback) {
-  if (isServerEnv) {
-    return callback();
-  }
-
-  return undefined;
-}
-function clientSide(callback) {
-  if (!isServerEnv) {
-    return callback();
-  }
-
-  return undefined;
-}
-
-function errorAction(reason) {
-  return {
-    type: ActionTypes.Error,
-    payload: [reason]
-  };
-}
-function moduleInitAction(moduleName, initState) {
-  return {
-    type: "" + moduleName + config.NSP + ActionTypes.MInit,
-    payload: [initState]
-  };
-}
-function moduleReInitAction(moduleName, initState) {
-  return {
-    type: "" + moduleName + config.NSP + ActionTypes.MReInit,
-    payload: [initState]
-  };
-}
-
-function symbolObservablePonyfill(root) {
-  var result;
-  var Symbol = root.Symbol;
-
-  if (typeof Symbol === 'function') {
-    if (Symbol.observable) {
-      result = Symbol.observable;
-    } else {
-      result = Symbol('observable');
-      Symbol.observable = result;
-    }
-  } else {
-    result = '@@observable';
-  }
-
-  return result;
-}
-
-/* global window */
-var root;
-
-if (typeof self !== 'undefined') {
-  root = self;
-} else if (typeof window !== 'undefined') {
-  root = window;
-} else if (typeof global !== 'undefined') {
-  root = global;
-} else if (typeof module !== 'undefined') {
-  root = module;
-} else {
-  root = Function('return this')();
-}
-
-var result = symbolObservablePonyfill(root);
-
-/**
- * These are private action types reserved by Redux.
- * For any unknown actions, you must return the current state.
- * If the current state is undefined, you must return the initial state.
- * Do not reference these action types directly in your code.
- */
-
-var randomString = function randomString() {
-  return Math.random().toString(36).substring(7).split('').join('.');
-};
-
-var ActionTypes$1 = {
-  INIT: "@@redux/INIT" + randomString(),
-  REPLACE: "@@redux/REPLACE" + randomString(),
-  PROBE_UNKNOWN_ACTION: function PROBE_UNKNOWN_ACTION() {
-    return "@@redux/PROBE_UNKNOWN_ACTION" + randomString();
-  }
-};
-/**
- * @param {any} obj The object to inspect.
- * @returns {boolean} True if the argument appears to be a plain object.
- */
-
-function isPlainObject$1(obj) {
-  if (typeof obj !== 'object' || obj === null) return false;
-  var proto = obj;
-
-  while (Object.getPrototypeOf(proto) !== null) {
-    proto = Object.getPrototypeOf(proto);
-  }
-
-  return Object.getPrototypeOf(obj) === proto;
-}
-/**
- * Creates a Redux store that holds the state tree.
- * The only way to change the data in the store is to call `dispatch()` on it.
- *
- * There should only be a single store in your app. To specify how different
- * parts of the state tree respond to actions, you may combine several reducers
- * into a single reducer function by using `combineReducers`.
- *
- * @param {Function} reducer A function that returns the next state tree, given
- * the current state tree and the action to handle.
- *
- * @param {any} [preloadedState] The initial state. You may optionally specify it
- * to hydrate the state from the server in universal apps, or to restore a
- * previously serialized user session.
- * If you use `combineReducers` to produce the root reducer function, this must be
- * an object with the same shape as `combineReducers` keys.
- *
- * @param {Function} [enhancer] The store enhancer. You may optionally specify it
- * to enhance the store with third-party capabilities such as middleware,
- * time travel, persistence, etc. The only store enhancer that ships with Redux
- * is `applyMiddleware()`.
- *
- * @returns {Store} A Redux store that lets you read the state, dispatch actions
- * and subscribe to changes.
- */
-
-
-function createStore(reducer, preloadedState, enhancer) {
-  var _ref2;
-
-  if (typeof preloadedState === 'function' && typeof enhancer === 'function' || typeof enhancer === 'function' && typeof arguments[3] === 'function') {
-    throw new Error('It looks like you are passing several store enhancers to ' + 'createStore(). This is not supported. Instead, compose them ' + 'together to a single function.');
-  }
-
-  if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
-    enhancer = preloadedState;
-    preloadedState = undefined;
-  }
-
-  if (typeof enhancer !== 'undefined') {
-    if (typeof enhancer !== 'function') {
-      throw new Error('Expected the enhancer to be a function.');
-    }
-
-    return enhancer(createStore)(reducer, preloadedState);
-  }
-
-  if (typeof reducer !== 'function') {
-    throw new Error('Expected the reducer to be a function.');
-  }
-
-  var currentReducer = reducer;
-  var currentState = preloadedState;
-  var currentListeners = [];
-  var nextListeners = currentListeners;
-  var isDispatching = false;
-  /**
-   * This makes a shallow copy of currentListeners so we can use
-   * nextListeners as a temporary list while dispatching.
-   *
-   * This prevents any bugs around consumers calling
-   * subscribe/unsubscribe in the middle of a dispatch.
-   */
-
-  function ensureCanMutateNextListeners() {
-    if (nextListeners === currentListeners) {
-      nextListeners = currentListeners.slice();
-    }
-  }
-  /**
-   * Reads the state tree managed by the store.
-   *
-   * @returns {any} The current state tree of your application.
-   */
-
-
-  function getState() {
-    if (isDispatching) {
-      throw new Error('You may not call store.getState() while the reducer is executing. ' + 'The reducer has already received the state as an argument. ' + 'Pass it down from the top reducer instead of reading it from the store.');
-    }
-
-    return currentState;
-  }
-  /**
-   * Adds a change listener. It will be called any time an action is dispatched,
-   * and some part of the state tree may potentially have changed. You may then
-   * call `getState()` to read the current state tree inside the callback.
-   *
-   * You may call `dispatch()` from a change listener, with the following
-   * caveats:
-   *
-   * 1. The subscriptions are snapshotted just before every `dispatch()` call.
-   * If you subscribe or unsubscribe while the listeners are being invoked, this
-   * will not have any effect on the `dispatch()` that is currently in progress.
-   * However, the next `dispatch()` call, whether nested or not, will use a more
-   * recent snapshot of the subscription list.
-   *
-   * 2. The listener should not expect to see all state changes, as the state
-   * might have been updated multiple times during a nested `dispatch()` before
-   * the listener is called. It is, however, guaranteed that all subscribers
-   * registered before the `dispatch()` started will be called with the latest
-   * state by the time it exits.
-   *
-   * @param {Function} listener A callback to be invoked on every dispatch.
-   * @returns {Function} A function to remove this change listener.
-   */
-
-
-  function subscribe(listener) {
-    if (typeof listener !== 'function') {
-      throw new Error('Expected the listener to be a function.');
-    }
-
-    if (isDispatching) {
-      throw new Error('You may not call store.subscribe() while the reducer is executing. ' + 'If you would like to be notified after the store has been updated, subscribe from a ' + 'component and invoke store.getState() in the callback to access the latest state. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
-    }
-
-    var isSubscribed = true;
-    ensureCanMutateNextListeners();
-    nextListeners.push(listener);
-    return function unsubscribe() {
-      if (!isSubscribed) {
-        return;
-      }
-
-      if (isDispatching) {
-        throw new Error('You may not unsubscribe from a store listener while the reducer is executing. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
-      }
-
-      isSubscribed = false;
-      ensureCanMutateNextListeners();
-      var index = nextListeners.indexOf(listener);
-      nextListeners.splice(index, 1);
-      currentListeners = null;
-    };
-  }
-  /**
-   * Dispatches an action. It is the only way to trigger a state change.
-   *
-   * The `reducer` function, used to create the store, will be called with the
-   * current state tree and the given `action`. Its return value will
-   * be considered the **next** state of the tree, and the change listeners
-   * will be notified.
-   *
-   * The base implementation only supports plain object actions. If you want to
-   * dispatch a Promise, an Observable, a thunk, or something else, you need to
-   * wrap your store creating function into the corresponding middleware. For
-   * example, see the documentation for the `redux-thunk` package. Even the
-   * middleware will eventually dispatch plain object actions using this method.
-   *
-   * @param {Object} action A plain object representing “what changed”. It is
-   * a good idea to keep actions serializable so you can record and replay user
-   * sessions, or use the time travelling `redux-devtools`. An action must have
-   * a `type` property which may not be `undefined`. It is a good idea to use
-   * string constants for action types.
-   *
-   * @returns {Object} For convenience, the same action object you dispatched.
-   *
-   * Note that, if you use a custom middleware, it may wrap `dispatch()` to
-   * return something else (for example, a Promise you can await).
-   */
-
-
-  function dispatch(action) {
-    if (!isPlainObject$1(action)) {
-      throw new Error('Actions must be plain objects. ' + 'Use custom middleware for async actions.');
-    }
-
-    if (typeof action.type === 'undefined') {
-      throw new Error('Actions may not have an undefined "type" property. ' + 'Have you misspelled a constant?');
-    }
-
-    if (isDispatching) {
-      throw new Error('Reducers may not dispatch actions.');
-    }
-
-    try {
-      isDispatching = true;
-      currentState = currentReducer(currentState, action);
-    } finally {
-      isDispatching = false;
-    }
-
-    var listeners = currentListeners = nextListeners;
-
-    for (var i = 0; i < listeners.length; i++) {
-      var listener = listeners[i];
-      listener();
-    }
-
-    return action;
-  }
-  /**
-   * Replaces the reducer currently used by the store to calculate the state.
-   *
-   * You might need this if your app implements code splitting and you want to
-   * load some of the reducers dynamically. You might also need this if you
-   * implement a hot reloading mechanism for Redux.
-   *
-   * @param {Function} nextReducer The reducer for the store to use instead.
-   * @returns {void}
-   */
-
-
-  function replaceReducer(nextReducer) {
-    if (typeof nextReducer !== 'function') {
-      throw new Error('Expected the nextReducer to be a function.');
-    }
-
-    currentReducer = nextReducer; // This action has a similiar effect to ActionTypes.INIT.
-    // Any reducers that existed in both the new and old rootReducer
-    // will receive the previous state. This effectively populates
-    // the new state tree with any relevant data from the old one.
-
-    dispatch({
-      type: ActionTypes$1.REPLACE
-    });
-  }
-  /**
-   * Interoperability point for observable/reactive libraries.
-   * @returns {observable} A minimal observable of state changes.
-   * For more information, see the observable proposal:
-   * https://github.com/tc39/proposal-observable
-   */
-
-
-  function observable() {
-    var _ref;
-
-    var outerSubscribe = subscribe;
-    return _ref = {
-      /**
-       * The minimal observable subscription method.
-       * @param {Object} observer Any object that can be used as an observer.
-       * The observer object should have a `next` method.
-       * @returns {subscription} An object with an `unsubscribe` method that can
-       * be used to unsubscribe the observable from the store, and prevent further
-       * emission of values from the observable.
-       */
-      subscribe: function subscribe(observer) {
-        if (typeof observer !== 'object' || observer === null) {
-          throw new TypeError('Expected the observer to be an object.');
-        }
-
-        function observeState() {
-          if (observer.next) {
-            observer.next(getState());
-          }
-        }
-
-        observeState();
-        var unsubscribe = outerSubscribe(observeState);
-        return {
-          unsubscribe: unsubscribe
-        };
-      }
-    }, _ref[result] = function () {
-      return this;
-    }, _ref;
-  } // When a store is created, an "INIT" action is dispatched so that every
-  // reducer returns their initial state. This effectively populates
-  // the initial state tree.
-
-
-  dispatch({
-    type: ActionTypes$1.INIT
-  });
-  return _ref2 = {
-    dispatch: dispatch,
-    subscribe: subscribe,
-    getState: getState,
-    replaceReducer: replaceReducer
-  }, _ref2[result] = observable, _ref2;
-}
-/**
- * Prints a warning in the console if it exists.
- *
- * @param {String} message The warning message.
- * @returns {void}
- */
-
-
-function warning(message) {
-  /* eslint-disable no-console */
-  if (typeof console !== 'undefined' && typeof console.error === 'function') {
-    console.error(message);
-  }
-  /* eslint-enable no-console */
-
-
-  try {
-    // This error was thrown as a convenience so that if you enable
-    // "break on all exceptions" in your console,
-    // it would pause the execution at this line.
-    throw new Error(message);
-  } catch (e) {} // eslint-disable-line no-empty
-
-}
-
-function _defineProperty$1(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
-
-  if (Object.getOwnPropertySymbols) {
-    keys.push.apply(keys, Object.getOwnPropertySymbols(object));
-  }
-
-  if (enumerableOnly) keys = keys.filter(function (sym) {
-    return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-  });
-  return keys;
-}
-
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-
-    if (i % 2) {
-      ownKeys(source, true).forEach(function (key) {
-        _defineProperty$1(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(source).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
-    }
-  }
-
-  return target;
-}
-/**
- * Composes single-argument functions from right to left. The rightmost
- * function can take multiple arguments as it provides the signature for
- * the resulting composite function.
- *
- * @param {...Function} funcs The functions to compose.
- * @returns {Function} A function obtained by composing the argument functions
- * from right to left. For example, compose(f, g, h) is identical to doing
- * (...args) => f(g(h(...args))).
- */
-
-
-function compose() {
-  for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
-    funcs[_key] = arguments[_key];
-  }
-
-  if (funcs.length === 0) {
-    return function (arg) {
-      return arg;
-    };
-  }
-
-  if (funcs.length === 1) {
-    return funcs[0];
-  }
-
-  return funcs.reduce(function (a, b) {
-    return function () {
-      return a(b.apply(void 0, arguments));
-    };
-  });
-}
-/**
- * Creates a store enhancer that applies middleware to the dispatch method
- * of the Redux store. This is handy for a variety of tasks, such as expressing
- * asynchronous actions in a concise manner, or logging every action payload.
- *
- * See `redux-thunk` package as an example of the Redux middleware.
- *
- * Because middleware is potentially asynchronous, this should be the first
- * store enhancer in the composition chain.
- *
- * Note that each middleware will be given the `dispatch` and `getState` functions
- * as named arguments.
- *
- * @param {...Function} middlewares The middleware chain to be applied.
- * @returns {Function} A store enhancer applying the middleware.
- */
-
-
-function applyMiddleware() {
-  for (var _len = arguments.length, middlewares = new Array(_len), _key = 0; _key < _len; _key++) {
-    middlewares[_key] = arguments[_key];
-  }
-
-  return function (createStore) {
-    return function () {
-      var store = createStore.apply(void 0, arguments);
-
-      var _dispatch = function dispatch() {
-        throw new Error('Dispatching while constructing your middleware is not allowed. ' + 'Other middleware would not be applied to this dispatch.');
-      };
-
-      var middlewareAPI = {
-        getState: store.getState,
-        dispatch: function dispatch() {
-          return _dispatch.apply(void 0, arguments);
-        }
-      };
-      var chain = middlewares.map(function (middleware) {
-        return middleware(middlewareAPI);
-      });
-      _dispatch = compose.apply(void 0, chain)(store.dispatch);
-      return _objectSpread2({}, store, {
-        dispatch: _dispatch
-      });
-    };
-  };
-}
-/*
- * This is a dummy function to check if the function name has been altered by minification.
- * If the function has been minified and NODE_ENV !== 'production', warn the user.
- */
-
-
-function isCrushed() {}
-
-if (process.env.NODE_ENV !== 'production' && typeof isCrushed.name === 'string' && isCrushed.name !== 'isCrushed') {
-  warning('You are currently using minified code outside of NODE_ENV === "production". ' + 'This means that you are running a slower development build of Redux. ' + 'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' + 'or setting mode to production in webpack (https://webpack.js.org/concepts/mode/) ' + 'to ensure you have the correct code for your production build.');
-}
-
-function cacheModule(module) {
-  var moduleName = module.default.moduleName;
-  var moduleGetter = MetaData.moduleGetter;
-  var fn = moduleGetter[moduleName];
-
-  if (fn.__module__ === module) {
-    return fn;
-  }
-
-  fn = function fn() {
-    return module;
-  };
-
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
-}
-
-function bindThis(fun, thisObj) {
-  var newFun = fun.bind(thisObj);
-  Object.keys(fun).forEach(function (key) {
-    newFun[key] = fun[key];
-  });
-  return newFun;
-}
-
-function transformAction(actionName, action, listenerModule, actionHandlerMap) {
-  if (!actionHandlerMap[actionName]) {
-    actionHandlerMap[actionName] = {};
-  }
-
-  if (actionHandlerMap[actionName][listenerModule]) {
-    throw new Error("Action duplicate or conflict : " + actionName + ".");
-  }
-
-  actionHandlerMap[actionName][listenerModule] = action;
-}
-
-function injectActions(store, moduleName, handlers) {
-  for (var actionNames in handlers) {
-    if (typeof handlers[actionNames] === 'function') {
-      (function () {
-        var handler = handlers[actionNames];
-
-        if (handler.__isReducer__ || handler.__isEffect__) {
-          handler = bindThis(handler, handlers);
-          actionNames.split(config.MSP).forEach(function (actionName) {
-            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
-            var arr = actionName.split(config.NSP);
-
-            if (arr[1]) {
-              handler.__isHandler__ = true;
-              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            } else {
-              handler.__isHandler__ = false;
-              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            }
-          });
-        }
-      })();
-    }
-  }
-}
-
-function _loadModel(moduleName, store) {
-  var hasInjected = !!store._medux_.injectedModules[moduleName];
-
-  if (!hasInjected) {
-    var moduleGetter = MetaData.moduleGetter;
-
-    if (!moduleGetter[moduleName]) {
-      return undefined;
-    }
-
-    var result = moduleGetter[moduleName]();
-
-    if (isPromise(result)) {
-      return result.then(function (module) {
-        cacheModule(module);
-        return module.default.model(store);
-      });
-    }
-
-    cacheModule(result);
-    return result.default.model(store);
-  }
-
-  return undefined;
-}
-var CoreModuleHandlers = _decorate(null, function (_initialize) {
-  var CoreModuleHandlers = function CoreModuleHandlers(initState) {
-    this.initState = initState;
-
-    _initialize(this);
-  };
-
-  return {
-    F: CoreModuleHandlers,
-    d: [{
-      kind: "field",
-      key: "actions",
-      value: function value() {
-        return null;
-      }
-    }, {
-      kind: "field",
-      key: "store",
-      value: function value() {
-        return null;
-      }
-    }, {
-      kind: "field",
-      key: "moduleName",
-      value: function value() {
-        return '';
-      }
-    }, {
-      kind: "get",
-      key: "state",
-      value: function state() {
-        return this.store._medux_.realtimeState[this.moduleName];
-      }
-    }, {
-      kind: "get",
-      key: "rootState",
-      value: function rootState() {
-        return this.store._medux_.realtimeState;
-      }
-    }, {
-      kind: "method",
-      key: "getCurrentActionName",
-      value: function getCurrentActionName() {
-        return MetaData.currentData.actionName;
-      }
-    }, {
-      kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return MetaData.currentData.prevState;
-      }
-    }, {
-      kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return MetaData.currentData.prevState[this.moduleName];
-      }
-    }, {
-      kind: "method",
-      key: "dispatch",
-      value: function dispatch(action) {
-        return this.store.dispatch(action);
-      }
-    }, {
-      kind: "method",
-      key: "loadModel",
-      value: function loadModel(moduleName) {
-        return _loadModel(moduleName, this.store);
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "Init",
-      value: function Init(initState) {
-        return initState;
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "Update",
-      value: function Update(payload, key) {
-        return mergeState(this.state, payload);
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "Loading",
-      value: function Loading(payload) {
-        var loading = mergeState(this.state.loading, payload);
-        return mergeState(this.state, {
-          loading: loading
-        });
-      }
-    }]
-  };
-});
-var exportModule = function exportModule(moduleName, ModuleHandles, views) {
-  var model = function model(store) {
-    var hasInjected = store._medux_.injectedModules[moduleName];
-
-    if (!hasInjected) {
-      store._medux_.injectedModules[moduleName] = true;
-      var moduleHandles = new ModuleHandles();
-      moduleHandles.moduleName = moduleName;
-      moduleHandles.store = store;
-      moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
-      var _initState = moduleHandles.initState;
-      injectActions(store, moduleName, moduleHandles);
-      var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign({}, _initState, preModuleState);
-
-      if (moduleState.initialized) {
-        return store.dispatch(moduleReInitAction(moduleName, moduleState));
-      }
-
-      moduleState.initialized = true;
-      return store.dispatch(moduleInitAction(moduleName, moduleState));
-    }
-
-    return undefined;
-  };
-
-  return {
-    moduleName: moduleName,
-    model: model,
-    views: views,
-    initState: undefined,
-    actions: undefined
-  };
-};
-function getView(moduleName, viewName) {
-  var moduleGetter = MetaData.moduleGetter;
-  var result = moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
-      var view = module.default.views[viewName];
-
-      if (isServerEnv) {
-        return view;
-      }
-
-      var initModel = module.default.model(MetaData.clientStore);
-
-      if (isPromise(initModel)) {
-        return initModel.then(function () {
-          return view;
-        });
-      }
-
-      return view;
-    });
-  }
-
-  cacheModule(result);
-  var view = result.default.views[viewName];
-
-  if (isServerEnv) {
-    return view;
-  }
-
-  var initModel = result.default.model(MetaData.clientStore);
-
-  if (isPromise(initModel)) {
-    return initModel.then(function () {
-      return view;
-    });
-  }
-
-  return view;
-}
-function getModuleByName(moduleName, moduleGetter) {
-  var result = moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
-      return module;
-    });
-  }
-
-  cacheModule(result);
-  return result;
-}
-
-function getActionData(action) {
-  return Array.isArray(action.payload) ? action.payload : [];
-}
-function isProcessedError(error) {
-  return error && !!error.__meduxProcessed__;
-}
-function setProcessedError(error, meduxProcessed) {
-  if (typeof error !== 'object') {
-    error = {
-      message: error
-    };
-  }
-
-  Object.defineProperty(error, '__meduxProcessed__', {
-    value: meduxProcessed,
-    enumerable: false,
-    writable: true
-  });
-  return error;
-}
-function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
-  if (preloadedState === void 0) {
-    preloadedState = {};
-  }
-
-  if (storeReducers === void 0) {
-    storeReducers = {};
-  }
-
-  if (storeMiddlewares === void 0) {
-    storeMiddlewares = [];
-  }
-
-  if (storeEnhancers === void 0) {
-    storeEnhancers = [];
-  }
-
-  if (MetaData.clientStore) {
-    MetaData.clientStore.destroy();
-  }
-
-  var store;
-
-  var combineReducers = function combineReducers(state, action) {
-    if (!store) {
-      return state;
-    }
-
-    var meta = store._medux_;
-    var currentState = meta.currentState;
-    var realtimeState = meta.realtimeState;
-    Object.keys(storeReducers).forEach(function (moduleName) {
-      var node = storeReducers[moduleName](state[moduleName], action);
-
-      if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-        warn('Use rewrite instead of replace to update state in MutableData');
-      }
-
-      realtimeState[moduleName] = node;
-    });
-    var handlersCommon = meta.reducerMap[action.type] || {};
-    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-    var handlers = Object.assign({}, handlersCommon, handlersEvery);
-    var handlerModules = Object.keys(handlers);
-
-    if (handlerModules.length > 0) {
-      var orderList = [];
-      var priority = action.priority ? [].concat(action.priority) : [];
-      var actionData = getActionData(action);
-      handlerModules.forEach(function (moduleName) {
-        var fun = handlers[moduleName];
-
-        if (moduleName === MetaData.appModuleName) {
-          orderList.unshift(moduleName);
-        } else {
-          orderList.push(moduleName);
-        }
-
-        if (!fun.__isHandler__) {
-          priority.unshift(moduleName);
-        }
-      });
-      orderList.unshift.apply(orderList, priority);
-      var moduleNameMap = {};
-      orderList.forEach(function (moduleName) {
-        if (!moduleNameMap[moduleName]) {
-          moduleNameMap[moduleName] = true;
-          var fun = handlers[moduleName];
-          MetaData.currentData = {
-            actionName: action.type,
-            prevState: currentState
-          };
-          var node = fun.apply(void 0, actionData);
-
-          if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-            warn('Use rewrite instead of replace to update state in MutableData');
-          }
-
-          realtimeState[moduleName] = node;
-        }
-      });
-    }
-
-    return realtimeState;
-  };
-
-  var middleware = function middleware(_ref) {
-    var dispatch = _ref.dispatch;
-    return function (next) {
-      return function (originalAction) {
-        if (originalAction.type === ActionTypes.Error) {
-          var actionData = getActionData(originalAction);
-
-          if (isProcessedError(actionData[0])) {
-            return originalAction;
-          }
-
-          actionData[0] = setProcessedError(actionData[0], true);
-        }
-
-        if (isServerEnv) {
-          if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
-            return originalAction;
-          }
-        }
-
-        var meta = store._medux_;
-        var rootState = store.getState();
-        meta.realtimeState = mergeState(rootState);
-        meta.currentState = snapshotState(rootState);
-        var currentState = meta.currentState;
-        var action = next(originalAction);
-        var handlersCommon = meta.effectMap[action.type] || {};
-        var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-        var handlers = Object.assign({}, handlersCommon, handlersEvery);
-        var handlerModules = Object.keys(handlers);
-
-        if (handlerModules.length > 0) {
-          var _actionData = getActionData(action);
-
-          var orderList = [];
-          var priority = action.priority ? [].concat(action.priority) : [];
-          handlerModules.forEach(function (moduleName) {
-            var fun = handlers[moduleName];
-
-            if (moduleName === MetaData.appModuleName) {
-              orderList.unshift(moduleName);
-            } else {
-              orderList.push(moduleName);
-            }
-
-            if (!fun.__isHandler__) {
-              priority.unshift(moduleName);
-            }
-          });
-          orderList.unshift.apply(orderList, priority);
-          var moduleNameMap = {};
-          var promiseResults = [];
-          orderList.forEach(function (moduleName) {
-            if (!moduleNameMap[moduleName]) {
-              moduleNameMap[moduleName] = true;
-              var fun = handlers[moduleName];
-              MetaData.currentData = {
-                actionName: action.type,
-                prevState: currentState
-              };
-              var effectResult = fun.apply(void 0, _actionData);
-              var decorators = fun.__decorators__;
-
-              if (decorators) {
-                var results = [];
-                decorators.forEach(function (decorator, index) {
-                  results[index] = decorator[0](action, moduleName, effectResult);
-                });
-                fun.__decoratorResults__ = results;
-              }
-
-              var errorHandler = effectResult.then(function (reslove) {
-                if (decorators) {
-                  var _results = fun.__decoratorResults__ || [];
-
-                  decorators.forEach(function (decorator, index) {
-                    if (decorator[1]) {
-                      decorator[1]('Resolved', _results[index], reslove);
-                    }
-                  });
-                  fun.__decoratorResults__ = undefined;
-                }
-
-                return reslove;
-              }, function (reason) {
-                if (decorators) {
-                  var _results2 = fun.__decoratorResults__ || [];
-
-                  decorators.forEach(function (decorator, index) {
-                    if (decorator[1]) {
-                      decorator[1]('Rejected', _results2[index], reason);
-                    }
-                  });
-                  fun.__decoratorResults__ = undefined;
-                }
-
-                if (isProcessedError(reason)) {
-                  throw reason;
-                } else {
-                  reason = setProcessedError(reason, false);
-                  return dispatch(errorAction(reason));
-                }
-              });
-              promiseResults.push(errorHandler);
-            }
-          });
-
-          if (promiseResults.length) {
-            return Promise.all(promiseResults);
-          }
-        }
-
-        return action;
-      };
-    };
-  };
-
-  var preLoadMiddleware = function preLoadMiddleware() {
-    return function (next) {
-      return function (action) {
-        var _action$type$split = action.type.split(config.NSP),
-            moduleName = _action$type$split[0],
-            actionName = _action$type$split[1];
-
-        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-          var hasInjected = store._medux_.injectedModules[moduleName];
-
-          if (!hasInjected) {
-            if (actionName === ActionTypes.MInit) {
-              return _loadModel(moduleName, store);
-            }
-
-            var initModel = _loadModel(moduleName, store);
-
-            if (isPromise(initModel)) {
-              return initModel.then(function () {
-                return next(action);
-              });
-            }
-          }
-        }
-
-        return next(action);
-      };
-    };
-  };
-
-  var middlewareEnhancer = applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
-
-  var enhancer = function enhancer(newCreateStore) {
-    return function () {
-      var newStore = newCreateStore.apply(void 0, arguments);
-      var moduleStore = newStore;
-      moduleStore._medux_ = {
-        realtimeState: {},
-        currentState: {},
-        reducerMap: {},
-        effectMap: {},
-        injectedModules: {}
-      };
-      return newStore;
-    };
-  };
-
-  var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
-
-  if (config.DEVTOOLS && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
-  }
-
-  store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
-
-  store.destroy = function () {
-    return undefined;
-  };
-
-  if (!isServerEnv) {
-    MetaData.clientStore = store;
-  }
-
-  return store;
-}
-
 function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {
@@ -3098,6 +3081,22 @@ function _renderSSR() {
   }));
   return _renderSSR.apply(this, arguments);
 }
+
+env.encodeBas64 = function (str) {
+  if (!str) {
+    return '';
+  }
+
+  return typeof btoa === 'function' ? btoa(str) : typeof Buffer !== 'undefined' ? Buffer.from(str).toString('base64') : str;
+};
+
+env.decodeBas64 = function (str) {
+  if (!str) {
+    return '';
+  }
+
+  return typeof atob === 'function' ? atob(str) : typeof Buffer !== 'undefined' ? Buffer.from(str, 'base64').toString() : str;
+};
 
 var routeConfig = {
   actionMaxHistory: 10,
@@ -3817,6 +3816,71 @@ var routeReducer = function routeReducer(state, action) {
 
   return state;
 };
+
+function dataIsNativeLocation$1(data) {
+  return data['pathname'];
+}
+
+var BaseNativeRouter = function () {
+  function BaseNativeRouter() {
+    _defineProperty(this, "curTask", void 0);
+
+    _defineProperty(this, "taskList", []);
+
+    _defineProperty(this, "router", null);
+  }
+
+  var _proto = BaseNativeRouter.prototype;
+
+  _proto.onChange = function onChange(key) {
+    if (this.curTask) {
+      this.curTask.resolve(this.curTask.nativeData);
+      this.curTask = undefined;
+      return false;
+    }
+
+    return key !== this.router.getCurKey();
+  };
+
+  _proto.setRouter = function setRouter(router) {
+    this.router = router;
+  };
+
+  _proto.execute = function execute(method, getNativeData) {
+    var _this2 = this;
+
+    for (var _len3 = arguments.length, args = new Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+      args[_key3 - 2] = arguments[_key3];
+    }
+
+    return new Promise(function (resolve, reject) {
+      var task = {
+        resolve: resolve,
+        reject: reject,
+        nativeData: undefined
+      };
+      _this2.curTask = task;
+
+      var result = _this2[method].apply(_this2, [function () {
+        var nativeData = getNativeData();
+        task.nativeData = nativeData;
+        return nativeData;
+      }].concat(args));
+
+      if (!result) {
+        resolve(undefined);
+        _this2.curTask = undefined;
+      } else if (isPromise(result)) {
+        result.catch(function (e) {
+          reject(e);
+          _this2.curTask = undefined;
+        });
+      }
+    });
+  };
+
+  return BaseNativeRouter;
+}();
 var BaseRouter = function () {
   function BaseRouter(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
@@ -3824,9 +3888,11 @@ var BaseRouter = function () {
 
     _defineProperty(this, "_tid", 0);
 
-    _defineProperty(this, "_nativeData", void 0);
+    _defineProperty(this, "curTask", void 0);
 
-    _defineProperty(this, "_getNativeUrl", this.getNativeUrl.bind(this));
+    _defineProperty(this, "taskList", []);
+
+    _defineProperty(this, "_nativeData", void 0);
 
     _defineProperty(this, "routeState", void 0);
 
@@ -3836,6 +3902,7 @@ var BaseRouter = function () {
 
     _defineProperty(this, "history", void 0);
 
+    nativeRouter.setRouter(this);
     var location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
     var key = this._createKey();
@@ -3849,28 +3916,27 @@ var BaseRouter = function () {
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
-    this.nativeRouter.relaunch(this._getNativeUrl, key, false);
   }
 
-  var _proto = BaseRouter.prototype;
+  var _proto2 = BaseRouter.prototype;
 
-  _proto.getRouteState = function getRouteState() {
+  _proto2.getRouteState = function getRouteState() {
     return this.routeState;
   };
 
-  _proto.getPagename = function getPagename() {
+  _proto2.getPagename = function getPagename() {
     return this.routeState.pagename;
   };
 
-  _proto.getParams = function getParams() {
+  _proto2.getParams = function getParams() {
     return this.routeState.params;
   };
 
-  _proto.getMeduxUrl = function getMeduxUrl() {
+  _proto2.getMeduxUrl = function getMeduxUrl() {
     return this.meduxUrl;
   };
 
-  _proto.getNativeLocation = function getNativeLocation() {
+  _proto2.getNativeLocation = function getNativeLocation() {
     if (!this._nativeData) {
       var nativeLocation = this.locationTransform.out(this.routeState);
       var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3883,7 +3949,7 @@ var BaseRouter = function () {
     return this._nativeData.nativeLocation;
   };
 
-  _proto.getNativeUrl = function getNativeUrl() {
+  _proto2.getNativeUrl = function getNativeUrl() {
     if (!this._nativeData) {
       var nativeLocation = this.locationTransform.out(this.routeState);
       var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3896,24 +3962,24 @@ var BaseRouter = function () {
     return this._nativeData.nativeUrl;
   };
 
-  _proto.setStore = function setStore(_store) {
+  _proto2.setStore = function setStore(_store) {
     this.store = _store;
   };
 
-  _proto.getCurKey = function getCurKey() {
+  _proto2.getCurKey = function getCurKey() {
     return this.routeState.key;
   };
 
-  _proto._createKey = function _createKey() {
+  _proto2._createKey = function _createKey() {
     this._tid++;
     return "" + this._tid;
   };
 
-  _proto.nativeUrlToNativeLocation = function nativeUrlToNativeLocation$1(url) {
+  _proto2.nativeUrlToNativeLocation = function nativeUrlToNativeLocation$1(url) {
     return nativeUrlToNativeLocation(url);
   };
 
-  _proto.nativeLocationToLocation = function nativeLocationToLocation(nativeLocation) {
+  _proto2.nativeLocationToLocation = function nativeLocationToLocation(nativeLocation) {
     var location;
 
     try {
@@ -3929,11 +3995,11 @@ var BaseRouter = function () {
     return location;
   };
 
-  _proto.nativeUrlToLocation = function nativeUrlToLocation(nativeUrl) {
+  _proto2.nativeUrlToLocation = function nativeUrlToLocation(nativeUrl) {
     return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
   };
 
-  _proto.urlToLocation = function urlToLocation(url) {
+  _proto2.urlToLocation = function urlToLocation(url) {
     var _url$split = url.split('?'),
         pathname = _url$split[0],
         others = _url$split.slice(1);
@@ -3963,20 +4029,20 @@ var BaseRouter = function () {
     return location;
   };
 
-  _proto.nativeLocationToNativeUrl = function nativeLocationToNativeUrl$1(nativeLocation) {
+  _proto2.nativeLocationToNativeUrl = function nativeLocationToNativeUrl$1(nativeLocation) {
     return nativeLocationToNativeUrl(nativeLocation);
   };
 
-  _proto.locationToNativeUrl = function locationToNativeUrl(location) {
+  _proto2.locationToNativeUrl = function locationToNativeUrl(location) {
     var nativeLocation = this.locationTransform.out(location);
     return this.nativeLocationToNativeUrl(nativeLocation);
   };
 
-  _proto.locationToMeduxUrl = function locationToMeduxUrl(location) {
+  _proto2.locationToMeduxUrl = function locationToMeduxUrl(location) {
     return [location.pagename, JSON.stringify(location.params || {})].join('?');
   };
 
-  _proto.payloadToPartial = function payloadToPartial(payload) {
+  _proto2.payloadToPartial = function payloadToPartial(payload) {
     var params = payload.params;
     var extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
 
@@ -3992,15 +4058,27 @@ var BaseRouter = function () {
     };
   };
 
-  _proto.relaunch = function () {
-    var _relaunch = _asyncToGenerator(regenerator.mark(function _callee(data, internal) {
-      var location, key, routeState;
+  _proto2.relaunch = function relaunch(data, internal, passive) {
+    var _this3 = this;
+
+    this.addTask(function () {
+      return _this3._relaunch(data, internal, passive);
+    });
+  };
+
+  _proto2._relaunch = function () {
+    var _relaunch2 = _asyncToGenerator(regenerator.mark(function _callee(data, internal, passive) {
+      var _this4 = this;
+
+      var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
               if (typeof data === 'string') {
                 location = this.urlToLocation(data);
+              } else if (dataIsNativeLocation$1(data)) {
+                location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
               }
@@ -4014,9 +4092,30 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
+              if (passive) {
+                _context.next = 9;
+                break;
+              }
+
+              _context.next = 8;
+              return this.nativeRouter.execute('relaunch', function () {
+                var nativeLocation = _this4.locationTransform.out(routeState);
+
+                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
+
+                return {
+                  nativeLocation: nativeLocation,
+                  nativeUrl: nativeUrl
+                };
+              }, key, !!internal);
+
+            case 8:
+              nativeData = _context.sent;
+
+            case 9:
+              this._nativeData = nativeData;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
@@ -4025,10 +4124,7 @@ var BaseRouter = function () {
                 this.history.relaunch(location, key);
               }
 
-              this.nativeRouter.relaunch(this._getNativeUrl, key, !!internal);
-              return _context.abrupt("return", routeState);
-
-            case 12:
+            case 14:
             case "end":
               return _context.stop();
           }
@@ -4036,22 +4132,34 @@ var BaseRouter = function () {
       }, _callee, this);
     }));
 
-    function relaunch(_x, _x2) {
-      return _relaunch.apply(this, arguments);
+    function _relaunch(_x, _x2, _x3) {
+      return _relaunch2.apply(this, arguments);
     }
 
-    return relaunch;
+    return _relaunch;
   }();
 
-  _proto.push = function () {
-    var _push = _asyncToGenerator(regenerator.mark(function _callee2(data, internal) {
-      var location, key, routeState;
+  _proto2.push = function push(data, internal, passive) {
+    var _this5 = this;
+
+    this.addTask(function () {
+      return _this5._push(data, internal, passive);
+    });
+  };
+
+  _proto2._push = function () {
+    var _push2 = _asyncToGenerator(regenerator.mark(function _callee2(data, internal, passive) {
+      var _this6 = this;
+
+      var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
               if (typeof data === 'string') {
                 location = this.urlToLocation(data);
+              } else if (dataIsNativeLocation$1(data)) {
+                location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
               }
@@ -4065,9 +4173,30 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
+              if (passive) {
+                _context2.next = 9;
+                break;
+              }
+
+              _context2.next = 8;
+              return this.nativeRouter.execute('push', function () {
+                var nativeLocation = _this6.locationTransform.out(routeState);
+
+                var nativeUrl = _this6.nativeLocationToNativeUrl(nativeLocation);
+
+                return {
+                  nativeLocation: nativeLocation,
+                  nativeUrl: nativeUrl
+                };
+              }, key, !!internal);
+
+            case 8:
+              nativeData = _context2.sent;
+
+            case 9:
+              this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
@@ -4076,10 +4205,9 @@ var BaseRouter = function () {
                 this.history.push(location, key);
               }
 
-              this.nativeRouter.push(this._getNativeUrl, key, !!internal);
               return _context2.abrupt("return", routeState);
 
-            case 12:
+            case 15:
             case "end":
               return _context2.stop();
           }
@@ -4087,22 +4215,34 @@ var BaseRouter = function () {
       }, _callee2, this);
     }));
 
-    function push(_x3, _x4) {
-      return _push.apply(this, arguments);
+    function _push(_x4, _x5, _x6) {
+      return _push2.apply(this, arguments);
     }
 
-    return push;
+    return _push;
   }();
 
-  _proto.replace = function () {
-    var _replace = _asyncToGenerator(regenerator.mark(function _callee3(data, internal) {
-      var location, key, routeState;
+  _proto2.replace = function replace(data, internal, passive) {
+    var _this7 = this;
+
+    this.addTask(function () {
+      return _this7._replace(data, internal, passive);
+    });
+  };
+
+  _proto2._replace = function () {
+    var _replace2 = _asyncToGenerator(regenerator.mark(function _callee3(data, internal, passive) {
+      var _this8 = this;
+
+      var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
               if (typeof data === 'string') {
                 location = this.urlToLocation(data);
+              } else if (dataIsNativeLocation$1(data)) {
+                location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
               }
@@ -4116,9 +4256,30 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
+              if (passive) {
+                _context3.next = 9;
+                break;
+              }
+
+              _context3.next = 8;
+              return this.nativeRouter.execute('replace', function () {
+                var nativeLocation = _this8.locationTransform.out(routeState);
+
+                var nativeUrl = _this8.nativeLocationToNativeUrl(nativeLocation);
+
+                return {
+                  nativeLocation: nativeLocation,
+                  nativeUrl: nativeUrl
+                };
+              }, key, !!internal);
+
+            case 8:
+              nativeData = _context3.sent;
+
+            case 9:
+              this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
@@ -4127,10 +4288,9 @@ var BaseRouter = function () {
                 this.history.replace(location, key);
               }
 
-              this.nativeRouter.replace(this._getNativeUrl, key, !!internal);
               return _context3.abrupt("return", routeState);
 
-            case 12:
+            case 15:
             case "end":
               return _context3.stop();
           }
@@ -4138,16 +4298,30 @@ var BaseRouter = function () {
       }, _callee3, this);
     }));
 
-    function replace(_x5, _x6) {
-      return _replace.apply(this, arguments);
+    function _replace(_x7, _x8, _x9) {
+      return _replace2.apply(this, arguments);
     }
 
-    return replace;
+    return _replace;
   }();
 
-  _proto.back = function () {
-    var _back = _asyncToGenerator(regenerator.mark(function _callee4(n, internal) {
-      var stack, uri, _uriToLocation, key, location, routeState;
+  _proto2.back = function back(n, internal, passive) {
+    var _this9 = this;
+
+    if (n === void 0) {
+      n = 1;
+    }
+
+    this.addTask(function () {
+      return _this9._back(n, internal, passive);
+    });
+  };
+
+  _proto2._back = function () {
+    var _back2 = _asyncToGenerator(regenerator.mark(function _callee4(n, internal, passive) {
+      var _this10 = this;
+
+      var stack, uri, _uriToLocation, key, location, routeState, nativeData;
 
       return regenerator.wrap(function _callee4$(_context4) {
         while (1) {
@@ -4177,9 +4351,30 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 9:
+              if (passive) {
+                _context4.next = 13;
+                break;
+              }
+
+              _context4.next = 12;
+              return this.nativeRouter.execute('back', function () {
+                var nativeLocation = _this10.locationTransform.out(routeState);
+
+                var nativeUrl = _this10.nativeLocationToNativeUrl(nativeLocation);
+
+                return {
+                  nativeLocation: nativeLocation,
+                  nativeUrl: nativeUrl
+                };
+              }, n, key, !!internal);
+
+            case 12:
+              nativeData = _context4.sent;
+
+            case 13:
+              this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
@@ -4188,10 +4383,9 @@ var BaseRouter = function () {
                 this.history.back(n);
               }
 
-              this.nativeRouter.back(this._getNativeUrl, n, key, !!internal);
               return _context4.abrupt("return", routeState);
 
-            case 16:
+            case 19:
             case "end":
               return _context4.stop();
           }
@@ -4199,16 +4393,30 @@ var BaseRouter = function () {
       }, _callee4, this);
     }));
 
-    function back(_x7, _x8) {
-      return _back.apply(this, arguments);
+    function _back(_x10, _x11, _x12) {
+      return _back2.apply(this, arguments);
     }
 
-    return back;
+    return _back;
   }();
 
-  _proto.pop = function () {
-    var _pop = _asyncToGenerator(regenerator.mark(function _callee5(n, internal) {
-      var stack, uri, _uriToLocation2, key, location, routeState;
+  _proto2.pop = function pop(n, internal, passive) {
+    var _this11 = this;
+
+    if (n === void 0) {
+      n = 1;
+    }
+
+    this.addTask(function () {
+      return _this11._pop(n, internal, passive);
+    });
+  };
+
+  _proto2._pop = function () {
+    var _pop2 = _asyncToGenerator(regenerator.mark(function _callee5(n, internal, passive) {
+      var _this12 = this;
+
+      var stack, uri, _uriToLocation2, key, location, routeState, nativeData;
 
       return regenerator.wrap(function _callee5$(_context5) {
         while (1) {
@@ -4238,9 +4446,30 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 9:
+              if (passive) {
+                _context5.next = 13;
+                break;
+              }
+
+              _context5.next = 12;
+              return this.nativeRouter.execute('pop', function () {
+                var nativeLocation = _this12.locationTransform.out(routeState);
+
+                var nativeUrl = _this12.nativeLocationToNativeUrl(nativeLocation);
+
+                return {
+                  nativeLocation: nativeLocation,
+                  nativeUrl: nativeUrl
+                };
+              }, n, key, !!internal);
+
+            case 12:
+              nativeData = _context5.sent;
+
+            case 13:
+              this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this._nativeData = undefined;
               this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
@@ -4249,10 +4478,9 @@ var BaseRouter = function () {
                 this.history.pop(n);
               }
 
-              this.nativeRouter.pop(this._getNativeUrl, n, key, !!internal);
               return _context5.abrupt("return", routeState);
 
-            case 16:
+            case 19:
             case "end":
               return _context5.stop();
           }
@@ -4260,12 +4488,43 @@ var BaseRouter = function () {
       }, _callee5, this);
     }));
 
-    function pop(_x9, _x10) {
-      return _pop.apply(this, arguments);
+    function _pop(_x13, _x14, _x15) {
+      return _pop2.apply(this, arguments);
     }
 
-    return pop;
+    return _pop;
   }();
+
+  _proto2.taskComplete = function taskComplete() {
+    var task = this.taskList.shift();
+
+    if (task) {
+      this.executeTask(task);
+    } else {
+      this.curTask = undefined;
+    }
+  };
+
+  _proto2.executeTask = function executeTask(task) {
+    var _this13 = this;
+
+    this.curTask = task;
+    task().finally(function () {
+      return _this13.taskComplete();
+    });
+  };
+
+  _proto2.addTask = function addTask(task) {
+    if (this.curTask) {
+      this.taskList.push(task);
+    } else {
+      this.executeTask(task);
+    }
+  };
+
+  _proto2.destroy = function destroy() {
+    this.nativeRouter.destroy();
+  };
 
   return BaseRouter;
 }();
@@ -5307,27 +5566,37 @@ function createMemoryHistory(props) {
   return history;
 }
 
-var BrowserNativeRouter = function () {
-  function BrowserNativeRouter(createHistory) {
-    _defineProperty(this, "history", void 0);
+var BrowserNativeRouter = function (_BaseNativeRouter) {
+  _inheritsLoose(BrowserNativeRouter, _BaseNativeRouter);
 
-    _defineProperty(this, "serverSide", false);
+  function BrowserNativeRouter(createHistory) {
+    var _this;
+
+    _this = _BaseNativeRouter.call(this) || this;
+
+    _defineProperty(_assertThisInitialized(_this), "_unlistenHistory", void 0);
+
+    _defineProperty(_assertThisInitialized(_this), "router", void 0);
+
+    _defineProperty(_assertThisInitialized(_this), "history", void 0);
+
+    _defineProperty(_assertThisInitialized(_this), "serverSide", false);
 
     if (createHistory === 'Hash') {
-      this.history = createHashHistory();
+      _this.history = createHashHistory();
     } else if (createHistory === 'Memory') {
-      this.history = createMemoryHistory();
+      _this.history = createMemoryHistory();
     } else if (createHistory === 'Browser') {
-      this.history = createBrowserHistory();
+      _this.history = createBrowserHistory();
     } else {
-      this.serverSide = true;
+      _this.serverSide = true;
 
       var _createHistory$split = createHistory.split('?'),
           pathname = _createHistory$split[0],
           _createHistory$split$ = _createHistory$split[1],
           search = _createHistory$split$ === void 0 ? '' : _createHistory$split$;
 
-      this.history = {
+      _this.history = {
         action: 'PUSH',
         length: 0,
         listen: function listen() {
@@ -5355,6 +5624,53 @@ var BrowserNativeRouter = function () {
         }
       };
     }
+
+    _this._unlistenHistory = _this.history.block(function (location, action) {
+      var _location$pathname = location.pathname,
+          pathname = _location$pathname === void 0 ? '' : _location$pathname,
+          _location$search = location.search,
+          search = _location$search === void 0 ? '' : _location$search,
+          _location$hash = location.hash,
+          hash = _location$hash === void 0 ? '' : _location$hash;
+      var url = [pathname, search, hash].join('');
+
+      var key = _this.getKey(location);
+
+      var changed = _this.onChange(key);
+
+      if (changed) {
+        var index = 0;
+        var callback;
+
+        if (action === 'POP') {
+          index = _this.router.searchKey(key);
+        }
+
+        if (index > 0) {
+          callback = function callback() {
+            return _this.router.back(index);
+          };
+        } else if (action === 'REPLACE') {
+          callback = function callback() {
+            return _this.router.replace(url);
+          };
+        } else if (action === 'PUSH') {
+          callback = function callback() {
+            return _this.router.push(url);
+          };
+        } else {
+          callback = function callback() {
+            return _this.router.relaunch(url);
+          };
+        }
+
+        callback && env.setTimeout(callback, 50);
+        return false;
+      }
+
+      return undefined;
+    });
+    return _this;
   }
 
   var _proto = BrowserNativeRouter.prototype;
@@ -5370,50 +5686,74 @@ var BrowserNativeRouter = function () {
     return [pathname, search, hash].join('');
   };
 
-  _proto.block = function block(blocker) {
-    var _this = this;
-
-    return this.history.block(function (location, action) {
-      var _location$pathname = location.pathname,
-          pathname = _location$pathname === void 0 ? '' : _location$pathname,
-          _location$search = location.search,
-          search = _location$search === void 0 ? '' : _location$search,
-          _location$hash = location.hash,
-          hash = _location$hash === void 0 ? '' : _location$hash;
-      return blocker([pathname, search, hash].join(''), _this.getKey(location), action);
-    });
-  };
-
   _proto.getKey = function getKey(location) {
     return location.state || '';
   };
 
-  _proto.push = function push(getUrl, key, internal) {
-    !internal && !this.serverSide && this.history.push(getUrl(), key);
-  };
-
-  _proto.replace = function replace(getUrl, key, internal) {
-    !internal && !this.serverSide && this.history.replace(getUrl(), key);
-  };
-
-  _proto.relaunch = function relaunch(getUrl, key, internal) {
-    !internal && !this.serverSide && this.history.push(getUrl(), key);
-  };
-
-  _proto.back = function back(getUrl, n, key, internal) {
-    !internal && !this.serverSide && this.history.go(-n);
-  };
-
-  _proto.pop = function pop(getUrl, n, key, internal) {
-    !internal && !this.serverSide && this.history.push(getUrl(), key);
+  _proto.passive = function passive(url, key, action) {
+    return true;
   };
 
   _proto.refresh = function refresh() {
     this.history.go(0);
   };
 
+  _proto.push = function push(getNativeData, key, internal) {
+    if (!internal && !this.serverSide) {
+      var nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  };
+
+  _proto.replace = function replace(getNativeData, key, internal) {
+    if (!internal && !this.serverSide) {
+      var nativeData = getNativeData();
+      this.history.replace(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  };
+
+  _proto.relaunch = function relaunch(getNativeData, key, internal) {
+    if (!internal && !this.serverSide) {
+      var nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  };
+
+  _proto.back = function back(getNativeData, n, key, internal) {
+    if (!internal && !this.serverSide) {
+      var nativeData = getNativeData();
+      this.history.go(-n);
+      return nativeData;
+    }
+
+    return undefined;
+  };
+
+  _proto.pop = function pop(getNativeData, n, key, internal) {
+    if (!internal && !this.serverSide) {
+      var nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  };
+
+  _proto.destroy = function destroy() {
+    this._unlistenHistory();
+  };
+
   return BrowserNativeRouter;
-}();
+}(BaseNativeRouter);
 var Router = function (_BaseRouter) {
   _inheritsLoose(Router, _BaseRouter);
 
@@ -5422,64 +5762,15 @@ var Router = function (_BaseRouter) {
 
     _this2 = _BaseRouter.call(this, browserNativeRouter.getUrl(), browserNativeRouter, locationTransform) || this;
 
-    _defineProperty(_assertThisInitialized(_this2), "_unlistenHistory", void 0);
-
-    _defineProperty(_assertThisInitialized(_this2), "_timer", 0);
-
     _defineProperty(_assertThisInitialized(_this2), "nativeRouter", void 0);
 
-    _this2.nativeRouter = browserNativeRouter;
-    _this2._unlistenHistory = browserNativeRouter.block(function (url, key, action) {
-      if (key !== _this2.getCurKey()) {
-        var callback;
-        var index = 0;
-
-        if (action === 'POP') {
-          index = _this2.history.getActionIndex(key);
-        }
-
-        if (index > 0) {
-          callback = function callback() {
-            _this2._timer = 0;
-
-            _this2.back(index);
-          };
-        } else if (action === 'REPLACE') {
-          callback = function callback() {
-            _this2._timer = 0;
-
-            _this2.replace(url);
-          };
-        } else if (action === 'PUSH') {
-          callback = function callback() {
-            _this2._timer = 0;
-
-            _this2.push(url);
-          };
-        } else {
-          callback = function callback() {
-            _this2._timer = 0;
-
-            _this2.relaunch(url);
-          };
-        }
-
-        if (callback && !_this2._timer) {
-          _this2._timer = env.setTimeout(callback, 50);
-        }
-
-        return false;
-      }
-
-      return undefined;
-    });
     return _this2;
   }
 
   var _proto2 = Router.prototype;
 
-  _proto2.destroy = function destroy() {
-    this._unlistenHistory();
+  _proto2.searchKey = function searchKey(key) {
+    return this.history.getActionIndex(key);
   };
 
   return Router;
@@ -5809,4 +6100,4 @@ function buildSSR(moduleGetter, _ref2) {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, clientSide, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, clientSide, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };

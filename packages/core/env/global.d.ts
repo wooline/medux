@@ -11,13 +11,11 @@ declare namespace meduxCore {
     error: (error: any) => void;
   }
   interface ENV {
+    isServer: boolean;
     __REDUX_DEVTOOLS_EXTENSION__?: (options: any) => any;
     __REDUX_DEVTOOLS_EXTENSION__OPTIONS?: any;
     setTimeout: SetTimeout;
     clearTimeout: ClearTimeout;
     console: Console;
-    encodeBas64(str: string): string;
-    decodeBas64(str: string): string;
-    encodeURIComponent(str: string): string;
   }
 }

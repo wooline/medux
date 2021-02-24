@@ -139,7 +139,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
           actionData[0] = setProcessedError(actionData[0], true);
         }
 
-        if (_env.isServerEnv) {
+        if (_env.env.isServer) {
           if (originalAction.type.split(_basic.config.NSP)[1] === _basic.ActionTypes.MLoading) {
             return originalAction;
           }
@@ -291,8 +291,8 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
 
   var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
 
-  if (_basic.config.DEVTOOLS && _env.client && _env.client.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(_env.client.__REDUX_DEVTOOLS_EXTENSION__(_env.client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  if (_basic.config.DEVTOOLS && _env.env.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(_env.env.__REDUX_DEVTOOLS_EXTENSION__(_env.env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
   store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
@@ -301,7 +301,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     return undefined;
   };
 
-  if (!_env.isServerEnv) {
+  if (!_env.env.isServer) {
     _basic.MetaData.clientStore = store;
   }
 

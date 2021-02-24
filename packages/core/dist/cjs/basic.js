@@ -124,7 +124,7 @@ function setLoading(item, moduleName, groupName) {
     groupName = 'global';
   }
 
-  if (_env.isServerEnv) {
+  if (_env.env.isServer) {
     return item;
   }
 
@@ -183,7 +183,7 @@ function effect(loadingForGroupName, loadingForModuleName) {
 
     if (loadingForGroupName) {
       var before = function before(curAction, moduleName, promiseResult) {
-        if (!_env.isServerEnv) {
+        if (!_env.env.isServer) {
           if (loadingForModuleName === '') {
             loadingForModuleName = MetaData.appModuleName;
           } else if (!loadingForModuleName) {
@@ -254,11 +254,11 @@ function isPromise(data) {
 }
 
 function isServer() {
-  return _env.isServerEnv;
+  return _env.env.isServer;
 }
 
 function serverSide(callback) {
-  if (_env.isServerEnv) {
+  if (_env.env.isServer) {
     return callback();
   }
 
@@ -266,7 +266,7 @@ function serverSide(callback) {
 }
 
 function clientSide(callback) {
-  if (!_env.isServerEnv) {
+  if (!_env.env.isServer) {
     return callback();
   }
 

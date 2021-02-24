@@ -1,15 +1,16 @@
-/// <reference path="../env/global.d.ts" />
+/* eslint-disable import/order */
+import './env';
 import React from 'react';
 import {unmountComponentAtNode, hydrate, render} from 'react-dom';
 import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-web';
 import {env, renderApp, renderSSR, mergeState, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
 import {createRouter} from '@medux/route-browser';
+import {setLoadViewOptions} from './loadView';
+import {appExports} from './sington';
 
 import type {ComponentType, ReactElement} from 'react';
 import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
 import type {LocationTransform} from '@medux/route-web';
-import {setLoadViewOptions} from './loadView';
-import {appExports} from './sington';
 import type {ServerRequest, ServerResponse} from './sington';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
@@ -23,6 +24,7 @@ export {
   delayPromise,
   LoadingState,
   modelHotReplacement,
+  env,
   effect,
   errorAction,
   reducer,

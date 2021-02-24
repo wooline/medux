@@ -1,16 +1,20 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import {BaseRouter, NativeRouter, RootParams, LocationTransform} from '@medux/route-web';
-import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation, Action} from 'history';
+import {BaseRouter, BaseNativeRouter, NativeData, RootParams, LocationTransform} from '@medux/route-web';
+import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
 import {env} from '@medux/core';
 
 type UnregisterCallback = () => void;
 
-export class BrowserNativeRouter implements NativeRouter {
+export class BrowserNativeRouter extends BaseNativeRouter {
+  private _unlistenHistory: UnregisterCallback;
+
+  protected router!: Router<any, string>;
+
   public history: History<never>;
 
   private serverSide: boolean = false;
 
   constructor(createHistory: 'Browser' | 'Hash' | 'Memory' | string) {
+    super();
     if (createHistory === 'Hash') {
       this.history = createHashHistory();
     } else if (createHistory === 'Memory') {
@@ -44,6 +48,31 @@ export class BrowserNativeRouter implements NativeRouter {
         } as any,
       };
     }
+    this._unlistenHistory = this.history.block((location, action) => {
+      const {pathname = '', search = '', hash = ''} = location;
+      const url = [pathname, search, hash].join('');
+      const key = this.getKey(location);
+      const changed = this.onChange(key);
+      if (changed) {
+        let index: number = 0;
+        let callback: () => void;
+        if (action === 'POP') {
+          index = this.router.searchKey(key);
+        }
+        if (index > 0) {
+          callback = () => this.router.back(index);
+        } else if (action === 'REPLACE') {
+          callback = () => this.router.replace(url);
+        } else if (action === 'PUSH') {
+          callback = () => this.router.push(url);
+        } else {
+          callback = () => this.router.relaunch(url);
+        }
+        callback && env.setTimeout(callback, 50);
+        return false;
+      }
+      return undefined;
+    });
   }
 
   getUrl(): string {
@@ -51,90 +80,78 @@ export class BrowserNativeRouter implements NativeRouter {
     return [pathname, search, hash].join('');
   }
 
-  block(blocker: (url: string, key: string, action: Action) => false | void) {
-    return this.history.block((location, action) => {
-      const {pathname = '', search = '', hash = ''} = location;
-      return blocker([pathname, search, hash].join(''), this.getKey(location), action);
-    });
-  }
-
   private getKey(location: HistoryLocation): string {
     return (location.state || '') as string;
   }
 
-  push(getUrl: () => string, key: string, internal: boolean): void {
-    !internal && !this.serverSide && this.history.push(getUrl(), key as any);
-  }
-
-  replace(getUrl: () => string, key: string, internal: boolean): void {
-    !internal && !this.serverSide && this.history.replace(getUrl(), key as any);
-  }
-
-  relaunch(getUrl: () => string, key: string, internal: boolean): void {
-    !internal && !this.serverSide && this.history.push(getUrl(), key as any);
-  }
-
-  back(getUrl: () => string, n: number, key: string, internal: boolean): void {
-    !internal && !this.serverSide && this.history.go(-n);
-  }
-
-  pop(getUrl: () => string, n: number, key: string, internal: boolean) {
-    !internal && !this.serverSide && this.history.push(getUrl(), key as any);
+  protected passive(url: string, key: string, action: string): boolean {
+    return true;
   }
 
   refresh() {
     this.history.go(0);
   }
-}
-export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
-  private _unlistenHistory: UnregisterCallback;
 
-  private _timer: number = 0;
+  protected push(getNativeData: () => NativeData, key: string, internal: boolean) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key as any);
+      return nativeData;
+    }
+    return undefined;
+  }
 
-  public nativeRouter: BrowserNativeRouter;
+  protected replace(getNativeData: () => NativeData, key: string, internal: boolean) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.replace(nativeData.nativeUrl, key as any);
+      return nativeData;
+    }
+    return undefined;
+  }
 
-  constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>) {
-    super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
-    this.nativeRouter = browserNativeRouter;
-    this._unlistenHistory = browserNativeRouter.block((url, key, action) => {
-      if (key !== this.getCurKey()) {
-        let callback: (() => void) | undefined;
-        let index: number = 0;
-        if (action === 'POP') {
-          index = this.history.getActionIndex(key);
-        }
-        if (index > 0) {
-          callback = () => {
-            this._timer = 0;
-            this.back(index);
-          };
-        } else if (action === 'REPLACE') {
-          callback = () => {
-            this._timer = 0;
-            this.replace(url);
-          };
-        } else if (action === 'PUSH') {
-          callback = () => {
-            this._timer = 0;
-            this.push(url);
-          };
-        } else {
-          callback = () => {
-            this._timer = 0;
-            this.relaunch(url);
-          };
-        }
-        if (callback && !this._timer) {
-          this._timer = env.setTimeout(callback, 50);
-        }
-        return false;
-      }
-      return undefined;
-    });
+  protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key as any);
+      return nativeData;
+    }
+    return undefined;
+  }
+
+  // 只有当native不处理时返回void，否则必须返回NativeData，返回void会导致不依赖onChange来关闭task
+  // history.go会触发onChange，所以必须返回NativeData
+  protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.go(-n);
+      return nativeData;
+    }
+    return undefined;
+  }
+
+  protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key as any);
+      return nativeData;
+    }
+    return undefined;
   }
 
   destroy() {
     this._unlistenHistory();
+  }
+}
+export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
+  public nativeRouter!: BrowserNativeRouter;
+
+  constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>) {
+    super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
+  }
+
+  searchKey(key: string) {
+    return this.history.getActionIndex(key);
   }
 }
 

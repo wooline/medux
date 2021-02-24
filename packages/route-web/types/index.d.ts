@@ -42,24 +42,44 @@ export declare function routeChangeAction<P extends {
 };
 export declare const routeMiddleware: Middleware;
 export declare const routeReducer: Reducer;
-export interface NativeRouter {
-    push(getNativeUrl: () => string, key: string, internal: boolean): void;
-    replace(getNativeUrl: () => string, key: string, internal: boolean): void;
-    relaunch(getNativeUrl: () => string, key: string, internal: boolean): void;
-    back(getNativeUrl: () => string, n: number, key: string, internal: boolean): void;
-    pop(getNativeUrl: () => string, n: number, key: string, internal: boolean): void;
+export declare type NativeData = {
+    nativeLocation: NativeLocation;
+    nativeUrl: string;
+};
+interface RouterTask {
+    method: string;
+}
+interface NativeRouterTask {
+    resolve: (nativeData: NativeData | undefined) => void;
+    reject: () => void;
+    nativeData: undefined | NativeData;
+}
+export declare abstract class BaseNativeRouter {
+    protected curTask?: NativeRouterTask;
+    protected taskList: RouterTask[];
+    protected router: BaseRouter<any, string>;
+    protected abstract push(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+    protected abstract replace(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+    protected abstract relaunch(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+    protected abstract back(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+    protected abstract pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+    abstract destroy(): void;
+    protected onChange(key: string): boolean;
+    setRouter(router: BaseRouter<any, string>): void;
+    execute(method: 'relaunch' | 'push' | 'replace' | 'back' | 'pop', getNativeData: () => NativeData, ...args: any[]): Promise<NativeData | undefined>;
 }
 export declare abstract class BaseRouter<P extends RootParams, N extends string> {
-    nativeRouter: NativeRouter;
+    nativeRouter: BaseNativeRouter;
     protected locationTransform: LocationTransform<P>;
     private _tid;
+    private curTask?;
+    private taskList;
     private _nativeData;
-    private _getNativeUrl;
     private routeState;
     private meduxUrl;
     protected store: Store | undefined;
     readonly history: History;
-    constructor(nativeLocationOrNativeUrl: NativeLocation | string, nativeRouter: NativeRouter, locationTransform: LocationTransform<P>);
+    constructor(nativeLocationOrNativeUrl: NativeLocation | string, nativeRouter: BaseNativeRouter, locationTransform: LocationTransform<P>);
     getRouteState(): RouteState<P>;
     getPagename(): string;
     getParams(): Partial<P>;
@@ -67,7 +87,7 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     getNativeLocation(): NativeLocation;
     getNativeUrl(): string;
     setStore(_store: Store): void;
-    protected getCurKey(): string;
+    getCurKey(): string;
     private _createKey;
     nativeUrlToNativeLocation(url: string): NativeLocation;
     nativeLocationToLocation(nativeLocation: NativeLocation): Location<P>;
@@ -77,10 +97,18 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     locationToNativeUrl(location: PartialLocation<P>): string;
     locationToMeduxUrl(location: PartialLocation<P>): string;
     payloadToPartial(payload: PayloadLocation<P, N>): PartialLocation<P>;
-    relaunch(data: PayloadLocation<P, N> | string, internal?: boolean): Promise<RouteState<P>>;
-    push(data: PayloadLocation<P, N> | string, internal?: boolean): Promise<RouteState<P>>;
-    replace(data: PayloadLocation<P, N> | string, internal?: boolean): Promise<RouteState<P>>;
-    back(n?: number, internal?: boolean): Promise<RouteState<P>>;
-    pop(n?: number, internal?: boolean): Promise<RouteState<P>>;
-    abstract destroy(): void;
+    relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): void;
+    private _relaunch;
+    push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): void;
+    _push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): Promise<RouteState<P>>;
+    replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): void;
+    _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): Promise<RouteState<P>>;
+    back(n?: number, internal?: boolean, passive?: boolean): void;
+    _back(n?: number, internal?: boolean, passive?: boolean): Promise<RouteState<P>>;
+    pop(n?: number, internal?: boolean, passive?: boolean): void;
+    _pop(n?: number, internal?: boolean, passive?: boolean): Promise<RouteState<P>>;
+    private taskComplete;
+    private executeTask;
+    private addTask;
+    destroy(): void;
 }

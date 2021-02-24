@@ -1,6 +1,6 @@
 import {Unsubscribe} from 'redux';
 import {deepMerge, LoadingState, TaskCountEvent, TaskCounter} from './sprite';
-import {env, isServerEnv} from './env';
+import {env} from './env';
 
 /**
  * 可供设置的全局参数，参见setConfig
@@ -150,7 +150,7 @@ export function setLoadingDepthTime(second: number) {
  * @param groupName moduleName+groupName合起来作为该加载项的key
  */
 export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, groupName = 'global'): T {
-  if (isServerEnv) {
+  if (env.isServer) {
     return item;
   }
   const key = moduleName + config.NSP + groupName;
@@ -308,7 +308,7 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
     descriptor.enumerable = true;
     if (loadingForGroupName) {
       const before = (curAction: Action, moduleName: string, promiseResult: Promise<any>) => {
-        if (!isServerEnv) {
+        if (!env.isServer) {
           if (loadingForModuleName === '') {
             loadingForModuleName = MetaData.appModuleName;
           } else if (!loadingForModuleName) {
@@ -376,16 +376,16 @@ export function isPromise(data: any): data is Promise<any> {
   return typeof data === 'object' && typeof data.then === 'function';
 }
 export function isServer(): boolean {
-  return isServerEnv;
+  return env.isServer;
 }
 export function serverSide<T>(callback: () => T) {
-  if (isServerEnv) {
+  if (env.isServer) {
     return callback();
   }
   return undefined;
 }
 export function clientSide<T>(callback: () => T) {
-  if (!isServerEnv) {
+  if (!env.isServer) {
     return callback();
   }
   return undefined;

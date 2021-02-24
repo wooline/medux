@@ -1,5 +1,5 @@
 import {Middleware, Reducer} from 'redux';
-import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMergeState, mergeState, env, deepMerge} from '@medux/core';
+import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise} from '@medux/core';
 import {uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History} from './basic';
 
 import type {LocationTransform} from './transform';
@@ -76,20 +76,85 @@ export const routeReducer: Reducer = (state: RouteState<any>, action) => {
   return state;
 };
 
-export interface NativeRouter {
-  push(getNativeUrl: () => string, key: string, internal: boolean): void;
-  replace(getNativeUrl: () => string, key: string, internal: boolean): void;
-  relaunch(getNativeUrl: () => string, key: string, internal: boolean): void;
-  back(getNativeUrl: () => string, n: number, key: string, internal: boolean): void;
-  pop(getNativeUrl: () => string, n: number, key: string, internal: boolean): void;
+export type NativeData = {nativeLocation: NativeLocation; nativeUrl: string};
+
+function dataIsNativeLocation(data: PayloadLocation<any, string> | NativeLocation): data is NativeLocation {
+  return data['pathname'];
+}
+
+interface RouterTask {
+  method: string;
+}
+interface NativeRouterTask {
+  resolve: (nativeData: NativeData | undefined) => void;
+  reject: () => void;
+  nativeData: undefined | NativeData;
+}
+export abstract class BaseNativeRouter {
+  protected curTask?: NativeRouterTask;
+
+  protected taskList: RouterTask[] = [];
+
+  protected router: BaseRouter<any, string> = null as any;
+
+  protected abstract push(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+
+  protected abstract replace(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+
+  protected abstract relaunch(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+
+  protected abstract back(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+
+  // 只有当native不处理时返回void，否则必须返回NativeData，返回void会导致不依赖onChange来关闭task
+  protected abstract pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+
+  abstract destroy(): void;
+
+  protected onChange(key: string): boolean {
+    if (this.curTask) {
+      this.curTask.resolve(this.curTask.nativeData);
+      this.curTask = undefined;
+      return false;
+    }
+    return key !== this.router.getCurKey();
+  }
+
+  setRouter(router: BaseRouter<any, string>) {
+    this.router = router;
+  }
+
+  execute(method: 'relaunch' | 'push' | 'replace' | 'back' | 'pop', getNativeData: () => NativeData, ...args: any[]): Promise<NativeData | undefined> {
+    return new Promise((resolve, reject) => {
+      const task: NativeRouterTask = {resolve, reject, nativeData: undefined};
+      this.curTask = task;
+      const result: void | NativeData | Promise<NativeData> = this[method as string](() => {
+        const nativeData = getNativeData();
+        task.nativeData = nativeData;
+        return nativeData;
+      }, ...args);
+      if (!result) {
+        // 表示native不做任何处理，也不会触发onChange
+        resolve(undefined);
+        this.curTask = undefined;
+      } else if (isPromise(result)) {
+        // 存在错误时，不会触发onChange，需要手动触发，否则都会触发onChange
+        result.catch((e) => {
+          reject(e);
+          this.curTask = undefined;
+        });
+      }
+    });
+  }
 }
 
 export abstract class BaseRouter<P extends RootParams, N extends string> {
   private _tid = 0;
 
-  private _nativeData: {nativeLocation: NativeLocation; nativeUrl: string} | undefined;
+  private curTask?: () => Promise<void>;
 
-  private _getNativeUrl: () => string = this.getNativeUrl.bind(this);
+  private taskList: Array<() => Promise<void>> = [];
+
+  private _nativeData: {nativeLocation: NativeLocation; nativeUrl: string} | undefined;
 
   private routeState: RouteState<P>;
 
@@ -99,7 +164,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
 
   public readonly history: History;
 
-  constructor(nativeLocationOrNativeUrl: NativeLocation | string, public nativeRouter: NativeRouter, protected locationTransform: LocationTransform<P>) {
+  constructor(nativeLocationOrNativeUrl: NativeLocation | string, public nativeRouter: BaseNativeRouter, protected locationTransform: LocationTransform<P>) {
+    nativeRouter.setRouter(this);
     const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
@@ -108,7 +174,6 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
-    this.nativeRouter.relaunch(this._getNativeUrl, key, false);
   }
 
   getRouteState(): RouteState<P> {
@@ -149,7 +214,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this.store = _store;
   }
 
-  protected getCurKey(): string {
+  getCurKey(): string {
     return this.routeState.key;
   }
 
@@ -220,76 +285,134 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return {pagename: payload.pagename || this.routeState.pagename, params: params || {}};
   }
 
-  async relaunch(data: PayloadLocation<P, N> | string, internal?: boolean): Promise<RouteState<P>> {
+  relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
+    this.addTask(() => this._relaunch(data, internal, passive));
+  }
+
+  private async _relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
+    // : Promise<RouteState<P>>
     let location: Location<P>;
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
+    } else if (dataIsNativeLocation(data)) {
+      location = this.nativeLocationToLocation(data);
     } else {
       location = this.locationTransform.in(this.payloadToPartial(data));
     }
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData: NativeData | undefined;
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute(
+        'relaunch',
+        () => {
+          const nativeLocation = this.locationTransform.out(routeState);
+          const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+          return {nativeLocation, nativeUrl};
+        },
+        key,
+        !!internal
+      );
+    }
+    this._nativeData = nativeData;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().relaunch(location, key);
     } else {
       this.history.relaunch(location, key);
     }
-    this.nativeRouter.relaunch(this._getNativeUrl, key, !!internal);
-    return routeState;
   }
 
-  async push(data: PayloadLocation<P, N> | string, internal?: boolean): Promise<RouteState<P>> {
+  push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
+    this.addTask(() => this._push(data, internal, passive));
+  }
+
+  async _push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
     let location: Location<P>;
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
+    } else if (dataIsNativeLocation(data)) {
+      location = this.nativeLocationToLocation(data);
     } else {
       location = this.locationTransform.in(this.payloadToPartial(data));
     }
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'PUSH', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData: NativeData | void;
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute(
+        'push',
+        () => {
+          const nativeLocation = this.locationTransform.out(routeState);
+          const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+          return {nativeLocation, nativeUrl};
+        },
+        key,
+        !!internal
+      );
+    }
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().push(location, key);
     } else {
       this.history.push(location, key);
     }
-    this.nativeRouter.push(this._getNativeUrl, key, !!internal);
     return routeState;
   }
 
-  async replace(data: PayloadLocation<P, N> | string, internal?: boolean): Promise<RouteState<P>> {
+  replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
+    this.addTask(() => this._replace(data, internal, passive));
+  }
+
+  async _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
     let location: Location<P>;
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
+    } else if (dataIsNativeLocation(data)) {
+      location = this.nativeLocationToLocation(data);
     } else {
       location = this.locationTransform.in(this.payloadToPartial(data));
     }
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'REPLACE', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData: NativeData | void;
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute(
+        'replace',
+        () => {
+          const nativeLocation = this.locationTransform.out(routeState);
+          const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+          return {nativeLocation, nativeUrl};
+        },
+        key,
+        !!internal
+      );
+    }
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().replace(location, key);
     } else {
       this.history.replace(location, key);
     }
-    this.nativeRouter.replace(this._getNativeUrl, key, !!internal);
     return routeState;
   }
 
-  async back(n: number = 1, internal?: boolean): Promise<RouteState<P>> {
+  back(n: number = 1, internal?: boolean, passive?: boolean) {
+    this.addTask(() => this._back(n, internal, passive));
+  }
+
+  async _back(n: number = 1, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
     if (!stack) {
       return Promise.reject(1);
@@ -298,20 +421,37 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const {key, location} = uriToLocation<P>(uri);
     const routeState: RouteState<P> = {...location, action: 'BACK', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData: NativeData | void;
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute(
+        'back',
+        () => {
+          const nativeLocation = this.locationTransform.out(routeState);
+          const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+          return {nativeLocation, nativeUrl};
+        },
+        n,
+        key,
+        !!internal
+      );
+    }
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);
     } else {
       this.history.back(n);
     }
-    this.nativeRouter.back(this._getNativeUrl, n, key, !!internal);
     return routeState;
   }
 
-  async pop(n: number = 1, internal?: boolean): Promise<RouteState<P>> {
+  pop(n: number = 1, internal?: boolean, passive?: boolean) {
+    this.addTask(() => this._pop(n, internal, passive));
+  }
+
+  async _pop(n: number = 1, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
     if (!stack) {
       return Promise.reject(1);
@@ -320,18 +460,55 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const {key, location} = uriToLocation<P>(uri);
     const routeState: RouteState<P> = {...location, action: 'POP', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData: NativeData | void;
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute(
+        'pop',
+        () => {
+          const nativeLocation = this.locationTransform.out(routeState);
+          const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+          return {nativeLocation, nativeUrl};
+        },
+        n,
+        key,
+        !!internal
+      );
+    }
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().pop(n);
     } else {
       this.history.pop(n);
     }
-    this.nativeRouter.pop(this._getNativeUrl, n, key, !!internal);
     return routeState;
   }
 
-  abstract destroy(): void;
+  private taskComplete() {
+    const task = this.taskList.shift();
+    if (task) {
+      this.executeTask(task);
+    } else {
+      this.curTask = undefined;
+    }
+  }
+
+  private executeTask(task: () => Promise<void>) {
+    this.curTask = task;
+    task().finally(() => this.taskComplete());
+  }
+
+  private addTask(task: () => Promise<any>) {
+    if (this.curTask) {
+      this.taskList.push(task);
+    } else {
+      this.executeTask(task);
+    }
+  }
+
+  destroy() {
+    this.nativeRouter.destroy();
+  }
 }

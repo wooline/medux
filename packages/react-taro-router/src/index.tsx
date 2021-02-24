@@ -1,137 +1,86 @@
-/* global process */
-import './env';
-import {env, CommonModule, cacheModule, loadModel} from '@medux/core';
-import {initApp, InitAppOptions} from '@medux/mini-program';
-import React, {FC} from 'react';
-import {connect} from 'react-redux';
-import {
-  InferableComponentEnhancer,
-  DefaultRootState,
-  ResolveThunks,
-  MapStateToPropsParam,
-  MapDispatchToPropsNonObject,
-  InferableComponentEnhancerWithProps,
-  MapDispatchToPropsParam,
-} from 'react-redux';
+/* eslint-disable import/order */
 
-export {
-  ActionTypes,
-  delayPromise,
-  client,
-  env,
-  isDevelopmentEnv,
-  LoadingState,
-  exportActions,
-  BaseModelHandlers,
-  modelHotReplacement,
-  effect,
-  errorAction,
-  reducer,
-  viewHotReplacement,
-  setLoading,
-  setConfig,
-  logger,
-  setLoadingDepthTime,
-} from '@medux/core';
+import React from 'react';
+import Taro from '@tarojs/taro';
+import {env, renderApp, renderSSR, mergeState, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
+import {routeMiddleware, routeReducer, setRouteConfig} from '@medux/route-web';
+import {createRouter} from '@medux/route-mp';
+import {setLoadViewOptions} from './loadView';
 
-export type {Actions, RouteData, RouteViews, BaseModelState} from '@medux/core';
+import type {ComponentType, ReactElement} from 'react';
+import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
+import type {RouteENV} from '@medux/route-mp';
 
-export type {RouteConfig, LocationMap, RootState, BrowserRouter} from '@medux/mini-program';
-export {exportModule} from '@medux/mini-program';
+const routeENV: RouteENV = {reLaunch: Taro.reLaunch, redirectTo: Taro.redirectTo, navigateTo: Taro.navigateTo, navigateBack: Taro.navigateBack};
 
-export interface DispatchProp {
-  dispatch?: (action: {type: string}) => any;
+export function setConfig(conf: {
+  RSP?: string;
+  actionMaxHistory?: number;
+  pagesMaxHistory?: number;
+  pagenames?: {[key: string]: string};
+  NSP?: string;
+  MSP?: string;
+  MutableData?: boolean;
+  DEVTOOLS?: boolean;
+  LoadViewOnError?: ReactElement;
+  LoadViewOnLoading?: ReactElement;
+}) {
+  setCoreConfig(conf);
+  setRouteConfig(conf);
+  setLoadViewOptions(conf);
 }
 
-function toUrl(pathname: string, query: {[key: string]: string}) {
-  pathname = ('/' + pathname).replace('//', '/');
-  let search = Object.keys(query)
-    .map((key) => key + '=' + query[key])
-    .join('&');
-  if (search) {
-    search = '?' + search;
+export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
+
+export function buildApp(
+  moduleGetter: ModuleGetter,
+  {
+    appModuleName = 'app',
+    appViewName = 'main',
+    historyType = 'Browser',
+    locationTransform,
+    storeOptions = {},
+    container = 'root',
+  }: {
+    appModuleName?: string;
+    appViewName?: string;
+    historyType?: 'Browser' | 'Hash' | 'Memory';
+    locationTransform: LocationTransform<any>;
+    storeOptions?: StoreOptions;
+    container?: string | Element;
   }
-  return {pathname, search};
-}
-export function buildApp(options: Omit<InitAppOptions, 'startupUrl'>) {
-  let history: meduxCore.History | undefined = undefined;
-  let startupUrl: string = '';
-  if (process.env.TARO_ENV === 'h5') {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const taroRouter: {history: meduxCore.History} = require('@tarojs/router');
-    history = taroRouter.history;
-    startupUrl = history.location.pathname + history.location.search;
-  } else {
-    const {path, query} = env.getLaunchOptionsSync();
-    const {pathname, search} = toUrl(path, query);
-    startupUrl = pathname + search;
-  }
-  const result = initApp({...options, startupUrl});
-  if (history) {
-    history.listen((location, action) => {
-      result.historyActions.passive({...location, action});
-    });
-  } else {
-    env.onAppRoute(function (res) {
-      const {pathname, search} = toUrl(res.path, res.query);
-      result.historyActions.passive({pathname, search, hash: '', action: 'PUSH'});
-    });
-  }
-  return result;
-}
-export const connectView: ConnectView = function (module: CommonModule, useForwardRef: boolean, ...rest: any[]) {
-  cacheModule(module);
-  // @ts-ignore
-  const connectedComponent = connect(...rest);
-  return (...args: any[]) => {
-    const Raw: React.ComponentType<any> = connectedComponent(...args);
-    const Loader: FC<any> = function ViewLoader(props: any) {
-      loadModel(module.default.moduleName);
-      const {forwardRef, ...other} = props;
-      const ref = forwardRef ? {ref: forwardRef} : {};
-      return <Raw {...other} {...ref} />;
-    };
-    // eslint-disable-next-line react/display-name
-    const Component = useForwardRef ? React.forwardRef((props, ref) => <Loader {...props} forwardRef={ref} />) : Loader;
-    return Component as any;
-  };
-};
+) {
+  const router = createRouter(locationTransform, routeENV);
+  appExports.router = router;
+  const {middlewares = [], reducers = {}, initData = {}} = storeOptions;
+  middlewares.unshift(routeMiddleware);
+  reducers.route = routeReducer;
+  const ssrData = env[SSRKey];
+  initData.route = router.getRouteState();
 
-export interface ConnectView {
-  // tslint:disable:no-unnecessary-generics
-  (module: CommonModule, useForwardRef: boolean): InferableComponentEnhancer<DispatchProp>;
-
-  <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultRootState>(
-    module: CommonModule,
-    useForwardRef: boolean,
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>
-  ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>;
-
-  <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
-    module: CommonModule,
-    useForwardRef: boolean,
-    mapStateToProps: null | undefined,
-    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>
-  ): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>;
-
-  <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
-    module: CommonModule,
-    useForwardRef: boolean,
-    mapStateToProps: null | undefined,
-    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>
-  ): InferableComponentEnhancerWithProps<ResolveThunks<TDispatchProps>, TOwnProps>;
-
-  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultRootState>(
-    module: CommonModule,
-    useForwardRef: boolean,
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>
-  ): InferableComponentEnhancerWithProps<TStateProps & TDispatchProps, TOwnProps>;
-
-  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultRootState>(
-    module: CommonModule,
-    useForwardRef: boolean,
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>
-  ): InferableComponentEnhancerWithProps<TStateProps & ResolveThunks<TDispatchProps>, TOwnProps>;
+  return renderApp<ComponentType<any>>(
+    (store, AppView) => {
+      const reRender = (View: ComponentType<any>) => {
+        const panel: any = typeof container === 'string' ? env.document.getElementById(container) : container;
+        unmountComponentAtNode(panel!);
+        const renderFun = ssrData ? hydrate : render;
+        renderFun(<View store={store} />, panel);
+      };
+      reRender(AppView);
+      return reRender;
+    },
+    moduleGetter,
+    appModuleName,
+    appViewName,
+    {...storeOptions, middlewares, reducers, initData: mergeState(initData, ssrData)},
+    (store) => {
+      router.setStore(store);
+      appExports.store = store as any;
+      Object.defineProperty(appExports, 'state', {
+        get: () => {
+          return store.getState();
+        },
+      });
+    }
+  );
 }

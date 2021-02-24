@@ -1,4 +1,4 @@
-import {BaseRouter, NativeRouter, createLocationTransform, DeepPartial, RootParams} from 'src/index';
+import {BaseRouter, BaseNativeRouter, createLocationTransform, DeepPartial, RootParams, NativeData} from 'src/index';
 
 import nativeRouterMock from './nativeRouter';
 
@@ -111,23 +111,40 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
   destroy() {}
 }
 
-export const nativeRouter: NativeRouter = {
-  push(getUrl, key, internal) {
-    nativeRouterMock.push(getUrl(), key, internal);
-  },
-  replace(getUrl, key, internal) {
-    nativeRouterMock.replace(getUrl(), key, internal);
-  },
-  relaunch(getUrl, key, internal) {
-    nativeRouterMock.relaunch(getUrl(), key, internal);
-  },
-  back(getUrl, n, key, internal) {
-    nativeRouterMock.back(getUrl(), n, key, internal);
-  },
-  pop(getUrl, n, key, internal) {
-    nativeRouterMock.pop(getUrl(), n, key, internal);
-  },
-};
+export class NativeRouter extends BaseNativeRouter {
+  protected push(getNativeData: () => NativeData, key: string, internal: boolean) {
+    const nativeData = getNativeData();
+    nativeRouterMock.push(nativeData.nativeUrl, key, internal);
+    return nativeData;
+  }
+
+  protected replace(getNativeData: () => NativeData, key: string, internal: boolean) {
+    const nativeData = getNativeData();
+    nativeRouterMock.replace(nativeData.nativeUrl, key, internal);
+    return nativeData;
+  }
+
+  protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean) {
+    const nativeData = getNativeData();
+    nativeRouterMock.relaunch(nativeData.nativeUrl, key, internal);
+    return nativeData;
+  }
+
+  protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
+    const nativeData = getNativeData();
+    nativeRouterMock.back(nativeData.nativeUrl, n, key, internal);
+    return nativeData;
+  }
+
+  protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
+    const nativeData = getNativeData();
+    nativeRouterMock.pop(nativeData.nativeUrl, n, key, internal);
+    return nativeData;
+  }
+
+  destroy() {}
+}
+export const nativeRouter: NativeRouter = new NativeRouter();
 
 export const router = new Router('/', nativeRouter, locationTransform);
 router.setStore({

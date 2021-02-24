@@ -1,4 +1,4 @@
-/// <reference path="../env/global.d.ts" />
+import './env';
 import type { ComponentType, ReactElement } from 'react';
 import type { ModuleGetter, StoreOptions, ExportModule } from '@medux/core';
 import type { LocationTransform } from '@medux/route-web';
@@ -8,7 +8,7 @@ export type { Store } from 'redux';
 export type { RouteModuleState as BaseModuleState, RootState, RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial } from '@medux/route-web';
 export type { LoadView } from './loadView';
 export type { FacadeExports, ServerRequest, ServerResponse } from './sington';
-export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, setLoadingDepthTime, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
+export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, env, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, setLoadingDepthTime, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
 export { RouteModuleHandlers as BaseModuleHandlers, createLocationTransform } from '@medux/route-web';
 export { exportApp, patchActions } from './sington';
 export { DocumentHead } from './components/DocumentHead';

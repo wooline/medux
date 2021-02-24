@@ -1,6 +1,6 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge } from '@medux/core';
+import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise } from '@medux/core';
 import { uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History } from './basic';
 export { setRouteConfig, routeConfig } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
@@ -87,6 +87,61 @@ export const routeReducer = (state, action) => {
 
   return state;
 };
+
+function dataIsNativeLocation(data) {
+  return data['pathname'];
+}
+
+export class BaseNativeRouter {
+  constructor() {
+    _defineProperty(this, "curTask", void 0);
+
+    _defineProperty(this, "taskList", []);
+
+    _defineProperty(this, "router", null);
+  }
+
+  onChange(key) {
+    if (this.curTask) {
+      this.curTask.resolve(this.curTask.nativeData);
+      this.curTask = undefined;
+      return false;
+    }
+
+    return key !== this.router.getCurKey();
+  }
+
+  setRouter(router) {
+    this.router = router;
+  }
+
+  execute(method, getNativeData, ...args) {
+    return new Promise((resolve, reject) => {
+      const task = {
+        resolve,
+        reject,
+        nativeData: undefined
+      };
+      this.curTask = task;
+      const result = this[method](() => {
+        const nativeData = getNativeData();
+        task.nativeData = nativeData;
+        return nativeData;
+      }, ...args);
+
+      if (!result) {
+        resolve(undefined);
+        this.curTask = undefined;
+      } else if (isPromise(result)) {
+        result.catch(e => {
+          reject(e);
+          this.curTask = undefined;
+        });
+      }
+    });
+  }
+
+}
 export class BaseRouter {
   constructor(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
     this.nativeRouter = nativeRouter;
@@ -94,9 +149,11 @@ export class BaseRouter {
 
     _defineProperty(this, "_tid", 0);
 
-    _defineProperty(this, "_nativeData", void 0);
+    _defineProperty(this, "curTask", void 0);
 
-    _defineProperty(this, "_getNativeUrl", this.getNativeUrl.bind(this));
+    _defineProperty(this, "taskList", []);
+
+    _defineProperty(this, "_nativeData", void 0);
 
     _defineProperty(this, "routeState", void 0);
 
@@ -106,6 +163,7 @@ export class BaseRouter {
 
     _defineProperty(this, "history", void 0);
 
+    nativeRouter.setRouter(this);
     const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
     const key = this._createKey();
@@ -119,7 +177,6 @@ export class BaseRouter {
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
-    this.nativeRouter.relaunch(this._getNativeUrl, key, false);
   }
 
   getRouteState() {
@@ -257,11 +314,17 @@ export class BaseRouter {
     };
   }
 
-  async relaunch(data, internal) {
+  relaunch(data, internal, passive) {
+    this.addTask(() => this._relaunch(data, internal, passive));
+  }
+
+  async _relaunch(data, internal, passive) {
     let location;
 
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
+    } else if (dataIsNativeLocation(data)) {
+      location = this.nativeLocationToLocation(data);
     } else {
       location = this.locationTransform.in(this.payloadToPartial(data));
     }
@@ -273,9 +336,22 @@ export class BaseRouter {
       key
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData;
+
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute('relaunch', () => {
+        const nativeLocation = this.locationTransform.out(routeState);
+        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        return {
+          nativeLocation,
+          nativeUrl
+        };
+      }, key, !!internal);
+    }
+
+    this._nativeData = nativeData;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
@@ -283,16 +359,19 @@ export class BaseRouter {
     } else {
       this.history.relaunch(location, key);
     }
-
-    this.nativeRouter.relaunch(this._getNativeUrl, key, !!internal);
-    return routeState;
   }
 
-  async push(data, internal) {
+  push(data, internal, passive) {
+    this.addTask(() => this._push(data, internal, passive));
+  }
+
+  async _push(data, internal, passive) {
     let location;
 
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
+    } else if (dataIsNativeLocation(data)) {
+      location = this.nativeLocationToLocation(data);
     } else {
       location = this.locationTransform.in(this.payloadToPartial(data));
     }
@@ -304,9 +383,22 @@ export class BaseRouter {
       key
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData;
+
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute('push', () => {
+        const nativeLocation = this.locationTransform.out(routeState);
+        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        return {
+          nativeLocation,
+          nativeUrl
+        };
+      }, key, !!internal);
+    }
+
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
@@ -315,15 +407,20 @@ export class BaseRouter {
       this.history.push(location, key);
     }
 
-    this.nativeRouter.push(this._getNativeUrl, key, !!internal);
     return routeState;
   }
 
-  async replace(data, internal) {
+  replace(data, internal, passive) {
+    this.addTask(() => this._replace(data, internal, passive));
+  }
+
+  async _replace(data, internal, passive) {
     let location;
 
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
+    } else if (dataIsNativeLocation(data)) {
+      location = this.nativeLocationToLocation(data);
     } else {
       location = this.locationTransform.in(this.payloadToPartial(data));
     }
@@ -335,9 +432,22 @@ export class BaseRouter {
       key
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData;
+
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute('replace', () => {
+        const nativeLocation = this.locationTransform.out(routeState);
+        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        return {
+          nativeLocation,
+          nativeUrl
+        };
+      }, key, !!internal);
+    }
+
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
@@ -346,11 +456,14 @@ export class BaseRouter {
       this.history.replace(location, key);
     }
 
-    this.nativeRouter.replace(this._getNativeUrl, key, !!internal);
     return routeState;
   }
 
-  async back(n = 1, internal) {
+  back(n = 1, internal, passive) {
+    this.addTask(() => this._back(n, internal, passive));
+  }
+
+  async _back(n = 1, internal, passive) {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
     if (!stack) {
@@ -367,9 +480,22 @@ export class BaseRouter {
       key
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData;
+
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute('back', () => {
+        const nativeLocation = this.locationTransform.out(routeState);
+        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        return {
+          nativeLocation,
+          nativeUrl
+        };
+      }, n, key, !!internal);
+    }
+
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
@@ -378,11 +504,14 @@ export class BaseRouter {
       this.history.back(n);
     }
 
-    this.nativeRouter.back(this._getNativeUrl, n, key, !!internal);
     return routeState;
   }
 
-  async pop(n = 1, internal) {
+  pop(n = 1, internal, passive) {
+    this.addTask(() => this._pop(n, internal, passive));
+  }
+
+  async _pop(n = 1, internal, passive) {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
     if (!stack) {
@@ -399,9 +528,22 @@ export class BaseRouter {
       key
     });
     await this.store.dispatch(beforeRouteChangeAction(routeState));
+    let nativeData;
+
+    if (!passive) {
+      nativeData = await this.nativeRouter.execute('pop', () => {
+        const nativeLocation = this.locationTransform.out(routeState);
+        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        return {
+          nativeLocation,
+          nativeUrl
+        };
+      }, n, key, !!internal);
+    }
+
+    this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this._nativeData = undefined;
     this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
@@ -410,8 +552,34 @@ export class BaseRouter {
       this.history.pop(n);
     }
 
-    this.nativeRouter.pop(this._getNativeUrl, n, key, !!internal);
     return routeState;
+  }
+
+  taskComplete() {
+    const task = this.taskList.shift();
+
+    if (task) {
+      this.executeTask(task);
+    } else {
+      this.curTask = undefined;
+    }
+  }
+
+  executeTask(task) {
+    this.curTask = task;
+    task().finally(() => this.taskComplete());
+  }
+
+  addTask(task) {
+    if (this.curTask) {
+      this.taskList.push(task);
+    } else {
+      this.executeTask(task);
+    }
+  }
+
+  destroy() {
+    this.nativeRouter.destroy();
   }
 
 }

@@ -1,7 +1,7 @@
 import { applyMiddleware, compose, createStore } from 'redux';
 import { ActionTypes, MetaData, config, isPromise, snapshotState, mergeState, warn } from './basic';
 import { loadModel } from './inject';
-import { client, isServerEnv } from './env';
+import { env } from './env';
 import { errorAction } from './actions';
 export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
@@ -106,7 +106,7 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
       actionData[0] = setProcessedError(actionData[0], true);
     }
 
-    if (isServerEnv) {
+    if (env.isServer) {
       if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
         return originalAction;
       }
@@ -245,15 +245,15 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
 
   const enhancers = [middlewareEnhancer, enhancer, ...storeEnhancers];
 
-  if (config.DEVTOOLS && client && client.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(client.__REDUX_DEVTOOLS_EXTENSION__(client.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  if (config.DEVTOOLS && env.__REDUX_DEVTOOLS_EXTENSION__) {
+    enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
   store = createStore(combineReducers, preloadedState, compose(...enhancers));
 
   store.destroy = () => undefined;
 
-  if (!isServerEnv) {
+  if (!env.isServer) {
     MetaData.clientStore = store;
   }
 

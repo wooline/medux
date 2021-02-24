@@ -1,3 +1,4 @@
+import {env} from './env';
 import {
   Action,
   ActionHandler,
@@ -15,7 +16,6 @@ import {
   mergeState,
 } from './basic';
 import {moduleInitAction, moduleReInitAction} from './actions';
-import {isServerEnv} from './env';
 
 export function cacheModule<T extends CommonModule>(module: T): () => T {
   const moduleName = module.default.moduleName;
@@ -303,7 +303,7 @@ export function getView<T>(moduleName: string, viewName: string): T | Promise<T>
     return result.then((module) => {
       cacheModule(module);
       const view: T = module.default.views[viewName];
-      if (isServerEnv) {
+      if (env.isServer) {
         return view;
       }
       const initModel = module.default.model(MetaData.clientStore);
@@ -315,7 +315,7 @@ export function getView<T>(moduleName: string, viewName: string): T | Promise<T>
   }
   cacheModule(result);
   const view: T = result.default.views[viewName];
-  if (isServerEnv) {
+  if (env.isServer) {
     return view;
   }
   const initModel = result.default.model(MetaData.clientStore);

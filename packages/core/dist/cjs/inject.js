@@ -13,11 +13,11 @@ exports.exportModule = exports.CoreModuleHandlers = void 0;
 
 var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
 
+var _env = require("./env");
+
 var _basic = require("./basic");
 
 var _actions = require("./actions");
-
-var _env = require("./env");
 
 function cacheModule(module) {
   var moduleName = module.default.moduleName;
@@ -257,7 +257,7 @@ function getView(moduleName, viewName) {
       cacheModule(module);
       var view = module.default.views[viewName];
 
-      if (_env.isServerEnv) {
+      if (_env.env.isServer) {
         return view;
       }
 
@@ -276,7 +276,7 @@ function getView(moduleName, viewName) {
   cacheModule(result);
   var view = result.default.views[viewName];
 
-  if (_env.isServerEnv) {
+  if (_env.env.isServer) {
     return view;
   }
 

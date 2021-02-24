@@ -1,9 +1,15 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseRouter } from '@medux/route-web';
+import { BaseRouter, BaseNativeRouter } from '@medux/route-web';
 import { createBrowserHistory, createHashHistory, createMemoryHistory } from 'history';
 import { env } from '@medux/core';
-export class BrowserNativeRouter {
+export class BrowserNativeRouter extends BaseNativeRouter {
   constructor(createHistory) {
+    super();
+
+    _defineProperty(this, "_unlistenHistory", void 0);
+
+    _defineProperty(this, "router", void 0);
+
     _defineProperty(this, "history", void 0);
 
     _defineProperty(this, "serverSide", false);
@@ -50,6 +56,41 @@ export class BrowserNativeRouter {
         }
       };
     }
+
+    this._unlistenHistory = this.history.block((location, action) => {
+      const {
+        pathname = '',
+        search = '',
+        hash = ''
+      } = location;
+      const url = [pathname, search, hash].join('');
+      const key = this.getKey(location);
+      const changed = this.onChange(key);
+
+      if (changed) {
+        let index = 0;
+        let callback;
+
+        if (action === 'POP') {
+          index = this.router.searchKey(key);
+        }
+
+        if (index > 0) {
+          callback = () => this.router.back(index);
+        } else if (action === 'REPLACE') {
+          callback = () => this.router.replace(url);
+        } else if (action === 'PUSH') {
+          callback = () => this.router.push(url);
+        } else {
+          callback = () => this.router.relaunch(url);
+        }
+
+        callback && env.setTimeout(callback, 50);
+        return false;
+      }
+
+      return undefined;
+    });
   }
 
   getUrl() {
@@ -61,43 +102,70 @@ export class BrowserNativeRouter {
     return [pathname, search, hash].join('');
   }
 
-  block(blocker) {
-    return this.history.block((location, action) => {
-      const {
-        pathname = '',
-        search = '',
-        hash = ''
-      } = location;
-      return blocker([pathname, search, hash].join(''), this.getKey(location), action);
-    });
-  }
-
   getKey(location) {
     return location.state || '';
   }
 
-  push(getUrl, key, internal) {
-    !internal && !this.serverSide && this.history.push(getUrl(), key);
-  }
-
-  replace(getUrl, key, internal) {
-    !internal && !this.serverSide && this.history.replace(getUrl(), key);
-  }
-
-  relaunch(getUrl, key, internal) {
-    !internal && !this.serverSide && this.history.push(getUrl(), key);
-  }
-
-  back(getUrl, n, key, internal) {
-    !internal && !this.serverSide && this.history.go(-n);
-  }
-
-  pop(getUrl, n, key, internal) {
-    !internal && !this.serverSide && this.history.push(getUrl(), key);
+  passive(url, key, action) {
+    return true;
   }
 
   refresh() {
     this.history.go(0);
+  }
+
+  push(getNativeData, key, internal) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  }
+
+  replace(getNativeData, key, internal) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.replace(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  }
+
+  relaunch(getNativeData, key, internal) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  }
+
+  back(getNativeData, n, key, internal) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.go(-n);
+      return nativeData;
+    }
+
+    return undefined;
+  }
+
+  pop(getNativeData, n, key, internal) {
+    if (!internal && !this.serverSide) {
+      const nativeData = getNativeData();
+      this.history.push(nativeData.nativeUrl, key);
+      return nativeData;
+    }
+
+    return undefined;
+  }
+
+  destroy() {
+    this._unlistenHistory();
   }
 
 }
@@ -105,57 +173,11 @@ export class Router extends BaseRouter {
   constructor(browserNativeRouter, locationTransform) {
     super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
 
-    _defineProperty(this, "_unlistenHistory", void 0);
-
-    _defineProperty(this, "_timer", 0);
-
     _defineProperty(this, "nativeRouter", void 0);
-
-    this.nativeRouter = browserNativeRouter;
-    this._unlistenHistory = browserNativeRouter.block((url, key, action) => {
-      if (key !== this.getCurKey()) {
-        let callback;
-        let index = 0;
-
-        if (action === 'POP') {
-          index = this.history.getActionIndex(key);
-        }
-
-        if (index > 0) {
-          callback = () => {
-            this._timer = 0;
-            this.back(index);
-          };
-        } else if (action === 'REPLACE') {
-          callback = () => {
-            this._timer = 0;
-            this.replace(url);
-          };
-        } else if (action === 'PUSH') {
-          callback = () => {
-            this._timer = 0;
-            this.push(url);
-          };
-        } else {
-          callback = () => {
-            this._timer = 0;
-            this.relaunch(url);
-          };
-        }
-
-        if (callback && !this._timer) {
-          this._timer = env.setTimeout(callback, 50);
-        }
-
-        return false;
-      }
-
-      return undefined;
-    });
   }
 
-  destroy() {
-    this._unlistenHistory();
+  searchKey(key) {
+    return this.history.getActionIndex(key);
   }
 
 }

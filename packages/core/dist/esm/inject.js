@@ -1,7 +1,7 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
+import { env } from './env';
 import { MetaData, config, reducer, isPromise, mergeState } from './basic';
 import { moduleInitAction, moduleReInitAction } from './actions';
-import { isServerEnv } from './env';
 export function cacheModule(module) {
   var moduleName = module.default.moduleName;
   var moduleGetter = MetaData.moduleGetter;
@@ -235,7 +235,7 @@ export function getView(moduleName, viewName) {
       cacheModule(module);
       var view = module.default.views[viewName];
 
-      if (isServerEnv) {
+      if (env.isServer) {
         return view;
       }
 
@@ -254,7 +254,7 @@ export function getView(moduleName, viewName) {
   cacheModule(result);
   var view = result.default.views[viewName];
 
-  if (isServerEnv) {
+  if (env.isServer) {
     return view;
   }
 

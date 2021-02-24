@@ -1,49 +1,107 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { BaseRouter } from '@medux/route-web';
-import { env } from '@medux/core';
-export class MPNativeRouter {
+import { BaseRouter, BaseNativeRouter } from '@medux/route-web';
+export class MPNativeRouter extends BaseNativeRouter {
+  constructor(env) {
+    super();
+    this.env = env;
+
+    _defineProperty(this, "_unlistenHistory", void 0);
+
+    _defineProperty(this, "router", void 0);
+
+    this._unlistenHistory = env.onRouteChange((pathname, query, action) => {
+      const key = query['__key__'];
+      const nativeLocation = {
+        pathname,
+        searchData: query || undefined
+      };
+      const changed = this.onChange(key);
+
+      if (changed) {
+        let index = 0;
+
+        if (action === 'POP') {
+          index = this.router.searchKey(key);
+        }
+
+        if (index > 0) {
+          this.router.back(index, false, true);
+        } else if (action === 'REPLACE') {
+          this.router.replace(nativeLocation, false, true);
+        } else if (action === 'PUSH') {
+          this.router.push(nativeLocation, false, true);
+        } else {
+          this.router.relaunch(nativeLocation, false, true);
+        }
+      }
+    });
+  }
+
   getLocation() {
-    return env.getLocation();
+    return this.env.getLocation();
   }
 
   toUrl(url, key) {
     return url.indexOf('?') > -1 ? `${url}&__key__=${key}` : `${url}?__key__=${key}`;
   }
 
-  onChange(callback) {
-    env.onRouteChange((pathname, query, action) => {
-      callback(pathname, query, query['__key__'], action);
-    });
+  push(getNativeData, key, internal) {
+    if (!internal) {
+      const nativeData = getNativeData();
+      return this.env.navigateTo({
+        url: this.toUrl(nativeData.nativeUrl, key)
+      }).then(() => nativeData);
+    }
+
+    return undefined;
   }
 
-  push(getUrl, key, internal) {
-    !internal && env.navigateTo({
-      url: this.toUrl(getUrl(), key)
-    });
+  replace(getNativeData, key, internal) {
+    if (!internal) {
+      const nativeData = getNativeData();
+      return this.env.redirectTo({
+        url: this.toUrl(nativeData.nativeUrl, key)
+      }).then(() => nativeData);
+    }
+
+    return undefined;
   }
 
-  replace(getUrl, key, internal) {
-    !internal && env.redirectTo({
-      url: this.toUrl(getUrl(), key)
-    });
+  relaunch(getNativeData, key, internal) {
+    if (!internal) {
+      const nativeData = getNativeData();
+      return this.env.reLaunch({
+        url: this.toUrl(nativeData.nativeUrl, key)
+      }).then(() => nativeData);
+    }
+
+    return undefined;
   }
 
-  relaunch(getUrl, key, internal) {
-    !internal && env.reLaunch({
-      url: this.toUrl(getUrl(), key)
-    });
+  back(getNativeData, n, key, internal) {
+    if (!internal) {
+      const nativeData = getNativeData();
+      return this.env.navigateBack({
+        delta: n
+      }).then(() => nativeData);
+    }
+
+    return undefined;
   }
 
-  back(getUrl, n, key, internal) {
-    !internal && env.navigateBack({
-      delta: n
-    });
+  pop(getNativeData, n, key, internal) {
+    if (!internal) {
+      const nativeData = getNativeData();
+      return this.env.reLaunch({
+        url: this.toUrl(nativeData.nativeUrl, key)
+      }).then(() => nativeData);
+    }
+
+    return undefined;
   }
 
-  pop(getUrl, n, key, internal) {
-    !internal && env.navigateTo({
-      url: this.toUrl(getUrl(), key)
-    });
+  destroy() {
+    this._unlistenHistory();
   }
 
 }
@@ -52,32 +110,15 @@ export class Router extends BaseRouter {
     super(mpNativeRouter.getLocation(), mpNativeRouter, locationTransform);
 
     _defineProperty(this, "nativeRouter", void 0);
-
-    this.nativeRouter = mpNativeRouter;
-    mpNativeRouter.onChange((url, query, key, action) => {
-      if (key !== this.getCurKey()) {
-        if (action === 'POP') {
-          const index = this.history.getActionIndex(key);
-
-          if (index > 0) {
-            this.back(index);
-          }
-        } else if (action === 'REPLACE') {
-          this.replace(url);
-        } else if (action === 'PUSH') {
-          this.push(url);
-        } else {
-          this.relaunch(url);
-        }
-      }
-    });
   }
 
-  destroy() {}
+  searchKey(key) {
+    return this.history.getActionIndex(key);
+  }
 
 }
-export function createRouter(locationTransform) {
-  const mpNativeRouter = new MPNativeRouter();
+export function createRouter(locationTransform, env) {
+  const mpNativeRouter = new MPNativeRouter(env);
   const router = new Router(mpNativeRouter, locationTransform);
   return router;
 }
