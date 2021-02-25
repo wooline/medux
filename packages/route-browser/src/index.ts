@@ -7,7 +7,7 @@ type UnregisterCallback = () => void;
 export class BrowserNativeRouter extends BaseNativeRouter {
   private _unlistenHistory: UnregisterCallback;
 
-  protected router!: Router<any, string>;
+  protected declare router: Router<any, string>;
 
   public history: History<never>;
 
@@ -143,8 +143,9 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     this._unlistenHistory();
   }
 }
+
 export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
-  public nativeRouter!: BrowserNativeRouter;
+  public declare nativeRouter: BrowserNativeRouter;
 
   constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>) {
     super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);

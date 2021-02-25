@@ -5574,8 +5574,6 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
 
     _defineProperty(_assertThisInitialized(_this), "_unlistenHistory", void 0);
 
-    _defineProperty(_assertThisInitialized(_this), "router", void 0);
-
     _defineProperty(_assertThisInitialized(_this), "history", void 0);
 
     _defineProperty(_assertThisInitialized(_this), "serverSide", false);
@@ -5756,13 +5754,7 @@ var Router = function (_BaseRouter) {
   _inheritsLoose(Router, _BaseRouter);
 
   function Router(browserNativeRouter, locationTransform) {
-    var _this2;
-
-    _this2 = _BaseRouter.call(this, browserNativeRouter.getUrl(), browserNativeRouter, locationTransform) || this;
-
-    _defineProperty(_assertThisInitialized(_this2), "nativeRouter", void 0);
-
-    return _this2;
+    return _BaseRouter.call(this, browserNativeRouter.getUrl(), browserNativeRouter, locationTransform) || this;
   }
 
   return Router;

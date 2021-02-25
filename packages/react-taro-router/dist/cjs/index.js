@@ -4405,12 +4405,10 @@ var MPNativeRouter = function (_BaseNativeRouter) {
     var _this;
 
     _this = _BaseNativeRouter.call(this) || this;
-    _this.env = env;
 
     _defineProperty(_assertThisInitialized(_this), "_unlistenHistory", void 0);
 
-    _defineProperty(_assertThisInitialized(_this), "router", void 0);
-
+    _this.env = env;
     _this._unlistenHistory = env.onRouteChange(function (pathname, searchData, action) {
       var key = searchData ? searchData['__key__'] : '';
       var nativeLocation = {
@@ -4526,13 +4524,7 @@ var Router = function (_BaseRouter) {
   _inheritsLoose(Router, _BaseRouter);
 
   function Router(mpNativeRouter, locationTransform) {
-    var _this2;
-
-    _this2 = _BaseRouter.call(this, mpNativeRouter.getLocation(), mpNativeRouter, locationTransform) || this;
-
-    _defineProperty(_assertThisInitialized(_this2), "nativeRouter", void 0);
-
-    return _this2;
+    return _BaseRouter.call(this, mpNativeRouter.getLocation(), mpNativeRouter, locationTransform) || this;
   }
 
   return Router;

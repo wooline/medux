@@ -21,7 +21,7 @@ export interface RouteENV {
 export class MPNativeRouter extends BaseNativeRouter {
   private _unlistenHistory: UnregisterCallback;
 
-  protected router!: Router<any, string>;
+  protected declare router: Router<any, string>;
 
   constructor(public env: RouteENV) {
     super();
@@ -103,7 +103,7 @@ export class MPNativeRouter extends BaseNativeRouter {
 }
 
 export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
-  public nativeRouter!: MPNativeRouter;
+  public declare nativeRouter: MPNativeRouter;
 
   constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>) {
     super(mpNativeRouter.getLocation(), mpNativeRouter, locationTransform);

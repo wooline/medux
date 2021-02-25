@@ -21,9 +21,8 @@ var MPNativeRouter = function (_BaseNativeRouter) {
     var _this;
 
     _this = _BaseNativeRouter.call(this) || this;
-    _this.env = env;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "_unlistenHistory", void 0);
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "router", void 0);
+    _this.env = env;
     _this._unlistenHistory = env.onRouteChange(function (pathname, searchData, action) {
       var key = searchData ? searchData['__key__'] : '';
       var nativeLocation = {
@@ -142,11 +141,7 @@ var Router = function (_BaseRouter) {
   (0, _inheritsLoose2.default)(Router, _BaseRouter);
 
   function Router(mpNativeRouter, locationTransform) {
-    var _this2;
-
-    _this2 = _BaseRouter.call(this, mpNativeRouter.getLocation(), mpNativeRouter, locationTransform) || this;
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "nativeRouter", void 0);
-    return _this2;
+    return _BaseRouter.call(this, mpNativeRouter.getLocation(), mpNativeRouter, locationTransform) || this;
   }
 
   return Router;

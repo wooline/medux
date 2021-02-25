@@ -8,8 +8,6 @@ export class BrowserNativeRouter extends BaseNativeRouter {
 
     _defineProperty(this, "_unlistenHistory", void 0);
 
-    _defineProperty(this, "router", void 0);
-
     _defineProperty(this, "history", void 0);
 
     _defineProperty(this, "serverSide", false);
@@ -172,8 +170,6 @@ export class BrowserNativeRouter extends BaseNativeRouter {
 export class Router extends BaseRouter {
   constructor(browserNativeRouter, locationTransform) {
     super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
-
-    _defineProperty(this, "nativeRouter", void 0);
   }
 
 }

@@ -3199,12 +3199,10 @@ class BaseRouter {
 class MPNativeRouter extends BaseNativeRouter {
   constructor(env) {
     super();
-    this.env = env;
 
     _defineProperty(this, "_unlistenHistory", void 0);
 
-    _defineProperty(this, "router", void 0);
-
+    this.env = env;
     this._unlistenHistory = env.onRouteChange((pathname, searchData, action) => {
       const key = searchData ? searchData['__key__'] : '';
       const nativeLocation = {
@@ -3304,8 +3302,6 @@ class MPNativeRouter extends BaseNativeRouter {
 class Router extends BaseRouter {
   constructor(mpNativeRouter, locationTransform) {
     super(mpNativeRouter.getLocation(), mpNativeRouter, locationTransform);
-
-    _defineProperty(this, "nativeRouter", void 0);
   }
 
 }

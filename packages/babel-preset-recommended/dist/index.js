@@ -8,6 +8,24 @@ module.exports = function (api, options = {}) {
         options.targets = { node: 'current' };
     }
     const { module = 'esm', targets, presets = ['@babel/preset-react'], moduleResolver, rootImport, plugins = [], classPropertiesLoose = true } = options;
+    const pluginsList = [
+        rootImport && ['babel-plugin-root-import', rootImport],
+        moduleResolver && ['module-resolver', moduleResolver],
+        ...plugins,
+        '@babel/plugin-syntax-dynamic-import',
+        ['@babel/plugin-proposal-decorators', { legacy: false, decoratorsBeforeExport: true }],
+        ['@babel/plugin-proposal-class-properties', { loose: classPropertiesLoose }],
+        '@babel/plugin-proposal-nullish-coalescing-operator',
+        '@babel/plugin-proposal-optional-chaining',
+        ['@babel/plugin-proposal-object-rest-spread', { loose: true, useBuiltIns: true }],
+        [
+            '@babel/plugin-transform-runtime',
+            {
+                useESModules: module === 'esm',
+                version: runtimeVersion,
+            },
+        ],
+    ].filter(Boolean);
     return {
         sourceType: 'unambiguous',
         presets: [
@@ -20,25 +38,19 @@ module.exports = function (api, options = {}) {
                 },
             ],
             ...presets,
-            '@babel/preset-typescript',
         ].filter(Boolean),
-        plugins: [
-            rootImport && ['babel-plugin-root-import', rootImport],
-            moduleResolver && ['module-resolver', moduleResolver],
-            ...plugins,
-            '@babel/plugin-syntax-dynamic-import',
-            ['@babel/plugin-proposal-decorators', { legacy: false, decoratorsBeforeExport: true }],
-            ['@babel/plugin-proposal-class-properties', { loose: classPropertiesLoose }],
-            '@babel/plugin-proposal-nullish-coalescing-operator',
-            '@babel/plugin-proposal-optional-chaining',
-            ['@babel/plugin-proposal-object-rest-spread', { loose: true, useBuiltIns: true }],
-            [
-                '@babel/plugin-transform-runtime',
-                {
-                    useESModules: module === 'esm',
-                    version: runtimeVersion,
-                },
-            ],
-        ].filter(Boolean),
+        overrides: [
+            {
+                test: /\.ts$/,
+                plugins: [['@babel/plugin-transform-typescript', { allowDeclareFields: true, isTSX: false }], ...pluginsList],
+            },
+            {
+                test: /\.tsx$/,
+                plugins: [['@babel/plugin-transform-typescript', { allowDeclareFields: true, isTSX: true }], ...pluginsList],
+            },
+            {
+                plugins: pluginsList,
+            },
+        ],
     };
 };
