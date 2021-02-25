@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-mp",
-  "version": "2.0.0-beta.3.16",
+  "version": "2.0.0-beta.3.17",
   "description": "Using @medux/route-web in mini-program",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-mp",
   "author": "wooline <wooline@qq.com>",

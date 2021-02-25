@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-browser",
-  "version": "2.0.0-beta.3.16",
+  "version": "2.0.0-beta.3.17",
   "description": "Using @medux/route-web in browser",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-browser",
   "author": "wooline <wooline@qq.com>",
