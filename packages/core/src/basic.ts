@@ -2,6 +2,7 @@ import {Unsubscribe} from 'redux';
 import {deepMerge, LoadingState, TaskCountEvent, TaskCounter} from './sprite';
 import {env} from './env';
 
+declare const process: any;
 /**
  * 可供设置的全局参数，参见setConfig
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
@@ -19,7 +20,6 @@ export const config: {
   NSP: '.',
   MSP: ',',
   MutableData: false,
-  // @ts-ignore
   DEVTOOLS: process.env.NODE_ENV === 'development',
 };
 /**
@@ -36,7 +36,6 @@ export function setConfig(_config: {NSP?: string; MSP?: string; SSRKey?: string;
 }
 
 export function warn(str: string) {
-  // @ts-ignore
   if (process.env.NODE_ENV === 'development') {
     env.console.warn(str);
   }

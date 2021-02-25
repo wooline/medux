@@ -1,14 +1,5 @@
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var Taro = require('@tarojs/taro');
-var React = require('react');
-
-function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
-
-var Taro__default = /*#__PURE__*/_interopDefaultLegacy(Taro);
-var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
+import Taro from '@tarojs/taro';
+import React, { useEffect, useState } from 'react';
 
 function _assertThisInitialized(self) {
   if (self === void 0) {
@@ -47,12 +38,13 @@ var env = typeof window === 'object' && window.window || typeof global === 'obje
 env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 
 var TaskCountEvent = 'TaskCountEvent';
+var LoadingState;
 
 (function (LoadingState) {
   LoadingState["Start"] = "Start";
   LoadingState["Stop"] = "Stop";
   LoadingState["Depth"] = "Depth";
-})(exports.LoadingState || (exports.LoadingState = {}));
+})(LoadingState || (LoadingState = {}));
 
 var PEvent = function () {
   function PEvent(name, data, bubbling) {
@@ -200,12 +192,12 @@ var TaskCounter = function (_PDispatcher) {
       });
 
       if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Start));
+        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
         this.ctimer = env.setTimeout(function () {
           _this3.ctimer = null;
 
           if (_this3.list.length > 0) {
-            _this3.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Depth));
+            _this3.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
           }
         }, this.deferSecond * 1000);
       }
@@ -228,7 +220,7 @@ var TaskCounter = function (_PDispatcher) {
           this.ctimer = null;
         }
 
-        this.dispatch(new PEvent(TaskCountEvent, exports.LoadingState.Stop));
+        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
       }
     }
 
@@ -4562,8 +4554,8 @@ function _extends() {
 }
 
 var loadViewDefaultOptions = {
-  LoadViewOnError: React__default['default'].createElement("div", null, "error"),
-  LoadViewOnLoading: React__default['default'].createElement("div", null)
+  LoadViewOnError: React.createElement("div", null, "error"),
+  LoadViewOnLoading: React.createElement("div", null)
 };
 function setLoadViewOptions(_ref) {
   var LoadViewOnError = _ref.LoadViewOnError,
@@ -4581,13 +4573,13 @@ var loadView = function loadView(moduleName, viewName, options) {
   var Loader = function ViewLoader(props, ref) {
     var OnErrorComponent = OnError || loadViewDefaultOptions.LoadViewOnError;
     var OnLoadingComponent = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
-    React.useEffect(function () {
+    useEffect(function () {
       return function () {
         active = false;
       };
     }, []);
 
-    var _useState = React.useState(function () {
+    var _useState = useState(function () {
       var moduleViewResult = getView(moduleName, viewName);
 
       if (isPromise(moduleViewResult)) {
@@ -4613,12 +4605,12 @@ var loadView = function loadView(moduleName, viewName, options) {
         view = _useState[0],
         setView = _useState[1];
 
-    return view ? React__default['default'].createElement(view.Component, _extends({}, props, {
+    return view ? React.createElement(view.Component, _extends({}, props, {
       ref: ref
     })) : OnLoadingComponent;
   };
 
-  var Component = React__default['default'].forwardRef(Loader);
+  var Component = React.forwardRef(Loader);
   return Component;
 };
 
@@ -4660,49 +4652,49 @@ var Component = function Component(_ref) {
   var children = _ref.children,
       elseView = _ref.elseView;
   var arr = [];
-  React__default['default'].Children.forEach(children, function (item) {
+  React.Children.forEach(children, function (item) {
     item && arr.push(item);
   });
 
   if (arr.length > 0) {
-    return React__default['default'].createElement(React__default['default'].Fragment, null, arr);
+    return React.createElement(React.Fragment, null, arr);
   }
 
-  return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
+  return React.createElement(React.Fragment, null, elseView);
 };
 
-var Else = React__default['default'].memo(Component);
+var Else = React.memo(Component);
 
 var Component$1 = function Component(_ref) {
   var children = _ref.children,
       elseView = _ref.elseView;
   var arr = [];
-  React__default['default'].Children.forEach(children, function (item) {
+  React.Children.forEach(children, function (item) {
     item && arr.push(item);
   });
 
   if (arr.length > 0) {
-    return React__default['default'].createElement(React__default['default'].Fragment, null, arr[0]);
+    return React.createElement(React.Fragment, null, arr[0]);
   }
 
-  return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
+  return React.createElement(React.Fragment, null, elseView);
 };
 
-var Switch = React__default['default'].memo(Component$1);
+var Switch = React.memo(Component$1);
 
 var routeENV = {
-  reLaunch: Taro__default['default'].reLaunch,
-  redirectTo: Taro__default['default'].redirectTo,
-  navigateTo: Taro__default['default'].navigateTo,
-  navigateBack: Taro__default['default'].navigateBack,
-  getCurrentPages: Taro__default['default'].getCurrentPages,
+  reLaunch: Taro.reLaunch,
+  redirectTo: Taro.redirectTo,
+  navigateTo: Taro.navigateTo,
+  navigateBack: Taro.navigateBack,
+  getCurrentPages: Taro.getCurrentPages,
   getLocation: function getLocation() {
-    var arr = Taro__default['default'].getCurrentPages();
+    var arr = Taro.getCurrentPages();
     var path;
     var query;
 
     if (arr.length === 0) {
-      var _Taro$getLaunchOption = Taro__default['default'].getLaunchOptionsSync();
+      var _Taro$getLaunchOption = Taro.getLaunchOptionsSync();
 
       path = _Taro$getLaunchOption.path;
       query = _Taro$getLaunchOption.query;
@@ -4813,25 +4805,4 @@ function buildApp(moduleGetter, _ref2, startup) {
   });
 }
 
-exports.ActionTypes = ActionTypes;
-exports.BaseModuleHandlers = RouteModuleHandlers;
-exports.Else = Else;
-exports.Switch = Switch;
-exports.buildApp = buildApp;
-exports.createLocationTransform = createLocationTransform;
-exports.deepMerge = deepMerge;
-exports.deepMergeState = deepMergeState;
-exports.delayPromise = delayPromise;
-exports.effect = effect;
-exports.env = env;
-exports.errorAction = errorAction;
-exports.exportApp = exportApp;
-exports.exportModule = exportModule$1;
-exports.isProcessedError = isProcessedError;
-exports.logger = logger;
-exports.patchActions = patchActions;
-exports.reducer = reducer;
-exports.setConfig = setConfig$1;
-exports.setLoading = setLoading;
-exports.setLoadingDepthTime = setLoadingDepthTime;
-exports.setProcessedError = setProcessedError;
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, LoadingState, Switch, buildApp, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, logger, patchActions, reducer, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError };

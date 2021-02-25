@@ -3,7 +3,7 @@ import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
 import { History } from './basic';
 import type { LocationTransform } from './transform';
 import type { RootParams, Location, NativeLocation, RouteState, HistoryAction, PayloadLocation, PartialLocation } from './basic';
-export { setRouteConfig, routeConfig } from './basic';
+export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
 export type { LocationTransform } from './transform';
 export type { RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, DeepPartial, PayloadLocation } from './basic';
@@ -88,6 +88,7 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     getNativeUrl(): string;
     setStore(_store: Store): void;
     getCurKey(): string;
+    searchKeyInActions(key: string): number;
     private _createKey;
     nativeUrlToNativeLocation(url: string): NativeLocation;
     nativeLocationToLocation(nativeLocation: NativeLocation): Location<P>;

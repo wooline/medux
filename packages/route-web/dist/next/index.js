@@ -2,7 +2,7 @@ import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise } from '@medux/core';
 import { uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History } from './basic';
-export { setRouteConfig, routeConfig } from './basic';
+export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
 export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   class RouteModuleHandlers extends _CoreModuleHandlers {
@@ -229,6 +229,10 @@ export class BaseRouter {
     return this.routeState.key;
   }
 
+  searchKeyInActions(key) {
+    return this.history.getActionIndex(key);
+  }
+
   _createKey() {
     this._tid++;
     return `${this._tid}`;
@@ -315,7 +319,7 @@ export class BaseRouter {
   }
 
   relaunch(data, internal, passive) {
-    this.addTask(() => this._relaunch(data, internal, passive));
+    this.addTask(this._relaunch.bind(this, data, internal, passive));
   }
 
   async _relaunch(data, internal, passive) {
@@ -362,7 +366,7 @@ export class BaseRouter {
   }
 
   push(data, internal, passive) {
-    this.addTask(() => this._push(data, internal, passive));
+    this.addTask(this._push.bind(this, data, internal, passive));
   }
 
   async _push(data, internal, passive) {
@@ -411,7 +415,7 @@ export class BaseRouter {
   }
 
   replace(data, internal, passive) {
-    this.addTask(() => this._replace(data, internal, passive));
+    this.addTask(this._replace.bind(this, data, internal, passive));
   }
 
   async _replace(data, internal, passive) {
@@ -460,7 +464,7 @@ export class BaseRouter {
   }
 
   back(n = 1, internal, passive) {
-    this.addTask(() => this._back(n, internal, passive));
+    this.addTask(this._back.bind(this, n, internal, passive));
   }
 
   async _back(n = 1, internal, passive) {
@@ -508,7 +512,7 @@ export class BaseRouter {
   }
 
   pop(n = 1, internal, passive) {
-    this.addTask(() => this._pop(n, internal, passive));
+    this.addTask(this._pop.bind(this, n, internal, passive));
   }
 
   async _pop(n = 1, internal, passive) {
@@ -567,7 +571,7 @@ export class BaseRouter {
 
   executeTask(task) {
     this.curTask = task;
-    task().finally(() => this.taskComplete());
+    task().finally(this.taskComplete.bind(this));
   }
 
   addTask(task) {

@@ -20,6 +20,5 @@ export declare class BrowserNativeRouter extends BaseNativeRouter {
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
     nativeRouter: BrowserNativeRouter;
     constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>);
-    searchKey(key: string): number;
 }
 export declare function createRouter<P extends RootParams, N extends string>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>): Router<P, N>;

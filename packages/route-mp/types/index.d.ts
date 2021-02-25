@@ -6,22 +6,22 @@ interface NavigateBackOption {
     delta?: number;
 }
 export interface RouteENV {
-    onRouteChange(callback: (pathname: string, query: {
+    onRouteChange(callback: (pathname: string, searchData: {
         [key: string]: string;
-    }, action: 'PUSH' | 'POP' | 'REPLACE') => void): () => void;
+    } | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void): () => void;
     getLocation(): {
         pathname: string;
-        query: {
+        searchData: {
             [key: string]: string;
-        };
+        } | undefined;
     };
-    reLaunch(option: RouteOption): Promise<void>;
-    redirectTo(option: RouteOption): Promise<void>;
-    navigateTo(option: RouteOption): Promise<void>;
-    navigateBack(option: NavigateBackOption): Promise<void>;
+    reLaunch(option: RouteOption): Promise<any>;
+    redirectTo(option: RouteOption): Promise<any>;
+    navigateTo(option: RouteOption): Promise<any>;
+    navigateBack(option: NavigateBackOption): Promise<any>;
     getCurrentPages: () => Array<{
         route: string;
-        options: {
+        options?: {
             [key: string]: string;
         };
     }>;
@@ -43,7 +43,6 @@ export declare class MPNativeRouter extends BaseNativeRouter {
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
     nativeRouter: MPNativeRouter;
     constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>);
-    searchKey(key: string): number;
 }
 export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, env: RouteENV): Router<P, N>;
 export {};

@@ -15,11 +15,11 @@ export var MPNativeRouter = function (_BaseNativeRouter) {
 
     _defineProperty(_assertThisInitialized(_this), "router", void 0);
 
-    _this._unlistenHistory = env.onRouteChange(function (pathname, query, action) {
-      var key = query['__key__'];
+    _this._unlistenHistory = env.onRouteChange(function (pathname, searchData, action) {
+      var key = searchData ? searchData['__key__'] : '';
       var nativeLocation = {
         pathname: pathname,
-        searchData: query || undefined
+        searchData: searchData
       };
 
       var changed = _this.onChange(key);
@@ -28,7 +28,7 @@ export var MPNativeRouter = function (_BaseNativeRouter) {
         var index = 0;
 
         if (action === 'POP') {
-          index = _this.router.searchKey(key);
+          index = _this.router.searchKeyInActions(key);
         }
 
         if (index > 0) {
@@ -138,12 +138,6 @@ export var Router = function (_BaseRouter) {
 
     return _this2;
   }
-
-  var _proto2 = Router.prototype;
-
-  _proto2.searchKey = function searchKey(key) {
-    return this.history.getActionIndex(key);
-  };
 
   return Router;
 }(BaseRouter);

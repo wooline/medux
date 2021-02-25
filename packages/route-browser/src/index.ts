@@ -57,7 +57,7 @@ export class BrowserNativeRouter extends BaseNativeRouter {
         let index: number = 0;
         let callback: () => void;
         if (action === 'POP') {
-          index = this.router.searchKey(key);
+          index = this.router.searchKeyInActions(key);
         }
         if (index > 0) {
           callback = () => this.router.back(index);
@@ -148,10 +148,6 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
 
   constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>) {
     super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
-  }
-
-  searchKey(key: string) {
-    return this.history.getActionIndex(key);
   }
 }
 

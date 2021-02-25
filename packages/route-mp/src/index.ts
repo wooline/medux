@@ -9,13 +9,13 @@ interface NavigateBackOption {
 }
 
 export interface RouteENV {
-  onRouteChange(callback: (pathname: string, query: {[key: string]: string}, action: 'PUSH' | 'POP' | 'REPLACE') => void): () => void;
-  getLocation(): {pathname: string; query: {[key: string]: string}};
-  reLaunch(option: RouteOption): Promise<void>;
-  redirectTo(option: RouteOption): Promise<void>;
-  navigateTo(option: RouteOption): Promise<void>;
-  navigateBack(option: NavigateBackOption): Promise<void>;
-  getCurrentPages: () => Array<{route: string; options: {[key: string]: string}}>;
+  onRouteChange(callback: (pathname: string, searchData: {[key: string]: string} | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void): () => void;
+  getLocation(): {pathname: string; searchData: {[key: string]: string} | undefined};
+  reLaunch(option: RouteOption): Promise<any>;
+  redirectTo(option: RouteOption): Promise<any>;
+  navigateTo(option: RouteOption): Promise<any>;
+  navigateBack(option: NavigateBackOption): Promise<any>;
+  getCurrentPages: () => Array<{route: string; options?: {[key: string]: string}}>;
 }
 
 export class MPNativeRouter extends BaseNativeRouter {
@@ -25,14 +25,14 @@ export class MPNativeRouter extends BaseNativeRouter {
 
   constructor(public env: RouteENV) {
     super();
-    this._unlistenHistory = env.onRouteChange((pathname, query, action) => {
-      const key = query['__key__'];
-      const nativeLocation: NativeLocation = {pathname, searchData: query || undefined};
+    this._unlistenHistory = env.onRouteChange((pathname, searchData, action) => {
+      const key = searchData ? searchData['__key__'] : '';
+      const nativeLocation: NativeLocation = {pathname, searchData};
       const changed = this.onChange(key);
       if (changed) {
         let index: number = 0;
         if (action === 'POP') {
-          index = this.router.searchKey(key);
+          index = this.router.searchKeyInActions(key);
         }
         if (index > 0) {
           this.router.back(index, false, true);
@@ -107,10 +107,6 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
 
   constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>) {
     super(mpNativeRouter.getLocation(), mpNativeRouter, locationTransform);
-  }
-
-  searchKey(key: string) {
-    return this.history.getActionIndex(key);
   }
 }
 

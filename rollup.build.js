@@ -16,9 +16,9 @@ export default function (root, moduleName, globals, aliasEntries) {
       output: [
         {file: `dist/esm/index.js`, format: 'esm'},
         {file: `dist/cjs/index.js`, format: 'cjs'},
-        {file: `dist/umd/index.js`, format: 'umd', name: moduleName, globals},
-        {file: `dist/umd/index.min.js`, format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
-      ],
+        moduleName && {file: `dist/umd/index.js`, format: 'umd', name: moduleName, globals},
+        moduleName && {file: `dist/umd/index.min.js`, format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
+      ].filter(Boolean),
       mainFields: ['module', 'main'],
     },
   };

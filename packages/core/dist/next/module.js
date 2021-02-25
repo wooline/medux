@@ -1,4 +1,4 @@
-import { MetaData, config } from './basic';
+import { MetaData, config, isPromise } from './basic';
 import { cacheModule, injectActions, getModuleByName } from './inject';
 import { buildStore } from './store';
 import { env } from './env';
@@ -134,7 +134,15 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   }
 
   const store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  const appModuleResult = getModuleByName(appModuleName, moduleGetter);
+  let appModule;
+
+  if (isPromise(appModuleResult)) {
+    appModule = await appModuleResult;
+  } else {
+    appModule = appModuleResult;
+  }
+
   startup(store, appModule);
   await appModule.default.model(store);
   reRender = render(store, appModule.default.views[appViewName]);

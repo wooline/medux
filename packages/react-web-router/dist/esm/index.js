@@ -30,7 +30,11 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global || {};
+var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global || {
+  setTimeout: setTimeout,
+  clearTimeout: clearTimeout,
+  console: console
+};
 env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 
 var TaskCountEvent = 'TaskCountEvent';
@@ -2981,7 +2985,7 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 
 function _renderApp() {
   _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
-    var appModuleName, store, appModule;
+    var appModuleName, store, appModuleResult, appModule;
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -3005,22 +3009,36 @@ function _renderApp() {
             }
 
             store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            _context.next = 10;
-            return getModuleByName(appModuleName, moduleGetter);
+            appModuleResult = getModuleByName(appModuleName, moduleGetter);
 
-          case 10:
+            if (!isPromise(appModuleResult)) {
+              _context.next = 15;
+              break;
+            }
+
+            _context.next = 12;
+            return appModuleResult;
+
+          case 12:
             appModule = _context.sent;
+            _context.next = 16;
+            break;
+
+          case 15:
+            appModule = appModuleResult;
+
+          case 16:
             startup(store, appModule);
-            _context.next = 14;
+            _context.next = 19;
             return appModule.default.model(store);
 
-          case 14:
+          case 19:
             reRender = render(store, appModule.default.views[appViewName]);
             return _context.abrupt("return", {
               store: store
             });
 
-          case 16:
+          case 21:
           case "end":
             return _context.stop();
         }
@@ -3970,6 +3988,10 @@ var BaseRouter = function () {
     return this.routeState.key;
   };
 
+  _proto2.searchKeyInActions = function searchKeyInActions(key) {
+    return this.history.getActionIndex(key);
+  };
+
   _proto2._createKey = function _createKey() {
     this._tid++;
     return "" + this._tid;
@@ -4059,16 +4081,12 @@ var BaseRouter = function () {
   };
 
   _proto2.relaunch = function relaunch(data, internal, passive) {
-    var _this3 = this;
-
-    this.addTask(function () {
-      return _this3._relaunch(data, internal, passive);
-    });
+    this.addTask(this._relaunch.bind(this, data, internal, passive));
   };
 
   _proto2._relaunch = function () {
     var _relaunch2 = _asyncToGenerator(regenerator.mark(function _callee(data, internal, passive) {
-      var _this4 = this;
+      var _this3 = this;
 
       var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee$(_context) {
@@ -4099,9 +4117,9 @@ var BaseRouter = function () {
 
               _context.next = 8;
               return this.nativeRouter.execute('relaunch', function () {
-                var nativeLocation = _this4.locationTransform.out(routeState);
+                var nativeLocation = _this3.locationTransform.out(routeState);
 
-                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this3.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4140,16 +4158,12 @@ var BaseRouter = function () {
   }();
 
   _proto2.push = function push(data, internal, passive) {
-    var _this5 = this;
-
-    this.addTask(function () {
-      return _this5._push(data, internal, passive);
-    });
+    this.addTask(this._push.bind(this, data, internal, passive));
   };
 
   _proto2._push = function () {
     var _push2 = _asyncToGenerator(regenerator.mark(function _callee2(data, internal, passive) {
-      var _this6 = this;
+      var _this4 = this;
 
       var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee2$(_context2) {
@@ -4180,9 +4194,9 @@ var BaseRouter = function () {
 
               _context2.next = 8;
               return this.nativeRouter.execute('push', function () {
-                var nativeLocation = _this6.locationTransform.out(routeState);
+                var nativeLocation = _this4.locationTransform.out(routeState);
 
-                var nativeUrl = _this6.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4223,16 +4237,12 @@ var BaseRouter = function () {
   }();
 
   _proto2.replace = function replace(data, internal, passive) {
-    var _this7 = this;
-
-    this.addTask(function () {
-      return _this7._replace(data, internal, passive);
-    });
+    this.addTask(this._replace.bind(this, data, internal, passive));
   };
 
   _proto2._replace = function () {
     var _replace2 = _asyncToGenerator(regenerator.mark(function _callee3(data, internal, passive) {
-      var _this8 = this;
+      var _this5 = this;
 
       var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee3$(_context3) {
@@ -4263,9 +4273,9 @@ var BaseRouter = function () {
 
               _context3.next = 8;
               return this.nativeRouter.execute('replace', function () {
-                var nativeLocation = _this8.locationTransform.out(routeState);
+                var nativeLocation = _this5.locationTransform.out(routeState);
 
-                var nativeUrl = _this8.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this5.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4306,20 +4316,16 @@ var BaseRouter = function () {
   }();
 
   _proto2.back = function back(n, internal, passive) {
-    var _this9 = this;
-
     if (n === void 0) {
       n = 1;
     }
 
-    this.addTask(function () {
-      return _this9._back(n, internal, passive);
-    });
+    this.addTask(this._back.bind(this, n, internal, passive));
   };
 
   _proto2._back = function () {
     var _back2 = _asyncToGenerator(regenerator.mark(function _callee4(n, internal, passive) {
-      var _this10 = this;
+      var _this6 = this;
 
       var stack, uri, _uriToLocation, key, location, routeState, nativeData;
 
@@ -4358,9 +4364,9 @@ var BaseRouter = function () {
 
               _context4.next = 12;
               return this.nativeRouter.execute('back', function () {
-                var nativeLocation = _this10.locationTransform.out(routeState);
+                var nativeLocation = _this6.locationTransform.out(routeState);
 
-                var nativeUrl = _this10.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this6.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4401,20 +4407,16 @@ var BaseRouter = function () {
   }();
 
   _proto2.pop = function pop(n, internal, passive) {
-    var _this11 = this;
-
     if (n === void 0) {
       n = 1;
     }
 
-    this.addTask(function () {
-      return _this11._pop(n, internal, passive);
-    });
+    this.addTask(this._pop.bind(this, n, internal, passive));
   };
 
   _proto2._pop = function () {
     var _pop2 = _asyncToGenerator(regenerator.mark(function _callee5(n, internal, passive) {
-      var _this12 = this;
+      var _this7 = this;
 
       var stack, uri, _uriToLocation2, key, location, routeState, nativeData;
 
@@ -4453,9 +4455,9 @@ var BaseRouter = function () {
 
               _context5.next = 12;
               return this.nativeRouter.execute('pop', function () {
-                var nativeLocation = _this12.locationTransform.out(routeState);
+                var nativeLocation = _this7.locationTransform.out(routeState);
 
-                var nativeUrl = _this12.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this7.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4506,12 +4508,8 @@ var BaseRouter = function () {
   };
 
   _proto2.executeTask = function executeTask(task) {
-    var _this13 = this;
-
     this.curTask = task;
-    task().finally(function () {
-      return _this13.taskComplete();
-    });
+    task().finally(this.taskComplete.bind(this));
   };
 
   _proto2.addTask = function addTask(task) {
@@ -5643,7 +5641,7 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
         var callback;
 
         if (action === 'POP') {
-          index = _this.router.searchKey(key);
+          index = _this.router.searchKeyInActions(key);
         }
 
         if (index > 0) {
@@ -5767,12 +5765,6 @@ var Router = function (_BaseRouter) {
     return _this2;
   }
 
-  var _proto2 = Router.prototype;
-
-  _proto2.searchKey = function searchKey(key) {
-    return this.history.getActionIndex(key);
-  };
-
   return Router;
 }(BaseRouter);
 function createRouter(createHistory, locationTransform) {
@@ -5890,7 +5882,7 @@ var Component = function Component(_ref) {
   if (!isServer()) {
     useEffect(function () {
       if (title) {
-        document.title = title;
+        env.document.title = title;
       }
     }, [title]);
     return null;

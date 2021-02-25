@@ -72,7 +72,7 @@ export class BrowserNativeRouter extends BaseNativeRouter {
         let callback;
 
         if (action === 'POP') {
-          index = this.router.searchKey(key);
+          index = this.router.searchKeyInActions(key);
         }
 
         if (index > 0) {
@@ -174,10 +174,6 @@ export class Router extends BaseRouter {
     super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
 
     _defineProperty(this, "nativeRouter", void 0);
-  }
-
-  searchKey(key) {
-    return this.history.getActionIndex(key);
   }
 
 }

@@ -159,7 +159,7 @@ function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
 
 function _renderApp() {
   _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
-    var appModuleName, store, appModule;
+    var appModuleName, store, appModuleResult, appModule;
     return _regenerator.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -184,22 +184,36 @@ function _renderApp() {
             }
 
             store = (0, _store.buildStore)(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            _context.next = 10;
-            return (0, _inject.getModuleByName)(appModuleName, moduleGetter);
+            appModuleResult = (0, _inject.getModuleByName)(appModuleName, moduleGetter);
 
-          case 10:
+            if (!(0, _basic.isPromise)(appModuleResult)) {
+              _context.next = 15;
+              break;
+            }
+
+            _context.next = 12;
+            return appModuleResult;
+
+          case 12:
             appModule = _context.sent;
+            _context.next = 16;
+            break;
+
+          case 15:
+            appModule = appModuleResult;
+
+          case 16:
             startup(store, appModule);
-            _context.next = 14;
+            _context.next = 19;
             return appModule.default.model(store);
 
-          case 14:
+          case 19:
             reRender = render(store, appModule.default.views[appViewName]);
             return _context.abrupt("return", {
               store: store
             });
 
-          case 16:
+          case 21:
           case "end":
             return _context.stop();
         }

@@ -4,6 +4,7 @@
     "baseUrl": "./",
     "rootDir": "./",
     "jsx": "react",
+    "types": ["../typings/taro"],
   },
    "include": ["./"],
    "exclude": []

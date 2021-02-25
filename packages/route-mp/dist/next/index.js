@@ -9,11 +9,11 @@ export class MPNativeRouter extends BaseNativeRouter {
 
     _defineProperty(this, "router", void 0);
 
-    this._unlistenHistory = env.onRouteChange((pathname, query, action) => {
-      const key = query['__key__'];
+    this._unlistenHistory = env.onRouteChange((pathname, searchData, action) => {
+      const key = searchData ? searchData['__key__'] : '';
       const nativeLocation = {
         pathname,
-        searchData: query || undefined
+        searchData
       };
       const changed = this.onChange(key);
 
@@ -21,7 +21,7 @@ export class MPNativeRouter extends BaseNativeRouter {
         let index = 0;
 
         if (action === 'POP') {
-          index = this.router.searchKey(key);
+          index = this.router.searchKeyInActions(key);
         }
 
         if (index > 0) {
@@ -110,10 +110,6 @@ export class Router extends BaseRouter {
     super(mpNativeRouter.getLocation(), mpNativeRouter, locationTransform);
 
     _defineProperty(this, "nativeRouter", void 0);
-  }
-
-  searchKey(key) {
-    return this.history.getActionIndex(key);
   }
 
 }

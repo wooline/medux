@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore} from './basic';
+import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore, isPromise} from './basic';
 import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName} from './inject';
 import {buildStore, StoreOptions} from './store';
 import {env} from './env';
@@ -196,7 +196,14 @@ export async function renderApp<V>(
     cacheModule(appModuleOrName);
   }
   const store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
+  const appModuleResult = getModuleByName(appModuleName, moduleGetter);
+  let appModule: Module;
+  // 在小程序中保证能同步执行startup得到store
+  if (isPromise(appModuleResult)) {
+    appModule = await appModuleResult;
+  } else {
+    appModule = appModuleResult;
+  }
   startup(store, appModule);
   await appModule.default.model(store);
   reRender = render(store, appModule!.default.views[appViewName]);

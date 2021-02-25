@@ -47,6 +47,8 @@ export {Else} from './components/Else';
 export {Switch} from './components/Switch';
 export {Link} from './components/Link';
 
+declare const require: any;
+
 let SSRKey = 'meduxInitStore';
 
 export function setConfig(conf: {
@@ -165,7 +167,6 @@ export function buildSSR(
       return {
         store,
         data,
-        // @ts-ignore
         html: require('react-dom/server').renderToString(<AppView store={store} />),
       };
     },

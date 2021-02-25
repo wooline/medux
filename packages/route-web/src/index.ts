@@ -5,7 +5,7 @@ import {uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, His
 import type {LocationTransform} from './transform';
 import type {RootParams, Location, NativeLocation, RouteState, HistoryAction, PayloadLocation, PartialLocation} from './basic';
 
-export {setRouteConfig, routeConfig} from './basic';
+export {setRouteConfig, routeConfig, nativeUrlToNativeLocation} from './basic';
 export {PagenameMap, createLocationTransform} from './transform';
 export type {LocationTransform} from './transform';
 export type {RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, DeepPartial, PayloadLocation} from './basic';
@@ -218,6 +218,10 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return this.routeState.key;
   }
 
+  searchKeyInActions(key: string) {
+    return this.history.getActionIndex(key);
+  }
+
   private _createKey() {
     this._tid++;
     return `${this._tid}`;
@@ -286,7 +290,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
-    this.addTask(() => this._relaunch(data, internal, passive));
+    this.addTask(this._relaunch.bind(this, data, internal, passive));
   }
 
   private async _relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
@@ -327,7 +331,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
-    this.addTask(() => this._push(data, internal, passive));
+    this.addTask(this._push.bind(this, data, internal, passive));
   }
 
   async _push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
@@ -368,7 +372,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean) {
-    this.addTask(() => this._replace(data, internal, passive));
+    this.addTask(this._replace.bind(this, data, internal, passive));
   }
 
   async _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
@@ -409,7 +413,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   back(n: number = 1, internal?: boolean, passive?: boolean) {
-    this.addTask(() => this._back(n, internal, passive));
+    this.addTask(this._back.bind(this, n, internal, passive));
   }
 
   async _back(n: number = 1, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
@@ -448,7 +452,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   pop(n: number = 1, internal?: boolean, passive?: boolean) {
-    this.addTask(() => this._pop(n, internal, passive));
+    this.addTask(this._pop.bind(this, n, internal, passive));
   }
 
   async _pop(n: number = 1, internal?: boolean, passive?: boolean): Promise<RouteState<P>> {
@@ -497,7 +501,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
 
   private executeTask(task: () => Promise<void>) {
     this.curTask = task;
-    task().finally(() => this.taskComplete());
+    task().finally(this.taskComplete.bind(this));
   }
 
   private addTask(task: () => Promise<any>) {

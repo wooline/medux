@@ -21,14 +21,21 @@
     "dist/"
   ],
   "scripts": {
-    "prebuild": "yarn lint && rimraf ./dist ./types && yarn types",
-    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
-    "types": "tsc --project ./types.tsconfig.json && copyfiles -f ./src/*.d.ts ./types",
-    "build": "cross-env NODE_ENV=development NODE_TAG=pkg rollup -c & cross-env NODE_ENV=production NODE_TAG=pkg rollup -c"
+    "type": "tsc",
+    "typeSrc": "tsc -P ./src",
+    "eslint": "eslint --cache .",
+    "eslintSrc": "eslint --cache ./src",
+    "buildTypes": "tsc --project ./src/tsconfig.types.json && copyfiles -f ./src/*.d.ts ./types",
+    "prebuild": "node ../../preBuild && yarn type & yarn typeSrc & yarn eslint & yarn eslintSrc && rimraf ./dist ./types && yarn buildTypes",
+    "build:next": "cross-env NODE_TAG=next babel ./src/lib --out-dir ./dist/next/lib  --extensions \".ts,.tsx\" && cross-env NODE_TAG=next rollup -c",
+    "build:esm": "cross-env NODE_TAG=esm babel ./src/lib --out-dir ./dist/esm/lib  --extensions \".ts,.tsx\" && cross-env NODE_TAG=esm rollup -c",
+    "build:cjs": "cross-env NODE_TAG=cjs babel ./src/lib --out-dir ./dist/cjs/lib  --extensions \".ts,.tsx\"",
+    "build": "yarn build:next && yarn build:esm && yarn build:cjs"
   },
   "externals": {
-    "@tarojs/taro": true,
+    "@tarojs": true,
     "react": true,
+    "react-dom": true,
     "react-redux": true
   },
   "peerDependencies": {

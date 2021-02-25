@@ -1,5 +1,6 @@
 declare namespace meduxCore {
   interface Document {
+    title: string;
     getElementById: (id: string) => Record<string, unknown> | null;
   }
 

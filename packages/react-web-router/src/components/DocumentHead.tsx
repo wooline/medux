@@ -1,5 +1,5 @@
 import React, {ReactNode, useEffect} from 'react';
-import {isServer} from '@medux/core';
+import {env, isServer} from '@medux/core';
 
 interface Props {
   children?: ReactNode;
@@ -15,8 +15,7 @@ const Component: React.FC<Props> = ({children}) => {
   if (!isServer()) {
     useEffect(() => {
       if (title) {
-        // @ts-ignore
-        document.title = title;
+        env.document.title = title;
       }
     }, [title]);
     return null;

@@ -91,7 +91,7 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
         var callback;
 
         if (action === 'POP') {
-          index = _this.router.searchKey(key);
+          index = _this.router.searchKeyInActions(key);
         }
 
         if (index > 0) {
@@ -215,12 +215,6 @@ var Router = function (_BaseRouter) {
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "nativeRouter", void 0);
     return _this2;
   }
-
-  var _proto2 = Router.prototype;
-
-  _proto2.searchKey = function searchKey(key) {
-    return this.history.getActionIndex(key);
-  };
 
   return Router;
 }(_routeWeb.BaseRouter);
