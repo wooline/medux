@@ -1,6 +1,6 @@
 {
   "name": "@medux/react-taro-router",
-  "version": "2.0.0-beta.3.17",
+  "version": "2.0.0-beta.3.18",
   "description": "The practice of @medux/core in taro",
   "repository": "https://github.com/wooline/medux/tree/master/packages/react-taro-router",
   "author": "wooline <wooline@qq.com>",
@@ -49,7 +49,7 @@
     "@medux/route-web": "^2.0.0-beta.3.16"
   },
   "devDependencies": {
-    "vtils":"^4.32.11"
+    "vtils": "^4.32.11"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
