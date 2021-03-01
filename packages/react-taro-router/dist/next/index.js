@@ -3487,7 +3487,7 @@ const routeENV = {
 
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = callback => {
-    onAppRoute(({
+    wx.onAppRoute(({
       openType,
       path,
       query
@@ -3513,6 +3513,18 @@ if (process.env.TARO_ENV === 'weapp') {
   };
 } else if (process.env.TARO_ENV === 'h5') {
   const taroRouter = require('@tarojs/router');
+
+  routeENV.getLocation = () => {
+    const {
+      pathname,
+      search
+    } = taroRouter.history.location;
+    const nativeLocation = nativeUrlToNativeLocation(pathname + search);
+    return {
+      pathname: nativeLocation.pathname,
+      searchData: nativeLocation.searchData
+    };
+  };
 
   routeENV.onRouteChange = callback => {
     const unhandle = taroRouter.history.listen((location, action) => {

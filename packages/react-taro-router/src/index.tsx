@@ -39,7 +39,7 @@ export {Else} from './components/Else';
 export {Switch} from './components/Switch';
 
 declare const process: any;
-declare const onAppRoute: any;
+declare const wx: any;
 declare const require: any;
 
 const routeENV: RouteENV = {
@@ -70,7 +70,7 @@ const routeENV: RouteENV = {
 };
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = (callback) => {
-    onAppRoute(({openType, path, query}: {openType: string; path: string; query: {[key: string]: string}}) => {
+    wx.onAppRoute(({openType, path, query}: {openType: string; path: string; query: {[key: string]: string}}) => {
       const actionMap = {
         switchTab: 'RELAUNCH',
         reLaunch: 'RELAUNCH',
@@ -91,7 +91,14 @@ if (process.env.TARO_ENV === 'weapp') {
     return () => undefined;
   };
 } else if (process.env.TARO_ENV === 'h5') {
-  const taroRouter: {history: {listen: (callback: (location: {pathname: string; search: string}, action: string) => void) => () => void}} = require('@tarojs/router');
+  const taroRouter: {
+    history: {location: {pathname: string; search: string}; listen: (callback: (location: {pathname: string; search: string}, action: string) => void) => () => void};
+  } = require('@tarojs/router');
+  routeENV.getLocation = () => {
+    const {pathname, search} = taroRouter.history.location;
+    const nativeLocation = nativeUrlToNativeLocation(pathname + search);
+    return {pathname: nativeLocation.pathname, searchData: nativeLocation.searchData};
+  };
   routeENV.onRouteChange = (callback) => {
     const unhandle = taroRouter.history.listen((location, action) => {
       const nativeLocation = nativeUrlToNativeLocation(location.search);

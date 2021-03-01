@@ -4710,7 +4710,7 @@ var routeENV = {
 
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = function (callback) {
-    onAppRoute(function (_ref) {
+    wx.onAppRoute(function (_ref) {
       var openType = _ref.openType,
           path = _ref.path,
           query = _ref.query;
@@ -4737,6 +4737,17 @@ if (process.env.TARO_ENV === 'weapp') {
   };
 } else if (process.env.TARO_ENV === 'h5') {
   var taroRouter = require('@tarojs/router');
+
+  routeENV.getLocation = function () {
+    var _taroRouter$history$l = taroRouter.history.location,
+        pathname = _taroRouter$history$l.pathname,
+        search = _taroRouter$history$l.search;
+    var nativeLocation = nativeUrlToNativeLocation(pathname + search);
+    return {
+      pathname: nativeLocation.pathname,
+      searchData: nativeLocation.searchData
+    };
+  };
 
   routeENV.onRouteChange = function (callback) {
     var unhandle = taroRouter.history.listen(function (location, action) {
