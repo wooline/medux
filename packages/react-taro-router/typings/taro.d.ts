@@ -6,3 +6,6 @@ declare module '@tarojs/taro' {
   const getCurrentPages: any;
   const getLaunchOptionsSync: any;
 }
+declare module '@tarojs/components' {
+  const View: any;
+}

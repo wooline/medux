@@ -50,7 +50,7 @@ const routeENV: RouteENV = {
   getCurrentPages: Taro.getCurrentPages,
   getLocation: () => {
     const arr = Taro.getCurrentPages();
-    let path;
+    let path: string;
     let query;
     if (arr.length === 0) {
       ({path, query} = Taro.getLaunchOptionsSync());
@@ -60,7 +60,7 @@ const routeENV: RouteENV = {
       query = current.options;
     }
     return {
-      pathname: path,
+      pathname: path.startsWith('/') ? path : `/${path}`,
       searchData: query && Object.keys(query).length ? query : undefined,
     };
   },
@@ -68,9 +68,14 @@ const routeENV: RouteENV = {
     return () => undefined;
   },
 };
+let fixOnRouteChangeOnce: boolean = false; // 小程序中初始化即会触发一次onRouteChange，需要忽略
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = (callback) => {
     wx.onAppRoute(({openType, path, query}: {openType: string; path: string; query: {[key: string]: string}}) => {
+      if (!fixOnRouteChangeOnce) {
+        fixOnRouteChangeOnce = true;
+        return;
+      }
       const actionMap = {
         switchTab: 'RELAUNCH',
         reLaunch: 'RELAUNCH',

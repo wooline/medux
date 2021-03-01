@@ -1,5 +1,6 @@
 import Taro from '@tarojs/taro';
 import React, { useEffect, useState } from 'react';
+import { View } from '@tarojs/components';
 
 function _assertThisInitialized(self) {
   if (self === void 0) {
@@ -4546,8 +4547,12 @@ function _extends() {
 }
 
 var loadViewDefaultOptions = {
-  LoadViewOnError: React.createElement("div", null, "error"),
-  LoadViewOnLoading: React.createElement("div", null)
+  LoadViewOnError: React.createElement(View, {
+    className: "g-loadview-error"
+  }, "error"),
+  LoadViewOnLoading: React.createElement(View, {
+    className: "g-loadview-loading"
+  }, "loading")
 };
 function setLoadViewOptions(_ref) {
   var LoadViewOnError = _ref.LoadViewOnError,
@@ -4697,7 +4702,7 @@ var routeENV = {
     }
 
     return {
-      pathname: path,
+      pathname: path.startsWith('/') ? path : "/" + path,
       searchData: query && Object.keys(query).length ? query : undefined
     };
   },
@@ -4707,6 +4712,7 @@ var routeENV = {
     };
   }
 };
+var fixOnRouteChangeOnce = false;
 
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = function (callback) {
@@ -4714,6 +4720,12 @@ if (process.env.TARO_ENV === 'weapp') {
       var openType = _ref.openType,
           path = _ref.path,
           query = _ref.query;
+
+      if (!fixOnRouteChangeOnce) {
+        fixOnRouteChangeOnce = true;
+        return;
+      }
+
       var actionMap = {
         switchTab: 'RELAUNCH',
         reLaunch: 'RELAUNCH',

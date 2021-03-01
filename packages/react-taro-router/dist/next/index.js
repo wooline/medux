@@ -1,5 +1,6 @@
 import Taro from '@tarojs/taro';
 import React, { useEffect, useState } from 'react';
+import { View } from '@tarojs/components';
 
 function _defineProperty(obj, key, value) {
   if (key in obj) {
@@ -3330,8 +3331,12 @@ function _extends() {
 }
 
 const loadViewDefaultOptions = {
-  LoadViewOnError: React.createElement("div", null, "error"),
-  LoadViewOnLoading: React.createElement("div", null)
+  LoadViewOnError: React.createElement(View, {
+    className: "g-loadview-error"
+  }, "error"),
+  LoadViewOnLoading: React.createElement(View, {
+    className: "g-loadview-loading"
+  }, "loading")
 };
 function setLoadViewOptions({
   LoadViewOnError,
@@ -3474,7 +3479,7 @@ const routeENV = {
     }
 
     return {
-      pathname: path,
+      pathname: path.startsWith('/') ? path : `/${path}`,
       searchData: query && Object.keys(query).length ? query : undefined
     };
   },
@@ -3484,6 +3489,7 @@ const routeENV = {
   }
 
 };
+let fixOnRouteChangeOnce = false;
 
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = callback => {
@@ -3492,6 +3498,11 @@ if (process.env.TARO_ENV === 'weapp') {
       path,
       query
     }) => {
+      if (!fixOnRouteChangeOnce) {
+        fixOnRouteChangeOnce = true;
+        return;
+      }
+
       const actionMap = {
         switchTab: 'RELAUNCH',
         reLaunch: 'RELAUNCH',

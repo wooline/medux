@@ -1,12 +1,13 @@
 import React, {ComponentType, useEffect, useState, ForwardRefRenderFunction, ReactElement} from 'react';
 import {RootModuleFacade, getView, isPromise, env} from '@medux/core';
 import type {BaseLoadView} from '@medux/core';
+import {View} from '@tarojs/components';
 
 export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {OnError?: ReactElement; OnLoading?: ReactElement}>;
 
 const loadViewDefaultOptions: {LoadViewOnError: ReactElement; LoadViewOnLoading: ReactElement} = {
-  LoadViewOnError: <div>error</div>,
-  LoadViewOnLoading: <div></div>,
+  LoadViewOnError: <View className="g-loadview-error">error</View>,
+  LoadViewOnLoading: <View className="g-loadview-loading">loading</View>,
 };
 export function setLoadViewOptions({LoadViewOnError, LoadViewOnLoading}: {LoadViewOnError?: ReactElement; LoadViewOnLoading?: ReactElement}) {
   LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);

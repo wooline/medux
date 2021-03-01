@@ -4,6 +4,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var Taro = require('@tarojs/taro');
 var React = require('react');
+var components = require('@tarojs/components');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -4554,8 +4555,12 @@ function _extends() {
 }
 
 var loadViewDefaultOptions = {
-  LoadViewOnError: React__default['default'].createElement("div", null, "error"),
-  LoadViewOnLoading: React__default['default'].createElement("div", null)
+  LoadViewOnError: React__default['default'].createElement(components.View, {
+    className: "g-loadview-error"
+  }, "error"),
+  LoadViewOnLoading: React__default['default'].createElement(components.View, {
+    className: "g-loadview-loading"
+  }, "loading")
 };
 function setLoadViewOptions(_ref) {
   var LoadViewOnError = _ref.LoadViewOnError,
@@ -4705,7 +4710,7 @@ var routeENV = {
     }
 
     return {
-      pathname: path,
+      pathname: path.startsWith('/') ? path : "/" + path,
       searchData: query && Object.keys(query).length ? query : undefined
     };
   },
@@ -4715,6 +4720,7 @@ var routeENV = {
     };
   }
 };
+var fixOnRouteChangeOnce = false;
 
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = function (callback) {
@@ -4722,6 +4728,12 @@ if (process.env.TARO_ENV === 'weapp') {
       var openType = _ref.openType,
           path = _ref.path,
           query = _ref.query;
+
+      if (!fixOnRouteChangeOnce) {
+        fixOnRouteChangeOnce = true;
+        return;
+      }
+
       var actionMap = {
         switchTab: 'RELAUNCH',
         reLaunch: 'RELAUNCH',

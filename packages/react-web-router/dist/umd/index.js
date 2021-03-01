@@ -5772,8 +5772,12 @@
   }
 
   var loadViewDefaultOptions = {
-    LoadViewOnError: React__default['default'].createElement("div", null, "error"),
-    LoadViewOnLoading: React__default['default'].createElement("div", null)
+    LoadViewOnError: React__default['default'].createElement("div", {
+      className: "g-loadview-error"
+    }, "error"),
+    LoadViewOnLoading: React__default['default'].createElement("div", {
+      className: "g-loadview-loading"
+    }, "loading")
   };
   function setLoadViewOptions(_ref) {
     var LoadViewOnError = _ref.LoadViewOnError,

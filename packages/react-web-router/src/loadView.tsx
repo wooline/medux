@@ -5,8 +5,8 @@ import type {BaseLoadView} from '@medux/core';
 export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {OnError?: ReactElement; OnLoading?: ReactElement}>;
 
 const loadViewDefaultOptions: {LoadViewOnError: ReactElement; LoadViewOnLoading: ReactElement} = {
-  LoadViewOnError: <div>error</div>,
-  LoadViewOnLoading: <div></div>,
+  LoadViewOnError: <div className="g-loadview-error">error</div>,
+  LoadViewOnLoading: <div className="g-loadview-loading">loading</div>,
 };
 export function setLoadViewOptions({LoadViewOnError, LoadViewOnLoading}: {LoadViewOnError?: ReactElement; LoadViewOnLoading?: ReactElement}) {
   LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);

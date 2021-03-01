@@ -5766,8 +5766,12 @@ function createRouter(createHistory, locationTransform) {
 }
 
 var loadViewDefaultOptions = {
-  LoadViewOnError: React.createElement("div", null, "error"),
-  LoadViewOnLoading: React.createElement("div", null)
+  LoadViewOnError: React.createElement("div", {
+    className: "g-loadview-error"
+  }, "error"),
+  LoadViewOnLoading: React.createElement("div", {
+    className: "g-loadview-loading"
+  }, "loading")
 };
 function setLoadViewOptions(_ref) {
   var LoadViewOnError = _ref.LoadViewOnError,
