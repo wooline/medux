@@ -91,7 +91,7 @@ if (process.env.TARO_ENV === 'weapp') {
         return params;
       }, undefined);
 
-      callback(path, searchData, actionMap[openType]);
+      callback(path.startsWith('/') ? path : `/${path}`, searchData, actionMap[openType]);
     });
     return () => undefined;
   };
@@ -106,7 +106,7 @@ if (process.env.TARO_ENV === 'weapp') {
   };
   routeENV.onRouteChange = (callback) => {
     const unhandle = taroRouter.history.listen((location, action) => {
-      const nativeLocation = nativeUrlToNativeLocation(location.search);
+      const nativeLocation = nativeUrlToNativeLocation([location.pathname, location.search].join(''));
       const actionMap = {
         POP: 'POP',
         PUSH: 'PUSH',
@@ -129,6 +129,7 @@ export function setConfig(conf: {
   DEVTOOLS?: boolean;
   LoadViewOnError?: ReactElement;
   LoadViewOnLoading?: ReactElement;
+  disableNativeRoute?: boolean;
 }) {
   setCoreConfig(conf);
   setRouteConfig(conf);

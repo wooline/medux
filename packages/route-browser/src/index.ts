@@ -60,13 +60,13 @@ export class BrowserNativeRouter extends BaseNativeRouter {
           index = this.router.searchKeyInActions(key);
         }
         if (index > 0) {
-          callback = () => this.router.back(index);
+          callback = () => this.router.back(index, false, false);
         } else if (action === 'REPLACE') {
-          callback = () => this.router.replace(url);
+          callback = () => this.router.replace(url, false, false);
         } else if (action === 'PUSH') {
-          callback = () => this.router.push(url);
+          callback = () => this.router.push(url, false, false);
         } else {
-          callback = () => this.router.relaunch(url);
+          callback = () => this.router.relaunch(url, false, false);
         }
         callback && env.setTimeout(callback, 50);
         return false;

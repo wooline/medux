@@ -95,19 +95,19 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
 
         if (index > 0) {
           callback = function callback() {
-            return _this.router.back(index);
+            return _this.router.back(index, false, false);
           };
         } else if (action === 'REPLACE') {
           callback = function callback() {
-            return _this.router.replace(url);
+            return _this.router.replace(url, false, false);
           };
         } else if (action === 'PUSH') {
           callback = function callback() {
-            return _this.router.push(url);
+            return _this.router.push(url, false, false);
           };
         } else {
           callback = function callback() {
-            return _this.router.relaunch(url);
+            return _this.router.relaunch(url, false, false);
           };
         }
 

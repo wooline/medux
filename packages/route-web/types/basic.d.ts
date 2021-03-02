@@ -6,6 +6,7 @@ export declare const routeConfig: {
         [key: string]: string;
     };
     defaultParams: any;
+    disableNativeRoute: boolean;
 };
 export declare function setRouteConfig(conf: {
     actionMaxHistory?: number;
@@ -14,6 +15,7 @@ export declare function setRouteConfig(conf: {
     pagenames?: {
         [key: string]: string;
     };
+    disableNativeRoute?: boolean;
 }): void;
 export declare type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
 export declare type ModuleParams = {

@@ -63,6 +63,7 @@ export function setConfig(conf: {
   DEVTOOLS?: boolean;
   LoadViewOnError?: ReactElement;
   LoadViewOnLoading?: ReactElement;
+  disableNativeRoute?: boolean;
 }) {
   setCoreConfig(conf);
   setRouteConfig(conf);

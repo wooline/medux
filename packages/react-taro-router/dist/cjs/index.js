@@ -2992,11 +2992,14 @@ var routeConfig = {
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
   pagenames: {},
-  defaultParams: {}
+  defaultParams: {},
+  disableNativeRoute: false
 };
 function setRouteConfig(conf) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+  conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
+  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function splitQuery(query) {
@@ -3773,9 +3776,6 @@ var BaseNativeRouter = function () {
 }();
 var BaseRouter = function () {
   function BaseRouter(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
-    this.nativeRouter = nativeRouter;
-    this.locationTransform = locationTransform;
-
     _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "curTask", void 0);
@@ -3792,6 +3792,8 @@ var BaseRouter = function () {
 
     _defineProperty(this, "history", void 0);
 
+    this.nativeRouter = nativeRouter;
+    this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
     var location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
@@ -3952,12 +3954,20 @@ var BaseRouter = function () {
     };
   };
 
-  _proto2.relaunch = function relaunch(data, internal, passive) {
-    this.addTask(this._relaunch.bind(this, data, internal, passive));
+  _proto2.relaunch = function relaunch(data, internal, disableNative) {
+    if (internal === void 0) {
+      internal = false;
+    }
+
+    if (disableNative === void 0) {
+      disableNative = routeConfig.disableNativeRoute;
+    }
+
+    this.addTask(this._relaunch.bind(this, data, internal, disableNative));
   };
 
   _proto2._relaunch = function () {
-    var _relaunch2 = _asyncToGenerator(regenerator.mark(function _callee(data, internal, passive) {
+    var _relaunch2 = _asyncToGenerator(regenerator.mark(function _callee(data, internal, disableNative) {
       var _this3 = this;
 
       var location, key, routeState, nativeData;
@@ -3982,7 +3992,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (passive) {
+              if (disableNative) {
                 _context.next = 9;
                 break;
               }
@@ -3997,7 +4007,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, !!internal);
+              }, key, internal);
 
             case 8:
               nativeData = _context.sent;
@@ -4029,12 +4039,20 @@ var BaseRouter = function () {
     return _relaunch;
   }();
 
-  _proto2.push = function push(data, internal, passive) {
-    this.addTask(this._push.bind(this, data, internal, passive));
+  _proto2.push = function push(data, internal, disableNative) {
+    if (internal === void 0) {
+      internal = false;
+    }
+
+    if (disableNative === void 0) {
+      disableNative = routeConfig.disableNativeRoute;
+    }
+
+    this.addTask(this._push.bind(this, data, internal, disableNative));
   };
 
   _proto2._push = function () {
-    var _push2 = _asyncToGenerator(regenerator.mark(function _callee2(data, internal, passive) {
+    var _push2 = _asyncToGenerator(regenerator.mark(function _callee2(data, internal, disableNative) {
       var _this4 = this;
 
       var location, key, routeState, nativeData;
@@ -4059,7 +4077,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (passive) {
+              if (disableNative) {
                 _context2.next = 9;
                 break;
               }
@@ -4074,7 +4092,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, !!internal);
+              }, key, internal);
 
             case 8:
               nativeData = _context2.sent;
@@ -4108,12 +4126,20 @@ var BaseRouter = function () {
     return _push;
   }();
 
-  _proto2.replace = function replace(data, internal, passive) {
-    this.addTask(this._replace.bind(this, data, internal, passive));
+  _proto2.replace = function replace(data, internal, disableNative) {
+    if (internal === void 0) {
+      internal = false;
+    }
+
+    if (disableNative === void 0) {
+      disableNative = routeConfig.disableNativeRoute;
+    }
+
+    this.addTask(this._replace.bind(this, data, internal, disableNative));
   };
 
   _proto2._replace = function () {
-    var _replace2 = _asyncToGenerator(regenerator.mark(function _callee3(data, internal, passive) {
+    var _replace2 = _asyncToGenerator(regenerator.mark(function _callee3(data, internal, disableNative) {
       var _this5 = this;
 
       var location, key, routeState, nativeData;
@@ -4138,7 +4164,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (passive) {
+              if (disableNative) {
                 _context3.next = 9;
                 break;
               }
@@ -4153,7 +4179,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, !!internal);
+              }, key, internal);
 
             case 8:
               nativeData = _context3.sent;
@@ -4187,16 +4213,24 @@ var BaseRouter = function () {
     return _replace;
   }();
 
-  _proto2.back = function back(n, internal, passive) {
+  _proto2.back = function back(n, internal, disableNative) {
     if (n === void 0) {
       n = 1;
     }
 
-    this.addTask(this._back.bind(this, n, internal, passive));
+    if (internal === void 0) {
+      internal = false;
+    }
+
+    if (disableNative === void 0) {
+      disableNative = routeConfig.disableNativeRoute;
+    }
+
+    this.addTask(this._back.bind(this, n, internal, disableNative));
   };
 
   _proto2._back = function () {
-    var _back2 = _asyncToGenerator(regenerator.mark(function _callee4(n, internal, passive) {
+    var _back2 = _asyncToGenerator(regenerator.mark(function _callee4(n, internal, disableNative) {
       var _this6 = this;
 
       var stack, uri, _uriToLocation, key, location, routeState, nativeData;
@@ -4229,7 +4263,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 9:
-              if (passive) {
+              if (disableNative) {
                 _context4.next = 13;
                 break;
               }
@@ -4244,7 +4278,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, n, key, !!internal);
+              }, n, key, internal);
 
             case 12:
               nativeData = _context4.sent;
@@ -4278,16 +4312,24 @@ var BaseRouter = function () {
     return _back;
   }();
 
-  _proto2.pop = function pop(n, internal, passive) {
+  _proto2.pop = function pop(n, internal, disableNative) {
     if (n === void 0) {
       n = 1;
     }
 
-    this.addTask(this._pop.bind(this, n, internal, passive));
+    if (internal === void 0) {
+      internal = false;
+    }
+
+    if (disableNative === void 0) {
+      disableNative = routeConfig.disableNativeRoute;
+    }
+
+    this.addTask(this._pop.bind(this, n, internal, disableNative));
   };
 
   _proto2._pop = function () {
-    var _pop2 = _asyncToGenerator(regenerator.mark(function _callee5(n, internal, passive) {
+    var _pop2 = _asyncToGenerator(regenerator.mark(function _callee5(n, internal, disableNative) {
       var _this7 = this;
 
       var stack, uri, _uriToLocation2, key, location, routeState, nativeData;
@@ -4320,7 +4362,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 9:
-              if (passive) {
+              if (disableNative) {
                 _context5.next = 13;
                 break;
               }
@@ -4335,7 +4377,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, n, key, !!internal);
+              }, n, key, internal);
 
             case 12:
               nativeData = _context5.sent;
@@ -4749,7 +4791,7 @@ if (process.env.TARO_ENV === 'weapp') {
         params[key] = decodeURIComponent(params[key]);
         return params;
       }, undefined);
-      callback(path, searchData, actionMap[openType]);
+      callback(path.startsWith('/') ? path : "/" + path, searchData, actionMap[openType]);
     });
     return function () {
       return undefined;
@@ -4771,7 +4813,7 @@ if (process.env.TARO_ENV === 'weapp') {
 
   routeENV.onRouteChange = function (callback) {
     var unhandle = taroRouter.history.listen(function (location, action) {
-      var nativeLocation = nativeUrlToNativeLocation(location.search);
+      var nativeLocation = nativeUrlToNativeLocation([location.pathname, location.search].join(''));
       var actionMap = {
         POP: 'POP',
         PUSH: 'PUSH',

@@ -1,7 +1,7 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise } from '@medux/core';
-import { uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History } from './basic';
+import { uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig } from './basic';
 export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
 export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
@@ -144,9 +144,6 @@ export class BaseNativeRouter {
 }
 export class BaseRouter {
   constructor(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
-    this.nativeRouter = nativeRouter;
-    this.locationTransform = locationTransform;
-
     _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "curTask", void 0);
@@ -163,6 +160,8 @@ export class BaseRouter {
 
     _defineProperty(this, "history", void 0);
 
+    this.nativeRouter = nativeRouter;
+    this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
     const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
@@ -318,11 +317,11 @@ export class BaseRouter {
     };
   }
 
-  relaunch(data, internal, passive) {
-    this.addTask(this._relaunch.bind(this, data, internal, passive));
+  relaunch(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._relaunch.bind(this, data, internal, disableNative));
   }
 
-  async _relaunch(data, internal, passive) {
+  async _relaunch(data, internal, disableNative) {
     let location;
 
     if (typeof data === 'string') {
@@ -342,7 +341,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('relaunch', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -350,7 +349,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, !!internal);
+      }, key, internal);
     }
 
     this._nativeData = nativeData;
@@ -365,11 +364,11 @@ export class BaseRouter {
     }
   }
 
-  push(data, internal, passive) {
-    this.addTask(this._push.bind(this, data, internal, passive));
+  push(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._push.bind(this, data, internal, disableNative));
   }
 
-  async _push(data, internal, passive) {
+  async _push(data, internal, disableNative) {
     let location;
 
     if (typeof data === 'string') {
@@ -389,7 +388,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('push', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -397,7 +396,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, !!internal);
+      }, key, internal);
     }
 
     this._nativeData = nativeData || undefined;
@@ -414,11 +413,11 @@ export class BaseRouter {
     return routeState;
   }
 
-  replace(data, internal, passive) {
-    this.addTask(this._replace.bind(this, data, internal, passive));
+  replace(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._replace.bind(this, data, internal, disableNative));
   }
 
-  async _replace(data, internal, passive) {
+  async _replace(data, internal, disableNative) {
     let location;
 
     if (typeof data === 'string') {
@@ -438,7 +437,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('replace', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -446,7 +445,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, !!internal);
+      }, key, internal);
     }
 
     this._nativeData = nativeData || undefined;
@@ -463,11 +462,11 @@ export class BaseRouter {
     return routeState;
   }
 
-  back(n = 1, internal, passive) {
-    this.addTask(this._back.bind(this, n, internal, passive));
+  back(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._back.bind(this, n, internal, disableNative));
   }
 
-  async _back(n = 1, internal, passive) {
+  async _back(n = 1, internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
     if (!stack) {
@@ -486,7 +485,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('back', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -494,7 +493,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, n, key, !!internal);
+      }, n, key, internal);
     }
 
     this._nativeData = nativeData || undefined;
@@ -511,11 +510,11 @@ export class BaseRouter {
     return routeState;
   }
 
-  pop(n = 1, internal, passive) {
-    this.addTask(this._pop.bind(this, n, internal, passive));
+  pop(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._pop.bind(this, n, internal, disableNative));
   }
 
-  async _pop(n = 1, internal, passive) {
+  async _pop(n = 1, internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
     if (!stack) {
@@ -534,7 +533,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('pop', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -542,7 +541,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, n, key, !!internal);
+      }, n, key, internal);
     }
 
     this._nativeData = nativeData || undefined;

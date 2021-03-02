@@ -15,13 +15,16 @@ var routeConfig = {
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
   pagenames: {},
-  defaultParams: {}
+  defaultParams: {},
+  disableNativeRoute: false
 };
 exports.routeConfig = routeConfig;
 
 function setRouteConfig(conf) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+  conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
+  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function splitQuery(query) {

@@ -2149,11 +2149,14 @@ const routeConfig = {
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
   pagenames: {},
-  defaultParams: {}
+  defaultParams: {},
+  disableNativeRoute: false
 };
 function setRouteConfig(conf) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
+  conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
+  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
 }
 
 function splitQuery(query) {
@@ -2856,9 +2859,6 @@ class BaseNativeRouter {
 }
 class BaseRouter {
   constructor(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
-    this.nativeRouter = nativeRouter;
-    this.locationTransform = locationTransform;
-
     _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "curTask", void 0);
@@ -2875,6 +2875,8 @@ class BaseRouter {
 
     _defineProperty(this, "history", void 0);
 
+    this.nativeRouter = nativeRouter;
+    this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
     const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
 
@@ -3030,11 +3032,11 @@ class BaseRouter {
     };
   }
 
-  relaunch(data, internal, passive) {
-    this.addTask(this._relaunch.bind(this, data, internal, passive));
+  relaunch(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._relaunch.bind(this, data, internal, disableNative));
   }
 
-  async _relaunch(data, internal, passive) {
+  async _relaunch(data, internal, disableNative) {
     let location;
 
     if (typeof data === 'string') {
@@ -3054,7 +3056,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('relaunch', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3062,7 +3064,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, !!internal);
+      }, key, internal);
     }
 
     this._nativeData = nativeData;
@@ -3077,11 +3079,11 @@ class BaseRouter {
     }
   }
 
-  push(data, internal, passive) {
-    this.addTask(this._push.bind(this, data, internal, passive));
+  push(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._push.bind(this, data, internal, disableNative));
   }
 
-  async _push(data, internal, passive) {
+  async _push(data, internal, disableNative) {
     let location;
 
     if (typeof data === 'string') {
@@ -3101,7 +3103,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('push', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3109,7 +3111,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, !!internal);
+      }, key, internal);
     }
 
     this._nativeData = nativeData || undefined;
@@ -3126,11 +3128,11 @@ class BaseRouter {
     return routeState;
   }
 
-  replace(data, internal, passive) {
-    this.addTask(this._replace.bind(this, data, internal, passive));
+  replace(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._replace.bind(this, data, internal, disableNative));
   }
 
-  async _replace(data, internal, passive) {
+  async _replace(data, internal, disableNative) {
     let location;
 
     if (typeof data === 'string') {
@@ -3150,7 +3152,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('replace', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3158,7 +3160,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, !!internal);
+      }, key, internal);
     }
 
     this._nativeData = nativeData || undefined;
@@ -3175,11 +3177,11 @@ class BaseRouter {
     return routeState;
   }
 
-  back(n = 1, internal, passive) {
-    this.addTask(this._back.bind(this, n, internal, passive));
+  back(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._back.bind(this, n, internal, disableNative));
   }
 
-  async _back(n = 1, internal, passive) {
+  async _back(n = 1, internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
     if (!stack) {
@@ -3198,7 +3200,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('back', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3206,7 +3208,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, n, key, !!internal);
+      }, n, key, internal);
     }
 
     this._nativeData = nativeData || undefined;
@@ -3223,11 +3225,11 @@ class BaseRouter {
     return routeState;
   }
 
-  pop(n = 1, internal, passive) {
-    this.addTask(this._pop.bind(this, n, internal, passive));
+  pop(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._pop.bind(this, n, internal, disableNative));
   }
 
-  async _pop(n = 1, internal, passive) {
+  async _pop(n = 1, internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
     if (!stack) {
@@ -3246,7 +3248,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!passive) {
+    if (!disableNative) {
       nativeData = await this.nativeRouter.execute('pop', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3254,7 +3256,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, n, key, !!internal);
+      }, n, key, internal);
     }
 
     this._nativeData = nativeData || undefined;
@@ -4409,13 +4411,13 @@ class BrowserNativeRouter extends BaseNativeRouter {
         }
 
         if (index > 0) {
-          callback = () => this.router.back(index);
+          callback = () => this.router.back(index, false, false);
         } else if (action === 'REPLACE') {
-          callback = () => this.router.replace(url);
+          callback = () => this.router.replace(url, false, false);
         } else if (action === 'PUSH') {
-          callback = () => this.router.push(url);
+          callback = () => this.router.push(url, false, false);
         } else {
-          callback = () => this.router.relaunch(url);
+          callback = () => this.router.relaunch(url, false, false);
         }
 
         callback && env.setTimeout(callback, 50);

@@ -29,6 +29,7 @@ export declare function setConfig(conf: {
     DEVTOOLS?: boolean;
     LoadViewOnError?: ReactElement;
     LoadViewOnLoading?: ReactElement;
+    disableNativeRoute?: boolean;
 }): void;
 export declare const exportModule: ExportModule<ComponentType<any>>;
 export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, locationTransform, storeOptions, container, }: {
