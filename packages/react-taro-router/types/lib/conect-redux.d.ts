@@ -10,3 +10,4 @@ export interface ConnectRedux {
     }>;
 }
 export declare const connectRedux: ConnectRedux;
+export declare function connectPage(page: ComponentType): ComponentType;

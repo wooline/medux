@@ -1,5 +1,5 @@
-import type { ComponentType, ReactElement } from 'react';
-import type { ModuleGetter, StoreOptions, ExportModule, ModuleStore, CommonModule } from '@medux/core';
+import type { ComponentType } from 'react';
+import type { ModuleGetter, StoreOptions, ExportModule, ModuleStore } from '@medux/core';
 import type { LocationTransform } from '@medux/route-web';
 export type { RootModuleFacade, Dispatch } from '@medux/core';
 export type { Store } from 'redux';
@@ -22,8 +22,10 @@ export declare function setConfig(conf: {
     MSP?: string;
     MutableData?: boolean;
     DEVTOOLS?: boolean;
-    LoadViewOnError?: ReactElement;
-    LoadViewOnLoading?: ReactElement;
+    LoadViewOnError?: ComponentType<{
+        message: string;
+    }>;
+    LoadViewOnLoading?: ComponentType<{}>;
     disableNativeRoute?: boolean;
 }): void;
 export declare const exportModule: ExportModule<ComponentType<any>>;
@@ -32,6 +34,4 @@ export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, ap
     appViewName?: string;
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
-}, startup: (store: ModuleStore, app: CommonModule) => void): Promise<{
-    store: ModuleStore;
-}>;
+}, startup: (store: ModuleStore) => void): Promise<ModuleStore>;

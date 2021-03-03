@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
 import {Action, ActionTypes, MetaData, ModuleStore, config, isPromise, snapshotState, mergeState, warn} from './basic';
-import {loadModel} from './inject';
+import {getModuleByName} from './inject';
 import {env} from './env';
 import {errorAction} from './actions';
 
@@ -211,17 +211,34 @@ export function buildStore(
     return action;
   };
 
+  // const preLoadMiddleware: Middleware = () => (next) => (action) => {
+  //   const [moduleName, actionName] = action.type.split(config.NSP);
+  //   if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+  //     const hasInjected = store._medux_.injectedModules[moduleName];
+  //     if (!hasInjected) {
+  //       if (actionName === ActionTypes.MInit) {
+  //         return loadModel(moduleName, store);
+  //       }
+  //       const initModel = loadModel(moduleName, store);
+  //       if (isPromise(initModel)) {
+  //         return initModel.then(() => next(action));
+  //       }
+  //     }
+  //   }
+  //   return next(action);
+  // };
+
   const preLoadMiddleware: Middleware = () => (next) => (action) => {
     const [moduleName, actionName] = action.type.split(config.NSP);
     if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
       const hasInjected = store._medux_.injectedModules[moduleName];
       if (!hasInjected) {
-        if (actionName === ActionTypes.MInit) {
-          return loadModel(moduleName, store);
-        }
-        const initModel = loadModel(moduleName, store);
-        if (isPromise(initModel)) {
-          return initModel.then(() => next(action));
+        const moduleOrPromise = getModuleByName(moduleName);
+        if (isPromise(moduleOrPromise)) {
+          return moduleOrPromise.then((module) => {
+            module.default.model(store);
+            return next(action);
+          });
         }
       }
     }

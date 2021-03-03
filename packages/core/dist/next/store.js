@@ -1,6 +1,6 @@
 import { applyMiddleware, compose, createStore } from 'redux';
 import { ActionTypes, MetaData, config, isPromise, snapshotState, mergeState, warn } from './basic';
-import { loadModel } from './inject';
+import { getModuleByName } from './inject';
 import { env } from './env';
 import { errorAction } from './actions';
 export function getActionData(action) {
@@ -211,14 +211,13 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
       const hasInjected = store._medux_.injectedModules[moduleName];
 
       if (!hasInjected) {
-        if (actionName === ActionTypes.MInit) {
-          return loadModel(moduleName, store);
-        }
+        const moduleOrPromise = getModuleByName(moduleName);
 
-        const initModel = loadModel(moduleName, store);
-
-        if (isPromise(initModel)) {
-          return initModel.then(() => next(action));
+        if (isPromise(moduleOrPromise)) {
+          return moduleOrPromise.then(module => {
+            module.default.model(store);
+            return next(action);
+          });
         }
       }
     }

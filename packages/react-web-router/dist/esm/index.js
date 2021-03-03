@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Component as Component$3, useEffect } from 'react';
 import { unmountComponentAtNode, hydrate, render } from 'react-dom';
 
 function _assertThisInitialized(self) {
@@ -30,11 +30,21 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global || {
-  setTimeout: setTimeout,
-  clearTimeout: clearTimeout,
-  console: console
-};
+var root;
+
+if (typeof self !== 'undefined') {
+  root = self;
+} else if (typeof window !== 'undefined') {
+  root = window;
+} else if (typeof global !== 'undefined') {
+  root = global;
+} else if (typeof module !== 'undefined') {
+  root = module;
+} else {
+  root = Function('return this')();
+}
+
+var env = root;
 env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 
 var TaskCountEvent = 'TaskCountEvent';
@@ -52,13 +62,13 @@ var PEvent = function () {
       bubbling = false;
     }
 
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
-
     _defineProperty(this, "target", null);
 
     _defineProperty(this, "currentTarget", null);
+
+    this.name = name;
+    this.data = data;
+    this.bubbling = bubbling;
   }
 
   var _proto = PEvent.prototype;
@@ -75,9 +85,9 @@ var PEvent = function () {
 }();
 var PDispatcher = function () {
   function PDispatcher(parent) {
-    this.parent = parent;
-
     _defineProperty(this, "storeHandlers", {});
+
+    this.parent = parent;
   }
 
   var _proto2 = PDispatcher.prototype;
@@ -160,12 +170,12 @@ var TaskCounter = function (_PDispatcher) {
     var _this2;
 
     _this2 = _PDispatcher.call(this) || this;
-    _this2.deferSecond = deferSecond;
 
     _defineProperty(_assertThisInitialized(_this2), "list", []);
 
     _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
 
+    _this2.deferSecond = deferSecond;
     return _this2;
   }
 
@@ -562,21 +572,21 @@ function symbolObservablePonyfill(root) {
 }
 
 /* global window */
-var root;
+var root$1;
 
 if (typeof self !== 'undefined') {
-  root = self;
+  root$1 = self;
 } else if (typeof window !== 'undefined') {
-  root = window;
+  root$1 = window;
 } else if (typeof global !== 'undefined') {
-  root = global;
+  root$1 = global;
 } else if (typeof module !== 'undefined') {
-  root = module;
+  root$1 = module;
 } else {
-  root = Function('return this')();
+  root$1 = Function('return this')();
 }
 
-var result = symbolObservablePonyfill(root);
+var result = symbolObservablePonyfill(root$1);
 
 /**
  * These are private action types reserved by Redux.
@@ -1576,37 +1586,11 @@ function injectActions(store, moduleName, handlers) {
     }
   }
 }
-
-function _loadModel(moduleName, store) {
-  var hasInjected = !!store._medux_.injectedModules[moduleName];
-
-  if (!hasInjected) {
-    var moduleGetter = MetaData.moduleGetter;
-
-    if (!moduleGetter[moduleName]) {
-      return undefined;
-    }
-
-    var result = moduleGetter[moduleName]();
-
-    if (isPromise(result)) {
-      return result.then(function (module) {
-        cacheModule(module);
-        return module.default.model(store);
-      });
-    }
-
-    cacheModule(result);
-    return result.default.model(store);
-  }
-
-  return undefined;
-}
 var CoreModuleHandlers = _decorate(null, function (_initialize) {
   var CoreModuleHandlers = function CoreModuleHandlers(initState) {
-    this.initState = initState;
-
     _initialize(this);
+
+    this.initState = initState;
   };
 
   return {
@@ -1732,50 +1716,8 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
     actions: undefined
   };
 };
-function getView(moduleName, viewName) {
-  var moduleGetter = MetaData.moduleGetter;
-  var result = moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
-      var view = module.default.views[viewName];
-
-      if (env.isServer) {
-        return view;
-      }
-
-      var initModel = module.default.model(MetaData.clientStore);
-
-      if (isPromise(initModel)) {
-        return initModel.then(function () {
-          return view;
-        });
-      }
-
-      return view;
-    });
-  }
-
-  cacheModule(result);
-  var view = result.default.views[viewName];
-
-  if (env.isServer) {
-    return view;
-  }
-
-  var initModel = result.default.model(MetaData.clientStore);
-
-  if (isPromise(initModel)) {
-    return initModel.then(function () {
-      return view;
-    });
-  }
-
-  return view;
-}
-function getModuleByName(moduleName, moduleGetter) {
-  var result = moduleGetter[moduleName]();
+function getModuleByName(moduleName) {
+  var result = MetaData.moduleGetter[moduleName]();
 
   if (isPromise(result)) {
     return result.then(function (module) {
@@ -1786,6 +1728,38 @@ function getModuleByName(moduleName, moduleGetter) {
 
   cacheModule(result);
   return result;
+}
+function getView(moduleName, viewName) {
+  var callback = function callback(module) {
+    var view = module.default.views[viewName];
+
+    if (env.isServer) {
+      return view;
+    }
+
+    module.default.model(MetaData.clientStore);
+    return view;
+  };
+
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(callback);
+  }
+
+  return callback(moduleOrPromise);
+}
+
+function _loadModel(moduleName, store) {
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(function (module) {
+      return module.default.model(store);
+    });
+  }
+
+  return moduleOrPromise.default.model(store);
 }
 
 function getActionData(action) {
@@ -2022,14 +1996,11 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
           var hasInjected = store._medux_.injectedModules[moduleName];
 
           if (!hasInjected) {
-            if (actionName === ActionTypes.MInit) {
-              return _loadModel(moduleName, store);
-            }
+            var moduleOrPromise = getModuleByName(moduleName);
 
-            var initModel = _loadModel(moduleName, store);
-
-            if (isPromise(initModel)) {
-              return initModel.then(function () {
+            if (isPromise(moduleOrPromise)) {
+              return moduleOrPromise.then(function (module) {
+                module.default.model(store);
                 return next(action);
               });
             }
@@ -2979,13 +2950,13 @@ function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
+function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
   return _renderApp.apply(this, arguments);
 }
 
 function _renderApp() {
-  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
-    var appModuleName, store, appModuleResult, appModule;
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup, preModules) {
+    var appModuleName, store, appModule;
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -3009,36 +2980,32 @@ function _renderApp() {
             }
 
             store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            appModuleResult = getModuleByName(appModuleName, moduleGetter);
+            startup(store);
+            _context.next = 11;
+            return getModuleByName(appModuleName);
 
-            if (!isPromise(appModuleResult)) {
-              _context.next = 15;
+          case 11:
+            appModule = _context.sent;
+            appModule.default.model(store);
+            preModules = preModules.filter(function (item) {
+              return moduleGetter[item] && item !== appModuleName;
+            });
+
+            if (!preModules.length) {
+              _context.next = 17;
               break;
             }
 
-            _context.next = 12;
-            return appModuleResult;
+            _context.next = 17;
+            return Promise.all(preModules.map(function (moduleName) {
+              return getModuleByName(moduleName);
+            }));
 
-          case 12:
-            appModule = _context.sent;
-            _context.next = 16;
-            break;
-
-          case 15:
-            appModule = appModuleResult;
-
-          case 16:
-            startup(store, appModule);
-            _context.next = 19;
-            return appModule.default.model(store);
+          case 17:
+            reRender = render(store, appModule.default.views[appViewName]);
+            return _context.abrupt("return", store);
 
           case 19:
-            reRender = render(store, appModule.default.views[appViewName]);
-            return _context.abrupt("return", {
-              store: store
-            });
-
-          case 21:
           case "end":
             return _context.stop();
         }
@@ -3052,12 +3019,12 @@ var defFun = function defFun() {
   return undefined;
 };
 
-function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
+function renderSSR(_x8, _x9, _x10, _x11, _x12, _x13, _x14) {
   return _renderSSR.apply(this, arguments);
 }
 
 function _renderSSR() {
-  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
+  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup, preModules) {
     var appModuleName, store, appModule;
     return regenerator.wrap(function _callee2$(_context2) {
       while (1) {
@@ -3077,20 +3044,26 @@ function _renderSSR() {
             }
 
             store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            _context2.next = 9;
-            return getModuleByName(appModuleName, moduleGetter);
+            startup(store);
+            _context2.next = 10;
+            return getModuleByName(appModuleName);
 
-          case 9:
+          case 10:
             appModule = _context2.sent;
-            startup(store, appModule);
-            _context2.next = 13;
-            return appModule.default.model(store);
+            preModules = preModules.filter(function (item) {
+              return moduleGetter[item] && item !== appModuleName;
+            });
+            preModules.unshift(appModuleName);
+            _context2.next = 15;
+            return Promise.all(preModules.map(function (moduleName) {
+              return _loadModel(moduleName, store);
+            }));
 
-          case 13:
+          case 15:
             store.dispatch = defFun;
             return _context2.abrupt("return", render(store, appModule.default.views[appViewName]));
 
-          case 15:
+          case 17:
           case "end":
             return _context2.stop();
         }
@@ -5807,69 +5780,148 @@ function createRouter(createHistory, locationTransform) {
   return router;
 }
 
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
+
 var loadViewDefaultOptions = {
-  LoadViewOnError: React.createElement("div", {
-    className: "g-loadview-error"
-  }, "error"),
-  LoadViewOnLoading: React.createElement("div", {
-    className: "g-loadview-loading"
-  }, "loading")
+  LoadViewOnError: function LoadViewOnError(_ref) {
+    var message = _ref.message;
+    return React.createElement("div", {
+      className: "g-view-error"
+    }, message);
+  },
+  LoadViewOnLoading: function LoadViewOnLoading() {
+    return React.createElement("div", {
+      className: "g-view-loading"
+    }, "loading...");
+  }
 };
-function setLoadViewOptions(_ref) {
-  var LoadViewOnError = _ref.LoadViewOnError,
-      LoadViewOnLoading = _ref.LoadViewOnLoading;
+function setLoadViewOptions(_ref2) {
+  var LoadViewOnError = _ref2.LoadViewOnError,
+      LoadViewOnLoading = _ref2.LoadViewOnLoading;
   LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);
   LoadViewOnLoading && (loadViewDefaultOptions.LoadViewOnLoading = LoadViewOnLoading);
 }
 var loadView = function loadView(moduleName, viewName, options) {
-  var _ref2 = options || {},
-      OnLoading = _ref2.OnLoading,
-      OnError = _ref2.OnError;
+  var _ref3 = options || {},
+      OnLoading = _ref3.OnLoading,
+      OnError = _ref3.OnError;
 
-  var active = true;
+  var Loader = function (_Component) {
+    _inheritsLoose(Loader, _Component);
 
-  var Loader = function ViewLoader(props, ref) {
-    var OnErrorComponent = OnError || loadViewDefaultOptions.LoadViewOnError;
-    var OnLoadingComponent = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
-    useEffect(function () {
-      return function () {
-        active = false;
-      };
-    }, []);
+    function Loader() {
+      var _this;
 
-    var _useState = useState(function () {
-      var moduleViewResult = getView(moduleName, viewName);
-
-      if (isPromise(moduleViewResult)) {
-        moduleViewResult.then(function (Component) {
-          active && setView({
-            Component: Component
-          });
-        }).catch(function (e) {
-          active && setView({
-            Component: function Component() {
-              return OnErrorComponent;
-            }
-          });
-          env.console.error(e);
-        });
-        return null;
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
       }
 
-      return {
-        Component: moduleViewResult
-      };
-    }),
-        view = _useState[0],
-        setView = _useState[1];
+      _this = _Component.call.apply(_Component, [this].concat(args)) || this;
 
-    return view ? React.createElement(view.Component, _extends({}, props, {
-      ref: ref
-    })) : OnLoadingComponent;
-  };
+      _defineProperty(_assertThisInitialized(_this), "active", true);
 
-  var Component = React.forwardRef(Loader);
-  return Component;
+      _defineProperty(_assertThisInitialized(_this), "loading", false);
+
+      _defineProperty(_assertThisInitialized(_this), "error", '');
+
+      _defineProperty(_assertThisInitialized(_this), "view", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "state", {
+        ver: 0
+      });
+
+      return _this;
+    }
+
+    var _proto = Loader.prototype;
+
+    _proto.componentWillUnmount = function componentWillUnmount() {
+      this.active = false;
+    };
+
+    _proto.render = function render() {
+      var _this2 = this;
+
+      if (!this.view && !this.loading && !this.error) {
+        this.loading = true;
+        var result;
+
+        try {
+          result = getView(moduleName, viewName);
+        } catch (e) {
+          this.loading = false;
+          this.error = e.message || "" + e;
+        }
+
+        if (result) {
+          if (isPromise(result)) {
+            result.then(function (view) {
+              _this2.loading = false;
+              _this2.view = view;
+              _this2.active && _this2.setState({
+                ver: _this2.state.ver + 1
+              });
+            }, function (e) {
+              env.console.error(e);
+              _this2.loading = false;
+              _this2.error = e.message || "" + e || 'error';
+              _this2.active && _this2.setState({
+                ver: _this2.state.ver + 1
+              });
+            });
+          } else {
+            this.loading = false;
+            this.view = result;
+          }
+        }
+      }
+
+      var _this$props = this.props,
+          forwardedRef = _this$props.forwardedRef,
+          rest = _objectWithoutPropertiesLoose(_this$props, ["forwardedRef"]);
+
+      var errorMessage = this.error;
+      this.error = '';
+
+      if (this.view) {
+        return React.createElement(this.view, _extends({
+          ref: forwardedRef
+        }, rest));
+      }
+
+      if (this.loading) {
+        var _Comp = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
+
+        return React.createElement(_Comp, null);
+      }
+
+      var Comp = OnError || loadViewDefaultOptions.LoadViewOnError;
+      return React.createElement(Comp, {
+        message: errorMessage
+      });
+    };
+
+    return Loader;
+  }(Component$3);
+
+  return React.forwardRef(function (props, ref) {
+    return React.createElement(Loader, _extends({}, props, {
+      forwardedRef: ref
+    }));
+  });
 };
 
 var appExports = {
@@ -5965,21 +6017,6 @@ var Component$2 = function Component(_ref) {
 
 var Switch = React.memo(Component$2);
 
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-
-  return target;
-}
-
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
@@ -6066,7 +6103,7 @@ function buildApp(moduleGetter, _ref) {
         return store.getState();
       }
     });
-  });
+  }, ssrData ? Object.keys(initData.route.params) : []);
 }
 var SSRTPL;
 function setSsrHtmlTpl(tpl) {
@@ -6115,7 +6152,7 @@ function buildSSR(moduleGetter, _ref2) {
         return store.getState();
       }
     });
-  }).then(function (_ref3) {
+  }, Object.keys(initData.route.params)).then(function (_ref3) {
     var html = _ref3.html,
         data = _ref3.data;
     var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));

@@ -1,5 +1,5 @@
-import { MetaData, config, isPromise } from './basic';
-import { cacheModule, injectActions, getModuleByName } from './inject';
+import { MetaData, config } from './basic';
+import { cacheModule, injectActions, getModuleByName, loadModel } from './inject';
 import { buildStore } from './store';
 import { env } from './env';
 export function getRootModuleAPI(data) {
@@ -118,7 +118,7 @@ export function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
+export async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup, preModules) {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -134,26 +134,22 @@ export async function renderApp(render, moduleGetter, appModuleOrName, appViewNa
   }
 
   const store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModuleResult = getModuleByName(appModuleName, moduleGetter);
-  let appModule;
+  startup(store);
+  const appModule = await getModuleByName(appModuleName);
+  appModule.default.model(store);
+  preModules = preModules.filter(item => moduleGetter[item] && item !== appModuleName);
 
-  if (isPromise(appModuleResult)) {
-    appModule = await appModuleResult;
-  } else {
-    appModule = appModuleResult;
+  if (preModules.length) {
+    await Promise.all(preModules.map(moduleName => getModuleByName(moduleName)));
   }
 
-  startup(store, appModule);
-  await appModule.default.model(store);
   reRender = render(store, appModule.default.views[appViewName]);
-  return {
-    store
-  };
+  return store;
 }
 
 const defFun = () => undefined;
 
-export async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
+export async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup, preModules) {
   const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
@@ -164,9 +160,11 @@ export async function renderSSR(render, moduleGetter, appModuleOrName, appViewNa
   }
 
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
-  startup(store, appModule);
-  await appModule.default.model(store);
+  startup(store);
+  const appModule = await getModuleByName(appModuleName);
+  preModules = preModules.filter(item => moduleGetter[item] && item !== appModuleName);
+  preModules.unshift(appModuleName);
+  await Promise.all(preModules.map(moduleName => loadModel(moduleName, store)));
   store.dispatch = defFun;
   return render(store, appModule.default.views[appViewName]);
 }

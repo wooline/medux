@@ -64,40 +64,12 @@ export function injectActions(store, moduleName, handlers) {
     }
   }
 }
-
-function _loadModel(moduleName, store) {
-  const hasInjected = !!store._medux_.injectedModules[moduleName];
-
-  if (!hasInjected) {
-    const moduleGetter = MetaData.moduleGetter;
-
-    if (!moduleGetter[moduleName]) {
-      return undefined;
-    }
-
-    const result = moduleGetter[moduleName]();
-
-    if (isPromise(result)) {
-      return result.then(module => {
-        cacheModule(module);
-        return module.default.model(store);
-      });
-    }
-
-    cacheModule(result);
-    return result.default.model(store);
-  }
-
-  return undefined;
-}
-
-export { _loadModel as loadModel };
 export let CoreModuleHandlers = _decorate(null, function (_initialize) {
   class CoreModuleHandlers {
     constructor(initState) {
-      this.initState = initState;
-
       _initialize(this);
+
+      this.initState = initState;
     }
 
   }
@@ -231,46 +203,8 @@ export const exportModule = (moduleName, ModuleHandles, views) => {
     actions: undefined
   };
 };
-export function getView(moduleName, viewName) {
-  const moduleGetter = MetaData.moduleGetter;
-  const result = moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(module => {
-      cacheModule(module);
-      const view = module.default.views[viewName];
-
-      if (env.isServer) {
-        return view;
-      }
-
-      const initModel = module.default.model(MetaData.clientStore);
-
-      if (isPromise(initModel)) {
-        return initModel.then(() => view);
-      }
-
-      return view;
-    });
-  }
-
-  cacheModule(result);
-  const view = result.default.views[viewName];
-
-  if (env.isServer) {
-    return view;
-  }
-
-  const initModel = result.default.model(MetaData.clientStore);
-
-  if (isPromise(initModel)) {
-    return initModel.then(() => view);
-  }
-
-  return view;
-}
-export function getModuleByName(moduleName, moduleGetter) {
-  const result = moduleGetter[moduleName]();
+export function getModuleByName(moduleName) {
+  const result = MetaData.moduleGetter[moduleName]();
 
   if (isPromise(result)) {
     return result.then(module => {
@@ -282,3 +216,35 @@ export function getModuleByName(moduleName, moduleGetter) {
   cacheModule(result);
   return result;
 }
+export function getView(moduleName, viewName) {
+  const callback = module => {
+    const view = module.default.views[viewName];
+
+    if (env.isServer) {
+      return view;
+    }
+
+    module.default.model(MetaData.clientStore);
+    return view;
+  };
+
+  const moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(callback);
+  }
+
+  return callback(moduleOrPromise);
+}
+
+function _loadModel(moduleName, store) {
+  const moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(module => module.default.model(store));
+  }
+
+  return moduleOrPromise.default.model(store);
+}
+
+export { _loadModel as loadModel };

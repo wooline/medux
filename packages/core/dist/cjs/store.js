@@ -253,14 +253,11 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
           var hasInjected = store._medux_.injectedModules[moduleName];
 
           if (!hasInjected) {
-            if (actionName === _basic.ActionTypes.MInit) {
-              return (0, _inject.loadModel)(moduleName, store);
-            }
+            var moduleOrPromise = (0, _inject.getModuleByName)(moduleName);
 
-            var initModel = (0, _inject.loadModel)(moduleName, store);
-
-            if ((0, _basic.isPromise)(initModel)) {
-              return initModel.then(function () {
+            if ((0, _basic.isPromise)(moduleOrPromise)) {
+              return moduleOrPromise.then(function (module) {
+                module.default.model(store);
                 return next(action);
               });
             }

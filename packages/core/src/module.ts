@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
-import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore, isPromise} from './basic';
-import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName} from './inject';
+import {ActionHandlerMap, MetaData, FacadeMap, CommonModule, config, ModuleGetter, ModuleStore} from './basic';
+import {CoreModuleHandlers, cacheModule, Module, injectActions, getModuleByName, loadModel} from './inject';
 import {buildStore, StoreOptions} from './store';
 import {env} from './env';
 
@@ -150,23 +150,6 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
   }
 }
 
-// export function moduleHasInjected(moduleName: string, store: Store): boolean {
-//   const moduleStore: ModuleStore = store as any;
-//   return !!moduleStore._medux_.injectedModules[moduleName];
-// }
-
-// function getModuleListByNames(moduleNames: string[], moduleGetter: ModuleGetter): Promise<Module[]> {
-//   const preModules = moduleNames.map((moduleName) => {
-//     const module = getModuleByName(moduleName, moduleGetter);
-//     if (isPromiseModule(module)) {
-//       return module;
-//     } else {
-//       return Promise.resolve(module);
-//     }
-//   });
-//   return Promise.all(preModules);
-// }
-
 /**
  * 该方法用来创建并启动Client应用
  * - 注意该方法只负责加载Module和创建Model，具体的渲染View将通过回调执行
@@ -182,8 +165,9 @@ export async function renderApp<V>(
   appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  startup: (store: ModuleStore, app: CommonModule) => void
-): Promise<{store: ModuleStore}> {
+  startup: (store: ModuleStore) => void,
+  preModules: string[]
+): Promise<ModuleStore> {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -196,18 +180,16 @@ export async function renderApp<V>(
     cacheModule(appModuleOrName);
   }
   const store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModuleResult = getModuleByName(appModuleName, moduleGetter);
-  let appModule: Module;
-  // 在小程序中保证能同步执行startup得到store
-  if (isPromise(appModuleResult)) {
-    appModule = await appModuleResult;
-  } else {
-    appModule = appModuleResult;
+  startup(store);
+  const appModule = await getModuleByName(appModuleName);
+  appModule.default.model(store);
+  preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+  if (preModules.length) {
+    // SSR时保证所有的module都已经载入
+    await Promise.all(preModules.map((moduleName) => getModuleByName(moduleName)));
   }
-  startup(store, appModule);
-  await appModule.default.model(store);
-  reRender = render(store, appModule!.default.views[appViewName]);
-  return {store};
+  reRender = render(store, appModule.default.views[appViewName]);
+  return store;
 }
 const defFun: any = () => undefined;
 /**
@@ -225,7 +207,8 @@ export async function renderSSR<V>(
   appModuleOrName: string | CommonModule,
   appViewName: string,
   storeOptions: StoreOptions = {},
-  startup: (store: ModuleStore, app: CommonModule) => void
+  startup: (store: ModuleStore) => void,
+  preModules: string[]
 ) {
   const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
@@ -235,9 +218,11 @@ export async function renderSSR<V>(
     cacheModule(appModuleOrName);
   }
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
-  startup(store, appModule);
-  await appModule.default.model(store);
+  startup(store);
+  const appModule = await getModuleByName(appModuleName);
+  preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+  preModules.unshift(appModuleName);
+  await Promise.all(preModules.map((moduleName) => loadModel(moduleName, store)));
   store.dispatch = defFun;
-  return render(store, appModule!.default.views[appViewName]);
+  return render(store, appModule.default.views[appViewName]);
 }

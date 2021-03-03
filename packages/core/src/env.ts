@@ -2,16 +2,23 @@
 
 declare const window: any;
 declare const global: any;
-declare const setTimeout: any;
-declare const clearTimeout: any;
-declare const console: any;
+declare const module: any;
+declare const self: any;
 
-export const env: meduxCore.ENV = (typeof window === 'object' && window.window) ||
-  (typeof global === 'object' && global.global) ||
-  global || {
-    setTimeout,
-    clearTimeout,
-    console,
-  };
+let root: any;
+if (typeof self !== 'undefined') {
+  root = self;
+} else if (typeof window !== 'undefined') {
+  root = window;
+} else if (typeof global !== 'undefined') {
+  root = global;
+} else if (typeof module !== 'undefined') {
+  root = module;
+} else {
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  root = Function('return this')();
+}
+
+export const env: meduxCore.ENV = root;
 
 env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;

@@ -32,11 +32,11 @@ var PEvent = function () {
       bubbling = false;
     }
 
+    (0, _defineProperty2.default)(this, "target", null);
+    (0, _defineProperty2.default)(this, "currentTarget", null);
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
-    (0, _defineProperty2.default)(this, "target", null);
-    (0, _defineProperty2.default)(this, "currentTarget", null);
   }
 
   var _proto = PEvent.prototype;
@@ -56,8 +56,8 @@ exports.PEvent = PEvent;
 
 var PDispatcher = function () {
   function PDispatcher(parent) {
-    this.parent = parent;
     (0, _defineProperty2.default)(this, "storeHandlers", {});
+    this.parent = parent;
   }
 
   var _proto2 = PDispatcher.prototype;
@@ -143,9 +143,9 @@ var TaskCounter = function (_PDispatcher) {
     var _this2;
 
     _this2 = _PDispatcher.call(this) || this;
-    _this2.deferSecond = deferSecond;
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "list", []);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this2), "ctimer", null);
+    _this2.deferSecond = deferSecond;
     return _this2;
   }
 

@@ -153,13 +153,13 @@ function viewHotReplacement(moduleName, views) {
   }
 }
 
-function renderApp(_x, _x2, _x3, _x4, _x5, _x6) {
+function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
   return _renderApp.apply(this, arguments);
 }
 
 function _renderApp() {
-  _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
-    var appModuleName, store, appModuleResult, appModule;
+  _renderApp = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup, preModules) {
+    var appModuleName, store, appModule;
     return _regenerator.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -184,36 +184,32 @@ function _renderApp() {
             }
 
             store = (0, _store.buildStore)(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            appModuleResult = (0, _inject.getModuleByName)(appModuleName, moduleGetter);
+            startup(store);
+            _context.next = 11;
+            return (0, _inject.getModuleByName)(appModuleName);
 
-            if (!(0, _basic.isPromise)(appModuleResult)) {
-              _context.next = 15;
+          case 11:
+            appModule = _context.sent;
+            appModule.default.model(store);
+            preModules = preModules.filter(function (item) {
+              return moduleGetter[item] && item !== appModuleName;
+            });
+
+            if (!preModules.length) {
+              _context.next = 17;
               break;
             }
 
-            _context.next = 12;
-            return appModuleResult;
+            _context.next = 17;
+            return Promise.all(preModules.map(function (moduleName) {
+              return (0, _inject.getModuleByName)(moduleName);
+            }));
 
-          case 12:
-            appModule = _context.sent;
-            _context.next = 16;
-            break;
-
-          case 15:
-            appModule = appModuleResult;
-
-          case 16:
-            startup(store, appModule);
-            _context.next = 19;
-            return appModule.default.model(store);
+          case 17:
+            reRender = render(store, appModule.default.views[appViewName]);
+            return _context.abrupt("return", store);
 
           case 19:
-            reRender = render(store, appModule.default.views[appViewName]);
-            return _context.abrupt("return", {
-              store: store
-            });
-
-          case 21:
           case "end":
             return _context.stop();
         }
@@ -227,12 +223,12 @@ var defFun = function defFun() {
   return undefined;
 };
 
-function renderSSR(_x7, _x8, _x9, _x10, _x11, _x12) {
+function renderSSR(_x8, _x9, _x10, _x11, _x12, _x13, _x14) {
   return _renderSSR.apply(this, arguments);
 }
 
 function _renderSSR() {
-  _renderSSR = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup) {
+  _renderSSR = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup, preModules) {
     var appModuleName, store, appModule;
     return _regenerator.default.wrap(function _callee2$(_context2) {
       while (1) {
@@ -252,20 +248,26 @@ function _renderSSR() {
             }
 
             store = (0, _store.buildStore)(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            _context2.next = 9;
-            return (0, _inject.getModuleByName)(appModuleName, moduleGetter);
+            startup(store);
+            _context2.next = 10;
+            return (0, _inject.getModuleByName)(appModuleName);
 
-          case 9:
+          case 10:
             appModule = _context2.sent;
-            startup(store, appModule);
-            _context2.next = 13;
-            return appModule.default.model(store);
+            preModules = preModules.filter(function (item) {
+              return moduleGetter[item] && item !== appModuleName;
+            });
+            preModules.unshift(appModuleName);
+            _context2.next = 15;
+            return Promise.all(preModules.map(function (moduleName) {
+              return (0, _inject.loadModel)(moduleName, store);
+            }));
 
-          case 13:
+          case 15:
             store.dispatch = defFun;
             return _context2.abrupt("return", render(store, appModule.default.views[appViewName]));
 
-          case 15:
+          case 17:
           case "end":
             return _context2.stop();
         }

@@ -1,58 +1,84 @@
-import React, {ComponentType, useEffect, useState, ForwardRefRenderFunction, ReactElement} from 'react';
+import React, {ComponentType, Component} from 'react';
 import {RootModuleFacade, getView, isPromise, env} from '@medux/core';
 import type {BaseLoadView} from '@medux/core';
 
-export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {OnError?: ReactElement; OnLoading?: ReactElement}>;
+export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {OnError?: ComponentType<{message: string}>; OnLoading?: ComponentType<{}>}>;
 
-const loadViewDefaultOptions: {LoadViewOnError: ReactElement; LoadViewOnLoading: ReactElement} = {
-  LoadViewOnError: <div className="g-loadview-error">error</div>,
-  LoadViewOnLoading: <div className="g-loadview-loading">loading</div>,
+const loadViewDefaultOptions: {LoadViewOnError: ComponentType<{message: string}>; LoadViewOnLoading: ComponentType<{}>} = {
+  LoadViewOnError: ({message}) => <div className="g-view-error">{message}</div>,
+  LoadViewOnLoading: () => <div className="g-view-loading">loading...</div>,
 };
-export function setLoadViewOptions({LoadViewOnError, LoadViewOnLoading}: {LoadViewOnError?: ReactElement; LoadViewOnLoading?: ReactElement}) {
+export function setLoadViewOptions({LoadViewOnError, LoadViewOnLoading}: {LoadViewOnError?: ComponentType<{message: string}>; LoadViewOnLoading?: ComponentType<{}>}) {
   LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);
   LoadViewOnLoading && (loadViewDefaultOptions.LoadViewOnLoading = LoadViewOnLoading);
 }
 
 export const loadView: LoadView = (moduleName, viewName, options) => {
   const {OnLoading, OnError} = options || {};
-  // Can't perform a React state update on an unmounted component.
-  let active = true;
-  const Loader: ForwardRefRenderFunction<any> = function ViewLoader(props, ref) {
-    const OnErrorComponent = OnError || loadViewDefaultOptions.LoadViewOnError;
-    const OnLoadingComponent = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
-    useEffect(() => {
-      return () => {
-        active = false;
-      };
-    }, []);
-    const [view, setView] = useState<{Component: ComponentType<any>} | null>(() => {
-      const moduleViewResult = getView<ComponentType>(moduleName, viewName);
-      if (isPromise(moduleViewResult)) {
-        moduleViewResult
-          .then((Component) => {
-            // loader.propTypes = Component.propTypes;
-            // loader.contextTypes = Component.contextTypes;
-            // loader.defaultProps = Component.defaultProps;
-            // Object.keys(loader).forEach(key => (Component[key] = loader[key]));
-            // Object.keys(Component).forEach(key => (loader[key] = Component[key]));
-            active && setView({Component});
-          })
-          .catch((e: any) => {
-            active && setView({Component: () => OnErrorComponent});
-            env.console.error(e);
-          });
-        return null;
-      }
-      // loader.propTypes = moduleViewResult.propTypes;
-      // loader.contextTypes = moduleViewResult.contextTypes;
-      // loader.defaultProps = moduleViewResult.defaultProps;
-      // Object.keys(loader).forEach(key => (moduleViewResult[key] = loader[key]));
-      // Object.keys(moduleViewResult).forEach(key => (loader[key] = moduleViewResult[key]));
-      return {Component: moduleViewResult};
-    });
-    return view ? <view.Component {...props} ref={ref} /> : OnLoadingComponent;
-  };
-  const Component = React.forwardRef(Loader);
+  class Loader extends Component<{forwardedRef: any}> {
+    private active: boolean = true;
 
-  return Component as any;
+    private loading: boolean = false;
+
+    private error: string = '';
+
+    private view?: ComponentType<any>;
+
+    state = {
+      ver: 0,
+    };
+
+    componentWillUnmount() {
+      this.active = false;
+    }
+
+    render() {
+      if (!this.view && !this.loading && !this.error) {
+        this.loading = true;
+        let result: ComponentType<any> | Promise<ComponentType<any>> | undefined;
+        try {
+          result = getView<ComponentType<any>>(moduleName, viewName);
+        } catch (e: any) {
+          this.loading = false;
+          this.error = e.message || `${e}`;
+        }
+        if (result) {
+          if (isPromise(result)) {
+            result.then(
+              (view) => {
+                this.loading = false;
+                this.view = view;
+                this.active && this.setState({ver: this.state.ver + 1});
+              },
+              (e) => {
+                env.console.error(e);
+                this.loading = false;
+                this.error = e.message || `${e}` || 'error';
+                this.active && this.setState({ver: this.state.ver + 1});
+              }
+            );
+          } else {
+            this.loading = false;
+            this.view = result;
+          }
+        }
+      }
+
+      const {forwardedRef, ...rest} = this.props;
+      const errorMessage = this.error;
+      this.error = '';
+      if (this.view) {
+        return <this.view ref={forwardedRef} {...rest} />;
+      }
+      if (this.loading) {
+        const Comp = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
+        return <Comp />;
+      }
+      const Comp = OnError || loadViewDefaultOptions.LoadViewOnError;
+      return <Comp message={errorMessage} />;
+    }
+  }
+  return React.forwardRef((props, ref) => {
+    return <Loader {...props} forwardedRef={ref} />;
+  }) as any;
 };

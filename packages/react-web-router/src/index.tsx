@@ -8,7 +8,7 @@ import {createRouter} from '@medux/route-browser';
 import {setLoadViewOptions} from './loadView';
 import {appExports} from './sington';
 
-import type {ComponentType, ReactElement} from 'react';
+import type {ComponentType} from 'react';
 import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
 import type {LocationTransform} from '@medux/route-web';
 import type {ServerRequest, ServerResponse} from './sington';
@@ -61,8 +61,8 @@ export function setConfig(conf: {
   SSRKey?: string;
   MutableData?: boolean;
   DEVTOOLS?: boolean;
-  LoadViewOnError?: ReactElement;
-  LoadViewOnLoading?: ReactElement;
+  LoadViewOnError?: ComponentType<{message: string}>;
+  LoadViewOnLoading?: ComponentType<{}>;
   disableNativeRoute?: boolean;
 }) {
   setCoreConfig(conf);
@@ -122,7 +122,8 @@ export function buildApp(
           return store.getState();
         },
       });
-    }
+    },
+    ssrData ? Object.keys(initData.route.params) : []
   );
 }
 
@@ -183,7 +184,8 @@ export function buildSSR(
           return store.getState();
         },
       });
-    }
+    },
+    Object.keys(initData.route.params)
   ).then(({html, data}) => {
     const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${container}['"][^<>]*>`, 'm'));
     if (match) {

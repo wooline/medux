@@ -14,3 +14,9 @@ export interface ConnectRedux {
 }
 
 export const connectRedux: ConnectRedux = connect as any;
+
+export function connectPage(page: ComponentType): ComponentType {
+  return connectRedux((appState) => {
+    return {pagename: appState.route.pagename};
+  })(page);
+}

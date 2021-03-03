@@ -25,7 +25,8 @@ describe('init', () => {
       (store) => {
         mockStore = store;
         return ['moduleA'];
-      }
+      },
+      []
     );
   });
   beforeEach(() => {

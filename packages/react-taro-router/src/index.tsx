@@ -6,8 +6,8 @@ import {createRouter} from '@medux/route-mp';
 import {setLoadViewOptions} from './loadView';
 import {appExports} from './sington';
 
-import type {ComponentType, ReactElement} from 'react';
-import type {ModuleGetter, StoreOptions, ExportModule, ModuleStore, CommonModule} from '@medux/core';
+import type {ComponentType} from 'react';
+import type {ModuleGetter, StoreOptions, ExportModule, ModuleStore} from '@medux/core';
 import type {LocationTransform} from '@medux/route-web';
 import type {RouteENV} from '@medux/route-mp';
 
@@ -127,8 +127,8 @@ export function setConfig(conf: {
   MSP?: string;
   MutableData?: boolean;
   DEVTOOLS?: boolean;
-  LoadViewOnError?: ReactElement;
-  LoadViewOnLoading?: ReactElement;
+  LoadViewOnError?: ComponentType<{message: string}>;
+  LoadViewOnLoading?: ComponentType<{}>;
   disableNativeRoute?: boolean;
 }) {
   setCoreConfig(conf);
@@ -151,7 +151,7 @@ export function buildApp(
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
   },
-  startup: (store: ModuleStore, app: CommonModule) => void
+  startup: (store: ModuleStore) => void
 ) {
   const router = createRouter(locationTransform, routeENV);
   appExports.router = router;
@@ -168,7 +168,7 @@ export function buildApp(
     appModuleName,
     appViewName,
     {...storeOptions, middlewares, reducers, initData},
-    (store, appModule) => {
+    (store) => {
       router.setStore(store);
       appExports.store = store as any;
       Object.defineProperty(appExports, 'state', {
@@ -176,7 +176,8 @@ export function buildApp(
           return store.getState();
         },
       });
-      startup(store, appModule);
-    }
+      startup(store);
+    },
+    []
   );
 }

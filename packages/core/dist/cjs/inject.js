@@ -6,9 +6,9 @@ exports.__esModule = true;
 exports.cacheModule = cacheModule;
 exports.getClientStore = getClientStore;
 exports.injectActions = injectActions;
-exports.loadModel = _loadModel;
-exports.getView = getView;
 exports.getModuleByName = getModuleByName;
+exports.getView = getView;
+exports.loadModel = _loadModel;
 exports.exportModule = exports.CoreModuleHandlers = void 0;
 
 var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
@@ -87,37 +87,11 @@ function injectActions(store, moduleName, handlers) {
   }
 }
 
-function _loadModel(moduleName, store) {
-  var hasInjected = !!store._medux_.injectedModules[moduleName];
-
-  if (!hasInjected) {
-    var moduleGetter = _basic.MetaData.moduleGetter;
-
-    if (!moduleGetter[moduleName]) {
-      return undefined;
-    }
-
-    var result = moduleGetter[moduleName]();
-
-    if ((0, _basic.isPromise)(result)) {
-      return result.then(function (module) {
-        cacheModule(module);
-        return module.default.model(store);
-      });
-    }
-
-    cacheModule(result);
-    return result.default.model(store);
-  }
-
-  return undefined;
-}
-
 var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
   var CoreModuleHandlers = function CoreModuleHandlers(initState) {
-    this.initState = initState;
-
     _initialize(this);
+
+    this.initState = initState;
   };
 
   return {
@@ -248,51 +222,8 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
 
 exports.exportModule = exportModule;
 
-function getView(moduleName, viewName) {
-  var moduleGetter = _basic.MetaData.moduleGetter;
-  var result = moduleGetter[moduleName]();
-
-  if ((0, _basic.isPromise)(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
-      var view = module.default.views[viewName];
-
-      if (_env.env.isServer) {
-        return view;
-      }
-
-      var initModel = module.default.model(_basic.MetaData.clientStore);
-
-      if ((0, _basic.isPromise)(initModel)) {
-        return initModel.then(function () {
-          return view;
-        });
-      }
-
-      return view;
-    });
-  }
-
-  cacheModule(result);
-  var view = result.default.views[viewName];
-
-  if (_env.env.isServer) {
-    return view;
-  }
-
-  var initModel = result.default.model(_basic.MetaData.clientStore);
-
-  if ((0, _basic.isPromise)(initModel)) {
-    return initModel.then(function () {
-      return view;
-    });
-  }
-
-  return view;
-}
-
-function getModuleByName(moduleName, moduleGetter) {
-  var result = moduleGetter[moduleName]();
+function getModuleByName(moduleName) {
+  var result = _basic.MetaData.moduleGetter[moduleName]();
 
   if ((0, _basic.isPromise)(result)) {
     return result.then(function (module) {
@@ -303,4 +234,37 @@ function getModuleByName(moduleName, moduleGetter) {
 
   cacheModule(result);
   return result;
+}
+
+function getView(moduleName, viewName) {
+  var callback = function callback(module) {
+    var view = module.default.views[viewName];
+
+    if (_env.env.isServer) {
+      return view;
+    }
+
+    module.default.model(_basic.MetaData.clientStore);
+    return view;
+  };
+
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if ((0, _basic.isPromise)(moduleOrPromise)) {
+    return moduleOrPromise.then(callback);
+  }
+
+  return callback(moduleOrPromise);
+}
+
+function _loadModel(moduleName, store) {
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if ((0, _basic.isPromise)(moduleOrPromise)) {
+    return moduleOrPromise.then(function (module) {
+      return module.default.model(store);
+    });
+  }
+
+  return moduleOrPromise.default.model(store);
 }

@@ -8,7 +8,6 @@ declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => 
 export declare type Actions<Ins> = {
     [K in keyof Ins]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
 };
-export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModuleStore): void | Promise<void>;
 export declare abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> {
     readonly initState: S;
     protected actions: Actions<this>;
@@ -47,6 +46,7 @@ export declare type ExportModule<Component> = <N extends string, V extends {
     new (): H;
 }, views: V) => Module<N, H, V>['default'];
 export declare const exportModule: ExportModule<any>;
+export declare function getModuleByName(moduleName: string): Promise<CommonModule> | CommonModule;
 export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
-export declare function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module;
+export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModuleStore): void | Promise<void>;
 export {};

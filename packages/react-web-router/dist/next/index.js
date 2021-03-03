@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Component as Component$3, useEffect } from 'react';
 import { unmountComponentAtNode, hydrate, render } from 'react-dom';
 
 function _defineProperty(obj, key, value) {
@@ -16,11 +16,21 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-const env = typeof window === 'object' && window.window || typeof global === 'object' && global.global || global || {
-  setTimeout,
-  clearTimeout,
-  console
-};
+let root;
+
+if (typeof self !== 'undefined') {
+  root = self;
+} else if (typeof window !== 'undefined') {
+  root = window;
+} else if (typeof global !== 'undefined') {
+  root = global;
+} else if (typeof module !== 'undefined') {
+  root = module;
+} else {
+  root = Function('return this')();
+}
+
+const env = root;
 env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 
 const TaskCountEvent = 'TaskCountEvent';
@@ -34,13 +44,13 @@ let LoadingState;
 
 class PEvent {
   constructor(name, data, bubbling = false) {
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
-
     _defineProperty(this, "target", null);
 
     _defineProperty(this, "currentTarget", null);
+
+    this.name = name;
+    this.data = data;
+    this.bubbling = bubbling;
   }
 
   setTarget(target) {
@@ -54,9 +64,9 @@ class PEvent {
 }
 class PDispatcher {
   constructor(parent) {
-    this.parent = parent;
-
     _defineProperty(this, "storeHandlers", {});
+
+    this.parent = parent;
   }
 
   addListener(ename, handler) {
@@ -130,11 +140,12 @@ class PDispatcher {
 class TaskCounter extends PDispatcher {
   constructor(deferSecond) {
     super();
-    this.deferSecond = deferSecond;
 
     _defineProperty(this, "list", []);
 
     _defineProperty(this, "ctimer", null);
+
+    this.deferSecond = deferSecond;
   }
 
   addItem(promise, note = '') {
@@ -476,21 +487,21 @@ function symbolObservablePonyfill(root) {
 }
 
 /* global window */
-var root;
+var root$1;
 
 if (typeof self !== 'undefined') {
-  root = self;
+  root$1 = self;
 } else if (typeof window !== 'undefined') {
-  root = window;
+  root$1 = window;
 } else if (typeof global !== 'undefined') {
-  root = global;
+  root$1 = global;
 } else if (typeof module !== 'undefined') {
-  root = module;
+  root$1 = module;
 } else {
-  root = Function('return this')();
+  root$1 = Function('return this')();
 }
 
-var result = symbolObservablePonyfill(root);
+var result = symbolObservablePonyfill(root$1);
 
 /**
  * These are private action types reserved by Redux.
@@ -1486,38 +1497,12 @@ function injectActions(store, moduleName, handlers) {
     }
   }
 }
-
-function _loadModel(moduleName, store) {
-  const hasInjected = !!store._medux_.injectedModules[moduleName];
-
-  if (!hasInjected) {
-    const moduleGetter = MetaData.moduleGetter;
-
-    if (!moduleGetter[moduleName]) {
-      return undefined;
-    }
-
-    const result = moduleGetter[moduleName]();
-
-    if (isPromise(result)) {
-      return result.then(module => {
-        cacheModule(module);
-        return module.default.model(store);
-      });
-    }
-
-    cacheModule(result);
-    return result.default.model(store);
-  }
-
-  return undefined;
-}
 let CoreModuleHandlers = _decorate(null, function (_initialize) {
   class CoreModuleHandlers {
     constructor(initState) {
-      this.initState = initState;
-
       _initialize(this);
+
+      this.initState = initState;
     }
 
   }
@@ -1651,46 +1636,8 @@ const exportModule = (moduleName, ModuleHandles, views) => {
     actions: undefined
   };
 };
-function getView(moduleName, viewName) {
-  const moduleGetter = MetaData.moduleGetter;
-  const result = moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(module => {
-      cacheModule(module);
-      const view = module.default.views[viewName];
-
-      if (env.isServer) {
-        return view;
-      }
-
-      const initModel = module.default.model(MetaData.clientStore);
-
-      if (isPromise(initModel)) {
-        return initModel.then(() => view);
-      }
-
-      return view;
-    });
-  }
-
-  cacheModule(result);
-  const view = result.default.views[viewName];
-
-  if (env.isServer) {
-    return view;
-  }
-
-  const initModel = result.default.model(MetaData.clientStore);
-
-  if (isPromise(initModel)) {
-    return initModel.then(() => view);
-  }
-
-  return view;
-}
-function getModuleByName(moduleName, moduleGetter) {
-  const result = moduleGetter[moduleName]();
+function getModuleByName(moduleName) {
+  const result = MetaData.moduleGetter[moduleName]();
 
   if (isPromise(result)) {
     return result.then(module => {
@@ -1701,6 +1648,36 @@ function getModuleByName(moduleName, moduleGetter) {
 
   cacheModule(result);
   return result;
+}
+function getView(moduleName, viewName) {
+  const callback = module => {
+    const view = module.default.views[viewName];
+
+    if (env.isServer) {
+      return view;
+    }
+
+    module.default.model(MetaData.clientStore);
+    return view;
+  };
+
+  const moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(callback);
+  }
+
+  return callback(moduleOrPromise);
+}
+
+function _loadModel(moduleName, store) {
+  const moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(module => module.default.model(store));
+  }
+
+  return moduleOrPromise.default.model(store);
 }
 
 function getActionData(action) {
@@ -1911,14 +1888,13 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
       const hasInjected = store._medux_.injectedModules[moduleName];
 
       if (!hasInjected) {
-        if (actionName === ActionTypes.MInit) {
-          return _loadModel(moduleName, store);
-        }
+        const moduleOrPromise = getModuleByName(moduleName);
 
-        const initModel = _loadModel(moduleName, store);
-
-        if (isPromise(initModel)) {
-          return initModel.then(() => next(action));
+        if (isPromise(moduleOrPromise)) {
+          return moduleOrPromise.then(module => {
+            module.default.model(store);
+            return next(action);
+          });
         }
       }
     }
@@ -2076,7 +2052,7 @@ function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
+async function renderApp(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup, preModules) {
   if (reRenderTimer) {
     env.clearTimeout.call(null, reRenderTimer);
     reRenderTimer = 0;
@@ -2092,26 +2068,22 @@ async function renderApp(render, moduleGetter, appModuleOrName, appViewName, sto
   }
 
   const store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModuleResult = getModuleByName(appModuleName, moduleGetter);
-  let appModule;
+  startup(store);
+  const appModule = await getModuleByName(appModuleName);
+  appModule.default.model(store);
+  preModules = preModules.filter(item => moduleGetter[item] && item !== appModuleName);
 
-  if (isPromise(appModuleResult)) {
-    appModule = await appModuleResult;
-  } else {
-    appModule = appModuleResult;
+  if (preModules.length) {
+    await Promise.all(preModules.map(moduleName => getModuleByName(moduleName)));
   }
 
-  startup(store, appModule);
-  await appModule.default.model(store);
   reRender = render(store, appModule.default.views[appViewName]);
-  return {
-    store
-  };
+  return store;
 }
 
 const defFun = () => undefined;
 
-async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup) {
+async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, storeOptions = {}, startup, preModules) {
   const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
@@ -2122,9 +2094,11 @@ async function renderSSR(render, moduleGetter, appModuleOrName, appViewName, sto
   }
 
   const store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-  const appModule = await getModuleByName(appModuleName, moduleGetter);
-  startup(store, appModule);
-  await appModule.default.model(store);
+  startup(store);
+  const appModule = await getModuleByName(appModuleName);
+  preModules = preModules.filter(item => moduleGetter[item] && item !== appModuleName);
+  preModules.unshift(appModuleName);
+  await Promise.all(preModules.map(moduleName => _loadModel(moduleName, store)));
   store.dispatch = defFun;
   return render(store, appModule.default.views[appViewName]);
 }
@@ -4516,13 +4490,30 @@ function createRouter(createHistory, locationTransform) {
   return router;
 }
 
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
+
 const loadViewDefaultOptions = {
-  LoadViewOnError: React.createElement("div", {
-    className: "g-loadview-error"
-  }, "error"),
-  LoadViewOnLoading: React.createElement("div", {
-    className: "g-loadview-loading"
-  }, "loading")
+  LoadViewOnError: ({
+    message
+  }) => React.createElement("div", {
+    className: "g-view-error"
+  }, message),
+  LoadViewOnLoading: () => React.createElement("div", {
+    className: "g-view-loading"
+  }, "loading...")
 };
 function setLoadViewOptions({
   LoadViewOnError,
@@ -4536,44 +4527,96 @@ const loadView = (moduleName, viewName, options) => {
     OnLoading,
     OnError
   } = options || {};
-  let active = true;
 
-  const Loader = function ViewLoader(props, ref) {
-    const OnErrorComponent = OnError || loadViewDefaultOptions.LoadViewOnError;
-    const OnLoadingComponent = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
-    useEffect(() => {
-      return () => {
-        active = false;
-      };
-    }, []);
-    const [view, setView] = useState(() => {
-      const moduleViewResult = getView(moduleName, viewName);
+  class Loader extends Component$3 {
+    constructor(...args) {
+      super(...args);
 
-      if (isPromise(moduleViewResult)) {
-        moduleViewResult.then(Component => {
-          active && setView({
-            Component
-          });
-        }).catch(e => {
-          active && setView({
-            Component: () => OnErrorComponent
-          });
-          env.console.error(e);
-        });
-        return null;
+      _defineProperty(this, "active", true);
+
+      _defineProperty(this, "loading", false);
+
+      _defineProperty(this, "error", '');
+
+      _defineProperty(this, "view", void 0);
+
+      _defineProperty(this, "state", {
+        ver: 0
+      });
+    }
+
+    componentWillUnmount() {
+      this.active = false;
+    }
+
+    render() {
+      if (!this.view && !this.loading && !this.error) {
+        this.loading = true;
+        let result;
+
+        try {
+          result = getView(moduleName, viewName);
+        } catch (e) {
+          this.loading = false;
+          this.error = e.message || `${e}`;
+        }
+
+        if (result) {
+          if (isPromise(result)) {
+            result.then(view => {
+              this.loading = false;
+              this.view = view;
+              this.active && this.setState({
+                ver: this.state.ver + 1
+              });
+            }, e => {
+              env.console.error(e);
+              this.loading = false;
+              this.error = e.message || `${e}` || 'error';
+              this.active && this.setState({
+                ver: this.state.ver + 1
+              });
+            });
+          } else {
+            this.loading = false;
+            this.view = result;
+          }
+        }
       }
 
-      return {
-        Component: moduleViewResult
-      };
-    });
-    return view ? React.createElement(view.Component, _extends({}, props, {
-      ref: ref
-    })) : OnLoadingComponent;
-  };
+      const _this$props = this.props,
+            {
+        forwardedRef
+      } = _this$props,
+            rest = _objectWithoutPropertiesLoose(_this$props, ["forwardedRef"]);
 
-  const Component = React.forwardRef(Loader);
-  return Component;
+      const errorMessage = this.error;
+      this.error = '';
+
+      if (this.view) {
+        return React.createElement(this.view, _extends({
+          ref: forwardedRef
+        }, rest));
+      }
+
+      if (this.loading) {
+        const Comp = OnLoading || loadViewDefaultOptions.LoadViewOnLoading;
+        return React.createElement(Comp, null);
+      }
+
+      const Comp = OnError || loadViewDefaultOptions.LoadViewOnError;
+      return React.createElement(Comp, {
+        message: errorMessage
+      });
+    }
+
+  }
+
+  return React.forwardRef((props, ref) => {
+    return React.createElement(Loader, _extends({}, props, {
+      forwardedRef: ref
+    }));
+  });
 };
 
 const appExports = {
@@ -4668,21 +4711,6 @@ const Component$2 = ({
 
 const Switch = React.memo(Component$2);
 
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-
-  return target;
-}
-
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
 }
@@ -4768,7 +4796,7 @@ function buildApp(moduleGetter, {
         return store.getState();
       }
     });
-  });
+  }, ssrData ? Object.keys(initData.route.params) : []);
 }
 let SSRTPL;
 function setSsrHtmlTpl(tpl) {
@@ -4814,7 +4842,7 @@ function buildSSR(moduleGetter, {
         return store.getState();
       }
     });
-  }).then(({
+  }, Object.keys(initData.route.params)).then(({
     html,
     data
   }) => {

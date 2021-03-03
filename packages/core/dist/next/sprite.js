@@ -11,13 +11,13 @@ export let LoadingState;
 
 export class PEvent {
   constructor(name, data, bubbling = false) {
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
-
     _defineProperty(this, "target", null);
 
     _defineProperty(this, "currentTarget", null);
+
+    this.name = name;
+    this.data = data;
+    this.bubbling = bubbling;
   }
 
   setTarget(target) {
@@ -31,9 +31,9 @@ export class PEvent {
 }
 export class PDispatcher {
   constructor(parent) {
-    this.parent = parent;
-
     _defineProperty(this, "storeHandlers", {});
+
+    this.parent = parent;
   }
 
   addListener(ename, handler) {
@@ -107,11 +107,12 @@ export class PDispatcher {
 export class TaskCounter extends PDispatcher {
   constructor(deferSecond) {
     super();
-    this.deferSecond = deferSecond;
 
     _defineProperty(this, "list", []);
 
     _defineProperty(this, "ctimer", null);
+
+    this.deferSecond = deferSecond;
   }
 
   addItem(promise, note = '') {

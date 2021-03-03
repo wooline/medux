@@ -1,5 +1,5 @@
 import './env';
-import type { ComponentType, ReactElement } from 'react';
+import type { ComponentType } from 'react';
 import type { ModuleGetter, StoreOptions, ExportModule } from '@medux/core';
 import type { LocationTransform } from '@medux/route-web';
 import type { ServerRequest, ServerResponse } from './sington';
@@ -27,8 +27,10 @@ export declare function setConfig(conf: {
     SSRKey?: string;
     MutableData?: boolean;
     DEVTOOLS?: boolean;
-    LoadViewOnError?: ReactElement;
-    LoadViewOnLoading?: ReactElement;
+    LoadViewOnError?: ComponentType<{
+        message: string;
+    }>;
+    LoadViewOnLoading?: ComponentType<{}>;
     disableNativeRoute?: boolean;
 }): void;
 export declare const exportModule: ExportModule<ComponentType<any>>;
@@ -39,9 +41,7 @@ export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, ap
     locationTransform: LocationTransform<any>;
     storeOptions?: StoreOptions;
     container?: string | Element;
-}): Promise<{
-    store: import("@medux/core/types").ModuleStore;
-}>;
+}): Promise<import("@medux/core/types").ModuleStore>;
 export declare function setSsrHtmlTpl(tpl: string): void;
 export declare function buildSSR(moduleGetter: ModuleGetter, { request, response, appModuleName, appViewName, locationTransform, storeOptions, container, }: {
     appModuleName?: string;

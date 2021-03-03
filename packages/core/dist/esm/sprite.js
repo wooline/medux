@@ -17,13 +17,13 @@ export var PEvent = function () {
       bubbling = false;
     }
 
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
-
     _defineProperty(this, "target", null);
 
     _defineProperty(this, "currentTarget", null);
+
+    this.name = name;
+    this.data = data;
+    this.bubbling = bubbling;
   }
 
   var _proto = PEvent.prototype;
@@ -40,9 +40,9 @@ export var PEvent = function () {
 }();
 export var PDispatcher = function () {
   function PDispatcher(parent) {
-    this.parent = parent;
-
     _defineProperty(this, "storeHandlers", {});
+
+    this.parent = parent;
   }
 
   var _proto2 = PDispatcher.prototype;
@@ -125,12 +125,12 @@ export var TaskCounter = function (_PDispatcher) {
     var _this2;
 
     _this2 = _PDispatcher.call(this) || this;
-    _this2.deferSecond = deferSecond;
 
     _defineProperty(_assertThisInitialized(_this2), "list", []);
 
     _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
 
+    _this2.deferSecond = deferSecond;
     return _this2;
   }
 

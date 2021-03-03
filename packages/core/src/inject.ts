@@ -98,32 +98,6 @@ export type Actions<Ins> = {
 };
 
 /**
- * 动态加载并初始化其他模块的model
- * @param moduleName 要加载的模块名
- * @param store 当前Store的引用
- * @param options model初始化时可以传入的数据，参见Model接口
- */
-export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModuleStore): void | Promise<void> {
-  const hasInjected = !!store._medux_.injectedModules[moduleName];
-  if (!hasInjected) {
-    const moduleGetter = MetaData.moduleGetter;
-    if (!moduleGetter[moduleName]) {
-      return undefined;
-    }
-    const result = moduleGetter[moduleName]();
-    if (isPromise(result)) {
-      return result.then((module) => {
-        cacheModule(module);
-        return module.default.model(store);
-      });
-    }
-    cacheModule(result);
-    return result.default.model(store);
-  }
-  return undefined;
-}
-
-/**
  * ModuleHandlers基类
  * 所有ModuleHandlers必须继承此基类
  */
@@ -177,6 +151,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * 动态加载并初始化其他模块的model
    */
   protected loadModel(moduleName: string) {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     return loadModel(moduleName, this.store);
   }
 
@@ -290,42 +265,9 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
     actions: undefined as any,
   };
 };
-/**
- * 动态获取View，与LoadView的区别是：
- * - getView仅获取view，并不渲染，与UI平台无关
- * - LoadView内部会调用getView之后会渲染View
- * - getView会自动加载并初始化该view对应的model
- */
-export function getView<T>(moduleName: string, viewName: string): T | Promise<T> {
-  const moduleGetter: ModuleGetter = MetaData.moduleGetter;
-  const result = moduleGetter[moduleName]();
-  if (isPromise(result)) {
-    return result.then((module) => {
-      cacheModule(module);
-      const view: T = module.default.views[viewName];
-      if (env.isServer) {
-        return view;
-      }
-      const initModel = module.default.model(MetaData.clientStore);
-      if (isPromise(initModel)) {
-        return initModel.then(() => view);
-      }
-      return view;
-    });
-  }
-  cacheModule(result);
-  const view: T = result.default.views[viewName];
-  if (env.isServer) {
-    return view;
-  }
-  const initModel = result.default.model(MetaData.clientStore);
-  if (isPromise(initModel)) {
-    return initModel.then(() => view);
-  }
-  return view;
-}
-export function getModuleByName(moduleName: string, moduleGetter: ModuleGetter): Promise<Module> | Module {
-  const result = moduleGetter[moduleName]();
+
+export function getModuleByName(moduleName: string): Promise<CommonModule> | CommonModule {
+  const result = MetaData.moduleGetter[moduleName]();
   if (isPromise(result)) {
     return result.then((module) => {
       cacheModule(module);
@@ -334,4 +276,40 @@ export function getModuleByName(moduleName: string, moduleGetter: ModuleGetter):
   }
   cacheModule(result);
   return result as Module;
+}
+
+/**
+ * 动态获取View，与LoadView的区别是：
+ * - getView仅获取view，并不渲染，与UI平台无关
+ * - LoadView内部会调用getView之后会渲染View
+ * - getView会自动加载并初始化该view对应的model
+ */
+export function getView<T>(moduleName: string, viewName: string): T | Promise<T> {
+  const callback = (module: CommonModule) => {
+    const view: T = module.default.views[viewName];
+    if (env.isServer) {
+      return view;
+    }
+    module.default.model(MetaData.clientStore);
+    return view;
+  };
+  const moduleOrPromise = getModuleByName(moduleName);
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(callback);
+  }
+  return callback(moduleOrPromise);
+}
+
+/**
+ * 动态加载并初始化其他模块的model
+ * @param moduleName 要加载的模块名
+ * @param store 当前Store的引用
+ * @param options model初始化时可以传入的数据，参见Model接口
+ */
+export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, store: ModuleStore): void | Promise<void> {
+  const moduleOrPromise = getModuleByName(moduleName);
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then((module) => module.default.model(store));
+  }
+  return moduleOrPromise.default.model(store);
 }
