@@ -61,11 +61,6 @@ export var ActionTypes = {
   Error: "medux" + config.NSP + "Error"
 };
 export var MetaData = {
-  appViewName: null,
-  facadeMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null,
   currentData: {
     actionName: '',
     prevState: null

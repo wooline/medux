@@ -99,15 +99,11 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
     d: [{
       kind: "field",
       key: "actions",
-      value: function value() {
-        return null;
-      }
+      value: void 0
     }, {
       kind: "field",
       key: "store",
-      value: function value() {
-        return null;
-      }
+      value: void 0
     }, {
       kind: "field",
       key: "moduleName",

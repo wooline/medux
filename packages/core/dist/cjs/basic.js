@@ -92,11 +92,6 @@ var ActionTypes = {
 };
 exports.ActionTypes = ActionTypes;
 var MetaData = {
-  appViewName: null,
-  facadeMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null,
   currentData: {
     actionName: '',
     prevState: null

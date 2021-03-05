@@ -12,12 +12,8 @@ module.exports = function (api, options = {}) {
         rootImport && ['babel-plugin-root-import', rootImport],
         moduleResolver && ['module-resolver', moduleResolver],
         ...plugins,
-        '@babel/plugin-syntax-dynamic-import',
         ['@babel/plugin-proposal-decorators', { legacy: false, decoratorsBeforeExport: true }],
         ['@babel/plugin-proposal-class-properties', { loose: classPropertiesLoose }],
-        '@babel/plugin-proposal-nullish-coalescing-operator',
-        '@babel/plugin-proposal-optional-chaining',
-        ['@babel/plugin-proposal-object-rest-spread', { loose: true, useBuiltIns: true }],
         [
             '@babel/plugin-transform-runtime',
             {

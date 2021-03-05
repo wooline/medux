@@ -79,19 +79,11 @@ export let CoreModuleHandlers = _decorate(null, function (_initialize) {
     d: [{
       kind: "field",
       key: "actions",
-
-      value() {
-        return null;
-      }
-
+      value: void 0
     }, {
       kind: "field",
       key: "store",
-
-      value() {
-        return null;
-      }
-
+      value: void 0
     }, {
       kind: "field",
       key: "moduleName",

@@ -106,9 +106,9 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * - 引用本module的actions
    * - this.actions相当于actions[this.moduleName]
    */
-  protected actions: Actions<this> = null as any;
+  protected actions!: Actions<this>;
 
-  protected store: ModuleStore = null as any;
+  protected store!: ModuleStore;
 
   protected moduleName: string = '';
 

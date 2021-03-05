@@ -22,9 +22,9 @@ export enum LoadingState {
 }
 
 export class PEvent {
-  public readonly target: PDispatcher = null as any;
+  public readonly target!: PDispatcher;
 
-  public readonly currentTarget: PDispatcher = null as any;
+  public readonly currentTarget!: PDispatcher;
 
   public constructor(public readonly name: string, public readonly data?: any, public bubbling: boolean = false) {}
 

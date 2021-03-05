@@ -45,10 +45,6 @@ let LoadingState;
 
 class PEvent {
   constructor(name, data, bubbling = false) {
-    _defineProperty(this, "target", null);
-
-    _defineProperty(this, "currentTarget", null);
-
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
@@ -300,11 +296,6 @@ const ActionTypes = {
   Error: `medux${config.NSP}Error`
 };
 const MetaData = {
-  appViewName: null,
-  facadeMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null,
   currentData: {
     actionName: '',
     prevState: null
@@ -1494,22 +1485,6 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
   return {
     F: CoreModuleHandlers,
     d: [{
-      kind: "field",
-      key: "actions",
-
-      value() {
-        return null;
-      }
-
-    }, {
-      kind: "field",
-      key: "store",
-
-      value() {
-        return null;
-      }
-
-    }, {
       kind: "field",
       key: "moduleName",
 

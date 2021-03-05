@@ -45,11 +45,6 @@ export const ActionTypes = {
   Error: `medux${config.NSP}Error`
 };
 export const MetaData = {
-  appViewName: null,
-  facadeMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null,
   currentData: {
     actionName: '',
     prevState: null

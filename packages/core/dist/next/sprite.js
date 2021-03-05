@@ -11,9 +11,9 @@ export let LoadingState;
 
 export class PEvent {
   constructor(name, data, bubbling = false) {
-    _defineProperty(this, "target", null);
+    _defineProperty(this, "target", void 0);
 
-    _defineProperty(this, "currentTarget", null);
+    _defineProperty(this, "currentTarget", void 0);
 
     this.name = name;
     this.data = data;

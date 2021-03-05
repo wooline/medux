@@ -1,6 +1,6 @@
 {
   "name": "@medux/eslint-plugin-recommended",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "main": "index.js",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/eslint-plugin-recommended",
@@ -12,6 +12,10 @@
   "engines": {
     "node": ">=9.0.0"
   },
+  "files": [
+    "index.js",
+    "config/"
+  ],
   "dependencies": {
     "eslint-config-airbnb-typescript": "~11.4.0",
     "eslint-plugin-import": "~2.22.1",

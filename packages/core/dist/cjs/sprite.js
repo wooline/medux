@@ -32,8 +32,8 @@ var PEvent = function () {
       bubbling = false;
     }
 
-    (0, _defineProperty2.default)(this, "target", null);
-    (0, _defineProperty2.default)(this, "currentTarget", null);
+    (0, _defineProperty2.default)(this, "target", void 0);
+    (0, _defineProperty2.default)(this, "currentTarget", void 0);
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;

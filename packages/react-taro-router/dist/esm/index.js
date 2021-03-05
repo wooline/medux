@@ -63,10 +63,6 @@ var PEvent = function () {
       bubbling = false;
     }
 
-    _defineProperty(this, "target", null);
-
-    _defineProperty(this, "currentTarget", null);
-
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
@@ -370,11 +366,6 @@ var ActionTypes = {
   Error: "medux" + config.NSP + "Error"
 };
 var MetaData = {
-  appViewName: null,
-  facadeMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null,
   currentData: {
     actionName: '',
     prevState: null
@@ -1580,18 +1571,6 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
   return {
     F: CoreModuleHandlers,
     d: [{
-      kind: "field",
-      key: "actions",
-      value: function value() {
-        return null;
-      }
-    }, {
-      kind: "field",
-      key: "store",
-      value: function value() {
-        return null;
-      }
-    }, {
       kind: "field",
       key: "moduleName",
       value: function value() {
