@@ -71,7 +71,7 @@ export const routeMiddleware = ({
       if (routeParams) {
         var _rootState$moduleName;
 
-        if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
+        if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
         }
       }
@@ -167,10 +167,10 @@ export class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'RELAUNCH',
       key
-    });
+    };
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
@@ -334,10 +334,10 @@ export class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'RELAUNCH',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -381,10 +381,10 @@ export class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'PUSH',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -430,10 +430,10 @@ export class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'REPLACE',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -478,10 +478,10 @@ export class BaseRouter {
       key,
       location
     } = uriToLocation(uri);
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'BACK',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -526,10 +526,10 @@ export class BaseRouter {
       key,
       location
     } = uriToLocation(uri);
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'POP',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 

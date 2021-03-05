@@ -1,5 +1,6 @@
 import _regeneratorRuntime from "@babel/runtime/regenerator";
 import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
+import _extends from "@babel/runtime/helpers/esm/extends";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
@@ -87,7 +88,7 @@ export var routeMiddleware = function routeMiddleware(_ref) {
           if (routeParams) {
             var _rootState$moduleName;
 
-            if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
+            if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
               dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
             }
           }
@@ -138,8 +139,8 @@ export var BaseNativeRouter = function () {
   _proto.execute = function execute(method, getNativeData) {
     var _this2 = this;
 
-    for (var _len3 = arguments.length, args = new Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
-      args[_key3 - 2] = arguments[_key3];
+    for (var _len2 = arguments.length, args = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+      args[_key2 - 2] = arguments[_key2];
     }
 
     return new Promise(function (resolve, reject) {
@@ -195,10 +196,11 @@ export var BaseRouter = function () {
 
     var key = this._createKey();
 
-    var routeState = Object.assign({}, location, {
+    var routeState = _extends({}, location, {
       action: 'RELAUNCH',
       key: key
     });
+
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
@@ -380,7 +382,7 @@ export var BaseRouter = function () {
               }
 
               key = this._createKey();
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'RELAUNCH',
                 key: key
               });
@@ -465,7 +467,7 @@ export var BaseRouter = function () {
               }
 
               key = this._createKey();
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'PUSH',
                 key: key
               });
@@ -552,7 +554,7 @@ export var BaseRouter = function () {
               }
 
               key = this._createKey();
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'REPLACE',
                 key: key
               });
@@ -651,7 +653,7 @@ export var BaseRouter = function () {
             case 4:
               uri = stack.uri;
               _uriToLocation = uriToLocation(uri), key = _uriToLocation.key, location = _uriToLocation.location;
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'BACK',
                 key: key
               });
@@ -750,7 +752,7 @@ export var BaseRouter = function () {
             case 4:
               uri = stack.uri;
               _uriToLocation2 = uriToLocation(uri), key = _uriToLocation2.key, location = _uriToLocation2.location;
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'POP',
                 key: key
               });

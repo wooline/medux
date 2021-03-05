@@ -11,6 +11,8 @@ exports.getView = getView;
 exports.loadModel = _loadModel;
 exports.exportModule = exports.CoreModuleHandlers = void 0;
 
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+
 var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
 
 var _env = require("./env");
@@ -194,7 +196,7 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       var _initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign({}, _initState, preModuleState);
+      var moduleState = (0, _extends2.default)({}, _initState, preModuleState);
 
       if (moduleState.initialized) {
         return store.dispatch((0, _actions.moduleReInitAction)(moduleName, moduleState));

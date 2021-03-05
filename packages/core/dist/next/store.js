@@ -49,7 +49,9 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, handlersEvery);
+    const handlers = { ...handlersCommon,
+      ...handlersEvery
+    };
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -120,7 +122,9 @@ export function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlew
     const action = next(originalAction);
     const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, handlersEvery);
+    const handlers = { ...handlersCommon,
+      ...handlersEvery
+    };
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {

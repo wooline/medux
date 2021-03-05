@@ -174,7 +174,9 @@ export const exportModule = (moduleName, ModuleHandles, views) => {
       const initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       const preModuleState = store.getState()[moduleName] || {};
-      const moduleState = Object.assign({}, initState, preModuleState);
+      const moduleState = { ...initState,
+        ...preModuleState
+      };
 
       if (moduleState.initialized) {
         return store.dispatch(moduleReInitAction(moduleName, moduleState));

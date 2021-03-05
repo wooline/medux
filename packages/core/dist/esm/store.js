@@ -1,3 +1,4 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
 import { applyMiddleware, compose, createStore } from 'redux';
 import { ActionTypes, MetaData, config, isPromise, snapshotState, mergeState, warn } from './basic';
 import { getModuleByName } from './inject';
@@ -65,7 +66,9 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-    var handlers = Object.assign({}, handlersCommon, handlersEvery);
+
+    var handlers = _extends({}, handlersCommon, handlersEvery);
+
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -137,7 +140,9 @@ export function buildStore(preloadedState, storeReducers, storeMiddlewares, stor
         var action = next(originalAction);
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-        var handlers = Object.assign({}, handlersCommon, handlersEvery);
+
+        var handlers = _extends({}, handlersCommon, handlersEvery);
+
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {

@@ -215,7 +215,7 @@ export var History = function () {
       actions.length = actionsMax;
     }
 
-    if (splitUri((_pages$ = pages[0]) === null || _pages$ === void 0 ? void 0 : _pages$.uri, 'pagename') !== pagename) {
+    if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
       pages.unshift(newStack);
 
       if (pages.length > pagesMax) {
@@ -250,7 +250,7 @@ export var History = function () {
     actions[0] = newStack;
     pages[0] = newStack;
 
-    if (pagename === splitUri((_pages$2 = pages[1]) === null || _pages$2 === void 0 ? void 0 : _pages$2.uri, 'pagename')) {
+    if (pagename === splitUri((_pages$2 = pages[1]) == null ? void 0 : _pages$2.uri, 'pagename')) {
       pages.splice(1, 1);
     }
 
@@ -320,13 +320,13 @@ export var History = function () {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) === null || _actions$ === void 0 ? void 0 : _actions$.uri, 'pagename')) {
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) == null ? void 0 : _actions$.uri, 'pagename')) {
       arr.pop();
     }
 
     pages.splice(0, arr.length, historyRecord);
 
-    if (pagename === splitUri((_pages$3 = pages[1]) === null || _pages$3 === void 0 ? void 0 : _pages$3.uri, 'pagename')) {
+    if (pagename === splitUri((_pages$3 = pages[1]) == null ? void 0 : _pages$3.uri, 'pagename')) {
       pages.splice(1, 1);
     }
 

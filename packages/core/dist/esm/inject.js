@@ -1,3 +1,4 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { env } from './env';
 import { MetaData, config, reducer, isPromise, mergeState } from './basic';
@@ -173,7 +174,8 @@ export var exportModule = function exportModule(moduleName, ModuleHandles, views
       var _initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign({}, _initState, preModuleState);
+
+      var moduleState = _extends({}, _initState, preModuleState);
 
       if (moduleState.initialized) {
         return store.dispatch(moduleReInitAction(moduleName, moduleState));

@@ -1,10 +1,14 @@
 "use strict";
 
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
 exports.__esModule = true;
 exports.getActionData = getActionData;
 exports.isProcessedError = isProcessedError;
 exports.setProcessedError = setProcessedError;
 exports.buildStore = buildStore;
+
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
 var _redux = require("redux");
 
@@ -81,7 +85,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-    var handlers = Object.assign({}, handlersCommon, handlersEvery);
+    var handlers = (0, _extends2.default)({}, handlersCommon, handlersEvery);
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -153,7 +157,7 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         var action = next(originalAction);
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-        var handlers = Object.assign({}, handlersCommon, handlersEvery);
+        var handlers = (0, _extends2.default)({}, handlersCommon, handlersEvery);
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {

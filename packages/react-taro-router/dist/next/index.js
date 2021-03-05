@@ -45,6 +45,10 @@ let LoadingState;
 
 class PEvent {
   constructor(name, data, bubbling = false) {
+    _defineProperty(this, "target", void 0);
+
+    _defineProperty(this, "currentTarget", void 0);
+
     this.name = name;
     this.data = data;
     this.bubbling = bubbling;
@@ -1486,6 +1490,14 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
     F: CoreModuleHandlers,
     d: [{
       kind: "field",
+      key: "actions",
+      value: void 0
+    }, {
+      kind: "field",
+      key: "store",
+      value: void 0
+    }, {
+      kind: "field",
       key: "moduleName",
 
       value() {
@@ -1574,7 +1586,9 @@ const exportModule = (moduleName, ModuleHandles, views) => {
       const initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       const preModuleState = store.getState()[moduleName] || {};
-      const moduleState = Object.assign({}, initState, preModuleState);
+      const moduleState = { ...initState,
+        ...preModuleState
+      };
 
       if (moduleState.initialized) {
         return store.dispatch(moduleReInitAction(moduleName, moduleState));
@@ -1685,7 +1699,9 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
     });
     const handlersCommon = meta.reducerMap[action.type] || {};
     const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, handlersEvery);
+    const handlers = { ...handlersCommon,
+      ...handlersEvery
+    };
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -1756,7 +1772,9 @@ function buildStore(preloadedState = {}, storeReducers = {}, storeMiddlewares = 
     const action = next(originalAction);
     const handlersCommon = meta.effectMap[action.type] || {};
     const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = Object.assign({}, handlersCommon, handlersEvery);
+    const handlers = { ...handlersCommon,
+      ...handlersEvery
+    };
     const handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -2174,7 +2192,7 @@ class History {
       actions.length = actionsMax;
     }
 
-    if (splitUri((_pages$ = pages[0]) === null || _pages$ === void 0 ? void 0 : _pages$.uri, 'pagename') !== pagename) {
+    if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
       pages.unshift(newStack);
 
       if (pages.length > pagesMax) {
@@ -2209,7 +2227,7 @@ class History {
     actions[0] = newStack;
     pages[0] = newStack;
 
-    if (pagename === splitUri((_pages$2 = pages[1]) === null || _pages$2 === void 0 ? void 0 : _pages$2.uri, 'pagename')) {
+    if (pagename === splitUri((_pages$2 = pages[1]) == null ? void 0 : _pages$2.uri, 'pagename')) {
       pages.splice(1, 1);
     }
 
@@ -2279,13 +2297,13 @@ class History {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) === null || _actions$ === void 0 ? void 0 : _actions$.uri, 'pagename')) {
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) == null ? void 0 : _actions$.uri, 'pagename')) {
       arr.pop();
     }
 
     pages.splice(0, arr.length, historyRecord);
 
-    if (pagename === splitUri((_pages$3 = pages[1]) === null || _pages$3 === void 0 ? void 0 : _pages$3.uri, 'pagename')) {
+    if (pagename === splitUri((_pages$3 = pages[1]) == null ? void 0 : _pages$3.uri, 'pagename')) {
       pages.splice(1, 1);
     }
 
@@ -2630,7 +2648,7 @@ const routeMiddleware = ({
       if (routeParams) {
         var _rootState$moduleName;
 
-        if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
+        if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
         }
       }
@@ -2726,10 +2744,10 @@ class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'RELAUNCH',
       key
-    });
+    };
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
@@ -2893,10 +2911,10 @@ class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'RELAUNCH',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -2940,10 +2958,10 @@ class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'PUSH',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -2989,10 +3007,10 @@ class BaseRouter {
 
     const key = this._createKey();
 
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'REPLACE',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -3037,10 +3055,10 @@ class BaseRouter {
       key,
       location
     } = uriToLocation(uri);
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'BACK',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -3085,10 +3103,10 @@ class BaseRouter {
       key,
       location
     } = uriToLocation(uri);
-    const routeState = Object.assign({}, location, {
+    const routeState = { ...location,
       action: 'POP',
       key
-    });
+    };
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
@@ -3279,21 +3297,6 @@ function _extends() {
   return _extends.apply(this, arguments);
 }
 
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-
-  return target;
-}
-
 const loadViewDefaultOptions = {
   LoadViewOnError: ({
     message
@@ -3373,12 +3376,10 @@ const loadView = (moduleName, viewName, options) => {
         }
       }
 
-      const _this$props = this.props,
-            {
-        forwardedRef
-      } = _this$props,
-            rest = _objectWithoutPropertiesLoose(_this$props, ["forwardedRef"]);
-
+      const {
+        forwardedRef,
+        ...rest
+      } = this.props;
       const errorMessage = this.error;
       this.error = '';
 
@@ -3593,11 +3594,11 @@ function buildApp(moduleGetter, {
   initData.route = router.getRouteState();
   return renderApp(() => {
     return () => undefined;
-  }, moduleGetter, appModuleName, appViewName, Object.assign({}, storeOptions, {
+  }, moduleGetter, appModuleName, appViewName, { ...storeOptions,
     middlewares,
     reducers,
     initData
-  }), store => {
+  }, store => {
     router.setStore(store);
     appExports.store = store;
     Object.defineProperty(appExports, 'state', {

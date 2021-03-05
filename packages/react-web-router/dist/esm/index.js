@@ -1,6 +1,24 @@
 import React, { Component as Component$3, useEffect } from 'react';
 import { unmountComponentAtNode, hydrate, render } from 'react-dom';
 
+function _extends() {
+  _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+
+    return target;
+  };
+
+  return _extends.apply(this, arguments);
+}
+
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -62,9 +80,9 @@ var PEvent = function () {
       bubbling = false;
     }
 
-    _defineProperty(this, "target", null);
+    _defineProperty(this, "target", void 0);
 
-    _defineProperty(this, "currentTarget", null);
+    _defineProperty(this, "currentTarget", void 0);
 
     this.name = name;
     this.data = data;
@@ -369,11 +387,6 @@ var ActionTypes = {
   Error: "medux" + config.NSP + "Error"
 };
 var MetaData = {
-  appViewName: null,
-  facadeMap: null,
-  clientStore: null,
-  appModuleName: null,
-  moduleGetter: null,
   currentData: {
     actionName: '',
     prevState: null
@@ -1598,15 +1611,11 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     d: [{
       kind: "field",
       key: "actions",
-      value: function value() {
-        return null;
-      }
+      value: void 0
     }, {
       kind: "field",
       key: "store",
-      value: function value() {
-        return null;
-      }
+      value: void 0
     }, {
       kind: "field",
       key: "moduleName",
@@ -1695,7 +1704,8 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       var _initState = moduleHandles.initState;
       injectActions(store, moduleName, moduleHandles);
       var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = Object.assign({}, _initState, preModuleState);
+
+      var moduleState = _extends({}, _initState, preModuleState);
 
       if (moduleState.initialized) {
         return store.dispatch(moduleReInitAction(moduleName, moduleState));
@@ -1824,7 +1834,9 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     });
     var handlersCommon = meta.reducerMap[action.type] || {};
     var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-    var handlers = Object.assign({}, handlersCommon, handlersEvery);
+
+    var handlers = _extends({}, handlersCommon, handlersEvery);
+
     var handlerModules = Object.keys(handlers);
 
     if (handlerModules.length > 0) {
@@ -1896,7 +1908,9 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
         var action = next(originalAction);
         var handlersCommon = meta.effectMap[action.type] || {};
         var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-        var handlers = Object.assign({}, handlersCommon, handlersEvery);
+
+        var handlers = _extends({}, handlersCommon, handlersEvery);
+
         var handlerModules = Object.keys(handlers);
 
         if (handlerModules.length > 0) {
@@ -3305,7 +3319,7 @@ var History = function () {
       actions.length = actionsMax;
     }
 
-    if (splitUri((_pages$ = pages[0]) === null || _pages$ === void 0 ? void 0 : _pages$.uri, 'pagename') !== pagename) {
+    if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
       pages.unshift(newStack);
 
       if (pages.length > pagesMax) {
@@ -3340,7 +3354,7 @@ var History = function () {
     actions[0] = newStack;
     pages[0] = newStack;
 
-    if (pagename === splitUri((_pages$2 = pages[1]) === null || _pages$2 === void 0 ? void 0 : _pages$2.uri, 'pagename')) {
+    if (pagename === splitUri((_pages$2 = pages[1]) == null ? void 0 : _pages$2.uri, 'pagename')) {
       pages.splice(1, 1);
     }
 
@@ -3410,13 +3424,13 @@ var History = function () {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) === null || _actions$ === void 0 ? void 0 : _actions$.uri, 'pagename')) {
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) == null ? void 0 : _actions$.uri, 'pagename')) {
       arr.pop();
     }
 
     pages.splice(0, arr.length, historyRecord);
 
-    if (pagename === splitUri((_pages$3 = pages[1]) === null || _pages$3 === void 0 ? void 0 : _pages$3.uri, 'pagename')) {
+    if (pagename === splitUri((_pages$3 = pages[1]) == null ? void 0 : _pages$3.uri, 'pagename')) {
       pages.splice(1, 1);
     }
 
@@ -3792,7 +3806,7 @@ var routeMiddleware = function routeMiddleware(_ref) {
           if (routeParams) {
             var _rootState$moduleName;
 
-            if ((_rootState$moduleName = rootState[moduleName]) !== null && _rootState$moduleName !== void 0 && _rootState$moduleName.initialized) {
+            if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
               dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
             }
           }
@@ -3843,8 +3857,8 @@ var BaseNativeRouter = function () {
   _proto.execute = function execute(method, getNativeData) {
     var _this2 = this;
 
-    for (var _len3 = arguments.length, args = new Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
-      args[_key3 - 2] = arguments[_key3];
+    for (var _len2 = arguments.length, args = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+      args[_key2 - 2] = arguments[_key2];
     }
 
     return new Promise(function (resolve, reject) {
@@ -3900,10 +3914,11 @@ var BaseRouter = function () {
 
     var key = this._createKey();
 
-    var routeState = Object.assign({}, location, {
+    var routeState = _extends({}, location, {
       action: 'RELAUNCH',
       key: key
     });
+
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     this._nativeData = undefined;
@@ -4085,7 +4100,7 @@ var BaseRouter = function () {
               }
 
               key = this._createKey();
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'RELAUNCH',
                 key: key
               });
@@ -4170,7 +4185,7 @@ var BaseRouter = function () {
               }
 
               key = this._createKey();
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'PUSH',
                 key: key
               });
@@ -4257,7 +4272,7 @@ var BaseRouter = function () {
               }
 
               key = this._createKey();
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'REPLACE',
                 key: key
               });
@@ -4356,7 +4371,7 @@ var BaseRouter = function () {
             case 4:
               uri = stack.uri;
               _uriToLocation = uriToLocation(uri), key = _uriToLocation.key, location = _uriToLocation.location;
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'BACK',
                 key: key
               });
@@ -4455,7 +4470,7 @@ var BaseRouter = function () {
             case 4:
               uri = stack.uri;
               _uriToLocation2 = uriToLocation(uri), key = _uriToLocation2.key, location = _uriToLocation2.location;
-              routeState = Object.assign({}, location, {
+              routeState = _extends({}, location, {
                 action: 'POP',
                 key: key
               });
@@ -4541,24 +4556,6 @@ var BaseRouter = function () {
 
   return BaseRouter;
 }();
-
-function _extends() {
-  _extends = Object.assign || function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-
-    return target;
-  };
-
-  return _extends.apply(this, arguments);
-}
 
 function isAbsolute(pathname) {
   return pathname.charAt(0) === '/';
@@ -6027,7 +6024,8 @@ var Link = React.forwardRef(function (_ref, ref) {
       rest = _objectWithoutPropertiesLoose(_ref, ["onClick", "replace"]);
 
   var target = rest.target;
-  var props = Object.assign({}, rest, {
+
+  var props = _extends({}, rest, {
     onClick: function onClick(event) {
       try {
         _onClick && _onClick(event);
@@ -6042,6 +6040,7 @@ var Link = React.forwardRef(function (_ref, ref) {
         }
     }
   });
+
   return React.createElement("a", _extends({}, props, {
     ref: ref
   }));
@@ -6091,7 +6090,7 @@ function buildApp(moduleGetter, _ref) {
 
     reRender(AppView);
     return reRender;
-  }, moduleGetter, appModuleName, appViewName, Object.assign({}, storeOptions, {
+  }, moduleGetter, appModuleName, appViewName, _extends({}, storeOptions, {
     middlewares: middlewares,
     reducers: reducers,
     initData: mergeState(initData, ssrData)
@@ -6142,7 +6141,7 @@ function buildSSR(moduleGetter, _ref2) {
         store: store
       }))
     };
-  }, moduleGetter, appModuleName, appViewName, Object.assign({}, storeOptions, {
+  }, moduleGetter, appModuleName, appViewName, _extends({}, storeOptions, {
     initData: initData
   }), function (store) {
     router.setStore(store);
