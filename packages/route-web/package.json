@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-web",
-  "version": "2.0.0-beta.3.22",
+  "version": "2.0.0-beta.3.23",
   "description": "The practice of @medux/core in web route",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-web",
   "author": "wooline <wooline@qq.com>",
