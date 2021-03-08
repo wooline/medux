@@ -2117,13 +2117,15 @@ const routeConfig = {
   pagesMaxHistory: 10,
   pagenames: {},
   defaultParams: {},
-  disableNativeRoute: false
+  disableNativeRoute: false,
+  indexUrl: ''
 };
 function setRouteConfig(conf) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
   conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
   conf.pagenames && (routeConfig.pagenames = conf.pagenames);
+  conf.indexUrl && (routeConfig.indexUrl = conf.indexUrl);
 }
 
 function splitQuery(query) {
@@ -2855,6 +2857,13 @@ class BaseRouter {
     };
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
+
+    if (!routeConfig.indexUrl) {
+      setRouteConfig({
+        indexUrl: this.meduxUrl
+      });
+    }
+
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
@@ -3091,8 +3100,6 @@ class BaseRouter {
     } else {
       this.history.push(location, key);
     }
-
-    return routeState;
   }
 
   replace(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -3140,19 +3147,24 @@ class BaseRouter {
     } else {
       this.history.replace(location, key);
     }
-
-    return routeState;
   }
 
-  back(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
-    this.addTask(this._back.bind(this, n, internal, disableNative));
+  back(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._back.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
   }
 
-  async _back(n = 1, internal, disableNative) {
+  async _back(n = 1, indexUrl, internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
     if (!stack) {
-      return Promise.reject(1);
+      if (indexUrl) {
+        return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
+      }
+
+      throw {
+        code: '1',
+        message: 'history not found'
+      };
     }
 
     const uri = stack.uri;
@@ -3189,18 +3201,19 @@ class BaseRouter {
       this.history.back(n);
     }
 
-    return routeState;
+    return undefined;
   }
 
-  pop(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
-    this.addTask(this._pop.bind(this, n, internal, disableNative));
+  pop(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
+    return true;
   }
 
-  async _pop(n = 1, internal, disableNative) {
+  async _pop(n = 1, indexUrl = '', internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
     if (!stack) {
-      return Promise.reject(1);
+      return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
     }
 
     const uri = stack.uri;
@@ -3237,7 +3250,7 @@ class BaseRouter {
       this.history.pop(n);
     }
 
-    return routeState;
+    return undefined;
   }
 
   taskComplete() {
@@ -4378,7 +4391,7 @@ class BrowserNativeRouter extends BaseNativeRouter {
         }
 
         if (index > 0) {
-          callback = () => this.router.back(index, false, false);
+          callback = () => this.router.back(index, '', false, false);
         } else if (action === 'REPLACE') {
           callback = () => this.router.replace(url, false, false);
         } else if (action === 'PUSH') {

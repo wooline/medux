@@ -7,11 +7,12 @@ export declare const routeConfig: {
     };
     defaultParams: any;
     disableNativeRoute: boolean;
+    indexUrl: string;
 };
 export declare function setRouteConfig(conf: {
     actionMaxHistory?: number;
     pagesMaxHistory?: number;
-    homeUri?: string;
+    indexUrl?: string;
     pagenames?: {
         [key: string]: string;
     };

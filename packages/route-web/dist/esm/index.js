@@ -6,7 +6,7 @@ import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitial
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise } from '@medux/core';
-import { uriToLocation, nativeUrlToNativeLocation as _nativeUrlToNativeLocation, nativeLocationToNativeUrl as _nativeLocationToNativeUrl, History, routeConfig } from './basic';
+import { uriToLocation, nativeUrlToNativeLocation as _nativeUrlToNativeLocation, nativeLocationToNativeUrl as _nativeLocationToNativeUrl, History, routeConfig, setRouteConfig } from './basic';
 export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
 export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
@@ -203,6 +203,13 @@ export var BaseRouter = function () {
 
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
+
+    if (!routeConfig.indexUrl) {
+      setRouteConfig({
+        indexUrl: this.meduxUrl
+      });
+    }
+
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
@@ -507,9 +514,7 @@ export var BaseRouter = function () {
                 this.history.push(location, key);
               }
 
-              return _context2.abrupt("return", routeState);
-
-            case 15:
+            case 14:
             case "end":
               return _context2.stop();
           }
@@ -594,9 +599,7 @@ export var BaseRouter = function () {
                 this.history.replace(location, key);
               }
 
-              return _context3.abrupt("return", routeState);
-
-            case 15:
+            case 14:
             case "end":
               return _context3.stop();
           }
@@ -611,9 +614,13 @@ export var BaseRouter = function () {
     return _replace;
   }();
 
-  _proto2.back = function back(n, internal, disableNative) {
+  _proto2.back = function back(n, indexUrl, internal, disableNative) {
     if (n === void 0) {
       n = 1;
+    }
+
+    if (indexUrl === void 0) {
+      indexUrl = 'index';
     }
 
     if (internal === void 0) {
@@ -624,11 +631,11 @@ export var BaseRouter = function () {
       disableNative = routeConfig.disableNativeRoute;
     }
 
-    this.addTask(this._back.bind(this, n, internal, disableNative));
+    this.addTask(this._back.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
   };
 
   _proto2._back = function () {
-    var _back2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(n, internal, disableNative) {
+    var _back2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(n, indexUrl, internal, disableNative) {
       var _this6 = this;
 
       var stack, uri, _uriToLocation, key, location, routeState, nativeData;
@@ -644,29 +651,40 @@ export var BaseRouter = function () {
               stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
               if (stack) {
-                _context4.next = 4;
+                _context4.next = 6;
                 break;
               }
 
-              return _context4.abrupt("return", Promise.reject(1));
+              if (!indexUrl) {
+                _context4.next = 5;
+                break;
+              }
 
-            case 4:
+              return _context4.abrupt("return", this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative));
+
+            case 5:
+              throw {
+                code: '1',
+                message: 'history not found'
+              };
+
+            case 6:
               uri = stack.uri;
               _uriToLocation = uriToLocation(uri), key = _uriToLocation.key, location = _uriToLocation.location;
               routeState = _extends({}, location, {
                 action: 'BACK',
                 key: key
               });
-              _context4.next = 9;
+              _context4.next = 11;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-            case 9:
+            case 11:
               if (disableNative) {
-                _context4.next = 13;
+                _context4.next = 15;
                 break;
               }
 
-              _context4.next = 12;
+              _context4.next = 14;
               return this.nativeRouter.execute('back', function () {
                 var nativeLocation = _this6.locationTransform.out(routeState);
 
@@ -678,10 +696,10 @@ export var BaseRouter = function () {
                 };
               }, n, key, internal);
 
-            case 12:
+            case 14:
               nativeData = _context4.sent;
 
-            case 13:
+            case 15:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -693,9 +711,9 @@ export var BaseRouter = function () {
                 this.history.back(n);
               }
 
-              return _context4.abrupt("return", routeState);
+              return _context4.abrupt("return", undefined);
 
-            case 19:
+            case 21:
             case "end":
               return _context4.stop();
           }
@@ -703,16 +721,20 @@ export var BaseRouter = function () {
       }, _callee4, this);
     }));
 
-    function _back(_x10, _x11, _x12) {
+    function _back(_x10, _x11, _x12, _x13) {
       return _back2.apply(this, arguments);
     }
 
     return _back;
   }();
 
-  _proto2.pop = function pop(n, internal, disableNative) {
+  _proto2.pop = function pop(n, indexUrl, internal, disableNative) {
     if (n === void 0) {
       n = 1;
+    }
+
+    if (indexUrl === void 0) {
+      indexUrl = 'index';
     }
 
     if (internal === void 0) {
@@ -723,11 +745,12 @@ export var BaseRouter = function () {
       disableNative = routeConfig.disableNativeRoute;
     }
 
-    this.addTask(this._pop.bind(this, n, internal, disableNative));
+    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
+    return true;
   };
 
   _proto2._pop = function () {
-    var _pop2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee5(n, internal, disableNative) {
+    var _pop2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee5(n, indexUrl, internal, disableNative) {
       var _this7 = this;
 
       var stack, uri, _uriToLocation2, key, location, routeState, nativeData;
@@ -740,32 +763,36 @@ export var BaseRouter = function () {
                 n = 1;
               }
 
+              if (indexUrl === void 0) {
+                indexUrl = '';
+              }
+
               stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
               if (stack) {
-                _context5.next = 4;
+                _context5.next = 5;
                 break;
               }
 
-              return _context5.abrupt("return", Promise.reject(1));
+              return _context5.abrupt("return", this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative));
 
-            case 4:
+            case 5:
               uri = stack.uri;
               _uriToLocation2 = uriToLocation(uri), key = _uriToLocation2.key, location = _uriToLocation2.location;
               routeState = _extends({}, location, {
                 action: 'POP',
                 key: key
               });
-              _context5.next = 9;
+              _context5.next = 10;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-            case 9:
+            case 10:
               if (disableNative) {
-                _context5.next = 13;
+                _context5.next = 14;
                 break;
               }
 
-              _context5.next = 12;
+              _context5.next = 13;
               return this.nativeRouter.execute('pop', function () {
                 var nativeLocation = _this7.locationTransform.out(routeState);
 
@@ -777,10 +804,10 @@ export var BaseRouter = function () {
                 };
               }, n, key, internal);
 
-            case 12:
+            case 13:
               nativeData = _context5.sent;
 
-            case 13:
+            case 14:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -792,9 +819,9 @@ export var BaseRouter = function () {
                 this.history.pop(n);
               }
 
-              return _context5.abrupt("return", routeState);
+              return _context5.abrupt("return", undefined);
 
-            case 19:
+            case 20:
             case "end":
               return _context5.stop();
           }
@@ -802,7 +829,7 @@ export var BaseRouter = function () {
       }, _callee5, this);
     }));
 
-    function _pop(_x13, _x14, _x15) {
+    function _pop(_x14, _x15, _x16, _x17) {
       return _pop2.apply(this, arguments);
     }
 

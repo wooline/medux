@@ -16,7 +16,8 @@ var routeConfig = {
   pagesMaxHistory: 10,
   pagenames: {},
   defaultParams: {},
-  disableNativeRoute: false
+  disableNativeRoute: false,
+  indexUrl: ''
 };
 exports.routeConfig = routeConfig;
 
@@ -25,6 +26,7 @@ function setRouteConfig(conf) {
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
   conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
   conf.pagenames && (routeConfig.pagenames = conf.pagenames);
+  conf.indexUrl && (routeConfig.indexUrl = conf.indexUrl);
 }
 
 function splitQuery(query) {

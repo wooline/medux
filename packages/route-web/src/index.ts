@@ -1,6 +1,6 @@
 import {Middleware, Reducer} from 'redux';
 import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise} from '@medux/core';
-import {uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig} from './basic';
+import {uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig, setRouteConfig} from './basic';
 
 import type {LocationTransform} from './transform';
 import type {RootParams, Location, NativeLocation, RouteState, HistoryAction, PayloadLocation, PartialLocation} from './basic';
@@ -171,6 +171,9 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
+    if (!routeConfig.indexUrl) {
+      setRouteConfig({indexUrl: this.meduxUrl});
+    }
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
@@ -334,7 +337,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this.addTask(this._push.bind(this, data, internal, disableNative));
   }
 
-  async _push(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean): Promise<RouteState<P>> {
+  async _push(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
     let location: Location<P>;
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
@@ -368,14 +371,13 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     } else {
       this.history.push(location, key);
     }
-    return routeState;
   }
 
   replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute) {
     this.addTask(this._replace.bind(this, data, internal, disableNative));
   }
 
-  async _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean): Promise<RouteState<P>> {
+  async _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
     let location: Location<P>;
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
@@ -409,17 +411,19 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     } else {
       this.history.replace(location, key);
     }
-    return routeState;
   }
 
-  back(n: number = 1, internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute) {
-    this.addTask(this._back.bind(this, n, internal, disableNative));
+  back(n: number = 1, indexUrl: string = 'index', internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute) {
+    this.addTask(this._back.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
   }
 
-  async _back(n: number = 1, internal: boolean, disableNative: boolean): Promise<RouteState<P>> {
+  async _back(n: number = 1, indexUrl: string, internal: boolean, disableNative: boolean) {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
     if (!stack) {
-      return Promise.reject(1);
+      if (indexUrl) {
+        return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
+      }
+      throw {code: '1', message: 'history not found'};
     }
     const uri = stack.uri;
     const {key, location} = uriToLocation<P>(uri);
@@ -448,17 +452,18 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     } else {
       this.history.back(n);
     }
-    return routeState;
+    return undefined;
   }
 
-  pop(n: number = 1, internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute) {
-    this.addTask(this._pop.bind(this, n, internal, disableNative));
+  pop(n: number = 1, indexUrl: string = 'index', internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute): boolean {
+    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
+    return true;
   }
 
-  async _pop(n: number = 1, internal: boolean, disableNative: boolean): Promise<RouteState<P>> {
+  async _pop(n: number = 1, indexUrl: string = '', internal: boolean, disableNative: boolean) {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
     if (!stack) {
-      return Promise.reject(1);
+      return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
     }
     const uri = stack.uri;
     const {key, location} = uriToLocation<P>(uri);
@@ -487,7 +492,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     } else {
       this.history.pop(n);
     }
-    return routeState;
+    return undefined;
   }
 
   private taskComplete() {

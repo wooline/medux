@@ -95,7 +95,7 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
 
         if (index > 0) {
           callback = function callback() {
-            return _this.router.back(index, false, false);
+            return _this.router.back(index, '', false, false);
           };
         } else if (action === 'REPLACE') {
           callback = function callback() {

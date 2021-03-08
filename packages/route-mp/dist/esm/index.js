@@ -30,7 +30,7 @@ export var MPNativeRouter = function (_BaseNativeRouter) {
         }
 
         if (index > 0) {
-          _this.router.back(index, false, true);
+          _this.router.back(index, '', false, true);
         } else if (action === 'REPLACE') {
           _this.router.replace(nativeLocation, false, true);
         } else if (action === 'PUSH') {

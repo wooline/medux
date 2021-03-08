@@ -4,8 +4,7 @@ exports.createMiddleware = void 0;
 const path = require("path");
 const fs = require("fs");
 const chalk = require("chalk");
-function createMiddleware(mockFile) {
-    console.info(`enable ${chalk.magenta('api mock')} file: ${chalk.underline(mockFile)}`);
+function createMiddleware(mockFile, globalFile) {
     const mockDir = path.dirname(mockFile);
     if (!fs.existsSync(mockDir)) {
         fs.mkdirSync(mockDir);
@@ -13,6 +12,11 @@ function createMiddleware(mockFile) {
     if (!fs.existsSync(mockFile)) {
         fs.writeFileSync(mockFile, 'module.exports = {}');
     }
+    if (!globalFile) {
+        const extname = path.extname(mockFile);
+        globalFile = path.join(mockDir, `./global${extname}`);
+    }
+    console.info(`enable ${chalk.magenta('api mock')} \n api: ${chalk.underline(mockFile)} \n global: ${chalk.underline(globalFile)}`);
     return (req, res, next) => {
         const str = fs
             .readFileSync(mockFile)
@@ -41,6 +45,7 @@ function createMiddleware(mockFile) {
             return false;
         });
         if (mockPath) {
+            delete require.cache[globalFile];
             delete require.cache[mockPath];
             const middleware = require(mockPath);
             if (typeof middleware === 'function') {

@@ -1,7 +1,7 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise } from '@medux/core';
-import { uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig } from './basic';
+import { uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig, setRouteConfig } from './basic';
 export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
 export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
@@ -173,6 +173,13 @@ export class BaseRouter {
     };
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
+
+    if (!routeConfig.indexUrl) {
+      setRouteConfig({
+        indexUrl: this.meduxUrl
+      });
+    }
+
     this._nativeData = undefined;
     this.history = new History();
     this.history.relaunch(location, key);
@@ -409,8 +416,6 @@ export class BaseRouter {
     } else {
       this.history.push(location, key);
     }
-
-    return routeState;
   }
 
   replace(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -458,19 +463,24 @@ export class BaseRouter {
     } else {
       this.history.replace(location, key);
     }
-
-    return routeState;
   }
 
-  back(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
-    this.addTask(this._back.bind(this, n, internal, disableNative));
+  back(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._back.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
   }
 
-  async _back(n = 1, internal, disableNative) {
+  async _back(n = 1, indexUrl, internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
 
     if (!stack) {
-      return Promise.reject(1);
+      if (indexUrl) {
+        return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
+      }
+
+      throw {
+        code: '1',
+        message: 'history not found'
+      };
     }
 
     const uri = stack.uri;
@@ -507,18 +517,19 @@ export class BaseRouter {
       this.history.back(n);
     }
 
-    return routeState;
+    return undefined;
   }
 
-  pop(n = 1, internal = false, disableNative = routeConfig.disableNativeRoute) {
-    this.addTask(this._pop.bind(this, n, internal, disableNative));
+  pop(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
+    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
+    return true;
   }
 
-  async _pop(n = 1, internal, disableNative) {
+  async _pop(n = 1, indexUrl = '', internal, disableNative) {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
 
     if (!stack) {
-      return Promise.reject(1);
+      return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
     }
 
     const uri = stack.uri;
@@ -555,7 +566,7 @@ export class BaseRouter {
       this.history.pop(n);
     }
 
-    return routeState;
+    return undefined;
   }
 
   taskComplete() {

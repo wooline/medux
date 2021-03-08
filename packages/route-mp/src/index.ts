@@ -35,7 +35,7 @@ export class MPNativeRouter extends BaseNativeRouter {
           index = this.router.searchKeyInActions(key);
         }
         if (index > 0) {
-          this.router.back(index, false, true);
+          this.router.back(index, '', false, true);
         } else if (action === 'REPLACE') {
           this.router.replace(nativeLocation, false, true);
         } else if (action === 'PUSH') {

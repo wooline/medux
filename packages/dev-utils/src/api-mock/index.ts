@@ -1,11 +1,11 @@
+/* eslint-disable no-console */
 import * as path from 'path';
 import * as fs from 'fs';
 import * as chalk from 'chalk';
 
 import {NextFunction, Request, Response} from 'express';
 
-export function createMiddleware(mockFile: string) {
-  console.info(`enable ${chalk.magenta('api mock')} file: ${chalk.underline(mockFile)}`);
+export function createMiddleware(mockFile: string, globalFile?: string) {
   const mockDir = path.dirname(mockFile);
   if (!fs.existsSync(mockDir)) {
     fs.mkdirSync(mockDir);
@@ -13,7 +13,11 @@ export function createMiddleware(mockFile: string) {
   if (!fs.existsSync(mockFile)) {
     fs.writeFileSync(mockFile, 'module.exports = {}');
   }
-
+  if (!globalFile) {
+    const extname = path.extname(mockFile);
+    globalFile = path.join(mockDir, `./global${extname}`);
+  }
+  console.info(`enable ${chalk.magenta('api mock')} \n api: ${chalk.underline(mockFile)} \n global: ${chalk.underline(globalFile)}`);
   return (req: Request, res: Response, next: NextFunction) => {
     const str = fs
       .readFileSync(mockFile)
@@ -41,6 +45,7 @@ export function createMiddleware(mockFile: string) {
       return false;
     });
     if (mockPath) {
+      delete require.cache[globalFile!];
       delete require.cache[mockPath];
       const middleware = require(mockPath);
       if (typeof middleware === 'function') {
