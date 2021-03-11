@@ -21,12 +21,12 @@ export enum LoadingState {
   Depth = 'Depth',
 }
 
-export class PEvent {
+export class PEvent<N extends string, D> {
   public readonly target!: PDispatcher;
 
   public readonly currentTarget!: PDispatcher;
 
-  public constructor(public readonly name: string, public readonly data?: any, public bubbling: boolean = false) {}
+  public constructor(public readonly name: N, public readonly data: D, public bubbling: boolean = false) {}
 
   public setTarget(target: PDispatcher) {
     (this as any).target = target;
@@ -37,14 +37,12 @@ export class PEvent {
   }
 }
 
-export class PDispatcher {
-  protected readonly storeHandlers: {
-    [key: string]: ((e: PEvent) => void)[];
-  } = {};
+export class PDispatcher<T extends {[key: string]: any} = {}> {
+  protected readonly storeHandlers: {[N in keyof T]?: Array<(e: PEvent<Extract<N, string>, T[N]>) => void>} = {};
 
-  public constructor(public readonly parent?: PDispatcher | undefined) {}
+  public constructor(public readonly parent?: PDispatcher) {}
 
-  public addListener(ename: string, handler: (e: PEvent) => void): this {
+  public addListener<N extends keyof T>(ename: N, handler: (e: PEvent<Extract<N, string>, T[N]>) => void): this {
     let dictionary = this.storeHandlers[ename];
     if (!dictionary) {
       // eslint-disable-next-line no-multi-assign
@@ -54,15 +52,15 @@ export class PDispatcher {
     return this;
   }
 
-  public removeListener(ename?: string, handler?: (e: PEvent) => void): this {
+  public removeListener<N extends keyof T>(ename?: N, handler?: (e: PEvent<Extract<N, string>, T[N]>) => void): this {
     if (!ename) {
       Object.keys(this.storeHandlers).forEach((key) => {
         delete this.storeHandlers[key];
       });
     } else {
       const handlers = this.storeHandlers;
-      if (handlers.propertyIsEnumerable(ename)) {
-        const dictionary = handlers[ename];
+      const dictionary = handlers[ename];
+      if (dictionary) {
         if (!handler) {
           delete handlers[ename];
         } else {
@@ -79,7 +77,7 @@ export class PDispatcher {
     return this;
   }
 
-  public dispatch(evt: PEvent): this {
+  public dispatch<N extends keyof T>(evt: PEvent<Extract<N, string>, T[N]>): this {
     if (!evt.target) {
       evt.setTarget(this);
     }
@@ -87,11 +85,11 @@ export class PDispatcher {
     const dictionary = this.storeHandlers[evt.name];
     if (dictionary) {
       for (let i = 0, k = dictionary.length; i < k; i++) {
-        dictionary[i](evt);
+        dictionary[i](evt as any);
       }
     }
     if (this.parent && evt.bubbling) {
-      this.parent.dispatch(evt);
+      this.parent.dispatch(evt as any);
     }
     return this;
   }
@@ -102,7 +100,7 @@ export class PDispatcher {
   }
 }
 
-export class TaskCounter extends PDispatcher {
+export class TaskCounter extends PDispatcher<{TaskCountEvent: LoadingState}> {
   public readonly list: {promise: Promise<any>; note: string}[] = [];
 
   private ctimer: number | null = null;

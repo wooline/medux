@@ -139,10 +139,9 @@ var PDispatcher = function () {
       });
     } else {
       var handlers = this.storeHandlers;
+      var dictionary = handlers[ename];
 
-      if (handlers.propertyIsEnumerable(ename)) {
-        var dictionary = handlers[ename];
-
+      if (dictionary) {
         if (!handler) {
           delete handlers[ename];
         } else {
@@ -4619,6 +4618,186 @@ function createRouter(locationTransform, routeENV, tabPages) {
   return router;
 }
 
+var eventBus = new PDispatcher();
+var tabPages = {};
+
+function queryToData(query) {
+  if (query === void 0) {
+    query = {};
+  }
+
+  return Object.keys(query).reduce(function (params, key) {
+    if (!params) {
+      params = {};
+    }
+
+    params[key] = decodeURIComponent(query[key]);
+    return params;
+  }, undefined);
+}
+
+function routeToUrl(path, query) {
+  if (query === void 0) {
+    query = {};
+  }
+
+  path = "/" + path.replace(/^\/+|\/+$/g, '');
+  var parts = [];
+  Object.keys(query).forEach(function (key) {
+    parts.push(key + "=" + query[key]);
+  });
+  var queryString = parts.join('&');
+  return queryString ? path + "?" + queryString : path;
+}
+
+var prevPagesInfo;
+
+function patchPageOptions(pageOptions) {
+  var onShow = pageOptions.onShow;
+
+  pageOptions.onShow = function () {
+    var arr = Taro__default['default'].getCurrentPages();
+    var currentPage = arr[arr.length - 1];
+    var currentPagesInfo = {
+      count: arr.length,
+      lastPageUrl: routeToUrl(currentPage.route, currentPage.options)
+    };
+
+    if (prevPagesInfo && (currentPagesInfo.count !== prevPagesInfo.count || currentPagesInfo.lastPageUrl !== prevPagesInfo.lastPageUrl)) {
+      var pathname = "/" + currentPage.route.replace(/^\/+|\/+$/g, '');
+
+      var _action = !prevPagesInfo || currentPagesInfo.count > prevPagesInfo.count ? 'PUSH' : currentPagesInfo.count < prevPagesInfo.count ? 'POP' : 'REPLACE';
+
+      var routeAction = _action;
+
+      if (_action !== 'POP' && tabPages[pathname]) {
+        routeAction = 'RELAUNCH';
+      }
+
+      eventBus.dispatch(new PEvent('routeChange', {
+        pathname: pathname,
+        searchData: queryToData(currentPage.options),
+        action: routeAction
+      }));
+    }
+
+    return onShow == null ? void 0 : onShow.call(this);
+  };
+
+  var onHide = pageOptions.onHide;
+
+  pageOptions.onHide = function () {
+    var arr = Taro__default['default'].getCurrentPages();
+    var currentPage = arr[arr.length - 1];
+    prevPagesInfo = {
+      count: arr.length,
+      lastPageUrl: routeToUrl(currentPage.route, currentPage.options)
+    };
+    return onHide == null ? void 0 : onHide.call(this);
+  };
+
+  var onUnload = pageOptions.onUnload;
+
+  pageOptions.onUnload = function () {
+    var arr = Taro__default['default'].getCurrentPages();
+    var currentPage = arr[arr.length - 1];
+    prevPagesInfo = {
+      count: arr.length,
+      lastPageUrl: routeToUrl(currentPage.route, currentPage.options)
+    };
+    return onUnload == null ? void 0 : onUnload.call(this);
+  };
+}
+
+var routeENV = {
+  reLaunch: Taro__default['default'].reLaunch,
+  redirectTo: Taro__default['default'].redirectTo,
+  navigateTo: Taro__default['default'].navigateTo,
+  navigateBack: Taro__default['default'].navigateBack,
+  switchTab: Taro__default['default'].switchTab,
+  getLocation: function getLocation() {
+    var arr = Taro__default['default'].getCurrentPages();
+    var path;
+    var query;
+
+    if (arr.length === 0) {
+      var _Taro$getLaunchOption = Taro__default['default'].getLaunchOptionsSync();
+
+      path = _Taro$getLaunchOption.path;
+      query = _Taro$getLaunchOption.query;
+    } else {
+      var current = arr[arr.length - 1];
+      path = current.route;
+      query = current.options;
+    }
+
+    return {
+      pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
+      searchData: queryToData(query)
+    };
+  },
+  onRouteChange: function onRouteChange(callback) {
+    var handler = function handler(e) {
+      var _e$data = e.data,
+          pathname = _e$data.pathname,
+          searchData = _e$data.searchData,
+          action = _e$data.action;
+      callback(pathname, searchData, action);
+    };
+
+    eventBus.addListener('routeChange', handler);
+    return function () {
+      return eventBus.removeListener('routeChange', handler);
+    };
+  }
+};
+
+if (process.env.TARO_ENV === 'h5') {
+  var taroRouter = require('@tarojs/router');
+
+  routeENV.getLocation = function () {
+    var _taroRouter$history$l = taroRouter.history.location,
+        pathname = _taroRouter$history$l.pathname,
+        search = _taroRouter$history$l.search;
+    var nativeLocation = nativeUrlToNativeLocation(pathname + search);
+    return {
+      pathname: nativeLocation.pathname,
+      searchData: nativeLocation.searchData
+    };
+  };
+
+  routeENV.onRouteChange = function (callback) {
+    var unhandle = taroRouter.history.listen(function (location, action) {
+      var nativeLocation = nativeUrlToNativeLocation([location.pathname, location.search].join(''));
+      var routeAction = action;
+
+      if (action !== 'POP' && tabPages[nativeLocation.pathname]) {
+        routeAction = 'RELAUNCH';
+      }
+
+      callback(nativeLocation.pathname, nativeLocation.searchData, routeAction);
+    });
+    return unhandle;
+  };
+
+  Taro__default['default'].onUnhandledRejection = function (callback) {
+    window.addEventListener('unhandledrejection', callback, false);
+  };
+} else {
+  if (!Taro__default['default'].onUnhandledRejection) {
+    Taro__default['default'].onUnhandledRejection = function () {
+      return undefined;
+    };
+  }
+
+  var originalPage = Page;
+
+  Page = function Page(pageOptions) {
+    patchPageOptions(pageOptions);
+    return originalPage(pageOptions);
+  };
+}
+
 function _objectWithoutPropertiesLoose(source, excluded) {
   if (source == null) return {};
   var target = {};
@@ -4837,124 +5016,27 @@ var Component$1 = function Component(_ref) {
 
 var Switch = React__default['default'].memo(Component$1);
 
-var routeENV = {
-  reLaunch: Taro__default['default'].reLaunch,
-  redirectTo: Taro__default['default'].redirectTo,
-  navigateTo: Taro__default['default'].navigateTo,
-  navigateBack: Taro__default['default'].navigateBack,
-  getCurrentPages: Taro__default['default'].getCurrentPages,
-  switchTab: Taro__default['default'].switchTab,
-  getLocation: function getLocation() {
-    var arr = Taro__default['default'].getCurrentPages();
-    var path;
-    var query;
-
-    if (arr.length === 0) {
-      var _Taro$getLaunchOption = Taro__default['default'].getLaunchOptionsSync();
-
-      path = _Taro$getLaunchOption.path;
-      query = _Taro$getLaunchOption.query;
-    } else {
-      var current = arr[arr.length - 1];
-      path = current.route;
-      query = current.options;
-    }
-
-    return {
-      pathname: path.startsWith('/') ? path : "/" + path,
-      searchData: query && Object.keys(query).length ? query : undefined
-    };
-  },
-  onRouteChange: function onRouteChange() {
-    return function () {
-      return undefined;
-    };
-  }
-};
-var fixOnRouteChangeOnce = false;
-var tabPages = {};
-
-if (process.env.TARO_ENV === 'weapp') {
-  routeENV.onRouteChange = function (callback) {
-    wx.onAppRoute(function (_ref) {
-      var openType = _ref.openType,
-          path = _ref.path,
-          query = _ref.query;
-
-      if (!fixOnRouteChangeOnce) {
-        fixOnRouteChangeOnce = true;
-        return;
-      }
-
-      var actionMap = {
-        switchTab: 'RELAUNCH',
-        reLaunch: 'RELAUNCH',
-        redirectTo: 'REPLACE',
-        navigateTo: 'PUSH',
-        navigateBack: 'POP'
-      };
-      var searchData = Object.keys(query).reduce(function (params, key) {
-        if (!params) {
-          params = {};
-        }
-
-        params[key] = decodeURIComponent(params[key]);
-        return params;
-      }, undefined);
-      callback("/" + path.replace(/^\/+|\/+$/g, ''), searchData, actionMap[openType]);
-    });
-    return function () {
-      return undefined;
-    };
-  };
-} else if (process.env.TARO_ENV === 'h5') {
-  var taroRouter = require('@tarojs/router');
-
-  routeENV.getLocation = function () {
-    var _taroRouter$history$l = taroRouter.history.location,
-        pathname = _taroRouter$history$l.pathname,
-        search = _taroRouter$history$l.search;
-    var nativeLocation = nativeUrlToNativeLocation(pathname + search);
-    return {
-      pathname: nativeLocation.pathname,
-      searchData: nativeLocation.searchData
-    };
-  };
-
-  routeENV.onRouteChange = function (callback) {
-    var unhandle = taroRouter.history.listen(function (location, action) {
-      var nativeLocation = nativeUrlToNativeLocation([location.pathname, location.search].join(''));
-      var routeAction = action;
-
-      if (action !== 'POP' && tabPages[nativeLocation.pathname]) {
-        routeAction = 'RELAUNCH';
-      }
-
-      callback(nativeLocation.pathname, nativeLocation.searchData, routeAction);
-    });
-    return unhandle;
-  };
-}
-
 function setConfig$1(conf) {
   setConfig(conf);
   setRouteConfig(conf);
   setLoadViewOptions(conf);
 }
 var exportModule$1 = exportModule;
-function buildApp(moduleGetter, _ref2, startup) {
-  var _ref2$appModuleName = _ref2.appModuleName,
-      appModuleName = _ref2$appModuleName === void 0 ? 'app' : _ref2$appModuleName,
-      _ref2$appViewName = _ref2.appViewName,
-      appViewName = _ref2$appViewName === void 0 ? 'main' : _ref2$appViewName,
-      locationTransform = _ref2.locationTransform,
-      _ref2$storeOptions = _ref2.storeOptions,
-      storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions;
-  tabPages = env.__taroAppConfig.tabBar.list.reduce(function (obj, _ref3) {
-    var pagePath = _ref3.pagePath;
+function buildApp(moduleGetter, _ref, startup) {
+  var _ref$appModuleName = _ref.appModuleName,
+      appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
+      _ref$appViewName = _ref.appViewName,
+      appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
+      locationTransform = _ref.locationTransform,
+      _ref$storeOptions = _ref.storeOptions,
+      storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions;
+
+  env.__taroAppConfig.tabBar.list.reduce(function (obj, _ref2) {
+    var pagePath = _ref2.pagePath;
     obj["/" + pagePath.replace(/^\/+|\/+$/g, '')] = true;
     return obj;
-  }, {});
+  }, tabPages);
+
   var router = createRouter(locationTransform, routeENV, tabPages);
   appExports.router = router;
   var _storeOptions$middlew = storeOptions.middlewares,
@@ -4998,6 +5080,7 @@ exports.delayPromise = delayPromise;
 exports.effect = effect;
 exports.env = env;
 exports.errorAction = errorAction;
+exports.eventBus = eventBus;
 exports.exportApp = exportApp;
 exports.exportModule = exportModule$1;
 exports.isProcessedError = isProcessedError;

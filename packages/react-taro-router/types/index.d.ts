@@ -9,6 +9,7 @@ export type { LoadView } from './loadView';
 export type { FacadeExports } from './sington';
 export { ActionTypes, delayPromise, LoadingState, env, effect, errorAction, reducer, setLoading, logger, setLoadingDepthTime, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
 export { RouteModuleHandlers as BaseModuleHandlers, createLocationTransform } from '@medux/route-web';
+export { eventBus } from './patch';
 export { exportApp, patchActions } from './sington';
 export { Else } from './components/Else';
 export { Switch } from './components/Switch';

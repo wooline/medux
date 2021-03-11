@@ -16,7 +16,6 @@ export interface RouteENV {
   navigateTo(option: RouteOption): Promise<any>;
   navigateBack(option: NavigateBackOption): Promise<any>;
   switchTab(option: RouteOption): Promise<any>;
-  getCurrentPages: () => Array<{route: string; options?: {[key: string]: string}}>;
 }
 
 export class MPNativeRouter extends BaseNativeRouter {

@@ -1,10 +1,8 @@
-declare namespace WechatMiniprogram {
-  namespace Page {
-    interface Constructor {}
-  }
-  namespace Component {
-    interface Constructor {}
-  }
+declare namespace Page {
+  interface Constructor {}
+}
+declare namespace Component {
+  interface Constructor {}
 }
 declare namespace meduxCore {
   type Props = {[key: string]: any};
