@@ -137,10 +137,9 @@ var PDispatcher = function () {
       });
     } else {
       var handlers = this.storeHandlers;
+      var dictionary = handlers[ename];
 
-      if (handlers.propertyIsEnumerable(ename)) {
-        var dictionary = handlers[ename];
-
+      if (dictionary) {
         if (!handler) {
           delete handlers[ename];
         } else {
