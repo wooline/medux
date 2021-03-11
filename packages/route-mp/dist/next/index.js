@@ -1,13 +1,14 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { BaseRouter, BaseNativeRouter } from '@medux/route-web';
 export class MPNativeRouter extends BaseNativeRouter {
-  constructor(env) {
+  constructor(routeENV, tabPages) {
     super();
 
     _defineProperty(this, "_unlistenHistory", void 0);
 
-    this.env = env;
-    this._unlistenHistory = env.onRouteChange((pathname, searchData, action) => {
+    this.routeENV = routeENV;
+    this.tabPages = tabPages;
+    this._unlistenHistory = routeENV.onRouteChange((pathname, searchData, action) => {
       const key = searchData ? searchData['__key__'] : '';
       const nativeLocation = {
         pathname,
@@ -36,7 +37,7 @@ export class MPNativeRouter extends BaseNativeRouter {
   }
 
   getLocation() {
-    return this.env.getLocation();
+    return this.routeENV.getLocation();
   }
 
   toUrl(url, key) {
@@ -46,7 +47,12 @@ export class MPNativeRouter extends BaseNativeRouter {
   push(getNativeData, key, internal) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.navigateTo({
+
+      if (this.tabPages[nativeData.nativeUrl]) {
+        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
+      }
+
+      return this.routeENV.navigateTo({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(() => nativeData);
     }
@@ -57,7 +63,12 @@ export class MPNativeRouter extends BaseNativeRouter {
   replace(getNativeData, key, internal) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.redirectTo({
+
+      if (this.tabPages[nativeData.nativeUrl]) {
+        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
+      }
+
+      return this.routeENV.redirectTo({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(() => nativeData);
     }
@@ -68,7 +79,14 @@ export class MPNativeRouter extends BaseNativeRouter {
   relaunch(getNativeData, key, internal) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.reLaunch({
+
+      if (this.tabPages[nativeData.nativeUrl]) {
+        return this.routeENV.switchTab({
+          url: nativeData.nativeUrl
+        }).then(() => nativeData);
+      }
+
+      return this.routeENV.reLaunch({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(() => nativeData);
     }
@@ -79,7 +97,7 @@ export class MPNativeRouter extends BaseNativeRouter {
   back(getNativeData, n, key, internal) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.navigateBack({
+      return this.routeENV.navigateBack({
         delta: n
       }).then(() => nativeData);
     }
@@ -90,7 +108,7 @@ export class MPNativeRouter extends BaseNativeRouter {
   pop(getNativeData, n, key, internal) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.reLaunch({
+      return this.routeENV.reLaunch({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(() => nativeData);
     }
@@ -109,8 +127,8 @@ export class Router extends BaseRouter {
   }
 
 }
-export function createRouter(locationTransform, env) {
-  const mpNativeRouter = new MPNativeRouter(env);
+export function createRouter(locationTransform, routeENV, tabPages) {
+  const mpNativeRouter = new MPNativeRouter(routeENV, tabPages);
   const router = new Router(mpNativeRouter, locationTransform);
   return router;
 }

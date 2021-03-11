@@ -3107,6 +3107,14 @@ var History = function () {
 
   var _proto = History.prototype;
 
+  _proto.getPagesLength = function getPagesLength() {
+    return this.pages.length;
+  };
+
+  _proto.getActionsLength = function getActionsLength() {
+    return this.actions.length;
+  };
+
   _proto.getActionRecord = function getActionRecord(keyOrIndex) {
     if (keyOrIndex === undefined) {
       keyOrIndex = 0;
@@ -4092,13 +4100,14 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().push(location, key);
               } else {
                 this.history.push(location, key);
               }
+
+              this.store.dispatch(routeChangeAction(routeState));
 
             case 14:
             case "end":
@@ -4177,13 +4186,14 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().replace(location, key);
               } else {
                 this.history.replace(location, key);
               }
+
+              this.store.dispatch(routeChangeAction(routeState));
 
             case 14:
             case "end":
@@ -4289,7 +4299,6 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().back(n);
@@ -4297,6 +4306,7 @@ var BaseRouter = function () {
                 this.history.back(n);
               }
 
+              this.store.dispatch(routeChangeAction(routeState));
               return _context4.abrupt("return", undefined);
 
             case 21:
@@ -4397,7 +4407,6 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().pop(n);
@@ -4405,6 +4414,7 @@ var BaseRouter = function () {
                 this.history.pop(n);
               }
 
+              this.store.dispatch(routeChangeAction(routeState));
               return _context5.abrupt("return", undefined);
 
             case 20:
@@ -4455,15 +4465,16 @@ var BaseRouter = function () {
 var MPNativeRouter = function (_BaseNativeRouter) {
   _inheritsLoose(MPNativeRouter, _BaseNativeRouter);
 
-  function MPNativeRouter(env) {
+  function MPNativeRouter(routeENV, tabPages) {
     var _this;
 
     _this = _BaseNativeRouter.call(this) || this;
 
     _defineProperty(_assertThisInitialized(_this), "_unlistenHistory", void 0);
 
-    _this.env = env;
-    _this._unlistenHistory = env.onRouteChange(function (pathname, searchData, action) {
+    _this.routeENV = routeENV;
+    _this.tabPages = tabPages;
+    _this._unlistenHistory = routeENV.onRouteChange(function (pathname, searchData, action) {
       var key = searchData ? searchData['__key__'] : '';
       var nativeLocation = {
         pathname: pathname,
@@ -4496,7 +4507,7 @@ var MPNativeRouter = function (_BaseNativeRouter) {
   var _proto = MPNativeRouter.prototype;
 
   _proto.getLocation = function getLocation() {
-    return this.env.getLocation();
+    return this.routeENV.getLocation();
   };
 
   _proto.toUrl = function toUrl(url, key) {
@@ -4506,7 +4517,12 @@ var MPNativeRouter = function (_BaseNativeRouter) {
   _proto.push = function push(getNativeData, key, internal) {
     if (!internal) {
       var nativeData = getNativeData();
-      return this.env.navigateTo({
+
+      if (this.tabPages[nativeData.nativeUrl]) {
+        throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
+      }
+
+      return this.routeENV.navigateTo({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(function () {
         return nativeData;
@@ -4519,7 +4535,12 @@ var MPNativeRouter = function (_BaseNativeRouter) {
   _proto.replace = function replace(getNativeData, key, internal) {
     if (!internal) {
       var nativeData = getNativeData();
-      return this.env.redirectTo({
+
+      if (this.tabPages[nativeData.nativeUrl]) {
+        throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
+      }
+
+      return this.routeENV.redirectTo({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(function () {
         return nativeData;
@@ -4532,7 +4553,16 @@ var MPNativeRouter = function (_BaseNativeRouter) {
   _proto.relaunch = function relaunch(getNativeData, key, internal) {
     if (!internal) {
       var nativeData = getNativeData();
-      return this.env.reLaunch({
+
+      if (this.tabPages[nativeData.nativeUrl]) {
+        return this.routeENV.switchTab({
+          url: nativeData.nativeUrl
+        }).then(function () {
+          return nativeData;
+        });
+      }
+
+      return this.routeENV.reLaunch({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(function () {
         return nativeData;
@@ -4545,7 +4575,7 @@ var MPNativeRouter = function (_BaseNativeRouter) {
   _proto.back = function back(getNativeData, n, key, internal) {
     if (!internal) {
       var nativeData = getNativeData();
-      return this.env.navigateBack({
+      return this.routeENV.navigateBack({
         delta: n
       }).then(function () {
         return nativeData;
@@ -4558,7 +4588,7 @@ var MPNativeRouter = function (_BaseNativeRouter) {
   _proto.pop = function pop(getNativeData, n, key, internal) {
     if (!internal) {
       var nativeData = getNativeData();
-      return this.env.reLaunch({
+      return this.routeENV.reLaunch({
         url: this.toUrl(nativeData.nativeUrl, key)
       }).then(function () {
         return nativeData;
@@ -4583,8 +4613,8 @@ var Router = function (_BaseRouter) {
 
   return Router;
 }(BaseRouter);
-function createRouter(locationTransform, env) {
-  var mpNativeRouter = new MPNativeRouter(env);
+function createRouter(locationTransform, routeENV, tabPages) {
+  var mpNativeRouter = new MPNativeRouter(routeENV, tabPages);
   var router = new Router(mpNativeRouter, locationTransform);
   return router;
 }
@@ -4631,14 +4661,10 @@ var loadView = function loadView(moduleName, viewName, options) {
   var Loader = function (_Component) {
     _inheritsLoose(Loader, _Component);
 
-    function Loader() {
+    function Loader(props) {
       var _this;
 
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+      _this = _Component.call(this, props) || this;
 
       _defineProperty(_assertThisInitialized(_this), "active", true);
 
@@ -4652,6 +4678,8 @@ var loadView = function loadView(moduleName, viewName, options) {
         ver: 0
       });
 
+      _this.execute();
+
       return _this;
     }
 
@@ -4661,7 +4689,16 @@ var loadView = function loadView(moduleName, viewName, options) {
       this.active = false;
     };
 
-    _proto.render = function render() {
+    _proto.shouldComponentUpdate = function shouldComponentUpdate() {
+      this.execute();
+      return true;
+    };
+
+    _proto.componentDidMount = function componentDidMount() {
+      this.error = '';
+    };
+
+    _proto.execute = function execute() {
       var _this2 = this;
 
       if (!this.view && !this.loading && !this.error) {
@@ -4697,13 +4734,12 @@ var loadView = function loadView(moduleName, viewName, options) {
           }
         }
       }
+    };
 
+    _proto.render = function render() {
       var _this$props = this.props,
           forwardedRef = _this$props.forwardedRef,
           rest = _objectWithoutPropertiesLoose(_this$props, ["forwardedRef"]);
-
-      var errorMessage = this.error;
-      this.error = '';
 
       if (this.view) {
         return React__default['default'].createElement(this.view, _extends({
@@ -4719,7 +4755,7 @@ var loadView = function loadView(moduleName, viewName, options) {
 
       var Comp = OnError || loadViewDefaultOptions.LoadViewOnError;
       return React__default['default'].createElement(Comp, {
-        message: errorMessage
+        message: this.error
       });
     };
 
@@ -4807,6 +4843,7 @@ var routeENV = {
   navigateTo: Taro__default['default'].navigateTo,
   navigateBack: Taro__default['default'].navigateBack,
   getCurrentPages: Taro__default['default'].getCurrentPages,
+  switchTab: Taro__default['default'].switchTab,
   getLocation: function getLocation() {
     var arr = Taro__default['default'].getCurrentPages();
     var path;
@@ -4835,6 +4872,7 @@ var routeENV = {
   }
 };
 var fixOnRouteChangeOnce = false;
+var tabPages = {};
 
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = function (callback) {
@@ -4863,7 +4901,7 @@ if (process.env.TARO_ENV === 'weapp') {
         params[key] = decodeURIComponent(params[key]);
         return params;
       }, undefined);
-      callback(path.startsWith('/') ? path : "/" + path, searchData, actionMap[openType]);
+      callback("/" + path.replace(/^\/+|\/+$/g, ''), searchData, actionMap[openType]);
     });
     return function () {
       return undefined;
@@ -4886,12 +4924,13 @@ if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = function (callback) {
     var unhandle = taroRouter.history.listen(function (location, action) {
       var nativeLocation = nativeUrlToNativeLocation([location.pathname, location.search].join(''));
-      var actionMap = {
-        POP: 'POP',
-        PUSH: 'PUSH',
-        REPLACE: 'PUSH'
-      };
-      callback(nativeLocation.pathname, nativeLocation.searchData, actionMap[action]);
+      var routeAction = action;
+
+      if (action !== 'POP' && tabPages[nativeLocation.pathname]) {
+        routeAction = 'RELAUNCH';
+      }
+
+      callback(nativeLocation.pathname, nativeLocation.searchData, routeAction);
     });
     return unhandle;
   };
@@ -4911,7 +4950,12 @@ function buildApp(moduleGetter, _ref2, startup) {
       locationTransform = _ref2.locationTransform,
       _ref2$storeOptions = _ref2.storeOptions,
       storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions;
-  var router = createRouter(locationTransform, routeENV);
+  tabPages = env.__taroAppConfig.tabBar.list.reduce(function (obj, _ref3) {
+    var pagePath = _ref3.pagePath;
+    obj["/" + pagePath.replace(/^\/+|\/+$/g, '')] = true;
+    return obj;
+  }, {});
+  var router = createRouter(locationTransform, routeENV, tabPages);
   appExports.router = router;
   var _storeOptions$middlew = storeOptions.middlewares,
       middlewares = _storeOptions$middlew === void 0 ? [] : _storeOptions$middlew,

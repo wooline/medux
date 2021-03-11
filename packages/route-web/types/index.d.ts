@@ -101,13 +101,13 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
     private _relaunch;
     push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
-    _push(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean): Promise<void>;
+    private _push;
     replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
-    _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean): Promise<void>;
+    private _replace;
     back(n?: number, indexUrl?: string, internal?: boolean, disableNative?: boolean): void;
-    _back(n: number | undefined, indexUrl: string, internal: boolean, disableNative: boolean): Promise<void>;
+    private _back;
     pop(n?: number, indexUrl?: string, internal?: boolean, disableNative?: boolean): boolean;
-    _pop(n: number | undefined, indexUrl: string | undefined, internal: boolean, disableNative: boolean): Promise<void>;
+    private _pop;
     private taskComplete;
     private executeTask;
     private addTask;

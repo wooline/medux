@@ -409,13 +409,14 @@ export class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().push(location, key);
     } else {
       this.history.push(location, key);
     }
+
+    this.store.dispatch(routeChangeAction(routeState));
   }
 
   replace(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -456,13 +457,14 @@ export class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().replace(location, key);
     } else {
       this.history.replace(location, key);
     }
+
+    this.store.dispatch(routeChangeAction(routeState));
   }
 
   back(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -509,7 +511,6 @@ export class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);
@@ -517,6 +518,7 @@ export class BaseRouter {
       this.history.back(n);
     }
 
+    this.store.dispatch(routeChangeAction(routeState));
     return undefined;
   }
 
@@ -558,7 +560,6 @@ export class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().pop(n);
@@ -566,6 +567,7 @@ export class BaseRouter {
       this.history.pop(n);
     }
 
+    this.store.dispatch(routeChangeAction(routeState));
     return undefined;
   }
 

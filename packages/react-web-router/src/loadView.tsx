@@ -28,11 +28,25 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
       ver: 0,
     };
 
+    constructor(props: any) {
+      super(props);
+      this.execute();
+    }
+
     componentWillUnmount() {
       this.active = false;
     }
 
-    render() {
+    shouldComponentUpdate() {
+      this.execute();
+      return true;
+    }
+
+    componentDidMount() {
+      this.error = '';
+    }
+
+    execute() {
       if (!this.view && !this.loading && !this.error) {
         this.loading = true;
         let result: ComponentType<any> | Promise<ComponentType<any>> | undefined;
@@ -63,10 +77,11 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
           }
         }
       }
+    }
 
+    render() {
       const {forwardedRef, ...rest} = this.props;
-      const errorMessage = this.error;
-      this.error = '';
+
       if (this.view) {
         return <this.view ref={forwardedRef} {...rest} />;
       }
@@ -75,7 +90,7 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
         return <Comp />;
       }
       const Comp = OnError || loadViewDefaultOptions.LoadViewOnError;
-      return <Comp message={errorMessage} />;
+      return <Comp message={this.error} />;
     }
   }
   return React.forwardRef((props, ref) => {

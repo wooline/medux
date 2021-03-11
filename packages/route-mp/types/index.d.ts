@@ -19,6 +19,7 @@ export interface RouteENV {
     redirectTo(option: RouteOption): Promise<any>;
     navigateTo(option: RouteOption): Promise<any>;
     navigateBack(option: NavigateBackOption): Promise<any>;
+    switchTab(option: RouteOption): Promise<any>;
     getCurrentPages: () => Array<{
         route: string;
         options?: {
@@ -27,10 +28,15 @@ export interface RouteENV {
     }>;
 }
 export declare class MPNativeRouter extends BaseNativeRouter {
-    env: RouteENV;
+    routeENV: RouteENV;
+    protected tabPages: {
+        [path: string]: boolean;
+    };
     private _unlistenHistory;
     protected router: Router<any, string>;
-    constructor(env: RouteENV);
+    constructor(routeENV: RouteENV, tabPages: {
+        [path: string]: boolean;
+    });
     getLocation(): NativeLocation;
     protected toUrl(url: string, key: string): string;
     protected push(getNativeData: () => NativeData, key: string, internal: boolean): Promise<NativeData> | undefined;
@@ -44,5 +50,7 @@ export declare class Router<P extends RootParams, N extends string> extends Base
     nativeRouter: MPNativeRouter;
     constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>);
 }
-export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, env: RouteENV): Router<P, N>;
+export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, routeENV: RouteENV, tabPages: {
+    [path: string]: boolean;
+}): Router<P, N>;
 export {};

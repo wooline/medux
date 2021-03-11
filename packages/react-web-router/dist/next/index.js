@@ -2231,6 +2231,14 @@ class History {
     _defineProperty(this, "actions", []);
   }
 
+  getPagesLength() {
+    return this.pages.length;
+  }
+
+  getActionsLength() {
+    return this.actions.length;
+  }
+
   getActionRecord(keyOrIndex) {
     if (keyOrIndex === undefined) {
       keyOrIndex = 0;
@@ -3093,13 +3101,14 @@ class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().push(location, key);
     } else {
       this.history.push(location, key);
     }
+
+    this.store.dispatch(routeChangeAction(routeState));
   }
 
   replace(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -3140,13 +3149,14 @@ class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().replace(location, key);
     } else {
       this.history.replace(location, key);
     }
+
+    this.store.dispatch(routeChangeAction(routeState));
   }
 
   back(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -3193,7 +3203,6 @@ class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);
@@ -3201,6 +3210,7 @@ class BaseRouter {
       this.history.back(n);
     }
 
+    this.store.dispatch(routeChangeAction(routeState));
     return undefined;
   }
 
@@ -3242,7 +3252,6 @@ class BaseRouter {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
       this.history.getCurrentInternalHistory().pop(n);
@@ -3250,6 +3259,7 @@ class BaseRouter {
       this.history.pop(n);
     }
 
+    this.store.dispatch(routeChangeAction(routeState));
     return undefined;
   }
 
@@ -4520,8 +4530,8 @@ const loadView = (moduleName, viewName, options) => {
   } = options || {};
 
   class Loader extends Component$3 {
-    constructor(...args) {
-      super(...args);
+    constructor(props) {
+      super(props);
 
       _defineProperty(this, "active", true);
 
@@ -4534,13 +4544,24 @@ const loadView = (moduleName, viewName, options) => {
       _defineProperty(this, "state", {
         ver: 0
       });
+
+      this.execute();
     }
 
     componentWillUnmount() {
       this.active = false;
     }
 
-    render() {
+    shouldComponentUpdate() {
+      this.execute();
+      return true;
+    }
+
+    componentDidMount() {
+      this.error = '';
+    }
+
+    execute() {
       if (!this.view && !this.loading && !this.error) {
         this.loading = true;
         let result;
@@ -4574,13 +4595,13 @@ const loadView = (moduleName, viewName, options) => {
           }
         }
       }
+    }
 
+    render() {
       const {
         forwardedRef,
         ...rest
       } = this.props;
-      const errorMessage = this.error;
-      this.error = '';
 
       if (this.view) {
         return React.createElement(this.view, _extends({
@@ -4595,7 +4616,7 @@ const loadView = (moduleName, viewName, options) => {
 
       const Comp = OnError || loadViewDefaultOptions.LoadViewOnError;
       return React.createElement(Comp, {
-        message: errorMessage
+        message: this.error
       });
     }
 

@@ -3247,6 +3247,14 @@
 
     var _proto = History.prototype;
 
+    _proto.getPagesLength = function getPagesLength() {
+      return this.pages.length;
+    };
+
+    _proto.getActionsLength = function getActionsLength() {
+      return this.actions.length;
+    };
+
     _proto.getActionRecord = function getActionRecord(keyOrIndex) {
       if (keyOrIndex === undefined) {
         keyOrIndex = 0;
@@ -4232,13 +4240,14 @@
                 this._nativeData = nativeData || undefined;
                 this.routeState = routeState;
                 this.meduxUrl = this.locationToMeduxUrl(routeState);
-                this.store.dispatch(routeChangeAction(routeState));
 
                 if (internal) {
                   this.history.getCurrentInternalHistory().push(location, key);
                 } else {
                   this.history.push(location, key);
                 }
+
+                this.store.dispatch(routeChangeAction(routeState));
 
               case 14:
               case "end":
@@ -4317,13 +4326,14 @@
                 this._nativeData = nativeData || undefined;
                 this.routeState = routeState;
                 this.meduxUrl = this.locationToMeduxUrl(routeState);
-                this.store.dispatch(routeChangeAction(routeState));
 
                 if (internal) {
                   this.history.getCurrentInternalHistory().replace(location, key);
                 } else {
                   this.history.replace(location, key);
                 }
+
+                this.store.dispatch(routeChangeAction(routeState));
 
               case 14:
               case "end":
@@ -4429,7 +4439,6 @@
                 this._nativeData = nativeData || undefined;
                 this.routeState = routeState;
                 this.meduxUrl = this.locationToMeduxUrl(routeState);
-                this.store.dispatch(routeChangeAction(routeState));
 
                 if (internal) {
                   this.history.getCurrentInternalHistory().back(n);
@@ -4437,6 +4446,7 @@
                   this.history.back(n);
                 }
 
+                this.store.dispatch(routeChangeAction(routeState));
                 return _context4.abrupt("return", undefined);
 
               case 21:
@@ -4537,7 +4547,6 @@
                 this._nativeData = nativeData || undefined;
                 this.routeState = routeState;
                 this.meduxUrl = this.locationToMeduxUrl(routeState);
-                this.store.dispatch(routeChangeAction(routeState));
 
                 if (internal) {
                   this.history.getCurrentInternalHistory().pop(n);
@@ -4545,6 +4554,7 @@
                   this.history.pop(n);
                 }
 
+                this.store.dispatch(routeChangeAction(routeState));
                 return _context5.abrupt("return", undefined);
 
               case 20:
@@ -5854,14 +5864,10 @@
     var Loader = function (_Component) {
       _inheritsLoose(Loader, _Component);
 
-      function Loader() {
+      function Loader(props) {
         var _this;
 
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+        _this = _Component.call(this, props) || this;
 
         _defineProperty(_assertThisInitialized(_this), "active", true);
 
@@ -5875,6 +5881,8 @@
           ver: 0
         });
 
+        _this.execute();
+
         return _this;
       }
 
@@ -5884,7 +5892,16 @@
         this.active = false;
       };
 
-      _proto.render = function render() {
+      _proto.shouldComponentUpdate = function shouldComponentUpdate() {
+        this.execute();
+        return true;
+      };
+
+      _proto.componentDidMount = function componentDidMount() {
+        this.error = '';
+      };
+
+      _proto.execute = function execute() {
         var _this2 = this;
 
         if (!this.view && !this.loading && !this.error) {
@@ -5920,13 +5937,12 @@
             }
           }
         }
+      };
 
+      _proto.render = function render() {
         var _this$props = this.props,
             forwardedRef = _this$props.forwardedRef,
             rest = _objectWithoutPropertiesLoose(_this$props, ["forwardedRef"]);
-
-        var errorMessage = this.error;
-        this.error = '';
 
         if (this.view) {
           return React__default['default'].createElement(this.view, _extends({
@@ -5942,7 +5958,7 @@
 
         var Comp = OnError || loadViewDefaultOptions.LoadViewOnError;
         return React__default['default'].createElement(Comp, {
-          message: errorMessage
+          message: this.error
         });
       };
 

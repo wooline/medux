@@ -1,6 +1,7 @@
 /* eslint-disable import/order */
+/// <reference path="../env/global.d.ts" />
 import Taro from '@tarojs/taro';
-import {renderApp, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
+import {renderApp, setConfig as setCoreConfig, exportModule as baseExportModule, env} from '@medux/core';
 import {routeMiddleware, routeReducer, setRouteConfig, nativeUrlToNativeLocation} from '@medux/route-web';
 import {createRouter} from '@medux/route-mp';
 import {setLoadViewOptions} from './loadView';
@@ -48,6 +49,7 @@ const routeENV: RouteENV = {
   navigateTo: Taro.navigateTo,
   navigateBack: Taro.navigateBack,
   getCurrentPages: Taro.getCurrentPages,
+  switchTab: Taro.switchTab,
   getLocation: () => {
     const arr = Taro.getCurrentPages();
     let path: string;
@@ -69,6 +71,7 @@ const routeENV: RouteENV = {
   },
 };
 let fixOnRouteChangeOnce: boolean = false; // 小程序中初始化即会触发一次onRouteChange，需要忽略
+let tabPages: {[path: string]: boolean} = {};
 if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = (callback) => {
     wx.onAppRoute(({openType, path, query}: {openType: string; path: string; query: {[key: string]: string}}) => {
@@ -91,13 +94,13 @@ if (process.env.TARO_ENV === 'weapp') {
         return params;
       }, undefined);
 
-      callback(path.startsWith('/') ? path : `/${path}`, searchData, actionMap[openType]);
+      callback(`/${path.replace(/^\/+|\/+$/g, '')}`, searchData, actionMap[openType]);
     });
     return () => undefined;
   };
 } else if (process.env.TARO_ENV === 'h5') {
   const taroRouter: {
-    history: {location: {pathname: string; search: string}; listen: (callback: (location: {pathname: string; search: string}, action: string) => void) => () => void};
+    history: {location: {pathname: string; search: string}; listen: (callback: (location: {pathname: string; search: string}, action: 'POP' | 'PUSH' | 'REPLACE') => void) => () => void};
   } = require('@tarojs/router');
   routeENV.getLocation = () => {
     const {pathname, search} = taroRouter.history.location;
@@ -107,12 +110,11 @@ if (process.env.TARO_ENV === 'weapp') {
   routeENV.onRouteChange = (callback) => {
     const unhandle = taroRouter.history.listen((location, action) => {
       const nativeLocation = nativeUrlToNativeLocation([location.pathname, location.search].join(''));
-      const actionMap = {
-        POP: 'POP',
-        PUSH: 'PUSH',
-        REPLACE: 'PUSH',
-      };
-      callback(nativeLocation.pathname, nativeLocation.searchData, actionMap[action]);
+      let routeAction: 'POP' | 'PUSH' | 'REPLACE' | 'RELAUNCH' = action;
+      if (action !== 'POP' && tabPages[nativeLocation.pathname]) {
+        routeAction = 'RELAUNCH';
+      }
+      callback(nativeLocation.pathname, nativeLocation.searchData, routeAction);
     });
     return unhandle;
   };
@@ -153,7 +155,11 @@ export function buildApp(
   },
   startup: (store: ModuleStore) => void
 ) {
-  const router = createRouter(locationTransform, routeENV);
+  tabPages = env.__taroAppConfig.tabBar.list.reduce((obj, {pagePath}) => {
+    obj[`/${pagePath.replace(/^\/+|\/+$/g, '')}`] = true;
+    return obj;
+  }, {});
+  const router = createRouter(locationTransform, routeENV, tabPages);
   appExports.router = router;
   const {middlewares = [], reducers = {}, initData = {}} = storeOptions;
   middlewares.unshift(routeMiddleware);

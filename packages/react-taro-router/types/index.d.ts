@@ -1,3 +1,4 @@
+/// <reference path="../env/global.d.ts" />
 import type { ComponentType } from 'react';
 import type { ModuleGetter, StoreOptions, ExportModule, ModuleStore } from '@medux/core';
 import type { LocationTransform } from '@medux/route-web';

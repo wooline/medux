@@ -536,13 +536,14 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().push(location, key);
               } else {
                 this.history.push(location, key);
               }
+
+              this.store.dispatch(routeChangeAction(routeState));
 
             case 14:
             case "end":
@@ -621,13 +622,14 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().replace(location, key);
               } else {
                 this.history.replace(location, key);
               }
+
+              this.store.dispatch(routeChangeAction(routeState));
 
             case 14:
             case "end":
@@ -733,7 +735,6 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().back(n);
@@ -741,6 +742,7 @@ var BaseRouter = function () {
                 this.history.back(n);
               }
 
+              this.store.dispatch(routeChangeAction(routeState));
               return _context4.abrupt("return", undefined);
 
             case 21:
@@ -841,7 +843,6 @@ var BaseRouter = function () {
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
-              this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
                 this.history.getCurrentInternalHistory().pop(n);
@@ -849,6 +850,7 @@ var BaseRouter = function () {
                 this.history.pop(n);
               }
 
+              this.store.dispatch(routeChangeAction(routeState));
               return _context5.abrupt("return", undefined);
 
             case 20:

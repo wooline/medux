@@ -15,6 +15,7 @@ export interface RouteENV {
   redirectTo(option: RouteOption): Promise<any>;
   navigateTo(option: RouteOption): Promise<any>;
   navigateBack(option: NavigateBackOption): Promise<any>;
+  switchTab(option: RouteOption): Promise<any>;
   getCurrentPages: () => Array<{route: string; options?: {[key: string]: string}}>;
 }
 
@@ -23,9 +24,9 @@ export class MPNativeRouter extends BaseNativeRouter {
 
   protected declare router: Router<any, string>;
 
-  constructor(public env: RouteENV) {
+  constructor(public routeENV: RouteENV, protected tabPages: {[path: string]: boolean}) {
     super();
-    this._unlistenHistory = env.onRouteChange((pathname, searchData, action) => {
+    this._unlistenHistory = routeENV.onRouteChange((pathname, searchData, action) => {
       const key = searchData ? searchData['__key__'] : '';
       const nativeLocation: NativeLocation = {pathname, searchData};
       const changed = this.onChange(key);
@@ -48,7 +49,7 @@ export class MPNativeRouter extends BaseNativeRouter {
   }
 
   getLocation(): NativeLocation {
-    return this.env.getLocation();
+    return this.routeENV.getLocation();
   }
 
   protected toUrl(url: string, key: string): string {
@@ -58,7 +59,10 @@ export class MPNativeRouter extends BaseNativeRouter {
   protected push(getNativeData: () => NativeData, key: string, internal: boolean) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.navigateTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
+      if (this.tabPages[nativeData.nativeUrl]) {
+        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
+      }
+      return this.routeENV.navigateTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
     }
     return undefined;
   }
@@ -66,7 +70,10 @@ export class MPNativeRouter extends BaseNativeRouter {
   protected replace(getNativeData: () => NativeData, key: string, internal: boolean) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.redirectTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
+      if (this.tabPages[nativeData.nativeUrl]) {
+        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
+      }
+      return this.routeENV.redirectTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
     }
     return undefined;
   }
@@ -74,7 +81,10 @@ export class MPNativeRouter extends BaseNativeRouter {
   protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.reLaunch({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
+      if (this.tabPages[nativeData.nativeUrl]) {
+        return this.routeENV.switchTab({url: nativeData.nativeUrl}).then(() => nativeData);
+      }
+      return this.routeENV.reLaunch({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
     }
     return undefined;
   }
@@ -84,7 +94,7 @@ export class MPNativeRouter extends BaseNativeRouter {
   protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.navigateBack({delta: n}).then(() => nativeData);
+      return this.routeENV.navigateBack({delta: n}).then(() => nativeData);
     }
     return undefined;
   }
@@ -92,7 +102,7 @@ export class MPNativeRouter extends BaseNativeRouter {
   protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
     if (!internal) {
       const nativeData = getNativeData();
-      return this.env.reLaunch({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
+      return this.routeENV.reLaunch({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
     }
     return undefined;
   }
@@ -110,8 +120,8 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
   }
 }
 
-export function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, env: RouteENV) {
-  const mpNativeRouter = new MPNativeRouter(env);
+export function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, routeENV: RouteENV, tabPages: {[path: string]: boolean}) {
+  const mpNativeRouter = new MPNativeRouter(routeENV, tabPages);
   const router = new Router<P, N>(mpNativeRouter, locationTransform);
   return router;
 }

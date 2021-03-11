@@ -84,6 +84,8 @@ interface HistoryRecord {
 export declare class History {
     private pages;
     private actions;
+    getPagesLength(): number;
+    getActionsLength(): number;
     getActionRecord(keyOrIndex?: number | string): HistoryRecord | undefined;
     getPageRecord(keyOrIndex?: number | string): HistoryRecord | undefined;
     getActionIndex(key: string): number;

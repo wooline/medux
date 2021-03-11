@@ -152,6 +152,14 @@ var History = function () {
 
   var _proto = History.prototype;
 
+  _proto.getPagesLength = function getPagesLength() {
+    return this.pages.length;
+  };
+
+  _proto.getActionsLength = function getActionsLength() {
+    return this.actions.length;
+  };
+
   _proto.getActionRecord = function getActionRecord(keyOrIndex) {
     if (keyOrIndex === undefined) {
       keyOrIndex = 0;

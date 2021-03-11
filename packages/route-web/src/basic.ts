@@ -136,6 +136,14 @@ export class History {
 
   private actions: HistoryRecord[] = [];
 
+  getPagesLength() {
+    return this.pages.length;
+  }
+
+  getActionsLength() {
+    return this.actions.length;
+  }
+
   getActionRecord(keyOrIndex?: number | string): HistoryRecord | undefined {
     if (keyOrIndex === undefined) {
       keyOrIndex = 0;

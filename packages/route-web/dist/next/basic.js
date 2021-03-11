@@ -118,6 +118,14 @@ export class History {
     _defineProperty(this, "actions", []);
   }
 
+  getPagesLength() {
+    return this.pages.length;
+  }
+
+  getActionsLength() {
+    return this.actions.length;
+  }
+
   getActionRecord(keyOrIndex) {
     if (keyOrIndex === undefined) {
       keyOrIndex = 0;

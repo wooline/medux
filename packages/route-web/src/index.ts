@@ -337,7 +337,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this.addTask(this._push.bind(this, data, internal, disableNative));
   }
 
-  async _push(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
+  private async _push(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
     let location: Location<P>;
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
@@ -365,19 +365,19 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().push(location, key);
     } else {
       this.history.push(location, key);
     }
+    this.store!.dispatch(routeChangeAction(routeState));
   }
 
   replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute) {
     this.addTask(this._replace.bind(this, data, internal, disableNative));
   }
 
-  async _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
+  private async _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
     let location: Location<P>;
     if (typeof data === 'string') {
       location = this.urlToLocation(data);
@@ -405,19 +405,19 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().replace(location, key);
     } else {
       this.history.replace(location, key);
     }
+    this.store!.dispatch(routeChangeAction(routeState));
   }
 
   back(n: number = 1, indexUrl: string = 'index', internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute) {
     this.addTask(this._back.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
   }
 
-  async _back(n: number = 1, indexUrl: string, internal: boolean, disableNative: boolean) {
+  private async _back(n: number = 1, indexUrl: string, internal: boolean, disableNative: boolean) {
     const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
     if (!stack) {
       if (indexUrl) {
@@ -446,12 +446,12 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);
     } else {
       this.history.back(n);
     }
+    this.store!.dispatch(routeChangeAction(routeState));
     return undefined;
   }
 
@@ -460,7 +460,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return true;
   }
 
-  async _pop(n: number = 1, indexUrl: string = '', internal: boolean, disableNative: boolean) {
+  private async _pop(n: number = 1, indexUrl: string = '', internal: boolean, disableNative: boolean) {
     const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
     if (!stack) {
       return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
@@ -486,12 +486,12 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
-    this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory().pop(n);
     } else {
       this.history.pop(n);
     }
+    this.store!.dispatch(routeChangeAction(routeState));
     return undefined;
   }
 
