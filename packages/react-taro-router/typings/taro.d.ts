@@ -7,6 +7,7 @@ declare module '@tarojs/taro' {
   const getLaunchOptionsSync: any;
   const switchTab: any;
   let onUnhandledRejection: (callback: (e: {reason: any}) => void) => void;
+  let onError: (callback: (e: any) => void) => void;
 }
 declare module '@tarojs/components' {
   const View: any;

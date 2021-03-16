@@ -164,6 +164,9 @@ if (process.env.TARO_ENV === 'h5') {
   Taro.onUnhandledRejection = (callback) => {
     window.addEventListener('unhandledrejection', callback, false);
   };
+  Taro.onError = (callback) => {
+    window.addEventListener('error', callback, false);
+  };
 } else {
   if (!Taro.onUnhandledRejection) {
     Taro.onUnhandledRejection = () => undefined;

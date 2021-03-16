@@ -4783,6 +4783,10 @@ if (process.env.TARO_ENV === 'h5') {
   Taro__default['default'].onUnhandledRejection = function (callback) {
     window.addEventListener('unhandledrejection', callback, false);
   };
+
+  Taro__default['default'].onError = function (callback) {
+    window.addEventListener('error', callback, false);
+  };
 } else {
   if (!Taro__default['default'].onUnhandledRejection) {
     Taro__default['default'].onUnhandledRejection = function () {
