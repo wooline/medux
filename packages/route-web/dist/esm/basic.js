@@ -1,3 +1,4 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 export var routeConfig = {
   actionMaxHistory: 10,
@@ -72,8 +73,7 @@ export function nativeLocationToNativeUrl(_ref) {
   var hash = joinQuery(hashData);
   return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
 }
-
-function locationToUri(location, key) {
+export function locationToUri(location, key) {
   var pagename = location.pagename,
       params = location.params;
   var query = params ? JSON.stringify(params) : '';
@@ -128,29 +128,56 @@ export function uriToLocation(uri) {
     location: location
   };
 }
+
+function isHistoryRecord(data) {
+  return data['uri'];
+}
+
 export var History = function () {
-  function History() {
+  function History(data, parent) {
+    _defineProperty(this, "curRecord", void 0);
+
     _defineProperty(this, "pages", []);
 
     _defineProperty(this, "actions", []);
+
+    this.parent = parent;
+
+    if (isHistoryRecord(data)) {
+      this.curRecord = data;
+    } else {
+      var _locationToUri = locationToUri(data.location, data.key),
+          _uri = _locationToUri.uri,
+          pagename = _locationToUri.pagename,
+          query = _locationToUri.query;
+
+      this.curRecord = {
+        uri: _uri,
+        pagename: pagename,
+        query: query,
+        key: data.key,
+        sub: new History({
+          uri: _uri,
+          pagename: pagename,
+          query: query,
+          key: data.key
+        }, this)
+      };
+    }
   }
 
   var _proto = History.prototype;
 
-  _proto.getPagesLength = function getPagesLength() {
-    return this.pages.length;
-  };
-
-  _proto.getActionsLength = function getActionsLength() {
+  _proto.getLength = function getLength() {
     return this.actions.length;
   };
 
-  _proto.getActionRecord = function getActionRecord(keyOrIndex) {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
-
+  _proto.getRecord = function getRecord(keyOrIndex) {
     if (typeof keyOrIndex === 'number') {
+      if (keyOrIndex === -1) {
+        keyOrIndex = this.actions.length - 1;
+      }
+
       return this.actions[keyOrIndex];
     }
 
@@ -159,167 +186,158 @@ export var History = function () {
     });
   };
 
-  _proto.getPageRecord = function getPageRecord(keyOrIndex) {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
-
-    if (typeof keyOrIndex === 'number') {
-      return this.pages[keyOrIndex];
-    }
-
-    return this.pages.find(function (item) {
-      return item.key === keyOrIndex;
-    });
-  };
-
-  _proto.getActionIndex = function getActionIndex(key) {
+  _proto.findIndex = function findIndex(key) {
     return this.actions.findIndex(function (item) {
       return item.key === key;
     });
   };
 
-  _proto.getPageIndex = function getPageIndex(key) {
-    return this.pages.findIndex(function (item) {
-      return item.key === key;
-    });
+  _proto.getCurrentInternalHistory = function getCurrentInternalHistory() {
+    return this.curRecord.sub;
   };
 
-  _proto.getCurrentInternalHistory = function getCurrentInternalHistory() {
-    return this.actions[0].sub;
+  _proto.getStack = function getStack() {
+    return this.actions;
   };
 
   _proto.getUriStack = function getUriStack() {
-    return {
-      actions: this.actions.map(function (item) {
-        return item.uri;
-      }),
-      pages: this.pages.map(function (item) {
-        return item.uri;
-      })
-    };
+    return this.actions.map(function (item) {
+      return item.uri;
+    });
+  };
+
+  _proto.getPageStack = function getPageStack() {
+    return this.pages;
   };
 
   _proto.push = function push(location, key) {
     var _pages$;
 
-    var _locationToUri = locationToUri(location, key),
-        uri = _locationToUri.uri,
-        pagename = _locationToUri.pagename,
-        query = _locationToUri.query;
-
-    var newStack = {
-      uri: uri,
-      pagename: pagename,
-      query: query,
-      key: key,
-      sub: new History()
-    };
-    var pages = [].concat(this.pages);
-    var actions = [].concat(this.actions);
-    var actionsMax = routeConfig.actionMaxHistory;
-    var pagesMax = routeConfig.pagesMaxHistory;
-    actions.unshift(newStack);
-
-    if (actions.length > actionsMax) {
-      actions.length = actionsMax;
-    }
-
-    if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
-      pages.unshift(newStack);
-
-      if (pages.length > pagesMax) {
-        pages.length = pagesMax;
-      }
-    } else {
-      pages[0] = newStack;
-    }
-
-    this.actions = actions;
-    this.pages = pages;
-  };
-
-  _proto.replace = function replace(location, key) {
-    var _pages$2;
+    var historyRecord = this.curRecord;
 
     var _locationToUri2 = locationToUri(location, key),
         uri = _locationToUri2.uri,
         pagename = _locationToUri2.pagename,
         query = _locationToUri2.query;
 
-    var newStack = {
+    this.curRecord = {
       uri: uri,
       pagename: pagename,
       query: query,
       key: key,
-      sub: new History()
+      sub: new History({
+        uri: uri,
+        pagename: pagename,
+        query: query,
+        key: key
+      }, this)
     };
     var pages = [].concat(this.pages);
     var actions = [].concat(this.actions);
+    var actionsMax = routeConfig.actionMaxHistory;
     var pagesMax = routeConfig.pagesMaxHistory;
-    actions[0] = newStack;
-    pages[0] = newStack;
+    actions.unshift(historyRecord);
 
-    if (pagename === splitUri((_pages$2 = pages[1]) == null ? void 0 : _pages$2.uri, 'pagename')) {
-      pages.splice(1, 1);
+    if (actions.length > actionsMax) {
+      actions.length = actionsMax;
     }
 
-    if (pages.length > pagesMax) {
-      pages.length = pagesMax;
+    if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
+      pages.unshift(historyRecord);
+
+      if (pages.length > pagesMax) {
+        pages.length = pagesMax;
+      }
+    } else {
+      pages[0] = historyRecord;
     }
 
     this.actions = actions;
     this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
   };
 
-  _proto.relaunch = function relaunch(location, key) {
+  _proto.replace = function replace(location, key) {
     var _locationToUri3 = locationToUri(location, key),
         uri = _locationToUri3.uri,
         pagename = _locationToUri3.pagename,
         query = _locationToUri3.query;
 
-    var newStack = {
+    this.curRecord = {
       uri: uri,
       pagename: pagename,
       query: query,
       key: key,
-      sub: new History()
+      sub: new History({
+        uri: uri,
+        pagename: pagename,
+        query: query,
+        key: key
+      }, this)
     };
-    var actions = [newStack];
-    var pages = [newStack];
-    this.actions = actions;
-    this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
   };
 
-  _proto.pop = function pop(n) {
-    var historyRecord = this.getPageRecord(n);
+  _proto.relaunch = function relaunch(location, key) {
+    var _locationToUri4 = locationToUri(location, key),
+        uri = _locationToUri4.uri,
+        pagename = _locationToUri4.pagename,
+        query = _locationToUri4.query;
+
+    this.curRecord = {
+      uri: uri,
+      pagename: pagename,
+      query: query,
+      key: key,
+      sub: new History({
+        uri: uri,
+        pagename: pagename,
+        query: query,
+        key: key
+      }, this)
+    };
+    this.actions = [];
+    this.pages = [];
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
+  };
+
+  _proto.back = function back(delta) {
+    var _actions$;
+
+    var historyRecord = this.getRecord(delta - 1);
 
     if (!historyRecord) {
       return false;
     }
 
-    var pages = [].concat(this.pages);
-    var actions = [];
-    pages.splice(0, n);
-    this.actions = actions;
-    this.pages = pages;
-    return true;
-  };
-
-  _proto.back = function back(n) {
-    var _actions$, _pages$3;
-
-    var historyRecord = this.getActionRecord(n);
-
-    if (!historyRecord) {
-      return false;
-    }
-
-    var uri = historyRecord.uri;
-    var pagename = splitUri(uri, 'pagename');
+    this.curRecord = historyRecord;
+    var uri = historyRecord.uri,
+        pagename = historyRecord.pagename,
+        query = historyRecord.query;
     var pages = [].concat(this.pages);
     var actions = [].concat(this.actions);
-    var deleteActions = actions.splice(0, n + 1, historyRecord);
+    var deleteActions = actions.splice(0, delta);
     var arr = deleteActions.reduce(function (pre, curStack) {
       var ctag = splitUri(curStack.uri, 'pagename');
 
@@ -330,18 +348,22 @@ export var History = function () {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) == null ? void 0 : _actions$.uri, 'pagename')) {
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[0]) == null ? void 0 : _actions$.uri, 'pagename')) {
       arr.pop();
     }
 
-    pages.splice(0, arr.length, historyRecord);
-
-    if (pagename === splitUri((_pages$3 = pages[1]) == null ? void 0 : _pages$3.uri, 'pagename')) {
-      pages.splice(1, 1);
-    }
-
+    pages.splice(0, arr.length);
     this.actions = actions;
     this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
+
     return true;
   };
 

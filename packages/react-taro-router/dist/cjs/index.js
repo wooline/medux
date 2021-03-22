@@ -3041,7 +3041,6 @@ function nativeLocationToNativeUrl(_ref) {
   var hash = joinQuery(hashData);
   return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
 }
-
 function locationToUri(location, key) {
   var pagename = location.pagename,
       params = location.params;
@@ -3097,29 +3096,56 @@ function uriToLocation(uri) {
     location: location
   };
 }
+
+function isHistoryRecord(data) {
+  return data['uri'];
+}
+
 var History = function () {
-  function History() {
+  function History(data, parent) {
+    _defineProperty(this, "curRecord", void 0);
+
     _defineProperty(this, "pages", []);
 
     _defineProperty(this, "actions", []);
+
+    this.parent = parent;
+
+    if (isHistoryRecord(data)) {
+      this.curRecord = data;
+    } else {
+      var _locationToUri = locationToUri(data.location, data.key),
+          _uri = _locationToUri.uri,
+          pagename = _locationToUri.pagename,
+          query = _locationToUri.query;
+
+      this.curRecord = {
+        uri: _uri,
+        pagename: pagename,
+        query: query,
+        key: data.key,
+        sub: new History({
+          uri: _uri,
+          pagename: pagename,
+          query: query,
+          key: data.key
+        }, this)
+      };
+    }
   }
 
   var _proto = History.prototype;
 
-  _proto.getPagesLength = function getPagesLength() {
-    return this.pages.length;
-  };
-
-  _proto.getActionsLength = function getActionsLength() {
+  _proto.getLength = function getLength() {
     return this.actions.length;
   };
 
-  _proto.getActionRecord = function getActionRecord(keyOrIndex) {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
-
+  _proto.getRecord = function getRecord(keyOrIndex) {
     if (typeof keyOrIndex === 'number') {
+      if (keyOrIndex === -1) {
+        keyOrIndex = this.actions.length - 1;
+      }
+
       return this.actions[keyOrIndex];
     }
 
@@ -3128,167 +3154,158 @@ var History = function () {
     });
   };
 
-  _proto.getPageRecord = function getPageRecord(keyOrIndex) {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
-
-    if (typeof keyOrIndex === 'number') {
-      return this.pages[keyOrIndex];
-    }
-
-    return this.pages.find(function (item) {
-      return item.key === keyOrIndex;
-    });
-  };
-
-  _proto.getActionIndex = function getActionIndex(key) {
+  _proto.findIndex = function findIndex(key) {
     return this.actions.findIndex(function (item) {
       return item.key === key;
     });
   };
 
-  _proto.getPageIndex = function getPageIndex(key) {
-    return this.pages.findIndex(function (item) {
-      return item.key === key;
-    });
+  _proto.getCurrentInternalHistory = function getCurrentInternalHistory() {
+    return this.curRecord.sub;
   };
 
-  _proto.getCurrentInternalHistory = function getCurrentInternalHistory() {
-    return this.actions[0].sub;
+  _proto.getStack = function getStack() {
+    return this.actions;
   };
 
   _proto.getUriStack = function getUriStack() {
-    return {
-      actions: this.actions.map(function (item) {
-        return item.uri;
-      }),
-      pages: this.pages.map(function (item) {
-        return item.uri;
-      })
-    };
+    return this.actions.map(function (item) {
+      return item.uri;
+    });
+  };
+
+  _proto.getPageStack = function getPageStack() {
+    return this.pages;
   };
 
   _proto.push = function push(location, key) {
     var _pages$;
 
-    var _locationToUri = locationToUri(location, key),
-        uri = _locationToUri.uri,
-        pagename = _locationToUri.pagename,
-        query = _locationToUri.query;
-
-    var newStack = {
-      uri: uri,
-      pagename: pagename,
-      query: query,
-      key: key,
-      sub: new History()
-    };
-    var pages = [].concat(this.pages);
-    var actions = [].concat(this.actions);
-    var actionsMax = routeConfig.actionMaxHistory;
-    var pagesMax = routeConfig.pagesMaxHistory;
-    actions.unshift(newStack);
-
-    if (actions.length > actionsMax) {
-      actions.length = actionsMax;
-    }
-
-    if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
-      pages.unshift(newStack);
-
-      if (pages.length > pagesMax) {
-        pages.length = pagesMax;
-      }
-    } else {
-      pages[0] = newStack;
-    }
-
-    this.actions = actions;
-    this.pages = pages;
-  };
-
-  _proto.replace = function replace(location, key) {
-    var _pages$2;
+    var historyRecord = this.curRecord;
 
     var _locationToUri2 = locationToUri(location, key),
         uri = _locationToUri2.uri,
         pagename = _locationToUri2.pagename,
         query = _locationToUri2.query;
 
-    var newStack = {
+    this.curRecord = {
       uri: uri,
       pagename: pagename,
       query: query,
       key: key,
-      sub: new History()
+      sub: new History({
+        uri: uri,
+        pagename: pagename,
+        query: query,
+        key: key
+      }, this)
     };
     var pages = [].concat(this.pages);
     var actions = [].concat(this.actions);
+    var actionsMax = routeConfig.actionMaxHistory;
     var pagesMax = routeConfig.pagesMaxHistory;
-    actions[0] = newStack;
-    pages[0] = newStack;
+    actions.unshift(historyRecord);
 
-    if (pagename === splitUri((_pages$2 = pages[1]) == null ? void 0 : _pages$2.uri, 'pagename')) {
-      pages.splice(1, 1);
+    if (actions.length > actionsMax) {
+      actions.length = actionsMax;
     }
 
-    if (pages.length > pagesMax) {
-      pages.length = pagesMax;
+    if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
+      pages.unshift(historyRecord);
+
+      if (pages.length > pagesMax) {
+        pages.length = pagesMax;
+      }
+    } else {
+      pages[0] = historyRecord;
     }
 
     this.actions = actions;
     this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
   };
 
-  _proto.relaunch = function relaunch(location, key) {
+  _proto.replace = function replace(location, key) {
     var _locationToUri3 = locationToUri(location, key),
         uri = _locationToUri3.uri,
         pagename = _locationToUri3.pagename,
         query = _locationToUri3.query;
 
-    var newStack = {
+    this.curRecord = {
       uri: uri,
       pagename: pagename,
       query: query,
       key: key,
-      sub: new History()
+      sub: new History({
+        uri: uri,
+        pagename: pagename,
+        query: query,
+        key: key
+      }, this)
     };
-    var actions = [newStack];
-    var pages = [newStack];
-    this.actions = actions;
-    this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
   };
 
-  _proto.pop = function pop(n) {
-    var historyRecord = this.getPageRecord(n);
+  _proto.relaunch = function relaunch(location, key) {
+    var _locationToUri4 = locationToUri(location, key),
+        uri = _locationToUri4.uri,
+        pagename = _locationToUri4.pagename,
+        query = _locationToUri4.query;
+
+    this.curRecord = {
+      uri: uri,
+      pagename: pagename,
+      query: query,
+      key: key,
+      sub: new History({
+        uri: uri,
+        pagename: pagename,
+        query: query,
+        key: key
+      }, this)
+    };
+    this.actions = [];
+    this.pages = [];
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
+  };
+
+  _proto.back = function back(delta) {
+    var _actions$;
+
+    var historyRecord = this.getRecord(delta - 1);
 
     if (!historyRecord) {
       return false;
     }
 
-    var pages = [].concat(this.pages);
-    var actions = [];
-    pages.splice(0, n);
-    this.actions = actions;
-    this.pages = pages;
-    return true;
-  };
-
-  _proto.back = function back(n) {
-    var _actions$, _pages$3;
-
-    var historyRecord = this.getActionRecord(n);
-
-    if (!historyRecord) {
-      return false;
-    }
-
-    var uri = historyRecord.uri;
-    var pagename = splitUri(uri, 'pagename');
+    this.curRecord = historyRecord;
+    var uri = historyRecord.uri,
+        pagename = historyRecord.pagename,
+        query = historyRecord.query;
     var pages = [].concat(this.pages);
     var actions = [].concat(this.actions);
-    var deleteActions = actions.splice(0, n + 1, historyRecord);
+    var deleteActions = actions.splice(0, delta);
     var arr = deleteActions.reduce(function (pre, curStack) {
       var ctag = splitUri(curStack.uri, 'pagename');
 
@@ -3299,18 +3316,22 @@ var History = function () {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) == null ? void 0 : _actions$.uri, 'pagename')) {
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[0]) == null ? void 0 : _actions$.uri, 'pagename')) {
       arr.pop();
     }
 
-    pages.splice(0, arr.length, historyRecord);
-
-    if (pagename === splitUri((_pages$3 = pages[1]) == null ? void 0 : _pages$3.uri, 'pagename')) {
-      pages.splice(1, 1);
-    }
-
+    pages.splice(0, arr.length);
     this.actions = actions;
     this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = _extends({}, this.parent.curRecord, {
+        uri: uri,
+        pagename: pagename,
+        query: query
+      });
+    }
+
     return true;
   };
 
@@ -3804,8 +3825,10 @@ var BaseRouter = function () {
     }
 
     this._nativeData = undefined;
-    this.history = new History();
-    this.history.relaunch(location, key);
+    this.history = new History({
+      location: location,
+      key: key
+    });
   }
 
   var _proto2 = BaseRouter.prototype;
@@ -3860,8 +3883,8 @@ var BaseRouter = function () {
     return this.routeState.key;
   };
 
-  _proto2.searchKeyInActions = function searchKeyInActions(key) {
-    return this.history.getActionIndex(key);
+  _proto2.findHistoryIndex = function findHistoryIndex(key) {
+    return this.history.findIndex(key);
   };
 
   _proto2._createKey = function _createKey() {
@@ -3990,7 +4013,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context.next = 9;
                 break;
               }
@@ -4005,7 +4028,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, internal);
+              }, key);
 
             case 8:
               nativeData = _context.sent;
@@ -4075,7 +4098,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context2.next = 9;
                 break;
               }
@@ -4090,7 +4113,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, internal);
+              }, key);
 
             case 8:
               nativeData = _context2.sent;
@@ -4161,7 +4184,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context3.next = 9;
                 break;
               }
@@ -4176,7 +4199,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, internal);
+              }, key);
 
             case 8:
               nativeData = _context3.sent;
@@ -4243,7 +4266,7 @@ var BaseRouter = function () {
                 n = 1;
               }
 
-              stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
+              stack = internal ? this.history.getCurrentInternalHistory().getRecord(n - 1) : this.history.getRecord(n - 1);
 
               if (stack) {
                 _context4.next = 6;
@@ -4274,7 +4297,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 11:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context4.next = 15;
                 break;
               }
@@ -4289,7 +4312,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, n, key, internal);
+              }, n, key);
 
             case 14:
               nativeData = _context4.sent;
@@ -4321,114 +4344,6 @@ var BaseRouter = function () {
     }
 
     return _back;
-  }();
-
-  _proto2.pop = function pop(n, indexUrl, internal, disableNative) {
-    if (n === void 0) {
-      n = 1;
-    }
-
-    if (indexUrl === void 0) {
-      indexUrl = 'index';
-    }
-
-    if (internal === void 0) {
-      internal = false;
-    }
-
-    if (disableNative === void 0) {
-      disableNative = routeConfig.disableNativeRoute;
-    }
-
-    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
-    return true;
-  };
-
-  _proto2._pop = function () {
-    var _pop2 = _asyncToGenerator(regenerator.mark(function _callee5(n, indexUrl, internal, disableNative) {
-      var _this7 = this;
-
-      var stack, uri, _uriToLocation2, key, location, routeState, nativeData;
-
-      return regenerator.wrap(function _callee5$(_context5) {
-        while (1) {
-          switch (_context5.prev = _context5.next) {
-            case 0:
-              if (n === void 0) {
-                n = 1;
-              }
-
-              if (indexUrl === void 0) {
-                indexUrl = '';
-              }
-
-              stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
-
-              if (stack) {
-                _context5.next = 5;
-                break;
-              }
-
-              return _context5.abrupt("return", this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative));
-
-            case 5:
-              uri = stack.uri;
-              _uriToLocation2 = uriToLocation(uri), key = _uriToLocation2.key, location = _uriToLocation2.location;
-              routeState = _extends({}, location, {
-                action: 'POP',
-                key: key
-              });
-              _context5.next = 10;
-              return this.store.dispatch(beforeRouteChangeAction(routeState));
-
-            case 10:
-              if (disableNative) {
-                _context5.next = 14;
-                break;
-              }
-
-              _context5.next = 13;
-              return this.nativeRouter.execute('pop', function () {
-                var nativeLocation = _this7.locationTransform.out(routeState);
-
-                var nativeUrl = _this7.nativeLocationToNativeUrl(nativeLocation);
-
-                return {
-                  nativeLocation: nativeLocation,
-                  nativeUrl: nativeUrl
-                };
-              }, n, key, internal);
-
-            case 13:
-              nativeData = _context5.sent;
-
-            case 14:
-              this._nativeData = nativeData || undefined;
-              this.routeState = routeState;
-              this.meduxUrl = this.locationToMeduxUrl(routeState);
-
-              if (internal) {
-                this.history.getCurrentInternalHistory().pop(n);
-              } else {
-                this.history.pop(n);
-              }
-
-              this.store.dispatch(routeChangeAction(routeState));
-              return _context5.abrupt("return", undefined);
-
-            case 20:
-            case "end":
-              return _context5.stop();
-          }
-        }
-      }, _callee5, this);
-    }));
-
-    function _pop(_x14, _x15, _x16, _x17) {
-      return _pop2.apply(this, arguments);
-    }
-
-    return _pop;
   }();
 
   _proto2.taskComplete = function taskComplete() {
@@ -4475,6 +4390,11 @@ var MPNativeRouter = function (_BaseNativeRouter) {
     _this.tabPages = tabPages;
     _this._unlistenHistory = routeENV.onRouteChange(function (pathname, searchData, action) {
       var key = searchData ? searchData['__key__'] : '';
+
+      if (action === 'POP' && !key) {
+        key = _this.router.history.getRecord(-1).key;
+      }
+
       var nativeLocation = {
         pathname: pathname,
         searchData: searchData
@@ -4483,14 +4403,14 @@ var MPNativeRouter = function (_BaseNativeRouter) {
       var changed = _this.onChange(key);
 
       if (changed) {
-        var index = 0;
+        var index = -1;
 
         if (action === 'POP') {
-          index = _this.router.searchKeyInActions(key);
+          index = _this.router.findHistoryIndex(key);
         }
 
-        if (index > 0) {
-          _this.router.back(index, '', false, true);
+        if (index > -1) {
+          _this.router.back(index + 1, '', false, true);
         } else if (action === 'REPLACE') {
           _this.router.replace(nativeLocation, false, true);
         } else if (action === 'PUSH') {
@@ -4513,88 +4433,59 @@ var MPNativeRouter = function (_BaseNativeRouter) {
     return url.indexOf('?') > -1 ? url + "&__key__=" + key : url + "?__key__=" + key;
   };
 
-  _proto.push = function push(getNativeData, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
+  _proto.push = function push(getNativeData, key) {
+    var nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
-      }
-
-      return this.routeENV.navigateTo({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(function () {
-        return nativeData;
-      });
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
     }
 
-    return undefined;
+    return this.routeENV.navigateTo({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(function () {
+      return nativeData;
+    });
   };
 
-  _proto.replace = function replace(getNativeData, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
+  _proto.replace = function replace(getNativeData, key) {
+    var nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
-      }
-
-      return this.routeENV.redirectTo({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(function () {
-        return nativeData;
-      });
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
     }
 
-    return undefined;
+    return this.routeENV.redirectTo({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(function () {
+      return nativeData;
+    });
   };
 
-  _proto.relaunch = function relaunch(getNativeData, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
+  _proto.relaunch = function relaunch(getNativeData, key) {
+    var nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        return this.routeENV.switchTab({
-          url: nativeData.nativeUrl
-        }).then(function () {
-          return nativeData;
-        });
-      }
-
-      return this.routeENV.reLaunch({
-        url: this.toUrl(nativeData.nativeUrl, key)
+    if (this.tabPages[nativeData.nativeUrl]) {
+      return this.routeENV.switchTab({
+        url: nativeData.nativeUrl
       }).then(function () {
         return nativeData;
       });
     }
 
-    return undefined;
+    return this.routeENV.reLaunch({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(function () {
+      return nativeData;
+    });
   };
 
-  _proto.back = function back(getNativeData, n, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
-      return this.routeENV.navigateBack({
-        delta: n
-      }).then(function () {
-        return nativeData;
-      });
-    }
-
-    return undefined;
-  };
-
-  _proto.pop = function pop(getNativeData, n, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
-      return this.routeENV.reLaunch({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(function () {
-        return nativeData;
-      });
-    }
-
-    return undefined;
+  _proto.back = function back(getNativeData, n, key) {
+    var nativeData = getNativeData();
+    return this.routeENV.navigateBack({
+      delta: n
+    }).then(function () {
+      return nativeData;
+    });
   };
 
   _proto.destroy = function destroy() {
@@ -4663,21 +4554,24 @@ function patchPageOptions(pageOptions) {
       lastPageUrl: routeToUrl(currentPage.route, currentPage.options)
     };
 
-    if (prevPagesInfo && (currentPagesInfo.count !== prevPagesInfo.count || currentPagesInfo.lastPageUrl !== prevPagesInfo.lastPageUrl)) {
-      var pathname = "/" + currentPage.route.replace(/^\/+|\/+$/g, '');
+    if (prevPagesInfo) {
+      var _action = 'PUSH';
+      var curPathname = "/" + currentPage.route.replace(/^\/+|\/+$/g, '');
 
-      var _action = !prevPagesInfo || currentPagesInfo.count > prevPagesInfo.count ? 'PUSH' : currentPagesInfo.count < prevPagesInfo.count ? 'POP' : 'REPLACE';
-
-      var routeAction = _action;
-
-      if (_action !== 'POP' && tabPages[pathname]) {
-        routeAction = 'RELAUNCH';
+      if (currentPagesInfo.count < prevPagesInfo.count) {
+        _action = 'POP';
+      } else if (currentPagesInfo.count === prevPagesInfo.count) {
+        if (currentPagesInfo.count === 1) {
+          _action = 'RELAUNCH';
+        } else {
+          _action = 'REPLACE';
+        }
       }
 
       eventBus.dispatch(new PEvent('routeChange', {
-        pathname: pathname,
+        pathname: curPathname,
         searchData: queryToData(currentPage.options),
-        action: routeAction
+        action: _action
       }));
     }
 

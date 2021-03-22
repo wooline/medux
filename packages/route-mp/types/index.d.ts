@@ -33,11 +33,10 @@ export declare class MPNativeRouter extends BaseNativeRouter {
     });
     getLocation(): NativeLocation;
     protected toUrl(url: string, key: string): string;
-    protected push(getNativeData: () => NativeData, key: string, internal: boolean): Promise<NativeData> | undefined;
-    protected replace(getNativeData: () => NativeData, key: string, internal: boolean): Promise<NativeData> | undefined;
-    protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean): Promise<NativeData> | undefined;
-    protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean): Promise<NativeData> | undefined;
-    protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean): Promise<NativeData> | undefined;
+    protected push(getNativeData: () => NativeData, key: string): Promise<NativeData>;
+    protected replace(getNativeData: () => NativeData, key: string): Promise<NativeData>;
+    protected relaunch(getNativeData: () => NativeData, key: string): Promise<NativeData>;
+    protected back(getNativeData: () => NativeData, n: number, key: string): Promise<NativeData>;
     destroy(): void;
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {

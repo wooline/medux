@@ -86,16 +86,16 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
       var changed = _this.onChange(key);
 
       if (changed) {
-        var index = 0;
+        var index = -1;
         var callback;
 
         if (action === 'POP') {
-          index = _this.router.searchKeyInActions(key);
+          index = _this.router.findHistoryIndex(key);
         }
 
-        if (index > 0) {
+        if (index > -1) {
           callback = function callback() {
-            return _this.router.back(index, '', false, false);
+            return _this.router.back(index + 1, '', false, false);
           };
         } else if (action === 'REPLACE') {
           callback = function callback() {
@@ -145,8 +145,8 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
     this.history.go(0);
   };
 
-  _proto.push = function push(getNativeData, key, internal) {
-    if (!internal && !this.serverSide) {
+  _proto.push = function push(getNativeData, key) {
+    if (!this.serverSide) {
       var nativeData = getNativeData();
       this.history.push(nativeData.nativeUrl, key);
       return nativeData;
@@ -155,8 +155,8 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
     return undefined;
   };
 
-  _proto.replace = function replace(getNativeData, key, internal) {
-    if (!internal && !this.serverSide) {
+  _proto.replace = function replace(getNativeData, key) {
+    if (!this.serverSide) {
       var nativeData = getNativeData();
       this.history.replace(nativeData.nativeUrl, key);
       return nativeData;
@@ -165,8 +165,8 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
     return undefined;
   };
 
-  _proto.relaunch = function relaunch(getNativeData, key, internal) {
-    if (!internal && !this.serverSide) {
+  _proto.relaunch = function relaunch(getNativeData, key) {
+    if (!this.serverSide) {
       var nativeData = getNativeData();
       this.history.push(nativeData.nativeUrl, key);
       return nativeData;
@@ -175,20 +175,10 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
     return undefined;
   };
 
-  _proto.back = function back(getNativeData, n, key, internal) {
-    if (!internal && !this.serverSide) {
+  _proto.back = function back(getNativeData, n, key) {
+    if (!this.serverSide) {
       var nativeData = getNativeData();
       this.history.go(-n);
-      return nativeData;
-    }
-
-    return undefined;
-  };
-
-  _proto.pop = function pop(getNativeData, n, key, internal) {
-    if (!internal && !this.serverSide) {
-      var nativeData = getNativeData();
-      this.history.push(nativeData.nativeUrl, key);
       return nativeData;
     }
 

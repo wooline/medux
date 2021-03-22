@@ -100,7 +100,7 @@ export function nativeLocationToNativeUrl({pathname, searchData, hashData}: Nati
   const hash = joinQuery(hashData);
   return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
 }
-function locationToUri(location: Location, key: string): {uri: string; pagename: string; query: string; key: string} {
+export function locationToUri(location: Location, key: string): {uri: string; pagename: string; query: string; key: string} {
   const {pagename, params} = location;
   const query = params ? JSON.stringify(params) : '';
   return {uri: [key, pagename, query].join('|'), pagename, query, key};
@@ -129,130 +129,130 @@ interface HistoryRecord {
   pagename: string;
   query: string;
   key: string;
-  sub: History;
+  sub?: History;
+}
+
+function isHistoryRecord(data: HistoryRecord | {location: Location; key: string}): data is HistoryRecord {
+  return data['uri'];
 }
 export class History {
+  private curRecord: HistoryRecord;
+
   private pages: HistoryRecord[] = [];
 
   private actions: HistoryRecord[] = [];
 
-  getPagesLength() {
-    return this.pages.length;
+  constructor(data: HistoryRecord | {location: Location; key: string}, private parent?: History) {
+    if (isHistoryRecord(data)) {
+      this.curRecord = data;
+    } else {
+      const {uri, pagename, query} = locationToUri(data.location, data.key);
+      this.curRecord = {uri, pagename, query, key: data.key, sub: new History({uri, pagename, query, key: data.key}, this)};
+    }
   }
 
-  getActionsLength() {
+  getLength() {
     return this.actions.length;
   }
 
-  getActionRecord(keyOrIndex?: number | string): HistoryRecord | undefined {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
+  getRecord(keyOrIndex: number | string): HistoryRecord | undefined {
     if (typeof keyOrIndex === 'number') {
+      if (keyOrIndex === -1) {
+        keyOrIndex = this.actions.length - 1;
+      }
       return this.actions[keyOrIndex];
     }
     return this.actions.find((item) => item.key === keyOrIndex);
   }
 
-  getPageRecord(keyOrIndex?: number | string): HistoryRecord | undefined {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
-    if (typeof keyOrIndex === 'number') {
-      return this.pages[keyOrIndex];
-    }
-    return this.pages.find((item) => item.key === keyOrIndex);
-  }
-
-  getActionIndex(key: string): number {
+  findIndex(key: string): number {
     return this.actions.findIndex((item) => item.key === key);
   }
 
-  getPageIndex(key: string): number {
-    return this.pages.findIndex((item) => item.key === key);
+  getCurrentInternalHistory() {
+    return this.curRecord.sub;
   }
 
-  getCurrentInternalHistory(): History {
-    return this.actions[0].sub;
+  getStack(): HistoryRecord[] {
+    return this.actions;
   }
 
-  getUriStack(): {actions: string[]; pages: string[]} {
-    return {actions: this.actions.map((item) => item.uri), pages: this.pages.map((item) => item.uri)};
+  getUriStack(): string[] {
+    return this.actions.map((item) => item.uri);
+  }
+
+  getPageStack(): HistoryRecord[] {
+    return this.pages;
   }
 
   push(location: Location, key: string) {
+    const historyRecord = this.curRecord;
     const {uri, pagename, query} = locationToUri(location, key);
-    const newStack: HistoryRecord = {uri, pagename, query, key, sub: new History()};
+    this.curRecord = {uri, pagename, query, key, sub: new History({uri, pagename, query, key}, this)};
     const pages = [...this.pages];
     const actions = [...this.actions];
     const actionsMax = routeConfig.actionMaxHistory;
     const pagesMax = routeConfig.pagesMaxHistory;
-    actions.unshift(newStack);
+    actions.unshift(historyRecord);
     if (actions.length > actionsMax) {
       actions.length = actionsMax;
     }
     if (splitUri(pages[0]?.uri, 'pagename') !== pagename) {
-      pages.unshift(newStack);
+      pages.unshift(historyRecord);
       if (pages.length > pagesMax) {
         pages.length = pagesMax;
       }
     } else {
-      pages[0] = newStack;
+      pages[0] = historyRecord;
     }
     this.actions = actions;
     this.pages = pages;
+    if (this.parent) {
+      this.parent.curRecord = {...this.parent.curRecord, uri, pagename, query};
+    }
   }
 
   replace(location: Location, key: string) {
     const {uri, pagename, query} = locationToUri(location, key);
-    const newStack: HistoryRecord = {uri, pagename, query, key, sub: new History()};
-    const pages = [...this.pages];
-    const actions = [...this.actions];
-    const pagesMax = routeConfig.pagesMaxHistory;
-    actions[0] = newStack;
-    pages[0] = newStack;
-    if (pagename === splitUri(pages[1]?.uri, 'pagename')) {
-      pages.splice(1, 1);
+    this.curRecord = {uri, pagename, query, key, sub: new History({uri, pagename, query, key}, this)};
+    if (this.parent) {
+      this.parent.curRecord = {...this.parent.curRecord, uri, pagename, query};
     }
-    if (pages.length > pagesMax) {
-      pages.length = pagesMax;
-    }
-    this.actions = actions;
-    this.pages = pages;
   }
 
   relaunch(location: Location, key: string) {
     const {uri, pagename, query} = locationToUri(location, key);
-    const newStack: HistoryRecord = {uri, pagename, query, key, sub: new History()};
-    const actions: HistoryRecord[] = [newStack];
-    const pages: HistoryRecord[] = [newStack];
-    this.actions = actions;
-    this.pages = pages;
+    this.curRecord = {uri, pagename, query, key, sub: new History({uri, pagename, query, key}, this)};
+    this.actions = [];
+    this.pages = [];
+    if (this.parent) {
+      this.parent.curRecord = {...this.parent.curRecord, uri, pagename, query};
+    }
   }
 
-  pop(n: number) {
-    const historyRecord = this.getPageRecord(n);
+  // pop(n: number) {
+  //   const historyRecord = this.getPageRecord(n);
+  //   if (!historyRecord) {
+  //     return false;
+  //   }
+  //   const pages = [...this.pages];
+  //   const actions: HistoryRecord[] = [];
+  //   pages.splice(0, n);
+  //   this.actions = actions;
+  //   this.pages = pages;
+  //   return true;
+  // }
+
+  back(delta: number) {
+    const historyRecord = this.getRecord(delta - 1);
     if (!historyRecord) {
       return false;
     }
-    const pages = [...this.pages];
-    const actions: HistoryRecord[] = [];
-    pages.splice(0, n);
-    this.actions = actions;
-    this.pages = pages;
-    return true;
-  }
-
-  back(n: number) {
-    const historyRecord = this.getActionRecord(n);
-    if (!historyRecord) {
-      return false;
-    }
-    const uri = historyRecord.uri;
-    const pagename = splitUri(uri, 'pagename');
+    this.curRecord = historyRecord;
+    const {uri, pagename, query} = historyRecord;
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const deleteActions = actions.splice(0, n + 1, historyRecord);
+    const deleteActions = actions.splice(0, delta);
     // 对删除的actions按tag合并
     const arr = deleteActions.reduce((pre: string[], curStack) => {
       const ctag = splitUri(curStack.uri, 'pagename');
@@ -262,15 +262,15 @@ export class History {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri(actions[1]?.uri, 'pagename')) {
+    if (arr[arr.length - 1] === splitUri(actions[0]?.uri, 'pagename')) {
       arr.pop();
     }
-    pages.splice(0, arr.length, historyRecord);
-    if (pagename === splitUri(pages[1]?.uri, 'pagename')) {
-      pages.splice(1, 1);
-    }
+    pages.splice(0, arr.length);
     this.actions = actions;
     this.pages = pages;
+    if (this.parent) {
+      this.parent.curRecord = {...this.parent.curRecord, uri, pagename, query};
+    }
     return true;
   }
 }

@@ -10,11 +10,10 @@ export declare class BrowserNativeRouter extends BaseNativeRouter {
     private getKey;
     protected passive(url: string, key: string, action: string): boolean;
     refresh(): void;
-    protected push(getNativeData: () => NativeData, key: string, internal: boolean): NativeData | undefined;
-    protected replace(getNativeData: () => NativeData, key: string, internal: boolean): NativeData | undefined;
-    protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean): NativeData | undefined;
-    protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean): NativeData | undefined;
-    protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean): NativeData | undefined;
+    protected push(getNativeData: () => NativeData, key: string): NativeData | undefined;
+    protected replace(getNativeData: () => NativeData, key: string): NativeData | undefined;
+    protected relaunch(getNativeData: () => NativeData, key: string): NativeData | undefined;
+    protected back(getNativeData: () => NativeData, n: number, key: string): NativeData | undefined;
     destroy(): void;
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {

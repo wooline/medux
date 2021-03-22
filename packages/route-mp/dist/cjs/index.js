@@ -26,6 +26,11 @@ var MPNativeRouter = function (_BaseNativeRouter) {
     _this.tabPages = tabPages;
     _this._unlistenHistory = routeENV.onRouteChange(function (pathname, searchData, action) {
       var key = searchData ? searchData['__key__'] : '';
+
+      if (action === 'POP' && !key) {
+        key = _this.router.history.getRecord(-1).key;
+      }
+
       var nativeLocation = {
         pathname: pathname,
         searchData: searchData
@@ -34,14 +39,14 @@ var MPNativeRouter = function (_BaseNativeRouter) {
       var changed = _this.onChange(key);
 
       if (changed) {
-        var index = 0;
+        var index = -1;
 
         if (action === 'POP') {
-          index = _this.router.searchKeyInActions(key);
+          index = _this.router.findHistoryIndex(key);
         }
 
-        if (index > 0) {
-          _this.router.back(index, '', false, true);
+        if (index > -1) {
+          _this.router.back(index + 1, '', false, true);
         } else if (action === 'REPLACE') {
           _this.router.replace(nativeLocation, false, true);
         } else if (action === 'PUSH') {
@@ -64,88 +69,59 @@ var MPNativeRouter = function (_BaseNativeRouter) {
     return url.indexOf('?') > -1 ? url + "&__key__=" + key : url + "?__key__=" + key;
   };
 
-  _proto.push = function push(getNativeData, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
+  _proto.push = function push(getNativeData, key) {
+    var nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
-      }
-
-      return this.routeENV.navigateTo({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(function () {
-        return nativeData;
-      });
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
     }
 
-    return undefined;
+    return this.routeENV.navigateTo({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(function () {
+      return nativeData;
+    });
   };
 
-  _proto.replace = function replace(getNativeData, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
+  _proto.replace = function replace(getNativeData, key) {
+    var nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
-      }
-
-      return this.routeENV.redirectTo({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(function () {
-        return nativeData;
-      });
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw "Replacing 'push' with 'relaunch' for TabPage: " + nativeData.nativeUrl;
     }
 
-    return undefined;
+    return this.routeENV.redirectTo({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(function () {
+      return nativeData;
+    });
   };
 
-  _proto.relaunch = function relaunch(getNativeData, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
+  _proto.relaunch = function relaunch(getNativeData, key) {
+    var nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        return this.routeENV.switchTab({
-          url: nativeData.nativeUrl
-        }).then(function () {
-          return nativeData;
-        });
-      }
-
-      return this.routeENV.reLaunch({
-        url: this.toUrl(nativeData.nativeUrl, key)
+    if (this.tabPages[nativeData.nativeUrl]) {
+      return this.routeENV.switchTab({
+        url: nativeData.nativeUrl
       }).then(function () {
         return nativeData;
       });
     }
 
-    return undefined;
+    return this.routeENV.reLaunch({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(function () {
+      return nativeData;
+    });
   };
 
-  _proto.back = function back(getNativeData, n, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
-      return this.routeENV.navigateBack({
-        delta: n
-      }).then(function () {
-        return nativeData;
-      });
-    }
-
-    return undefined;
-  };
-
-  _proto.pop = function pop(getNativeData, n, key, internal) {
-    if (!internal) {
-      var nativeData = getNativeData();
-      return this.routeENV.reLaunch({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(function () {
-        return nativeData;
-      });
-    }
-
-    return undefined;
+  _proto.back = function back(getNativeData, n, key) {
+    var nativeData = getNativeData();
+    return this.routeENV.navigateBack({
+      delta: n
+    }).then(function () {
+      return nativeData;
+    });
   };
 
   _proto.destroy = function destroy() {

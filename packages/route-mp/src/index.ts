@@ -26,16 +26,19 @@ export class MPNativeRouter extends BaseNativeRouter {
   constructor(public routeENV: RouteENV, protected tabPages: {[path: string]: boolean}) {
     super();
     this._unlistenHistory = routeENV.onRouteChange((pathname, searchData, action) => {
-      const key = searchData ? searchData['__key__'] : '';
+      let key = searchData ? searchData['__key__'] : '';
+      if (action === 'POP' && !key) {
+        key = this.router.history.getRecord(-1)!.key;
+      }
       const nativeLocation: NativeLocation = {pathname, searchData};
       const changed = this.onChange(key);
       if (changed) {
-        let index: number = 0;
+        let index: number = -1;
         if (action === 'POP') {
-          index = this.router.searchKeyInActions(key);
+          index = this.router.findHistoryIndex(key);
         }
-        if (index > 0) {
-          this.router.back(index, '', false, true);
+        if (index > -1) {
+          this.router.back(index + 1, '', false, true);
         } else if (action === 'REPLACE') {
           this.router.replace(nativeLocation, false, true);
         } else if (action === 'PUSH') {
@@ -55,55 +58,35 @@ export class MPNativeRouter extends BaseNativeRouter {
     return url.indexOf('?') > -1 ? `${url}&__key__=${key}` : `${url}?__key__=${key}`;
   }
 
-  protected push(getNativeData: () => NativeData, key: string, internal: boolean) {
-    if (!internal) {
-      const nativeData = getNativeData();
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
-      }
-      return this.routeENV.navigateTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
+  protected push(getNativeData: () => NativeData, key: string) {
+    const nativeData = getNativeData();
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
     }
-    return undefined;
+    return this.routeENV.navigateTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
   }
 
-  protected replace(getNativeData: () => NativeData, key: string, internal: boolean) {
-    if (!internal) {
-      const nativeData = getNativeData();
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
-      }
-      return this.routeENV.redirectTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
+  protected replace(getNativeData: () => NativeData, key: string) {
+    const nativeData = getNativeData();
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
     }
-    return undefined;
+    return this.routeENV.redirectTo({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
   }
 
-  protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean) {
-    if (!internal) {
-      const nativeData = getNativeData();
-      if (this.tabPages[nativeData.nativeUrl]) {
-        return this.routeENV.switchTab({url: nativeData.nativeUrl}).then(() => nativeData);
-      }
-      return this.routeENV.reLaunch({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
+  protected relaunch(getNativeData: () => NativeData, key: string) {
+    const nativeData = getNativeData();
+    if (this.tabPages[nativeData.nativeUrl]) {
+      return this.routeENV.switchTab({url: nativeData.nativeUrl}).then(() => nativeData);
     }
-    return undefined;
+    return this.routeENV.reLaunch({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
   }
 
   // 只有当native不处理时返回void，否则必须返回NativeData，返回void会导致不依赖onChange来关闭task
   // history.go会触发onChange，所以必须返回NativeData
-  protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
-    if (!internal) {
-      const nativeData = getNativeData();
-      return this.routeENV.navigateBack({delta: n}).then(() => nativeData);
-    }
-    return undefined;
-  }
-
-  protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
-    if (!internal) {
-      const nativeData = getNativeData();
-      return this.routeENV.reLaunch({url: this.toUrl(nativeData.nativeUrl, key)}).then(() => nativeData);
-    }
-    return undefined;
+  protected back(getNativeData: () => NativeData, n: number, key: string) {
+    const nativeData = getNativeData();
+    return this.routeENV.navigateBack({delta: n}).then(() => nativeData);
   }
 
   destroy() {

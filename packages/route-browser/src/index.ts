@@ -54,13 +54,13 @@ export class BrowserNativeRouter extends BaseNativeRouter {
       const key = this.getKey(location);
       const changed = this.onChange(key);
       if (changed) {
-        let index: number = 0;
+        let index: number = -1;
         let callback: () => void;
         if (action === 'POP') {
-          index = this.router.searchKeyInActions(key);
+          index = this.router.findHistoryIndex(key);
         }
-        if (index > 0) {
-          callback = () => this.router.back(index, '', false, false);
+        if (index > -1) {
+          callback = () => this.router.back(index + 1, '', false, false);
         } else if (action === 'REPLACE') {
           callback = () => this.router.replace(url, false, false);
         } else if (action === 'PUSH') {
@@ -92,8 +92,8 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     this.history.go(0);
   }
 
-  protected push(getNativeData: () => NativeData, key: string, internal: boolean) {
-    if (!internal && !this.serverSide) {
+  protected push(getNativeData: () => NativeData, key: string) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.push(nativeData.nativeUrl, key as any);
       return nativeData;
@@ -101,8 +101,8 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     return undefined;
   }
 
-  protected replace(getNativeData: () => NativeData, key: string, internal: boolean) {
-    if (!internal && !this.serverSide) {
+  protected replace(getNativeData: () => NativeData, key: string) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.replace(nativeData.nativeUrl, key as any);
       return nativeData;
@@ -110,8 +110,8 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     return undefined;
   }
 
-  protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean) {
-    if (!internal && !this.serverSide) {
+  protected relaunch(getNativeData: () => NativeData, key: string) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.push(nativeData.nativeUrl, key as any);
       return nativeData;
@@ -121,19 +121,10 @@ export class BrowserNativeRouter extends BaseNativeRouter {
 
   // 只有当native不处理时返回void，否则必须返回NativeData，返回void会导致不依赖onChange来关闭task
   // history.go会触发onChange，所以必须返回NativeData
-  protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
-    if (!internal && !this.serverSide) {
+  protected back(getNativeData: () => NativeData, n: number, key: string) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.go(-n);
-      return nativeData;
-    }
-    return undefined;
-  }
-
-  protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
-    if (!internal && !this.serverSide) {
-      const nativeData = getNativeData();
-      this.history.push(nativeData.nativeUrl, key as any);
       return nativeData;
     }
     return undefined;

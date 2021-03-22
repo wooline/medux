@@ -97,16 +97,15 @@ export abstract class BaseNativeRouter {
 
   protected router: BaseRouter<any, string> = null as any;
 
-  protected abstract push(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-
-  protected abstract replace(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-
-  protected abstract relaunch(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-
-  protected abstract back(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-
   // 只有当native不处理时返回void，否则必须返回NativeData，返回void会导致不依赖onChange来关闭task
-  protected abstract pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+
+  protected abstract push(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
+
+  protected abstract replace(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
+
+  protected abstract relaunch(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
+
+  protected abstract back(getNativeData: () => NativeData, n: number, key: string): void | NativeData | Promise<NativeData>;
 
   abstract destroy(): void;
 
@@ -175,8 +174,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
       setRouteConfig({indexUrl: this.meduxUrl});
     }
     this._nativeData = undefined;
-    this.history = new History();
-    this.history.relaunch(location, key);
+    this.history = new History({location, key});
   }
 
   getRouteState(): RouteState<P> {
@@ -221,8 +219,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return this.routeState.key;
   }
 
-  searchKeyInActions(key: string) {
-    return this.history.getActionIndex(key);
+  findHistoryIndex(key: string) {
+    return this.history.findIndex(key);
   }
 
   private _createKey() {
@@ -310,7 +308,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     let nativeData: NativeData | undefined;
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
         'relaunch',
         () => {
@@ -318,8 +316,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
           const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
           return {nativeLocation, nativeUrl};
         },
-        key,
-        internal
+        key
       );
     }
     this._nativeData = nativeData;
@@ -327,7 +324,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
-      this.history.getCurrentInternalHistory().relaunch(location, key);
+      this.history.getCurrentInternalHistory()!.relaunch(location, key);
     } else {
       this.history.relaunch(location, key);
     }
@@ -350,7 +347,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'PUSH', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     let nativeData: NativeData | void;
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
         'push',
         () => {
@@ -358,15 +355,14 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
           const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
           return {nativeLocation, nativeUrl};
         },
-        key,
-        internal
+        key
       );
     }
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     if (internal) {
-      this.history.getCurrentInternalHistory().push(location, key);
+      this.history.getCurrentInternalHistory()!.push(location, key);
     } else {
       this.history.push(location, key);
     }
@@ -390,7 +386,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'REPLACE', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     let nativeData: NativeData | void;
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
         'replace',
         () => {
@@ -398,15 +394,14 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
           const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
           return {nativeLocation, nativeUrl};
         },
-        key,
-        internal
+        key
       );
     }
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     if (internal) {
-      this.history.getCurrentInternalHistory().replace(location, key);
+      this.history.getCurrentInternalHistory()!.replace(location, key);
     } else {
       this.history.replace(location, key);
     }
@@ -418,7 +413,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   }
 
   private async _back(n: number = 1, indexUrl: string, internal: boolean, disableNative: boolean) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
+    const stack = internal ? this.history.getCurrentInternalHistory()!.getRecord(n - 1) : this.history.getRecord(n - 1);
     if (!stack) {
       if (indexUrl) {
         return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
@@ -430,7 +425,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const routeState: RouteState<P> = {...location, action: 'BACK', key};
     await this.store!.dispatch(beforeRouteChangeAction(routeState));
     let nativeData: NativeData | void;
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
         'back',
         () => {
@@ -439,15 +434,14 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
           return {nativeLocation, nativeUrl};
         },
         n,
-        key,
-        internal
+        key
       );
     }
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
     this.meduxUrl = this.locationToMeduxUrl(routeState);
     if (internal) {
-      this.history.getCurrentInternalHistory().back(n);
+      this.history.getCurrentInternalHistory()!.back(n);
     } else {
       this.history.back(n);
     }
@@ -455,45 +449,44 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return undefined;
   }
 
-  pop(n: number = 1, indexUrl: string = 'index', internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute): boolean {
-    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
-    return true;
-  }
+  // pop(n: number = 1, indexUrl: string = 'index', internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute): boolean {
+  //   this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
+  //   return true;
+  // }
 
-  private async _pop(n: number = 1, indexUrl: string = '', internal: boolean, disableNative: boolean) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
-    if (!stack) {
-      return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
-    }
-    const uri = stack.uri;
-    const {key, location} = uriToLocation<P>(uri);
-    const routeState: RouteState<P> = {...location, action: 'POP', key};
-    await this.store!.dispatch(beforeRouteChangeAction(routeState));
-    let nativeData: NativeData | void;
-    if (!disableNative) {
-      nativeData = await this.nativeRouter.execute(
-        'pop',
-        () => {
-          const nativeLocation = this.locationTransform.out(routeState);
-          const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
-          return {nativeLocation, nativeUrl};
-        },
-        n,
-        key,
-        internal
-      );
-    }
-    this._nativeData = nativeData || undefined;
-    this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
-    if (internal) {
-      this.history.getCurrentInternalHistory().pop(n);
-    } else {
-      this.history.pop(n);
-    }
-    this.store!.dispatch(routeChangeAction(routeState));
-    return undefined;
-  }
+  // private async _pop(n: number = 1, indexUrl: string = '', internal: boolean, disableNative: boolean) {
+  //   const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
+  //   if (!stack) {
+  //     return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
+  //   }
+  //   const uri = stack.uri;
+  //   const {key, location} = uriToLocation<P>(uri);
+  //   const routeState: RouteState<P> = {...location, action: 'POP', key};
+  //   await this.store!.dispatch(beforeRouteChangeAction(routeState));
+  //   let nativeData: NativeData | void;
+  //   if (!disableNative && !internal) {
+  //     nativeData = await this.nativeRouter.execute(
+  //       'pop',
+  //       () => {
+  //         const nativeLocation = this.locationTransform.out(routeState);
+  //         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+  //         return {nativeLocation, nativeUrl};
+  //       },
+  //       n,
+  //       key
+  //     );
+  //   }
+  //   this._nativeData = nativeData || undefined;
+  //   this.routeState = routeState;
+  //   this.meduxUrl = this.locationToMeduxUrl(routeState);
+  //   if (internal) {
+  //     this.history.getCurrentInternalHistory().pop(n);
+  //   } else {
+  //     this.history.pop(n);
+  //   }
+  //   this.store!.dispatch(routeChangeAction(routeState));
+  //   return undefined;
+  // }
 
   private taskComplete() {
     const task = this.taskList.shift();

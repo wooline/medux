@@ -50,15 +50,22 @@ function patchPageOptions(pageOptions: meduxCore.PageConfig) {
       count: arr.length,
       lastPageUrl: routeToUrl(currentPage.route, currentPage.options),
     };
-    if (prevPagesInfo && (currentPagesInfo.count !== prevPagesInfo.count || currentPagesInfo.lastPageUrl !== prevPagesInfo.lastPageUrl)) {
-      const pathname = `/${currentPage.route.replace(/^\/+|\/+$/g, '')}`;
-      // eslint-disable-next-line no-nested-ternary
-      const action: 'POP' | 'PUSH' | 'REPLACE' = !prevPagesInfo || currentPagesInfo.count > prevPagesInfo.count ? 'PUSH' : currentPagesInfo.count < prevPagesInfo.count ? 'POP' : 'REPLACE';
-      let routeAction: 'POP' | 'PUSH' | 'REPLACE' | 'RELAUNCH' = action;
-      if (action !== 'POP' && tabPages[pathname]) {
-        routeAction = 'RELAUNCH';
+    if (prevPagesInfo) {
+      // 仅处理不能使用medux路由的原生交互：原生导航后退、原生TAB
+      let action: 'POP' | 'PUSH' | 'REPLACE' | 'RELAUNCH' = 'PUSH';
+      const curPathname = `/${currentPage.route.replace(/^\/+|\/+$/g, '')}`;
+      if (currentPagesInfo.count < prevPagesInfo.count) {
+        action = 'POP';
+      } else if (currentPagesInfo.count === prevPagesInfo.count) {
+        // const prevPathname = `/${currentPage.route.replace(/^\/+|\/+$/g, '')}`;
+        // tabPages[curPathname] && tabPages[prevPathname];
+        if (currentPagesInfo.count === 1) {
+          action = 'RELAUNCH';
+        } else {
+          action = 'REPLACE';
+        }
       }
-      eventBus.dispatch(new PEvent('routeChange', {pathname, searchData: queryToData(currentPage.options), action: routeAction}));
+      eventBus.dispatch(new PEvent('routeChange', {pathname: curPathname, searchData: queryToData(currentPage.options), action}));
     }
     return onShow?.call(this);
   };

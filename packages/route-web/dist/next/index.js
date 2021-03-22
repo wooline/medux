@@ -181,8 +181,10 @@ export class BaseRouter {
     }
 
     this._nativeData = undefined;
-    this.history = new History();
-    this.history.relaunch(location, key);
+    this.history = new History({
+      location,
+      key
+    });
   }
 
   getRouteState() {
@@ -235,8 +237,8 @@ export class BaseRouter {
     return this.routeState.key;
   }
 
-  searchKeyInActions(key) {
-    return this.history.getActionIndex(key);
+  findHistoryIndex(key) {
+    return this.history.findIndex(key);
   }
 
   _createKey() {
@@ -348,7 +350,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('relaunch', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -356,7 +358,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, internal);
+      }, key);
     }
 
     this._nativeData = nativeData;
@@ -395,7 +397,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('push', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -403,7 +405,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, internal);
+      }, key);
     }
 
     this._nativeData = nativeData || undefined;
@@ -443,7 +445,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('replace', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -451,7 +453,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, internal);
+      }, key);
     }
 
     this._nativeData = nativeData || undefined;
@@ -472,7 +474,7 @@ export class BaseRouter {
   }
 
   async _back(n = 1, indexUrl, internal, disableNative) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
+    const stack = internal ? this.history.getCurrentInternalHistory().getRecord(n - 1) : this.history.getRecord(n - 1);
 
     if (!stack) {
       if (indexUrl) {
@@ -497,7 +499,7 @@ export class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('back', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -505,7 +507,7 @@ export class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, n, key, internal);
+      }, n, key);
     }
 
     this._nativeData = nativeData || undefined;
@@ -516,55 +518,6 @@ export class BaseRouter {
       this.history.getCurrentInternalHistory().back(n);
     } else {
       this.history.back(n);
-    }
-
-    this.store.dispatch(routeChangeAction(routeState));
-    return undefined;
-  }
-
-  pop(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
-    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
-    return true;
-  }
-
-  async _pop(n = 1, indexUrl = '', internal, disableNative) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
-
-    if (!stack) {
-      return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
-    }
-
-    const uri = stack.uri;
-    const {
-      key,
-      location
-    } = uriToLocation(uri);
-    const routeState = { ...location,
-      action: 'POP',
-      key
-    };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
-    let nativeData;
-
-    if (!disableNative) {
-      nativeData = await this.nativeRouter.execute('pop', () => {
-        const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
-        return {
-          nativeLocation,
-          nativeUrl
-        };
-      }, n, key, internal);
-    }
-
-    this._nativeData = nativeData || undefined;
-    this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
-
-    if (internal) {
-      this.history.getCurrentInternalHistory().pop(n);
-    } else {
-      this.history.pop(n);
     }
 
     this.store.dispatch(routeChangeAction(routeState));

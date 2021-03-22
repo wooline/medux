@@ -66,15 +66,15 @@ export class BrowserNativeRouter extends BaseNativeRouter {
       const changed = this.onChange(key);
 
       if (changed) {
-        let index = 0;
+        let index = -1;
         let callback;
 
         if (action === 'POP') {
-          index = this.router.searchKeyInActions(key);
+          index = this.router.findHistoryIndex(key);
         }
 
-        if (index > 0) {
-          callback = () => this.router.back(index, '', false, false);
+        if (index > -1) {
+          callback = () => this.router.back(index + 1, '', false, false);
         } else if (action === 'REPLACE') {
           callback = () => this.router.replace(url, false, false);
         } else if (action === 'PUSH') {
@@ -112,8 +112,8 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     this.history.go(0);
   }
 
-  push(getNativeData, key, internal) {
-    if (!internal && !this.serverSide) {
+  push(getNativeData, key) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.push(nativeData.nativeUrl, key);
       return nativeData;
@@ -122,8 +122,8 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     return undefined;
   }
 
-  replace(getNativeData, key, internal) {
-    if (!internal && !this.serverSide) {
+  replace(getNativeData, key) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.replace(nativeData.nativeUrl, key);
       return nativeData;
@@ -132,8 +132,8 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     return undefined;
   }
 
-  relaunch(getNativeData, key, internal) {
-    if (!internal && !this.serverSide) {
+  relaunch(getNativeData, key) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.push(nativeData.nativeUrl, key);
       return nativeData;
@@ -142,20 +142,10 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     return undefined;
   }
 
-  back(getNativeData, n, key, internal) {
-    if (!internal && !this.serverSide) {
+  back(getNativeData, n, key) {
+    if (!this.serverSide) {
       const nativeData = getNativeData();
       this.history.go(-n);
-      return nativeData;
-    }
-
-    return undefined;
-  }
-
-  pop(getNativeData, n, key, internal) {
-    if (!internal && !this.serverSide) {
-      const nativeData = getNativeData();
-      this.history.push(nativeData.nativeUrl, key);
       return nativeData;
     }
 

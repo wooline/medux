@@ -112,33 +112,33 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
 }
 
 export class NativeRouter extends BaseNativeRouter {
-  protected push(getNativeData: () => NativeData, key: string, internal: boolean) {
+  protected push(getNativeData: () => NativeData, key: string) {
     const nativeData = getNativeData();
-    nativeRouterMock.push(nativeData.nativeUrl, key, internal);
+    nativeRouterMock.push(nativeData.nativeUrl, key);
     return nativeData;
   }
 
-  protected replace(getNativeData: () => NativeData, key: string, internal: boolean) {
+  protected replace(getNativeData: () => NativeData, key: string) {
     const nativeData = getNativeData();
-    nativeRouterMock.replace(nativeData.nativeUrl, key, internal);
+    nativeRouterMock.replace(nativeData.nativeUrl, key);
     return nativeData;
   }
 
-  protected relaunch(getNativeData: () => NativeData, key: string, internal: boolean) {
+  protected relaunch(getNativeData: () => NativeData, key: string) {
     const nativeData = getNativeData();
-    nativeRouterMock.relaunch(nativeData.nativeUrl, key, internal);
+    nativeRouterMock.relaunch(nativeData.nativeUrl, key);
     return nativeData;
   }
 
-  protected back(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
+  protected back(getNativeData: () => NativeData, n: number, key: string) {
     const nativeData = getNativeData();
-    nativeRouterMock.back(nativeData.nativeUrl, n, key, internal);
+    nativeRouterMock.back(nativeData.nativeUrl, n, key);
     return nativeData;
   }
 
-  protected pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean) {
+  protected pop(getNativeData: () => NativeData, n: number, key: string) {
     const nativeData = getNativeData();
-    nativeRouterMock.pop(nativeData.nativeUrl, n, key, internal);
+    nativeRouterMock.pop(nativeData.nativeUrl, n, key);
     return nativeData;
   }
 

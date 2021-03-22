@@ -239,8 +239,10 @@ var BaseRouter = function () {
     }
 
     this._nativeData = undefined;
-    this.history = new _basic.History();
-    this.history.relaunch(location, key);
+    this.history = new _basic.History({
+      location: location,
+      key: key
+    });
   }
 
   var _proto2 = BaseRouter.prototype;
@@ -295,8 +297,8 @@ var BaseRouter = function () {
     return this.routeState.key;
   };
 
-  _proto2.searchKeyInActions = function searchKeyInActions(key) {
-    return this.history.getActionIndex(key);
+  _proto2.findHistoryIndex = function findHistoryIndex(key) {
+    return this.history.findIndex(key);
   };
 
   _proto2._createKey = function _createKey() {
@@ -427,7 +429,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context.next = 9;
                 break;
               }
@@ -442,7 +444,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, internal);
+              }, key);
 
             case 8:
               nativeData = _context.sent;
@@ -512,7 +514,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context2.next = 9;
                 break;
               }
@@ -527,7 +529,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, internal);
+              }, key);
 
             case 8:
               nativeData = _context2.sent;
@@ -598,7 +600,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 5:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context3.next = 9;
                 break;
               }
@@ -613,7 +615,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, key, internal);
+              }, key);
 
             case 8:
               nativeData = _context3.sent;
@@ -680,7 +682,7 @@ var BaseRouter = function () {
                 n = 1;
               }
 
-              stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
+              stack = internal ? this.history.getCurrentInternalHistory().getRecord(n - 1) : this.history.getRecord(n - 1);
 
               if (stack) {
                 _context4.next = 6;
@@ -711,7 +713,7 @@ var BaseRouter = function () {
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
             case 11:
-              if (disableNative) {
+              if (!(!disableNative && !internal)) {
                 _context4.next = 15;
                 break;
               }
@@ -726,7 +728,7 @@ var BaseRouter = function () {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
-              }, n, key, internal);
+              }, n, key);
 
             case 14:
               nativeData = _context4.sent;
@@ -758,114 +760,6 @@ var BaseRouter = function () {
     }
 
     return _back;
-  }();
-
-  _proto2.pop = function pop(n, indexUrl, internal, disableNative) {
-    if (n === void 0) {
-      n = 1;
-    }
-
-    if (indexUrl === void 0) {
-      indexUrl = 'index';
-    }
-
-    if (internal === void 0) {
-      internal = false;
-    }
-
-    if (disableNative === void 0) {
-      disableNative = _basic.routeConfig.disableNativeRoute;
-    }
-
-    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? _basic.routeConfig.indexUrl : indexUrl, internal, disableNative));
-    return true;
-  };
-
-  _proto2._pop = function () {
-    var _pop2 = (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee5(n, indexUrl, internal, disableNative) {
-      var _this7 = this;
-
-      var stack, uri, _uriToLocation2, key, location, routeState, nativeData;
-
-      return _regenerator.default.wrap(function _callee5$(_context5) {
-        while (1) {
-          switch (_context5.prev = _context5.next) {
-            case 0:
-              if (n === void 0) {
-                n = 1;
-              }
-
-              if (indexUrl === void 0) {
-                indexUrl = '';
-              }
-
-              stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
-
-              if (stack) {
-                _context5.next = 5;
-                break;
-              }
-
-              return _context5.abrupt("return", this._relaunch(indexUrl || _basic.routeConfig.indexUrl, internal, disableNative));
-
-            case 5:
-              uri = stack.uri;
-              _uriToLocation2 = (0, _basic.uriToLocation)(uri), key = _uriToLocation2.key, location = _uriToLocation2.location;
-              routeState = (0, _extends2.default)({}, location, {
-                action: 'POP',
-                key: key
-              });
-              _context5.next = 10;
-              return this.store.dispatch(beforeRouteChangeAction(routeState));
-
-            case 10:
-              if (disableNative) {
-                _context5.next = 14;
-                break;
-              }
-
-              _context5.next = 13;
-              return this.nativeRouter.execute('pop', function () {
-                var nativeLocation = _this7.locationTransform.out(routeState);
-
-                var nativeUrl = _this7.nativeLocationToNativeUrl(nativeLocation);
-
-                return {
-                  nativeLocation: nativeLocation,
-                  nativeUrl: nativeUrl
-                };
-              }, n, key, internal);
-
-            case 13:
-              nativeData = _context5.sent;
-
-            case 14:
-              this._nativeData = nativeData || undefined;
-              this.routeState = routeState;
-              this.meduxUrl = this.locationToMeduxUrl(routeState);
-
-              if (internal) {
-                this.history.getCurrentInternalHistory().pop(n);
-              } else {
-                this.history.pop(n);
-              }
-
-              this.store.dispatch(routeChangeAction(routeState));
-              return _context5.abrupt("return", undefined);
-
-            case 20:
-            case "end":
-              return _context5.stop();
-          }
-        }
-      }, _callee5, this);
-    }));
-
-    function _pop(_x14, _x15, _x16, _x17) {
-      return _pop2.apply(this, arguments);
-    }
-
-    return _pop;
   }();
 
   _proto2.taskComplete = function taskComplete() {

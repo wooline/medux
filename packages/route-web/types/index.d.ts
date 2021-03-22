@@ -58,11 +58,10 @@ export declare abstract class BaseNativeRouter {
     protected curTask?: NativeRouterTask;
     protected taskList: RouterTask[];
     protected router: BaseRouter<any, string>;
-    protected abstract push(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-    protected abstract replace(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-    protected abstract relaunch(getNativeData: () => NativeData, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-    protected abstract back(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
-    protected abstract pop(getNativeData: () => NativeData, n: number, key: string, internal: boolean): void | NativeData | Promise<NativeData>;
+    protected abstract push(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
+    protected abstract replace(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
+    protected abstract relaunch(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
+    protected abstract back(getNativeData: () => NativeData, n: number, key: string): void | NativeData | Promise<NativeData>;
     abstract destroy(): void;
     protected onChange(key: string): boolean;
     setRouter(router: BaseRouter<any, string>): void;
@@ -88,7 +87,7 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     getNativeUrl(): string;
     setStore(_store: Store): void;
     getCurKey(): string;
-    searchKeyInActions(key: string): number;
+    findHistoryIndex(key: string): number;
     private _createKey;
     nativeUrlToNativeLocation(url: string): NativeLocation;
     nativeLocationToLocation(nativeLocation: NativeLocation): Location<P>;
@@ -106,8 +105,6 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     private _replace;
     back(n?: number, indexUrl?: string, internal?: boolean, disableNative?: boolean): void;
     private _back;
-    pop(n?: number, indexUrl?: string, internal?: boolean, disableNative?: boolean): boolean;
-    private _pop;
     private taskComplete;
     private executeTask;
     private addTask;

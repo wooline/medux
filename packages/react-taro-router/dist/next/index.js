@@ -2075,7 +2075,6 @@ function nativeLocationToNativeUrl({
   const hash = joinQuery(hashData);
   return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
 }
-
 function locationToUri(location, key) {
   const {
     pagename,
@@ -2118,134 +2117,159 @@ function uriToLocation(uri) {
     location
   };
 }
+
+function isHistoryRecord(data) {
+  return data['uri'];
+}
+
 class History {
-  constructor() {
+  constructor(data, parent) {
+    _defineProperty(this, "curRecord", void 0);
+
     _defineProperty(this, "pages", []);
 
     _defineProperty(this, "actions", []);
+
+    this.parent = parent;
+
+    if (isHistoryRecord(data)) {
+      this.curRecord = data;
+    } else {
+      const {
+        uri,
+        pagename,
+        query
+      } = locationToUri(data.location, data.key);
+      this.curRecord = {
+        uri,
+        pagename,
+        query,
+        key: data.key,
+        sub: new History({
+          uri,
+          pagename,
+          query,
+          key: data.key
+        }, this)
+      };
+    }
   }
 
-  getPagesLength() {
-    return this.pages.length;
-  }
-
-  getActionsLength() {
+  getLength() {
     return this.actions.length;
   }
 
-  getActionRecord(keyOrIndex) {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
-
+  getRecord(keyOrIndex) {
     if (typeof keyOrIndex === 'number') {
+      if (keyOrIndex === -1) {
+        keyOrIndex = this.actions.length - 1;
+      }
+
       return this.actions[keyOrIndex];
     }
 
     return this.actions.find(item => item.key === keyOrIndex);
   }
 
-  getPageRecord(keyOrIndex) {
-    if (keyOrIndex === undefined) {
-      keyOrIndex = 0;
-    }
-
-    if (typeof keyOrIndex === 'number') {
-      return this.pages[keyOrIndex];
-    }
-
-    return this.pages.find(item => item.key === keyOrIndex);
-  }
-
-  getActionIndex(key) {
+  findIndex(key) {
     return this.actions.findIndex(item => item.key === key);
   }
 
-  getPageIndex(key) {
-    return this.pages.findIndex(item => item.key === key);
+  getCurrentInternalHistory() {
+    return this.curRecord.sub;
   }
 
-  getCurrentInternalHistory() {
-    return this.actions[0].sub;
+  getStack() {
+    return this.actions;
   }
 
   getUriStack() {
-    return {
-      actions: this.actions.map(item => item.uri),
-      pages: this.pages.map(item => item.uri)
-    };
+    return this.actions.map(item => item.uri);
+  }
+
+  getPageStack() {
+    return this.pages;
   }
 
   push(location, key) {
     var _pages$;
 
+    const historyRecord = this.curRecord;
     const {
       uri,
       pagename,
       query
     } = locationToUri(location, key);
-    const newStack = {
+    this.curRecord = {
       uri,
       pagename,
       query,
       key,
-      sub: new History()
+      sub: new History({
+        uri,
+        pagename,
+        query,
+        key
+      }, this)
     };
     const pages = [...this.pages];
     const actions = [...this.actions];
     const actionsMax = routeConfig.actionMaxHistory;
     const pagesMax = routeConfig.pagesMaxHistory;
-    actions.unshift(newStack);
+    actions.unshift(historyRecord);
 
     if (actions.length > actionsMax) {
       actions.length = actionsMax;
     }
 
     if (splitUri((_pages$ = pages[0]) == null ? void 0 : _pages$.uri, 'pagename') !== pagename) {
-      pages.unshift(newStack);
+      pages.unshift(historyRecord);
 
       if (pages.length > pagesMax) {
         pages.length = pagesMax;
       }
     } else {
-      pages[0] = newStack;
+      pages[0] = historyRecord;
     }
 
     this.actions = actions;
     this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = { ...this.parent.curRecord,
+        uri,
+        pagename,
+        query
+      };
+    }
   }
 
   replace(location, key) {
-    var _pages$2;
-
     const {
       uri,
       pagename,
       query
     } = locationToUri(location, key);
-    const newStack = {
+    this.curRecord = {
       uri,
       pagename,
       query,
       key,
-      sub: new History()
+      sub: new History({
+        uri,
+        pagename,
+        query,
+        key
+      }, this)
     };
-    const pages = [...this.pages];
-    const actions = [...this.actions];
-    const pagesMax = routeConfig.pagesMaxHistory;
-    actions[0] = newStack;
-    pages[0] = newStack;
 
-    if (pagename === splitUri((_pages$2 = pages[1]) == null ? void 0 : _pages$2.uri, 'pagename')) {
-      pages.splice(1, 1);
+    if (this.parent) {
+      this.parent.curRecord = { ...this.parent.curRecord,
+        uri,
+        pagename,
+        query
+      };
     }
-
-    if (pages.length > pagesMax) {
-      pages.length = pagesMax;
-    }
-
-    this.actions = actions;
-    this.pages = pages;
   }
 
   relaunch(location, key) {
@@ -2254,48 +2278,48 @@ class History {
       pagename,
       query
     } = locationToUri(location, key);
-    const newStack = {
+    this.curRecord = {
       uri,
       pagename,
       query,
       key,
-      sub: new History()
+      sub: new History({
+        uri,
+        pagename,
+        query,
+        key
+      }, this)
     };
-    const actions = [newStack];
-    const pages = [newStack];
-    this.actions = actions;
-    this.pages = pages;
+    this.actions = [];
+    this.pages = [];
+
+    if (this.parent) {
+      this.parent.curRecord = { ...this.parent.curRecord,
+        uri,
+        pagename,
+        query
+      };
+    }
   }
 
-  pop(n) {
-    const historyRecord = this.getPageRecord(n);
+  back(delta) {
+    var _actions$;
+
+    const historyRecord = this.getRecord(delta - 1);
 
     if (!historyRecord) {
       return false;
     }
 
-    const pages = [...this.pages];
-    const actions = [];
-    pages.splice(0, n);
-    this.actions = actions;
-    this.pages = pages;
-    return true;
-  }
-
-  back(n) {
-    var _actions$, _pages$3;
-
-    const historyRecord = this.getActionRecord(n);
-
-    if (!historyRecord) {
-      return false;
-    }
-
-    const uri = historyRecord.uri;
-    const pagename = splitUri(uri, 'pagename');
+    this.curRecord = historyRecord;
+    const {
+      uri,
+      pagename,
+      query
+    } = historyRecord;
     const pages = [...this.pages];
     const actions = [...this.actions];
-    const deleteActions = actions.splice(0, n + 1, historyRecord);
+    const deleteActions = actions.splice(0, delta);
     const arr = deleteActions.reduce((pre, curStack) => {
       const ctag = splitUri(curStack.uri, 'pagename');
 
@@ -2306,18 +2330,22 @@ class History {
       return pre;
     }, []);
 
-    if (arr[arr.length - 1] === splitUri((_actions$ = actions[1]) == null ? void 0 : _actions$.uri, 'pagename')) {
+    if (arr[arr.length - 1] === splitUri((_actions$ = actions[0]) == null ? void 0 : _actions$.uri, 'pagename')) {
       arr.pop();
     }
 
-    pages.splice(0, arr.length, historyRecord);
-
-    if (pagename === splitUri((_pages$3 = pages[1]) == null ? void 0 : _pages$3.uri, 'pagename')) {
-      pages.splice(1, 1);
-    }
-
+    pages.splice(0, arr.length);
     this.actions = actions;
     this.pages = pages;
+
+    if (this.parent) {
+      this.parent.curRecord = { ...this.parent.curRecord,
+        uri,
+        pagename,
+        query
+      };
+    }
+
     return true;
   }
 
@@ -2767,8 +2795,10 @@ class BaseRouter {
     }
 
     this._nativeData = undefined;
-    this.history = new History();
-    this.history.relaunch(location, key);
+    this.history = new History({
+      location,
+      key
+    });
   }
 
   getRouteState() {
@@ -2821,8 +2851,8 @@ class BaseRouter {
     return this.routeState.key;
   }
 
-  searchKeyInActions(key) {
-    return this.history.getActionIndex(key);
+  findHistoryIndex(key) {
+    return this.history.findIndex(key);
   }
 
   _createKey() {
@@ -2934,7 +2964,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('relaunch', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -2942,7 +2972,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, internal);
+      }, key);
     }
 
     this._nativeData = nativeData;
@@ -2981,7 +3011,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('push', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -2989,7 +3019,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, internal);
+      }, key);
     }
 
     this._nativeData = nativeData || undefined;
@@ -3029,7 +3059,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('replace', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3037,7 +3067,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, key, internal);
+      }, key);
     }
 
     this._nativeData = nativeData || undefined;
@@ -3058,7 +3088,7 @@ class BaseRouter {
   }
 
   async _back(n = 1, indexUrl, internal, disableNative) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getActionRecord(n) : this.history.getActionRecord(n);
+    const stack = internal ? this.history.getCurrentInternalHistory().getRecord(n - 1) : this.history.getRecord(n - 1);
 
     if (!stack) {
       if (indexUrl) {
@@ -3083,7 +3113,7 @@ class BaseRouter {
     await this.store.dispatch(beforeRouteChangeAction(routeState));
     let nativeData;
 
-    if (!disableNative) {
+    if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('back', () => {
         const nativeLocation = this.locationTransform.out(routeState);
         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
@@ -3091,7 +3121,7 @@ class BaseRouter {
           nativeLocation,
           nativeUrl
         };
-      }, n, key, internal);
+      }, n, key);
     }
 
     this._nativeData = nativeData || undefined;
@@ -3102,55 +3132,6 @@ class BaseRouter {
       this.history.getCurrentInternalHistory().back(n);
     } else {
       this.history.back(n);
-    }
-
-    this.store.dispatch(routeChangeAction(routeState));
-    return undefined;
-  }
-
-  pop(n = 1, indexUrl = 'index', internal = false, disableNative = routeConfig.disableNativeRoute) {
-    this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
-    return true;
-  }
-
-  async _pop(n = 1, indexUrl = '', internal, disableNative) {
-    const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
-
-    if (!stack) {
-      return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
-    }
-
-    const uri = stack.uri;
-    const {
-      key,
-      location
-    } = uriToLocation(uri);
-    const routeState = { ...location,
-      action: 'POP',
-      key
-    };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
-    let nativeData;
-
-    if (!disableNative) {
-      nativeData = await this.nativeRouter.execute('pop', () => {
-        const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
-        return {
-          nativeLocation,
-          nativeUrl
-        };
-      }, n, key, internal);
-    }
-
-    this._nativeData = nativeData || undefined;
-    this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
-
-    if (internal) {
-      this.history.getCurrentInternalHistory().pop(n);
-    } else {
-      this.history.pop(n);
     }
 
     this.store.dispatch(routeChangeAction(routeState));
@@ -3195,7 +3176,12 @@ class MPNativeRouter extends BaseNativeRouter {
     this.routeENV = routeENV;
     this.tabPages = tabPages;
     this._unlistenHistory = routeENV.onRouteChange((pathname, searchData, action) => {
-      const key = searchData ? searchData['__key__'] : '';
+      let key = searchData ? searchData['__key__'] : '';
+
+      if (action === 'POP' && !key) {
+        key = this.router.history.getRecord(-1).key;
+      }
+
       const nativeLocation = {
         pathname,
         searchData
@@ -3203,14 +3189,14 @@ class MPNativeRouter extends BaseNativeRouter {
       const changed = this.onChange(key);
 
       if (changed) {
-        let index = 0;
+        let index = -1;
 
         if (action === 'POP') {
-          index = this.router.searchKeyInActions(key);
+          index = this.router.findHistoryIndex(key);
         }
 
-        if (index > 0) {
-          this.router.back(index, '', false, true);
+        if (index > -1) {
+          this.router.back(index + 1, '', false, true);
         } else if (action === 'REPLACE') {
           this.router.replace(nativeLocation, false, true);
         } else if (action === 'PUSH') {
@@ -3230,76 +3216,49 @@ class MPNativeRouter extends BaseNativeRouter {
     return url.indexOf('?') > -1 ? `${url}&__key__=${key}` : `${url}?__key__=${key}`;
   }
 
-  push(getNativeData, key, internal) {
-    if (!internal) {
-      const nativeData = getNativeData();
+  push(getNativeData, key) {
+    const nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
-      }
-
-      return this.routeENV.navigateTo({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(() => nativeData);
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
     }
 
-    return undefined;
+    return this.routeENV.navigateTo({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(() => nativeData);
   }
 
-  replace(getNativeData, key, internal) {
-    if (!internal) {
-      const nativeData = getNativeData();
+  replace(getNativeData, key) {
+    const nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
-      }
-
-      return this.routeENV.redirectTo({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(() => nativeData);
+    if (this.tabPages[nativeData.nativeUrl]) {
+      throw `Replacing 'push' with 'relaunch' for TabPage: ${nativeData.nativeUrl}`;
     }
 
-    return undefined;
+    return this.routeENV.redirectTo({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(() => nativeData);
   }
 
-  relaunch(getNativeData, key, internal) {
-    if (!internal) {
-      const nativeData = getNativeData();
+  relaunch(getNativeData, key) {
+    const nativeData = getNativeData();
 
-      if (this.tabPages[nativeData.nativeUrl]) {
-        return this.routeENV.switchTab({
-          url: nativeData.nativeUrl
-        }).then(() => nativeData);
-      }
-
-      return this.routeENV.reLaunch({
-        url: this.toUrl(nativeData.nativeUrl, key)
+    if (this.tabPages[nativeData.nativeUrl]) {
+      return this.routeENV.switchTab({
+        url: nativeData.nativeUrl
       }).then(() => nativeData);
     }
 
-    return undefined;
+    return this.routeENV.reLaunch({
+      url: this.toUrl(nativeData.nativeUrl, key)
+    }).then(() => nativeData);
   }
 
-  back(getNativeData, n, key, internal) {
-    if (!internal) {
-      const nativeData = getNativeData();
-      return this.routeENV.navigateBack({
-        delta: n
-      }).then(() => nativeData);
-    }
-
-    return undefined;
-  }
-
-  pop(getNativeData, n, key, internal) {
-    if (!internal) {
-      const nativeData = getNativeData();
-      return this.routeENV.reLaunch({
-        url: this.toUrl(nativeData.nativeUrl, key)
-      }).then(() => nativeData);
-    }
-
-    return undefined;
+  back(getNativeData, n, key) {
+    const nativeData = getNativeData();
+    return this.routeENV.navigateBack({
+      delta: n
+    }).then(() => nativeData);
   }
 
   destroy() {
@@ -3356,19 +3315,24 @@ function patchPageOptions(pageOptions) {
       lastPageUrl: routeToUrl(currentPage.route, currentPage.options)
     };
 
-    if (prevPagesInfo && (currentPagesInfo.count !== prevPagesInfo.count || currentPagesInfo.lastPageUrl !== prevPagesInfo.lastPageUrl)) {
-      const pathname = `/${currentPage.route.replace(/^\/+|\/+$/g, '')}`;
-      const action = !prevPagesInfo || currentPagesInfo.count > prevPagesInfo.count ? 'PUSH' : currentPagesInfo.count < prevPagesInfo.count ? 'POP' : 'REPLACE';
-      let routeAction = action;
+    if (prevPagesInfo) {
+      let action = 'PUSH';
+      const curPathname = `/${currentPage.route.replace(/^\/+|\/+$/g, '')}`;
 
-      if (action !== 'POP' && tabPages[pathname]) {
-        routeAction = 'RELAUNCH';
+      if (currentPagesInfo.count < prevPagesInfo.count) {
+        action = 'POP';
+      } else if (currentPagesInfo.count === prevPagesInfo.count) {
+        if (currentPagesInfo.count === 1) {
+          action = 'RELAUNCH';
+        } else {
+          action = 'REPLACE';
+        }
       }
 
       eventBus.dispatch(new PEvent('routeChange', {
-        pathname,
+        pathname: curPathname,
         searchData: queryToData(currentPage.options),
-        action: routeAction
+        action
       }));
     }
 
