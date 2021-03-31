@@ -31,6 +31,7 @@ module.exports = {
     'no-underscore-dangle': 'off',
     'prefer-destructuring': 'off',
     'prefer-promise-reject-errors': 'off',
+    'no-nested-ternary': 'off',
     'global-require': 'off',
     'import/extensions': 'off',
     'import/no-dynamic-require': 'off',
