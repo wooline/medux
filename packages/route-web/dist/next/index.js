@@ -334,6 +334,11 @@ export class BaseRouter {
     let location;
 
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
+
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation(data)) {
       location = this.nativeLocationToLocation(data);
@@ -381,6 +386,11 @@ export class BaseRouter {
     let location;
 
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
+
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation(data)) {
       location = this.nativeLocationToLocation(data);
@@ -429,6 +439,11 @@ export class BaseRouter {
     let location;
 
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
+
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation(data)) {
       location = this.nativeLocationToLocation(data);

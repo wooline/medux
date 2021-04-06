@@ -4137,29 +4137,47 @@ var BaseRouter = function () {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              if (typeof data === 'string') {
-                location = this.urlToLocation(data);
-              } else if (dataIsNativeLocation$1(data)) {
+              if (!(typeof data === 'string')) {
+                _context.next = 7;
+                break;
+              }
+
+              if (!/^[\w:]*\/\//.test(data)) {
+                _context.next = 4;
+                break;
+              }
+
+              this.nativeRouter.toOutside(data);
+              return _context.abrupt("return");
+
+            case 4:
+              location = this.urlToLocation(data);
+              _context.next = 8;
+              break;
+
+            case 7:
+              if (dataIsNativeLocation$1(data)) {
                 location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
               }
 
+            case 8:
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'RELAUNCH',
                 key: key
               });
-              _context.next = 5;
+              _context.next = 12;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-            case 5:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context.next = 9;
+                _context.next = 16;
                 break;
               }
 
-              _context.next = 8;
+              _context.next = 15;
               return this.nativeRouter.execute('relaunch', function () {
                 var nativeLocation = _this3.locationTransform.out(routeState);
 
@@ -4171,10 +4189,10 @@ var BaseRouter = function () {
                 };
               }, key);
 
-            case 8:
+            case 15:
               nativeData = _context.sent;
 
-            case 9:
+            case 16:
               this._nativeData = nativeData;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -4186,7 +4204,7 @@ var BaseRouter = function () {
                 this.history.relaunch(location, key);
               }
 
-            case 14:
+            case 21:
             case "end":
               return _context.stop();
           }
@@ -4222,29 +4240,47 @@ var BaseRouter = function () {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              if (typeof data === 'string') {
-                location = this.urlToLocation(data);
-              } else if (dataIsNativeLocation$1(data)) {
+              if (!(typeof data === 'string')) {
+                _context2.next = 7;
+                break;
+              }
+
+              if (!/^[\w:]*\/\//.test(data)) {
+                _context2.next = 4;
+                break;
+              }
+
+              this.nativeRouter.toOutside(data);
+              return _context2.abrupt("return");
+
+            case 4:
+              location = this.urlToLocation(data);
+              _context2.next = 8;
+              break;
+
+            case 7:
+              if (dataIsNativeLocation$1(data)) {
                 location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
               }
 
+            case 8:
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'PUSH',
                 key: key
               });
-              _context2.next = 5;
+              _context2.next = 12;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-            case 5:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context2.next = 9;
+                _context2.next = 16;
                 break;
               }
 
-              _context2.next = 8;
+              _context2.next = 15;
               return this.nativeRouter.execute('push', function () {
                 var nativeLocation = _this4.locationTransform.out(routeState);
 
@@ -4256,10 +4292,10 @@ var BaseRouter = function () {
                 };
               }, key);
 
-            case 8:
+            case 15:
               nativeData = _context2.sent;
 
-            case 9:
+            case 16:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -4272,7 +4308,7 @@ var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 14:
+            case 21:
             case "end":
               return _context2.stop();
           }
@@ -4308,29 +4344,47 @@ var BaseRouter = function () {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
-              if (typeof data === 'string') {
-                location = this.urlToLocation(data);
-              } else if (dataIsNativeLocation$1(data)) {
+              if (!(typeof data === 'string')) {
+                _context3.next = 7;
+                break;
+              }
+
+              if (!/^[\w:]*\/\//.test(data)) {
+                _context3.next = 4;
+                break;
+              }
+
+              this.nativeRouter.toOutside(data);
+              return _context3.abrupt("return");
+
+            case 4:
+              location = this.urlToLocation(data);
+              _context3.next = 8;
+              break;
+
+            case 7:
+              if (dataIsNativeLocation$1(data)) {
                 location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
               }
 
+            case 8:
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'REPLACE',
                 key: key
               });
-              _context3.next = 5;
+              _context3.next = 12;
               return this.store.dispatch(beforeRouteChangeAction(routeState));
 
-            case 5:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context3.next = 9;
+                _context3.next = 16;
                 break;
               }
 
-              _context3.next = 8;
+              _context3.next = 15;
               return this.nativeRouter.execute('replace', function () {
                 var nativeLocation = _this5.locationTransform.out(routeState);
 
@@ -4342,10 +4396,10 @@ var BaseRouter = function () {
                 };
               }, key);
 
-            case 8:
+            case 15:
               nativeData = _context3.sent;
 
-            case 9:
+            case 16:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -4358,7 +4412,7 @@ var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 14:
+            case 21:
             case "end":
               return _context3.stop();
           }
@@ -5704,6 +5758,10 @@ var BrowserNativeRouter = function (_BaseNativeRouter) {
     }
 
     return undefined;
+  };
+
+  _proto.toOutside = function toOutside(url) {
+    this.history.push(url);
   };
 
   _proto.destroy = function destroy() {

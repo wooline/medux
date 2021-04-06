@@ -111,7 +111,10 @@ function __splitPrivate(data: {[key: string]: any}): [{[key: string]: any} | und
   return [publicData, privateData];
 }
 // 主要用来分离search与hash，注意：1.不能把顶级module省略，否则无法还原。2.由于服务器只能接收search，所以search不能把顶级module省略
-export function splitPrivate(data: {[key: string]: any}, deleteTopLevel: {[key: string]: boolean}): [{[key: string]: any} | undefined, {[key: string]: any} | undefined] {
+export function splitPrivate(
+  data: {[key: string]: any},
+  deleteTopLevel: {[key: string]: boolean}
+): [{[key: string]: any} | undefined, {[key: string]: any} | undefined] {
   if (!isPlainObject(data)) {
     return [undefined, undefined];
   }

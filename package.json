@@ -31,6 +31,7 @@
     "build:react-native-router": "lerna run build --scope @medux/react-native-router",
     "build:dev-utils": "lerna run build --scope @medux/dev-utils",
     "test": "eslint ./packages/core/scripts/build.js",
+    "babel:test": "BABEL_SHOW_CONFIG_FOR=./packages/core/src/index.ts babel ./packages/core/src/index.ts",
     "eslintConfig": "eslint --print-config /Users/zy/work/medux/medux/packages/react/src/index.tsx > eslintConfig.txt"
   },
   "resolutions": {

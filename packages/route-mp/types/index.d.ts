@@ -37,6 +37,7 @@ export declare class MPNativeRouter extends BaseNativeRouter {
     protected replace(getNativeData: () => NativeData, key: string): Promise<NativeData>;
     protected relaunch(getNativeData: () => NativeData, key: string): Promise<NativeData>;
     protected back(getNativeData: () => NativeData, n: number, key: string): Promise<NativeData>;
+    toOutside(url: string): void;
     destroy(): void;
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {

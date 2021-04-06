@@ -94,6 +94,8 @@ export class MPNativeRouter extends BaseNativeRouter {
     }).then(() => nativeData);
   }
 
+  toOutside(url) {}
+
   destroy() {
     this._unlistenHistory();
   }

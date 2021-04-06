@@ -130,6 +130,10 @@ export class BrowserNativeRouter extends BaseNativeRouter {
     return undefined;
   }
 
+  toOutside(url: string) {
+    this.history.push(url);
+  }
+
   destroy() {
     this._unlistenHistory();
   }
@@ -143,7 +147,10 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
   }
 }
 
-export function createRouter<P extends RootParams, N extends string>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>) {
+export function createRouter<P extends RootParams, N extends string>(
+  createHistory: 'Browser' | 'Hash' | 'Memory' | string,
+  locationTransform: LocationTransform<P>
+) {
   const browserNativeRouter = new BrowserNativeRouter(createHistory);
   const router = new Router<P, N>(browserNativeRouter, locationTransform);
   return router;

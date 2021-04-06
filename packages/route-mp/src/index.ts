@@ -9,7 +9,9 @@ interface NavigateBackOption {
 }
 
 export interface RouteENV {
-  onRouteChange(callback: (pathname: string, searchData: {[key: string]: string} | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void): () => void;
+  onRouteChange(
+    callback: (pathname: string, searchData: {[key: string]: string} | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void
+  ): () => void;
   getLocation(): {pathname: string; searchData: {[key: string]: string} | undefined};
   reLaunch(option: RouteOption): Promise<any>;
   redirectTo(option: RouteOption): Promise<any>;
@@ -89,6 +91,10 @@ export class MPNativeRouter extends BaseNativeRouter {
     return this.routeENV.navigateBack({delta: n}).then(() => nativeData);
   }
 
+  toOutside(url: string) {
+    // this.history.push(url);
+  }
+
   destroy() {
     this._unlistenHistory();
   }
@@ -102,7 +108,11 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
   }
 }
 
-export function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, routeENV: RouteENV, tabPages: {[path: string]: boolean}) {
+export function createRouter<P extends RootParams, N extends string>(
+  locationTransform: LocationTransform<P>,
+  routeENV: RouteENV,
+  tabPages: {[path: string]: boolean}
+) {
   const mpNativeRouter = new MPNativeRouter(routeENV, tabPages);
   const router = new Router<P, N>(mpNativeRouter, locationTransform);
   return router;

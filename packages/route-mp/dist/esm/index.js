@@ -114,6 +114,8 @@ export var MPNativeRouter = function (_BaseNativeRouter) {
     });
   };
 
+  _proto.toOutside = function toOutside(url) {};
+
   _proto.destroy = function destroy() {
     this._unlistenHistory();
   };

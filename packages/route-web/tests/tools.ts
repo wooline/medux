@@ -136,11 +136,7 @@ export class NativeRouter extends BaseNativeRouter {
     return nativeData;
   }
 
-  protected pop(getNativeData: () => NativeData, n: number, key: string) {
-    const nativeData = getNativeData();
-    nativeRouterMock.pop(nativeData.nativeUrl, n, key);
-    return nativeData;
-  }
+  toOutside(url: string) {}
 
   destroy() {}
 }

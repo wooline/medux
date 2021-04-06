@@ -174,6 +174,10 @@ export var BrowserNativeRouter = function (_BaseNativeRouter) {
     return undefined;
   };
 
+  _proto.toOutside = function toOutside(url) {
+    this.history.push(url);
+  };
+
   _proto.destroy = function destroy() {
     this._unlistenHistory();
   };

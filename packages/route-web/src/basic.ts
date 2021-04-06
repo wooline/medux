@@ -9,7 +9,13 @@ export const routeConfig = {
   indexUrl: '',
 };
 
-export function setRouteConfig(conf: {actionMaxHistory?: number; pagesMaxHistory?: number; indexUrl?: string; pagenames?: {[key: string]: string}; disableNativeRoute?: boolean}) {
+export function setRouteConfig(conf: {
+  actionMaxHistory?: number;
+  pagesMaxHistory?: number;
+  indexUrl?: string;
+  pagenames?: {[key: string]: string};
+  disableNativeRoute?: boolean;
+}) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
   conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
@@ -17,7 +23,7 @@ export function setRouteConfig(conf: {actionMaxHistory?: number; pagesMaxHistory
   conf.indexUrl && (routeConfig.indexUrl = conf.indexUrl);
 }
 
-export type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
+export type HistoryAction = 'PUSH' | 'BACK' | 'REPLACE' | 'RELAUNCH';
 
 export type ModuleParams = {[key: string]: any};
 export type RootParams = {[moduleName: string]: ModuleParams};

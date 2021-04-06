@@ -1,6 +1,6 @@
 {
   "name": "@medux/eslint-plugin-recommended",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "main": "index.js",
   "description": "Common development tools",
   "repository": "https://github.com/wooline/medux/tree/master/packages/eslint-plugin-recommended",

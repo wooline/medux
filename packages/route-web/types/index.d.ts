@@ -62,10 +62,11 @@ export declare abstract class BaseNativeRouter {
     protected abstract replace(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
     protected abstract relaunch(getNativeData: () => NativeData, key: string): void | NativeData | Promise<NativeData>;
     protected abstract back(getNativeData: () => NativeData, n: number, key: string): void | NativeData | Promise<NativeData>;
+    abstract toOutside(url: string): void;
     abstract destroy(): void;
     protected onChange(key: string): boolean;
     setRouter(router: BaseRouter<any, string>): void;
-    execute(method: 'relaunch' | 'push' | 'replace' | 'back' | 'pop', getNativeData: () => NativeData, ...args: any[]): Promise<NativeData | undefined>;
+    execute(method: 'relaunch' | 'push' | 'replace' | 'back', getNativeData: () => NativeData, ...args: any[]): Promise<NativeData | undefined>;
 }
 export declare abstract class BaseRouter<P extends RootParams, N extends string> {
     nativeRouter: BaseNativeRouter;

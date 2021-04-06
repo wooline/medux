@@ -14,6 +14,7 @@ export declare class BrowserNativeRouter extends BaseNativeRouter {
     protected replace(getNativeData: () => NativeData, key: string): NativeData | undefined;
     protected relaunch(getNativeData: () => NativeData, key: string): NativeData | undefined;
     protected back(getNativeData: () => NativeData, n: number, key: string): NativeData | undefined;
+    toOutside(url: string): void;
     destroy(): void;
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {

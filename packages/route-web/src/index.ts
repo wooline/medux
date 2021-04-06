@@ -107,6 +107,8 @@ export abstract class BaseNativeRouter {
 
   protected abstract back(getNativeData: () => NativeData, n: number, key: string): void | NativeData | Promise<NativeData>;
 
+  public abstract toOutside(url: string): void;
+
   abstract destroy(): void;
 
   protected onChange(key: string): boolean {
@@ -122,7 +124,7 @@ export abstract class BaseNativeRouter {
     this.router = router;
   }
 
-  execute(method: 'relaunch' | 'push' | 'replace' | 'back' | 'pop', getNativeData: () => NativeData, ...args: any[]): Promise<NativeData | undefined> {
+  execute(method: 'relaunch' | 'push' | 'replace' | 'back', getNativeData: () => NativeData, ...args: any[]): Promise<NativeData | undefined> {
     return new Promise((resolve, reject) => {
       const task: NativeRouterTask = {resolve, reject, nativeData: undefined};
       this.curTask = task;
@@ -163,9 +165,16 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
 
   public readonly history: History;
 
-  constructor(nativeLocationOrNativeUrl: NativeLocation | string, public nativeRouter: BaseNativeRouter, protected locationTransform: LocationTransform<P>) {
+  constructor(
+    nativeLocationOrNativeUrl: NativeLocation | string,
+    public nativeRouter: BaseNativeRouter,
+    protected locationTransform: LocationTransform<P>
+  ) {
     nativeRouter.setRouter(this);
-    const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
+    const location =
+      typeof nativeLocationOrNativeUrl === 'string'
+        ? this.nativeUrlToLocation(nativeLocationOrNativeUrl)
+        : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     this.routeState = routeState;
@@ -290,7 +299,11 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     return {pagename: payload.pagename || this.routeState.pagename, params: params || {}};
   }
 
-  relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute) {
+  relaunch(
+    data: PayloadLocation<P, N> | NativeLocation | string,
+    internal: boolean = false,
+    disableNative: boolean = routeConfig.disableNativeRoute
+  ) {
     this.addTask(this._relaunch.bind(this, data, internal, disableNative));
   }
 
@@ -298,6 +311,10 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     // : Promise<RouteState<P>>
     let location: Location<P>;
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation(data)) {
       location = this.nativeLocationToLocation(data);
@@ -337,6 +354,10 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   private async _push(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
     let location: Location<P>;
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation(data)) {
       location = this.nativeLocationToLocation(data);
@@ -376,6 +397,10 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
   private async _replace(data: PayloadLocation<P, N> | NativeLocation | string, internal: boolean, disableNative: boolean) {
     let location: Location<P>;
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation(data)) {
       location = this.nativeLocationToLocation(data);

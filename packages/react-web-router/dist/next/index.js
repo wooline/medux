@@ -3053,6 +3053,11 @@ class BaseRouter {
     let location;
 
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
+
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation$1(data)) {
       location = this.nativeLocationToLocation(data);
@@ -3100,6 +3105,11 @@ class BaseRouter {
     let location;
 
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
+
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation$1(data)) {
       location = this.nativeLocationToLocation(data);
@@ -3148,6 +3158,11 @@ class BaseRouter {
     let location;
 
     if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return;
+      }
+
       location = this.urlToLocation(data);
     } else if (dataIsNativeLocation$1(data)) {
       location = this.nativeLocationToLocation(data);
@@ -4457,6 +4472,10 @@ class BrowserNativeRouter extends BaseNativeRouter {
     }
 
     return undefined;
+  }
+
+  toOutside(url) {
+    this.history.push(url);
   }
 
   destroy() {

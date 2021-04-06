@@ -2,7 +2,10 @@ import {deepMerge} from '@medux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
 import {Location, NativeLocation, DeepPartial, RootParams, routeConfig, PartialLocation} from './basic';
 
-export type LocationTransform<P extends RootParams> = {in: (nativeLocation: NativeLocation | PartialLocation<P>) => Location<P>; out: (meduxLocation: PartialLocation<P>) => NativeLocation};
+export type LocationTransform<P extends RootParams> = {
+  in: (nativeLocation: NativeLocation | PartialLocation<P>) => Location<P>;
+  out: (meduxLocation: PartialLocation<P>) => NativeLocation;
+};
 
 export type PagenameMap<P extends RootParams> = {
   [pagename: string]: {
