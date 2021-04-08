@@ -1,5 +1,5 @@
 import {Unsubscribe} from 'redux';
-import {deepMerge, LoadingState, TaskCountEvent, TaskCounter} from './sprite';
+import {deepMerge, LoadingState, TaskCounter} from './sprite';
 import {env} from './env';
 
 declare const process: any;
@@ -150,11 +150,11 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
   const key = moduleName + config.NSP + groupName;
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, (e) => {
+    loadings[key].addListener((loadingState) => {
       const store = MetaData.clientStore;
       if (store) {
         const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
-        const action = actions({[groupName]: e.data});
+        const action = actions({[groupName]: loadingState});
         store.dispatch(action);
       }
     });
@@ -191,7 +191,10 @@ export interface ActionHandler {
   __isReducer__?: boolean;
   __isEffect__?: boolean;
   __isHandler__?: boolean;
-  __decorators__?: [(action: Action, moduleName: string, effectResult: Promise<any>) => any, null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)][];
+  __decorators__?: [
+    (action: Action, moduleName: string, effectResult: Promise<any>) => any,
+    null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
+  ][];
   __decoratorResults__?: any[];
   (payload?: any): any;
 }

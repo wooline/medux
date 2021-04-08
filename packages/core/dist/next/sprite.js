@@ -1,6 +1,5 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { env } from './env';
-export const TaskCountEvent = 'TaskCountEvent';
 export let LoadingState;
 
 (function (LoadingState) {
@@ -9,107 +8,71 @@ export let LoadingState;
   LoadingState["Depth"] = "Depth";
 })(LoadingState || (LoadingState = {}));
 
-export class PEvent {
-  constructor(name, data, bubbling = false) {
-    _defineProperty(this, "target", void 0);
+export class SingleDispatcher {
+  constructor() {
+    _defineProperty(this, "listenerId", 0);
 
-    _defineProperty(this, "currentTarget", void 0);
-
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
+    _defineProperty(this, "listenerMap", {});
   }
 
-  setTarget(target) {
-    this.target = target;
+  addListener(callback) {
+    this.listenerId++;
+    const id = `${this.listenerId}`;
+    const listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return () => {
+      delete listenerMap[id];
+    };
   }
 
-  setCurrentTarget(target) {
-    this.currentTarget = target;
+  dispatch(data) {
+    const listenerMap = this.listenerMap;
+    Object.keys(listenerMap).forEach(id => {
+      listenerMap[id](data);
+    });
   }
 
 }
-export class PDispatcher {
-  constructor(parent) {
-    _defineProperty(this, "storeHandlers", {});
+export class MultipleDispatcher {
+  constructor() {
+    _defineProperty(this, "listenerId", 0);
 
-    this.parent = parent;
+    _defineProperty(this, "listenerMap", {});
   }
 
-  addListener(ename, handler) {
-    let dictionary = this.storeHandlers[ename];
+  addListener(name, callback) {
+    this.listenerId++;
+    const id = `${this.listenerId}`;
 
-    if (!dictionary) {
-      this.storeHandlers[ename] = dictionary = [];
+    if (!this.listenerMap[name]) {
+      this.listenerMap[name] = {};
     }
 
-    dictionary.push(handler);
-    return this;
+    const listenerMap = this.listenerMap[name];
+    listenerMap[id] = callback;
+    return () => {
+      delete listenerMap[id];
+    };
   }
 
-  removeListener(ename, handler) {
-    if (!ename) {
-      Object.keys(this.storeHandlers).forEach(key => {
-        delete this.storeHandlers[key];
+  dispatch(name, data) {
+    const listenerMap = this.listenerMap[name];
+
+    if (listenerMap) {
+      Object.keys(listenerMap).forEach(id => {
+        listenerMap[id](data);
       });
-    } else {
-      const handlers = this.storeHandlers;
-      const dictionary = handlers[ename];
-
-      if (dictionary) {
-        if (!handler) {
-          delete handlers[ename];
-        } else {
-          const n = dictionary.indexOf(handler);
-
-          if (n > -1) {
-            dictionary.splice(n, 1);
-          }
-
-          if (dictionary.length === 0) {
-            delete handlers[ename];
-          }
-        }
-      }
     }
-
-    return this;
-  }
-
-  dispatch(evt) {
-    if (!evt.target) {
-      evt.setTarget(this);
-    }
-
-    evt.setCurrentTarget(this);
-    const dictionary = this.storeHandlers[evt.name];
-
-    if (dictionary) {
-      for (let i = 0, k = dictionary.length; i < k; i++) {
-        dictionary[i](evt);
-      }
-    }
-
-    if (this.parent && evt.bubbling) {
-      this.parent.dispatch(evt);
-    }
-
-    return this;
-  }
-
-  setParent(parent) {
-    this.parent = parent;
-    return this;
   }
 
 }
-export class TaskCounter extends PDispatcher {
+export class TaskCounter extends SingleDispatcher {
   constructor(deferSecond) {
     super();
 
     _defineProperty(this, "list", []);
 
-    _defineProperty(this, "ctimer", null);
+    _defineProperty(this, "ctimer", 0);
 
     this.deferSecond = deferSecond;
   }
@@ -120,15 +83,15 @@ export class TaskCounter extends PDispatcher {
         promise,
         note
       });
-      promise.then(() => this.completeItem(promise), () => this.completeItem(promise));
+      promise.finally(() => this.completeItem(promise));
 
-      if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
+      if (this.list.length === 1 && !this.ctimer) {
+        this.dispatch(LoadingState.Start);
         this.ctimer = env.setTimeout(() => {
-          this.ctimer = null;
+          this.ctimer = 0;
 
           if (this.list.length > 0) {
-            this.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
+            this.dispatch(LoadingState.Depth);
           }
         }, this.deferSecond * 1000);
       }
@@ -146,10 +109,10 @@ export class TaskCounter extends PDispatcher {
       if (this.list.length === 0) {
         if (this.ctimer) {
           env.clearTimeout.call(null, this.ctimer);
-          this.ctimer = null;
+          this.ctimer = 0;
         }
 
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
+        this.dispatch(LoadingState.Stop);
       }
     }
 

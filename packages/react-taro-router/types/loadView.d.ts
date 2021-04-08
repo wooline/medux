@@ -7,7 +7,7 @@ export declare type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, 
     }>;
     OnLoading?: ComponentType<{}>;
 }>;
-export declare function setLoadViewOptions({ LoadViewOnError, LoadViewOnLoading }: {
+export declare function setLoadViewOptions({ LoadViewOnError, LoadViewOnLoading, }: {
     LoadViewOnError?: ComponentType<{
         message: string;
     }>;

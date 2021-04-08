@@ -81,7 +81,10 @@ export interface ActionHandler {
     __isReducer__?: boolean;
     __isEffect__?: boolean;
     __isHandler__?: boolean;
-    __decorators__?: [(action: Action, moduleName: string, effectResult: Promise<any>) => any, null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)][];
+    __decorators__?: [
+        (action: Action, moduleName: string, effectResult: Promise<any>) => any,
+        null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
+    ][];
     __decoratorResults__?: any[];
     (payload?: any): any;
 }

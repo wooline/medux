@@ -13,7 +13,18 @@ import type {LocationTransform} from '@medux/route-web';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
-export type {RouteModuleState as BaseModuleState, RootState, RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial} from '@medux/route-web';
+export type {
+  RouteModuleState as BaseModuleState,
+  RootState,
+  RouteState,
+  PayloadLocation,
+  LocationTransform,
+  NativeLocation,
+  PagenameMap,
+  HistoryAction,
+  Location,
+  DeepPartial,
+} from '@medux/route-web';
 export type {LoadView} from './loadView';
 export type {FacadeExports} from './sington';
 
@@ -33,7 +44,7 @@ export {
   isProcessedError,
   setProcessedError,
 } from '@medux/core';
-export {RouteModuleHandlers as BaseModuleHandlers, createLocationTransform} from '@medux/route-web';
+export {RouteModuleHandlers as BaseModuleHandlers, createLocationTransform, RouteActionTypes} from '@medux/route-web';
 export {eventBus} from './patch';
 export {exportApp, patchActions} from './sington';
 export {Else} from './components/Else';

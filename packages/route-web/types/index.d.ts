@@ -22,9 +22,9 @@ export declare class RouteModuleHandlers<S extends CoreModuleState, R extends Re
 export declare const RouteActionTypes: {
     MRouteParams: string;
     RouteChange: string;
-    BeforeRouteChange: string;
+    TestRouteChange: string;
 };
-export declare function beforeRouteChangeAction<P extends {
+export declare function testRouteChangeAction<P extends {
     [key: string]: any;
 }>(routeState: RouteState<P>): {
     type: string;
@@ -79,7 +79,13 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     private meduxUrl;
     protected store: Store | undefined;
     readonly history: History;
+    private _lid;
+    protected readonly listenerMap: {
+        [id: string]: (data: RouteState<P>) => void | Promise<void>;
+    };
     constructor(nativeLocationOrNativeUrl: NativeLocation | string, nativeRouter: BaseNativeRouter, locationTransform: LocationTransform<P>);
+    addListener(callback: (data: RouteState<P>) => void | Promise<void>): () => void;
+    protected dispatch(data: RouteState<P>): Promise<void[]>;
     getRouteState(): RouteState<P>;
     getPagename(): string;
     getParams(): Partial<P>;

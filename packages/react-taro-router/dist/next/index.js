@@ -34,7 +34,6 @@ if (typeof self !== 'undefined') {
 const env = root;
 env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 
-const TaskCountEvent = 'TaskCountEvent';
 let LoadingState;
 
 (function (LoadingState) {
@@ -43,107 +42,38 @@ let LoadingState;
   LoadingState["Depth"] = "Depth";
 })(LoadingState || (LoadingState = {}));
 
-class PEvent {
-  constructor(name, data, bubbling = false) {
-    _defineProperty(this, "target", void 0);
+class SingleDispatcher {
+  constructor() {
+    _defineProperty(this, "listenerId", 0);
 
-    _defineProperty(this, "currentTarget", void 0);
-
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
+    _defineProperty(this, "listenerMap", {});
   }
 
-  setTarget(target) {
-    this.target = target;
+  addListener(callback) {
+    this.listenerId++;
+    const id = `${this.listenerId}`;
+    const listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return () => {
+      delete listenerMap[id];
+    };
   }
 
-  setCurrentTarget(target) {
-    this.currentTarget = target;
-  }
-
-}
-class PDispatcher {
-  constructor(parent) {
-    _defineProperty(this, "storeHandlers", {});
-
-    this.parent = parent;
-  }
-
-  addListener(ename, handler) {
-    let dictionary = this.storeHandlers[ename];
-
-    if (!dictionary) {
-      this.storeHandlers[ename] = dictionary = [];
-    }
-
-    dictionary.push(handler);
-    return this;
-  }
-
-  removeListener(ename, handler) {
-    if (!ename) {
-      Object.keys(this.storeHandlers).forEach(key => {
-        delete this.storeHandlers[key];
-      });
-    } else {
-      const handlers = this.storeHandlers;
-      const dictionary = handlers[ename];
-
-      if (dictionary) {
-        if (!handler) {
-          delete handlers[ename];
-        } else {
-          const n = dictionary.indexOf(handler);
-
-          if (n > -1) {
-            dictionary.splice(n, 1);
-          }
-
-          if (dictionary.length === 0) {
-            delete handlers[ename];
-          }
-        }
-      }
-    }
-
-    return this;
-  }
-
-  dispatch(evt) {
-    if (!evt.target) {
-      evt.setTarget(this);
-    }
-
-    evt.setCurrentTarget(this);
-    const dictionary = this.storeHandlers[evt.name];
-
-    if (dictionary) {
-      for (let i = 0, k = dictionary.length; i < k; i++) {
-        dictionary[i](evt);
-      }
-    }
-
-    if (this.parent && evt.bubbling) {
-      this.parent.dispatch(evt);
-    }
-
-    return this;
-  }
-
-  setParent(parent) {
-    this.parent = parent;
-    return this;
+  dispatch(data) {
+    const listenerMap = this.listenerMap;
+    Object.keys(listenerMap).forEach(id => {
+      listenerMap[id](data);
+    });
   }
 
 }
-class TaskCounter extends PDispatcher {
+class TaskCounter extends SingleDispatcher {
   constructor(deferSecond) {
     super();
 
     _defineProperty(this, "list", []);
 
-    _defineProperty(this, "ctimer", null);
+    _defineProperty(this, "ctimer", 0);
 
     this.deferSecond = deferSecond;
   }
@@ -154,15 +84,15 @@ class TaskCounter extends PDispatcher {
         promise,
         note
       });
-      promise.then(() => this.completeItem(promise), () => this.completeItem(promise));
+      promise.finally(() => this.completeItem(promise));
 
-      if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
+      if (this.list.length === 1 && !this.ctimer) {
+        this.dispatch(LoadingState.Start);
         this.ctimer = env.setTimeout(() => {
-          this.ctimer = null;
+          this.ctimer = 0;
 
           if (this.list.length > 0) {
-            this.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
+            this.dispatch(LoadingState.Depth);
           }
         }, this.deferSecond * 1000);
       }
@@ -180,10 +110,10 @@ class TaskCounter extends PDispatcher {
       if (this.list.length === 0) {
         if (this.ctimer) {
           env.clearTimeout.call(null, this.ctimer);
-          this.ctimer = null;
+          this.ctimer = 0;
         }
 
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
+        this.dispatch(LoadingState.Stop);
       }
     }
 
@@ -318,13 +248,13 @@ function setLoading(item, moduleName = MetaData.appModuleName, groupName = 'glob
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, e => {
+    loadings[key].addListener(loadingState => {
       const store = MetaData.clientStore;
 
       if (store) {
         const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({
-          [groupName]: e.data
+          [groupName]: loadingState
         });
         store.dispatch(action);
       }
@@ -2651,11 +2581,11 @@ let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHand
 const RouteActionTypes = {
   MRouteParams: 'RouteParams',
   RouteChange: `medux${config.NSP}RouteChange`,
-  BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`
+  TestRouteChange: `medux${config.NSP}TestRouteChange`
 };
-function beforeRouteChangeAction(routeState) {
+function testRouteChangeAction(routeState) {
   return {
-    type: RouteActionTypes.BeforeRouteChange,
+    type: RouteActionTypes.TestRouteChange,
     payload: [routeState]
   };
 }
@@ -2676,6 +2606,7 @@ const routeMiddleware = ({
   getState
 }) => next => action => {
   if (action.type === RouteActionTypes.RouteChange) {
+    const result = next(action);
     const routeState = action.payload[0];
     const rootRouteParams = routeState.params;
     const rootState = getState();
@@ -2690,6 +2621,7 @@ const routeMiddleware = ({
         }
       }
     });
+    return result;
   }
 
   return next(action);
@@ -2774,6 +2706,10 @@ class BaseRouter {
 
     _defineProperty(this, "history", void 0);
 
+    _defineProperty(this, "_lid", 0);
+
+    _defineProperty(this, "listenerMap", {});
+
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
@@ -2799,6 +2735,22 @@ class BaseRouter {
       location,
       key
     });
+  }
+
+  addListener(callback) {
+    this._lid++;
+    const id = `${this._lid}`;
+    const listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return () => {
+      delete listenerMap[id];
+    };
+  }
+
+  dispatch(data) {
+    const listenerMap = this.listenerMap;
+    const arr = Object.keys(listenerMap).map(id => listenerMap[id](data));
+    return Promise.all(arr);
   }
 
   getRouteState() {
@@ -2966,7 +2918,8 @@ class BaseRouter {
       action: 'RELAUNCH',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
@@ -3018,7 +2971,8 @@ class BaseRouter {
       action: 'PUSH',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
@@ -3071,7 +3025,8 @@ class BaseRouter {
       action: 'REPLACE',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
@@ -3125,7 +3080,8 @@ class BaseRouter {
       action: 'BACK',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
@@ -3295,7 +3251,7 @@ function createRouter(locationTransform, routeENV, tabPages) {
   return router;
 }
 
-const eventBus = new PDispatcher();
+const eventBus = new SingleDispatcher();
 const tabPages = {};
 
 function queryToData(query = {}) {
@@ -3346,11 +3302,11 @@ function patchPageOptions(pageOptions) {
         }
       }
 
-      eventBus.dispatch(new PEvent('routeChange', {
+      eventBus.dispatch({
         pathname: curPathname,
         searchData: queryToData(currentPage.options),
         action
-      }));
+      });
     }
 
     return onShow == null ? void 0 : onShow.call(this);
@@ -3410,17 +3366,14 @@ const routeENV = {
   },
 
   onRouteChange(callback) {
-    const handler = e => {
+    return eventBus.addListener(data => {
       const {
         pathname,
         searchData,
         action
-      } = e.data;
+      } = data;
       callback(pathname, searchData, action);
-    };
-
-    eventBus.addListener('routeChange', handler);
-    return () => eventBus.removeListener('routeChange', handler);
+    });
   }
 
 };
@@ -3728,4 +3681,4 @@ function buildApp(moduleGetter, {
   }, []);
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, LoadingState, Switch, buildApp, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, eventBus, exportApp, exportModule$1 as exportModule, isProcessedError, logger, patchActions, reducer, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, Else, LoadingState, RouteActionTypes, Switch, buildApp, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, eventBus, exportApp, exportModule$1 as exportModule, isProcessedError, logger, patchActions, reducer, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError };

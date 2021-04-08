@@ -76,7 +76,12 @@ export function injectActions(store: ModuleStore, moduleName: string, handlers: 
             transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
           } else {
             handler.__isHandler__ = false;
-            transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
+            transformAction(
+              moduleName + config.NSP + actionName,
+              handler,
+              moduleName,
+              handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap
+            );
             // addModuleActionCreatorList(moduleName, actionName);
           }
         });
@@ -191,7 +196,11 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
 /**
  * 模块的数据结构，该数据由ExportModule方法自动生成
  */
-export interface Module<N extends string = string, H extends CoreModuleHandlers = CoreModuleHandlers, VS extends {[key: string]: any} = {[key: string]: any}> {
+export interface Module<
+  N extends string = string,
+  H extends CoreModuleHandlers = CoreModuleHandlers,
+  VS extends {[key: string]: any} = {[key: string]: any}
+> {
   default: {
     /**
      * 模块名称

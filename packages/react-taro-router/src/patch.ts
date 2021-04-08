@@ -1,6 +1,6 @@
 // https://github.com/fjc0k/vtils
 import Taro from '@tarojs/taro';
-import {PDispatcher, PEvent} from '@medux/core';
+import {SingleDispatcher} from '@medux/core';
 import type {RouteENV} from '@medux/route-mp';
 import {nativeUrlToNativeLocation} from '@medux/route-web';
 
@@ -15,7 +15,7 @@ type RouteChangeEventData = {
   action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH';
 };
 
-export const eventBus = new PDispatcher<{routeChange: RouteChangeEventData}>();
+export const eventBus = new SingleDispatcher<RouteChangeEventData>();
 export const tabPages: {[path: string]: boolean} = {};
 
 function queryToData(query: any = {}): {[key: string]: string} | undefined {
@@ -65,7 +65,7 @@ function patchPageOptions(pageOptions: meduxCore.PageConfig) {
           action = 'REPLACE';
         }
       }
-      eventBus.dispatch(new PEvent('routeChange', {pathname: curPathname, searchData: queryToData(currentPage.options), action}));
+      eventBus.dispatch({pathname: curPathname, searchData: queryToData(currentPage.options), action});
     }
     return onShow?.call(this);
   };
@@ -139,18 +139,19 @@ export const routeENV: RouteENV = {
     };
   },
   onRouteChange(callback) {
-    const handler = (e: PEvent<'routeChange', RouteChangeEventData>) => {
-      const {pathname, searchData, action} = e.data;
+    return eventBus.addListener((data) => {
+      const {pathname, searchData, action} = data;
       callback(pathname, searchData, action);
-    };
-    eventBus.addListener('routeChange', handler);
-    return () => eventBus.removeListener('routeChange', handler);
+    });
   },
 };
 
 if (process.env.TARO_ENV === 'h5') {
   const taroRouter: {
-    history: {location: {pathname: string; search: string}; listen: (callback: (location: {pathname: string; search: string}, action: 'POP' | 'PUSH' | 'REPLACE') => void) => () => void};
+    history: {
+      location: {pathname: string; search: string};
+      listen: (callback: (location: {pathname: string; search: string}, action: 'POP' | 'PUSH' | 'REPLACE') => void) => () => void;
+    };
   } = require('@tarojs/router');
   routeENV.getLocation = () => {
     const {pathname, search} = taroRouter.history.location;

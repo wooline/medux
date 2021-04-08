@@ -1,4 +1,4 @@
-import { deepMerge, TaskCountEvent, TaskCounter } from './sprite';
+import { deepMerge, TaskCounter } from './sprite';
 import { env } from './env';
 export const config = {
   NSP: '.',
@@ -67,13 +67,13 @@ export function setLoading(item, moduleName = MetaData.appModuleName, groupName 
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, e => {
+    loadings[key].addListener(loadingState => {
       const store = MetaData.clientStore;
 
       if (store) {
         const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({
-          [groupName]: e.data
+          [groupName]: loadingState
         });
         store.dispatch(action);
       }

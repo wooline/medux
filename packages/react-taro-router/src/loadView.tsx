@@ -9,7 +9,13 @@ const loadViewDefaultOptions: {LoadViewOnError: ComponentType<{message: string}>
   LoadViewOnError: ({message}) => <View className="g-view-error">{message}</View>,
   LoadViewOnLoading: () => <View className="g-view-loading">loading...</View>,
 };
-export function setLoadViewOptions({LoadViewOnError, LoadViewOnLoading}: {LoadViewOnError?: ComponentType<{message: string}>; LoadViewOnLoading?: ComponentType<{}>}) {
+export function setLoadViewOptions({
+  LoadViewOnError,
+  LoadViewOnLoading,
+}: {
+  LoadViewOnError?: ComponentType<{message: string}>;
+  LoadViewOnLoading?: ComponentType<{}>;
+}) {
   LoadViewOnError && (loadViewDefaultOptions.LoadViewOnError = LoadViewOnError);
   LoadViewOnLoading && (loadViewDefaultOptions.LoadViewOnLoading = LoadViewOnLoading);
 }

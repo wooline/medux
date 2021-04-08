@@ -18,7 +18,7 @@ export declare function setRouteConfig(conf: {
     };
     disableNativeRoute?: boolean;
 }): void;
-export declare type HistoryAction = 'PUSH' | 'BACK' | 'POP' | 'REPLACE' | 'RELAUNCH';
+export declare type HistoryAction = 'PUSH' | 'BACK' | 'REPLACE' | 'RELAUNCH';
 export declare type ModuleParams = {
     [key: string]: any;
 };

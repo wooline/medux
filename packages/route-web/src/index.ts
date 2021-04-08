@@ -29,16 +29,15 @@ export class RouteModuleHandlers<S extends CoreModuleState, R extends Record<str
 export const RouteActionTypes = {
   MRouteParams: 'RouteParams',
   RouteChange: `medux${config.NSP}RouteChange`,
-  BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`,
+  TestRouteChange: `medux${config.NSP}TestRouteChange`,
 };
 
-export function beforeRouteChangeAction<P extends {[key: string]: any}>(routeState: RouteState<P>) {
+export function testRouteChangeAction<P extends {[key: string]: any}>(routeState: RouteState<P>) {
   return {
-    type: RouteActionTypes.BeforeRouteChange,
+    type: RouteActionTypes.TestRouteChange,
     payload: [routeState],
   };
 }
-
 export function routeParamsAction(moduleName: string, params: any, action: HistoryAction) {
   return {
     type: `${moduleName}${config.NSP}${RouteActionTypes.MRouteParams}`,
@@ -55,6 +54,7 @@ export function routeChangeAction<P extends {[key: string]: any}>(routeState: Ro
 
 export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (action) => {
   if (action.type === RouteActionTypes.RouteChange) {
+    const result = next(action);
     const routeState: RouteState<any> = action.payload[0];
     const rootRouteParams = routeState.params;
     const rootState = getState();
@@ -66,6 +66,7 @@ export const routeMiddleware: Middleware = ({dispatch, getState}) => (next) => (
         }
       }
     });
+    return result;
   }
   return next(action);
 };
@@ -165,6 +166,10 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
 
   public readonly history: History;
 
+  private _lid: number = 0;
+
+  protected readonly listenerMap: {[id: string]: (data: RouteState<P>) => void | Promise<void>} = {};
+
   constructor(
     nativeLocationOrNativeUrl: NativeLocation | string,
     public nativeRouter: BaseNativeRouter,
@@ -184,6 +189,22 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     }
     this._nativeData = undefined;
     this.history = new History({location, key});
+  }
+
+  addListener(callback: (data: RouteState<P>) => void | Promise<void>) {
+    this._lid++;
+    const id = `${this._lid}`;
+    const listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return () => {
+      delete listenerMap[id];
+    };
+  }
+
+  protected dispatch(data: RouteState<P>) {
+    const listenerMap = this.listenerMap;
+    const arr = Object.keys(listenerMap).map((id) => listenerMap[id](data));
+    return Promise.all(arr);
   }
 
   getRouteState(): RouteState<P> {
@@ -323,7 +344,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     }
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
-    await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    await this.store!.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData: NativeData | undefined;
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
@@ -366,7 +388,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     }
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'PUSH', key};
-    await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    await this.store!.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData: NativeData | void;
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
@@ -409,7 +432,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     }
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'REPLACE', key};
-    await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    await this.store!.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData: NativeData | void;
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
@@ -448,7 +472,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     const uri = stack.uri;
     const {key, location} = uriToLocation<P>(uri);
     const routeState: RouteState<P> = {...location, action: 'BACK', key};
-    await this.store!.dispatch(beforeRouteChangeAction(routeState));
+    await this.store!.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData: NativeData | void;
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute(
@@ -473,45 +498,6 @@ export abstract class BaseRouter<P extends RootParams, N extends string> {
     this.store!.dispatch(routeChangeAction(routeState));
     return undefined;
   }
-
-  // pop(n: number = 1, indexUrl: string = 'index', internal: boolean = false, disableNative: boolean = routeConfig.disableNativeRoute): boolean {
-  //   this.addTask(this._pop.bind(this, n, indexUrl === 'index' ? routeConfig.indexUrl : indexUrl, internal, disableNative));
-  //   return true;
-  // }
-
-  // private async _pop(n: number = 1, indexUrl: string = '', internal: boolean, disableNative: boolean) {
-  //   const stack = internal ? this.history.getCurrentInternalHistory().getPageRecord(n) : this.history.getPageRecord(n);
-  //   if (!stack) {
-  //     return this._relaunch(indexUrl || routeConfig.indexUrl, internal, disableNative);
-  //   }
-  //   const uri = stack.uri;
-  //   const {key, location} = uriToLocation<P>(uri);
-  //   const routeState: RouteState<P> = {...location, action: 'POP', key};
-  //   await this.store!.dispatch(beforeRouteChangeAction(routeState));
-  //   let nativeData: NativeData | void;
-  //   if (!disableNative && !internal) {
-  //     nativeData = await this.nativeRouter.execute(
-  //       'pop',
-  //       () => {
-  //         const nativeLocation = this.locationTransform.out(routeState);
-  //         const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
-  //         return {nativeLocation, nativeUrl};
-  //       },
-  //       n,
-  //       key
-  //     );
-  //   }
-  //   this._nativeData = nativeData || undefined;
-  //   this.routeState = routeState;
-  //   this.meduxUrl = this.locationToMeduxUrl(routeState);
-  //   if (internal) {
-  //     this.history.getCurrentInternalHistory().pop(n);
-  //   } else {
-  //     this.history.pop(n);
-  //   }
-  //   this.store!.dispatch(routeChangeAction(routeState));
-  //   return undefined;
-  // }
 
   private taskComplete() {
     const task = this.taskList.shift();

@@ -2,7 +2,6 @@ import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitial
 import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { env } from './env';
-export var TaskCountEvent = 'TaskCountEvent';
 export var LoadingState;
 
 (function (LoadingState) {
@@ -11,132 +10,90 @@ export var LoadingState;
   LoadingState["Depth"] = "Depth";
 })(LoadingState || (LoadingState = {}));
 
-export var PEvent = function () {
-  function PEvent(name, data, bubbling) {
-    if (bubbling === void 0) {
-      bubbling = false;
-    }
+export var SingleDispatcher = function () {
+  function SingleDispatcher() {
+    _defineProperty(this, "listenerId", 0);
 
-    _defineProperty(this, "target", void 0);
-
-    _defineProperty(this, "currentTarget", void 0);
-
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
+    _defineProperty(this, "listenerMap", {});
   }
 
-  var _proto = PEvent.prototype;
+  var _proto = SingleDispatcher.prototype;
 
-  _proto.setTarget = function setTarget(target) {
-    this.target = target;
+  _proto.addListener = function addListener(callback) {
+    this.listenerId++;
+    var id = "" + this.listenerId;
+    var listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return function () {
+      delete listenerMap[id];
+    };
   };
 
-  _proto.setCurrentTarget = function setCurrentTarget(target) {
-    this.currentTarget = target;
+  _proto.dispatch = function dispatch(data) {
+    var listenerMap = this.listenerMap;
+    Object.keys(listenerMap).forEach(function (id) {
+      listenerMap[id](data);
+    });
   };
 
-  return PEvent;
+  return SingleDispatcher;
 }();
-export var PDispatcher = function () {
-  function PDispatcher(parent) {
-    _defineProperty(this, "storeHandlers", {});
+export var MultipleDispatcher = function () {
+  function MultipleDispatcher() {
+    _defineProperty(this, "listenerId", 0);
 
-    this.parent = parent;
+    _defineProperty(this, "listenerMap", {});
   }
 
-  var _proto2 = PDispatcher.prototype;
+  var _proto2 = MultipleDispatcher.prototype;
 
-  _proto2.addListener = function addListener(ename, handler) {
-    var dictionary = this.storeHandlers[ename];
+  _proto2.addListener = function addListener(name, callback) {
+    this.listenerId++;
+    var id = "" + this.listenerId;
 
-    if (!dictionary) {
-      this.storeHandlers[ename] = dictionary = [];
+    if (!this.listenerMap[name]) {
+      this.listenerMap[name] = {};
     }
 
-    dictionary.push(handler);
-    return this;
+    var listenerMap = this.listenerMap[name];
+    listenerMap[id] = callback;
+    return function () {
+      delete listenerMap[id];
+    };
   };
 
-  _proto2.removeListener = function removeListener(ename, handler) {
-    var _this = this;
+  _proto2.dispatch = function dispatch(name, data) {
+    var listenerMap = this.listenerMap[name];
 
-    if (!ename) {
-      Object.keys(this.storeHandlers).forEach(function (key) {
-        delete _this.storeHandlers[key];
+    if (listenerMap) {
+      Object.keys(listenerMap).forEach(function (id) {
+        listenerMap[id](data);
       });
-    } else {
-      var handlers = this.storeHandlers;
-      var dictionary = handlers[ename];
-
-      if (dictionary) {
-        if (!handler) {
-          delete handlers[ename];
-        } else {
-          var n = dictionary.indexOf(handler);
-
-          if (n > -1) {
-            dictionary.splice(n, 1);
-          }
-
-          if (dictionary.length === 0) {
-            delete handlers[ename];
-          }
-        }
-      }
     }
-
-    return this;
   };
 
-  _proto2.dispatch = function dispatch(evt) {
-    if (!evt.target) {
-      evt.setTarget(this);
-    }
-
-    evt.setCurrentTarget(this);
-    var dictionary = this.storeHandlers[evt.name];
-
-    if (dictionary) {
-      for (var i = 0, k = dictionary.length; i < k; i++) {
-        dictionary[i](evt);
-      }
-    }
-
-    if (this.parent && evt.bubbling) {
-      this.parent.dispatch(evt);
-    }
-
-    return this;
-  };
-
-  _proto2.setParent = function setParent(parent) {
-    this.parent = parent;
-    return this;
-  };
-
-  return PDispatcher;
+  return MultipleDispatcher;
 }();
-export var TaskCounter = function (_PDispatcher) {
-  _inheritsLoose(TaskCounter, _PDispatcher);
+export var TaskCounter = function (_SingleDispatcher) {
+  _inheritsLoose(TaskCounter, _SingleDispatcher);
 
   function TaskCounter(deferSecond) {
-    var _this2;
+    var _this;
 
-    _this2 = _PDispatcher.call(this) || this;
+    _this = _SingleDispatcher.call(this) || this;
 
-    _defineProperty(_assertThisInitialized(_this2), "list", []);
+    _defineProperty(_assertThisInitialized(_this), "list", []);
 
-    _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
+    _defineProperty(_assertThisInitialized(_this), "ctimer", 0);
 
-    _this2.deferSecond = deferSecond;
-    return _this2;
+    _this.deferSecond = deferSecond;
+    return _this;
   }
 
   var _proto3 = TaskCounter.prototype;
 
   _proto3.addItem = function addItem(promise, note) {
-    var _this3 = this;
+    var _this2 = this;
 
     if (note === void 0) {
       note = '';
@@ -149,19 +106,17 @@ export var TaskCounter = function (_PDispatcher) {
         promise: promise,
         note: note
       });
-      promise.then(function () {
-        return _this3.completeItem(promise);
-      }, function () {
-        return _this3.completeItem(promise);
+      promise.finally(function () {
+        return _this2.completeItem(promise);
       });
 
-      if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
+      if (this.list.length === 1 && !this.ctimer) {
+        this.dispatch(LoadingState.Start);
         this.ctimer = env.setTimeout(function () {
-          _this3.ctimer = null;
+          _this2.ctimer = 0;
 
-          if (_this3.list.length > 0) {
-            _this3.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
+          if (_this2.list.length > 0) {
+            _this2.dispatch(LoadingState.Depth);
           }
         }, this.deferSecond * 1000);
       }
@@ -181,10 +136,10 @@ export var TaskCounter = function (_PDispatcher) {
       if (this.list.length === 0) {
         if (this.ctimer) {
           env.clearTimeout.call(null, this.ctimer);
-          this.ctimer = null;
+          this.ctimer = 0;
         }
 
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
+        this.dispatch(LoadingState.Stop);
       }
     }
 
@@ -192,7 +147,7 @@ export var TaskCounter = function (_PDispatcher) {
   };
 
   return TaskCounter;
-}(PDispatcher);
+}(SingleDispatcher);
 export function isPlainObject(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }

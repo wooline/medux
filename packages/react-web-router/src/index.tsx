@@ -15,7 +15,18 @@ import type {ServerRequest, ServerResponse} from './sington';
 
 export type {RootModuleFacade, Dispatch} from '@medux/core';
 export type {Store} from 'redux';
-export type {RouteModuleState as BaseModuleState, RootState, RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial} from '@medux/route-web';
+export type {
+  RouteModuleState as BaseModuleState,
+  RootState,
+  RouteState,
+  PayloadLocation,
+  LocationTransform,
+  NativeLocation,
+  PagenameMap,
+  HistoryAction,
+  Location,
+  DeepPartial,
+} from '@medux/route-web';
 export type {LoadView} from './loadView';
 export type {FacadeExports, ServerRequest, ServerResponse} from './sington';
 
@@ -40,7 +51,7 @@ export {
   isProcessedError,
   setProcessedError,
 } from '@medux/core';
-export {RouteModuleHandlers as BaseModuleHandlers, createLocationTransform} from '@medux/route-web';
+export {RouteModuleHandlers as BaseModuleHandlers, createLocationTransform, RouteActionTypes} from '@medux/route-web';
 export {exportApp, patchActions} from './sington';
 export {DocumentHead} from './components/DocumentHead';
 export {Else} from './components/Else';
@@ -191,7 +202,10 @@ export function buildSSR(
     if (match) {
       const pageHead = html.split(/<head>|<\/head>/, 3);
       html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-      return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${SSRKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+      return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${SSRKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(
+        match[0],
+        match[0] + html
+      );
     }
     return html;
   });

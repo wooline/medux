@@ -65,7 +65,6 @@ if (typeof self !== 'undefined') {
 var env = root;
 env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
 
-var TaskCountEvent = 'TaskCountEvent';
 var LoadingState;
 
 (function (LoadingState) {
@@ -74,132 +73,54 @@ var LoadingState;
   LoadingState["Depth"] = "Depth";
 })(LoadingState || (LoadingState = {}));
 
-var PEvent = function () {
-  function PEvent(name, data, bubbling) {
-    if (bubbling === void 0) {
-      bubbling = false;
-    }
+var SingleDispatcher = function () {
+  function SingleDispatcher() {
+    _defineProperty(this, "listenerId", 0);
 
-    _defineProperty(this, "target", void 0);
-
-    _defineProperty(this, "currentTarget", void 0);
-
-    this.name = name;
-    this.data = data;
-    this.bubbling = bubbling;
+    _defineProperty(this, "listenerMap", {});
   }
 
-  var _proto = PEvent.prototype;
+  var _proto = SingleDispatcher.prototype;
 
-  _proto.setTarget = function setTarget(target) {
-    this.target = target;
+  _proto.addListener = function addListener(callback) {
+    this.listenerId++;
+    var id = "" + this.listenerId;
+    var listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return function () {
+      delete listenerMap[id];
+    };
   };
 
-  _proto.setCurrentTarget = function setCurrentTarget(target) {
-    this.currentTarget = target;
+  _proto.dispatch = function dispatch(data) {
+    var listenerMap = this.listenerMap;
+    Object.keys(listenerMap).forEach(function (id) {
+      listenerMap[id](data);
+    });
   };
 
-  return PEvent;
+  return SingleDispatcher;
 }();
-var PDispatcher = function () {
-  function PDispatcher(parent) {
-    _defineProperty(this, "storeHandlers", {});
-
-    this.parent = parent;
-  }
-
-  var _proto2 = PDispatcher.prototype;
-
-  _proto2.addListener = function addListener(ename, handler) {
-    var dictionary = this.storeHandlers[ename];
-
-    if (!dictionary) {
-      this.storeHandlers[ename] = dictionary = [];
-    }
-
-    dictionary.push(handler);
-    return this;
-  };
-
-  _proto2.removeListener = function removeListener(ename, handler) {
-    var _this = this;
-
-    if (!ename) {
-      Object.keys(this.storeHandlers).forEach(function (key) {
-        delete _this.storeHandlers[key];
-      });
-    } else {
-      var handlers = this.storeHandlers;
-      var dictionary = handlers[ename];
-
-      if (dictionary) {
-        if (!handler) {
-          delete handlers[ename];
-        } else {
-          var n = dictionary.indexOf(handler);
-
-          if (n > -1) {
-            dictionary.splice(n, 1);
-          }
-
-          if (dictionary.length === 0) {
-            delete handlers[ename];
-          }
-        }
-      }
-    }
-
-    return this;
-  };
-
-  _proto2.dispatch = function dispatch(evt) {
-    if (!evt.target) {
-      evt.setTarget(this);
-    }
-
-    evt.setCurrentTarget(this);
-    var dictionary = this.storeHandlers[evt.name];
-
-    if (dictionary) {
-      for (var i = 0, k = dictionary.length; i < k; i++) {
-        dictionary[i](evt);
-      }
-    }
-
-    if (this.parent && evt.bubbling) {
-      this.parent.dispatch(evt);
-    }
-
-    return this;
-  };
-
-  _proto2.setParent = function setParent(parent) {
-    this.parent = parent;
-    return this;
-  };
-
-  return PDispatcher;
-}();
-var TaskCounter = function (_PDispatcher) {
-  _inheritsLoose(TaskCounter, _PDispatcher);
+var TaskCounter = function (_SingleDispatcher) {
+  _inheritsLoose(TaskCounter, _SingleDispatcher);
 
   function TaskCounter(deferSecond) {
-    var _this2;
+    var _this;
 
-    _this2 = _PDispatcher.call(this) || this;
+    _this = _SingleDispatcher.call(this) || this;
 
-    _defineProperty(_assertThisInitialized(_this2), "list", []);
+    _defineProperty(_assertThisInitialized(_this), "list", []);
 
-    _defineProperty(_assertThisInitialized(_this2), "ctimer", null);
+    _defineProperty(_assertThisInitialized(_this), "ctimer", 0);
 
-    _this2.deferSecond = deferSecond;
-    return _this2;
+    _this.deferSecond = deferSecond;
+    return _this;
   }
 
   var _proto3 = TaskCounter.prototype;
 
   _proto3.addItem = function addItem(promise, note) {
-    var _this3 = this;
+    var _this2 = this;
 
     if (note === void 0) {
       note = '';
@@ -212,19 +133,17 @@ var TaskCounter = function (_PDispatcher) {
         promise: promise,
         note: note
       });
-      promise.then(function () {
-        return _this3.completeItem(promise);
-      }, function () {
-        return _this3.completeItem(promise);
+      promise.finally(function () {
+        return _this2.completeItem(promise);
       });
 
-      if (this.list.length === 1) {
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
+      if (this.list.length === 1 && !this.ctimer) {
+        this.dispatch(LoadingState.Start);
         this.ctimer = env.setTimeout(function () {
-          _this3.ctimer = null;
+          _this2.ctimer = 0;
 
-          if (_this3.list.length > 0) {
-            _this3.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
+          if (_this2.list.length > 0) {
+            _this2.dispatch(LoadingState.Depth);
           }
         }, this.deferSecond * 1000);
       }
@@ -244,10 +163,10 @@ var TaskCounter = function (_PDispatcher) {
       if (this.list.length === 0) {
         if (this.ctimer) {
           env.clearTimeout.call(null, this.ctimer);
-          this.ctimer = null;
+          this.ctimer = 0;
         }
 
-        this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
+        this.dispatch(LoadingState.Stop);
       }
     }
 
@@ -255,7 +174,7 @@ var TaskCounter = function (_PDispatcher) {
   };
 
   return TaskCounter;
-}(PDispatcher);
+}(SingleDispatcher);
 function isPlainObject(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
@@ -413,7 +332,7 @@ function setLoading(item, moduleName, groupName) {
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(depthTime);
-    loadings[key].addListener(TaskCountEvent, function (e) {
+    loadings[key].addListener(function (loadingState) {
       var store = MetaData.clientStore;
 
       if (store) {
@@ -421,7 +340,7 @@ function setLoading(item, moduleName, groupName) {
 
         var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
 
-        var _action = actions((_actions = {}, _actions[groupName] = e.data, _actions));
+        var _action = actions((_actions = {}, _actions[groupName] = loadingState, _actions));
 
         store.dispatch(_action);
       }
@@ -3801,11 +3720,11 @@ var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHand
 var RouteActionTypes = {
   MRouteParams: 'RouteParams',
   RouteChange: "medux" + config.NSP + "RouteChange",
-  BeforeRouteChange: "medux" + config.NSP + "BeforeRouteChange"
+  TestRouteChange: "medux" + config.NSP + "TestRouteChange"
 };
-function beforeRouteChangeAction(routeState) {
+function testRouteChangeAction(routeState) {
   return {
-    type: RouteActionTypes.BeforeRouteChange,
+    type: RouteActionTypes.TestRouteChange,
     payload: [routeState]
   };
 }
@@ -3827,6 +3746,7 @@ var routeMiddleware = function routeMiddleware(_ref) {
   return function (next) {
     return function (action) {
       if (action.type === RouteActionTypes.RouteChange) {
+        var result = next(action);
         var routeState = action.payload[0];
         var rootRouteParams = routeState.params;
         var rootState = getState();
@@ -3841,6 +3761,7 @@ var routeMiddleware = function routeMiddleware(_ref) {
             }
           }
         });
+        return result;
       }
 
       return next(action);
@@ -3937,6 +3858,10 @@ var BaseRouter = function () {
 
     _defineProperty(this, "history", void 0);
 
+    _defineProperty(this, "_lid", 0);
+
+    _defineProperty(this, "listenerMap", {});
+
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
@@ -3966,6 +3891,24 @@ var BaseRouter = function () {
   }
 
   var _proto2 = BaseRouter.prototype;
+
+  _proto2.addListener = function addListener(callback) {
+    this._lid++;
+    var id = "" + this._lid;
+    var listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return function () {
+      delete listenerMap[id];
+    };
+  };
+
+  _proto2.dispatch = function dispatch(data) {
+    var listenerMap = this.listenerMap;
+    var arr = Object.keys(listenerMap).map(function (id) {
+      return listenerMap[id](data);
+    });
+    return Promise.all(arr);
+  };
 
   _proto2.getRouteState = function getRouteState() {
     return this.routeState;
@@ -4060,10 +4003,11 @@ var BaseRouter = function () {
 
     try {
       if (query.startsWith('{')) {
-        var data = JSON.parse(query);
+        var _data = JSON.parse(query);
+
         location = this.locationTransform.in({
           pagename: pathname,
-          params: data
+          params: _data
         });
       } else {
         var nativeLocation = this.nativeUrlToNativeLocation(url);
@@ -4162,15 +4106,19 @@ var BaseRouter = function () {
                 key: key
               });
               _context.next = 12;
-              return this.store.dispatch(beforeRouteChangeAction(routeState));
+              return this.store.dispatch(testRouteChangeAction(routeState));
 
             case 12:
+              _context.next = 14;
+              return this.dispatch(routeState);
+
+            case 14:
               if (!(!disableNative && !internal)) {
-                _context.next = 16;
+                _context.next = 18;
                 break;
               }
 
-              _context.next = 15;
+              _context.next = 17;
               return this.nativeRouter.execute('relaunch', function () {
                 var nativeLocation = _this3.locationTransform.out(routeState);
 
@@ -4182,10 +4130,10 @@ var BaseRouter = function () {
                 };
               }, key);
 
-            case 15:
+            case 17:
               nativeData = _context.sent;
 
-            case 16:
+            case 18:
               this._nativeData = nativeData;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -4197,7 +4145,7 @@ var BaseRouter = function () {
                 this.history.relaunch(location, key);
               }
 
-            case 21:
+            case 23:
             case "end":
               return _context.stop();
           }
@@ -4265,15 +4213,19 @@ var BaseRouter = function () {
                 key: key
               });
               _context2.next = 12;
-              return this.store.dispatch(beforeRouteChangeAction(routeState));
+              return this.store.dispatch(testRouteChangeAction(routeState));
 
             case 12:
+              _context2.next = 14;
+              return this.dispatch(routeState);
+
+            case 14:
               if (!(!disableNative && !internal)) {
-                _context2.next = 16;
+                _context2.next = 18;
                 break;
               }
 
-              _context2.next = 15;
+              _context2.next = 17;
               return this.nativeRouter.execute('push', function () {
                 var nativeLocation = _this4.locationTransform.out(routeState);
 
@@ -4285,10 +4237,10 @@ var BaseRouter = function () {
                 };
               }, key);
 
-            case 15:
+            case 17:
               nativeData = _context2.sent;
 
-            case 16:
+            case 18:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -4301,7 +4253,7 @@ var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 21:
+            case 23:
             case "end":
               return _context2.stop();
           }
@@ -4369,15 +4321,19 @@ var BaseRouter = function () {
                 key: key
               });
               _context3.next = 12;
-              return this.store.dispatch(beforeRouteChangeAction(routeState));
+              return this.store.dispatch(testRouteChangeAction(routeState));
 
             case 12:
+              _context3.next = 14;
+              return this.dispatch(routeState);
+
+            case 14:
               if (!(!disableNative && !internal)) {
-                _context3.next = 16;
+                _context3.next = 18;
                 break;
               }
 
-              _context3.next = 15;
+              _context3.next = 17;
               return this.nativeRouter.execute('replace', function () {
                 var nativeLocation = _this5.locationTransform.out(routeState);
 
@@ -4389,10 +4345,10 @@ var BaseRouter = function () {
                 };
               }, key);
 
-            case 15:
+            case 17:
               nativeData = _context3.sent;
 
-            case 16:
+            case 18:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -4405,7 +4361,7 @@ var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 21:
+            case 23:
             case "end":
               return _context3.stop();
           }
@@ -4482,15 +4438,19 @@ var BaseRouter = function () {
                 key: key
               });
               _context4.next = 11;
-              return this.store.dispatch(beforeRouteChangeAction(routeState));
+              return this.store.dispatch(testRouteChangeAction(routeState));
 
             case 11:
+              _context4.next = 13;
+              return this.dispatch(routeState);
+
+            case 13:
               if (!(!disableNative && !internal)) {
-                _context4.next = 15;
+                _context4.next = 17;
                 break;
               }
 
-              _context4.next = 14;
+              _context4.next = 16;
               return this.nativeRouter.execute('back', function () {
                 var nativeLocation = _this6.locationTransform.out(routeState);
 
@@ -4502,10 +4462,10 @@ var BaseRouter = function () {
                 };
               }, n, key);
 
-            case 14:
+            case 16:
               nativeData = _context4.sent;
 
-            case 15:
+            case 17:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
               this.meduxUrl = this.locationToMeduxUrl(routeState);
@@ -4519,7 +4479,7 @@ var BaseRouter = function () {
               this.store.dispatch(routeChangeAction(routeState));
               return _context4.abrupt("return", undefined);
 
-            case 21:
+            case 23:
             case "end":
               return _context4.stop();
           }
@@ -6173,4 +6133,4 @@ function buildSSR(moduleGetter, _ref2) {
   });
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, Switch, buildApp, buildSSR, clientSide, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, buildApp, buildSSR, clientSide, createLocationTransform, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportApp, exportModule$1 as exportModule, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig$1 as setConfig, setLoading, setLoadingDepthTime, setProcessedError, setSsrHtmlTpl, viewHotReplacement };

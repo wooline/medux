@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.PEvent = exports.PDispatcher = exports.deepMerge = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.clientSide = exports.serverSide = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.mergeState = exports.deepMergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
+exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.MultipleDispatcher = exports.SingleDispatcher = exports.deepMerge = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.clientSide = exports.serverSide = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.mergeState = exports.deepMergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -45,8 +45,8 @@ var _sprite = require("./sprite");
 
 exports.LoadingState = _sprite.LoadingState;
 exports.deepMerge = _sprite.deepMerge;
-exports.PDispatcher = _sprite.PDispatcher;
-exports.PEvent = _sprite.PEvent;
+exports.SingleDispatcher = _sprite.SingleDispatcher;
+exports.MultipleDispatcher = _sprite.MultipleDispatcher;
 
 var _module = require("./module");
 

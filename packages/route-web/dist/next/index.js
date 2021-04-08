@@ -37,11 +37,11 @@ export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreMod
 export const RouteActionTypes = {
   MRouteParams: 'RouteParams',
   RouteChange: `medux${config.NSP}RouteChange`,
-  BeforeRouteChange: `medux${config.NSP}BeforeRouteChange`
+  TestRouteChange: `medux${config.NSP}TestRouteChange`
 };
-export function beforeRouteChangeAction(routeState) {
+export function testRouteChangeAction(routeState) {
   return {
-    type: RouteActionTypes.BeforeRouteChange,
+    type: RouteActionTypes.TestRouteChange,
     payload: [routeState]
   };
 }
@@ -62,6 +62,7 @@ export const routeMiddleware = ({
   getState
 }) => next => action => {
   if (action.type === RouteActionTypes.RouteChange) {
+    const result = next(action);
     const routeState = action.payload[0];
     const rootRouteParams = routeState.params;
     const rootState = getState();
@@ -76,6 +77,7 @@ export const routeMiddleware = ({
         }
       }
     });
+    return result;
   }
 
   return next(action);
@@ -160,6 +162,10 @@ export class BaseRouter {
 
     _defineProperty(this, "history", void 0);
 
+    _defineProperty(this, "_lid", 0);
+
+    _defineProperty(this, "listenerMap", {});
+
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
@@ -185,6 +191,22 @@ export class BaseRouter {
       location,
       key
     });
+  }
+
+  addListener(callback) {
+    this._lid++;
+    const id = `${this._lid}`;
+    const listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return () => {
+      delete listenerMap[id];
+    };
+  }
+
+  dispatch(data) {
+    const listenerMap = this.listenerMap;
+    const arr = Object.keys(listenerMap).map(id => listenerMap[id](data));
+    return Promise.all(arr);
   }
 
   getRouteState() {
@@ -352,7 +374,8 @@ export class BaseRouter {
       action: 'RELAUNCH',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
@@ -404,7 +427,8 @@ export class BaseRouter {
       action: 'PUSH',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
@@ -457,7 +481,8 @@ export class BaseRouter {
       action: 'REPLACE',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
@@ -511,7 +536,8 @@ export class BaseRouter {
       action: 'BACK',
       key
     };
-    await this.store.dispatch(beforeRouteChangeAction(routeState));
+    await this.store.dispatch(testRouteChangeAction(routeState));
+    await this.dispatch(routeState);
     let nativeData;
 
     if (!disableNative && !internal) {
