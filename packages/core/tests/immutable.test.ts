@@ -1,36 +1,41 @@
-import {Middleware} from 'redux';
-import {getView, renderApp, ModuleStore} from 'src/index';
+import {Middleware, Store} from 'redux';
+import {getView, Action} from 'src/index';
+import {createAppWithRedux} from 'src/lib/withRedux';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
 
 describe('init', () => {
-  let mockStore: ModuleStore;
+  let mockStore: Store;
+  const reduxLogs: string[] = [];
   const actionLogs: string[] = [];
 
-  const logerMiddleware: Middleware = ({dispatch}) => (next) => (originalAction) => {
-    actionLogs.push(originalAction.type);
-    return next(originalAction);
+  const logerMiddleware: Middleware = () => (next) => (action) => {
+    reduxLogs.push(action.type);
+    return next(action);
   };
 
+  const actionDecorator = (action: Action) => {
+    actionLogs.push(action.type);
+    return action;
+  };
   beforeAll(() => {
-    return renderApp<() => void>(
-      (store, appView) => {
-        return (appView2) => {
-          appView2();
-        };
+    const {store, render} = createAppWithRedux(
+      () => {
+        return () => {};
       },
+      () => {
+        return {html: '', data: {}};
+      },
+      [],
       moduleGetter,
       'moduleA',
-      'Main',
-      {middlewares: [logerMiddleware], initData: {thirdParty: 123}},
-      (store) => {
-        mockStore = store;
-        return ['moduleA'];
-      },
-      []
-    );
+      'Main'
+    ).useStore({actionDecorator, middlewares: [logerMiddleware], initState: {thirdParty: 123}});
+    mockStore = store;
+    return render({});
   });
   beforeEach(() => {
+    reduxLogs.length = 0;
     actionLogs.length = 0;
     messages.length = 0;
   });
@@ -43,7 +48,7 @@ describe('init', () => {
   test('加载moduleB.Main,moduleC.Main', async () => {
     const viewB = await getView<Function>('moduleB', 'Main');
     const viewC = await getView<Function>('moduleC', 'Main');
-    expect(actionLogs).toEqual(['moduleB.Init', 'moduleC.Init']);
+    expect(reduxLogs).toEqual(['moduleB.Init', 'moduleC.Init']);
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       moduleA: {initialized: true, count: 0},
@@ -55,11 +60,10 @@ describe('init', () => {
   });
   test('同步handler', () => {
     mockStore.dispatch(App.moduleA.actions.add());
-    expect(actionLogs).toEqual(['moduleA.add', 'moduleB.add', 'moduleA.Loading', 'moduleC.add']);
+    expect(reduxLogs).toEqual(['moduleA.add', 'moduleB.add', 'moduleA.Loading', 'moduleC.add']);
     expect(messages).toEqual([
       [
         'moduleA/add',
-        '{"thirdParty":123,"moduleA":{"count":0,"initialized":true},"moduleB":{"count":0,"initialized":true},"moduleC":{"count":0,"initialized":true}}',
         '{"thirdParty":123,"moduleA":{"count":0,"initialized":true},"moduleB":{"count":0,"initialized":true},"moduleC":{"count":0,"initialized":true}}',
       ],
       [
@@ -82,7 +86,7 @@ describe('init', () => {
   });
   test('await handler', async () => {
     await mockStore.dispatch(App.moduleA.actions.add());
-    expect(actionLogs).toEqual(['moduleA.add', 'moduleB.add', 'moduleA.Loading', 'moduleC.add', 'moduleA.Loading']);
+    expect(reduxLogs).toEqual(['moduleA.add', 'moduleB.add', 'moduleA.Loading', 'moduleC.add', 'moduleA.Loading']);
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
       moduleA: {count: 2, initialized: true, loading: {global: 'Stop'}},
@@ -93,13 +97,11 @@ describe('init', () => {
   test('reducerError', () => {
     expect(() => mockStore.dispatch(App.moduleA.actions.reducerError('reducerError'))).toThrow('reducerError');
     expect(actionLogs).toEqual(['moduleA.reducerError']);
+    expect(reduxLogs).toEqual([]);
   });
   test('effect-reducerError', async () => {
     await mockStore.dispatch(App.moduleA.actions.effectReducerError('reducerError'));
     expect(actionLogs).toEqual(['moduleA.effectReducerError', 'moduleA.reducerError', 'medux.Error']);
+    expect(reduxLogs).toEqual([]);
   });
-  // test('effectEffectError同步错误', async () => {
-  //   await mockStore.dispatch(App.moduleA.actions.effectEffectError('effectEffectError同步错误'));
-  //   expect(actionLogs).toEqual(['moduleA.effectEffectError', 'moduleA.effectError', 'moduleA.simple', 'medux.Error']);
-  // });
 });

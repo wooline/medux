@@ -13,8 +13,7 @@ export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
 
   @reducer
   public add(): State {
-    const prevState = this.prevRootState;
-    messages.push(['moduleA/add', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
+    messages.push(['moduleA/add', JSON.stringify(this.rootState)]);
     return {...this.state, count: this.state.count + 1};
   }
 
@@ -54,7 +53,8 @@ export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
   }
 
   @effect(null)
-  protected async [ActionTypes.Error](error: Error) {
+  protected async [ActionTypes.Error](error: any) {
+    messages.push(error, error.__meduxProcessed__);
     return true;
   }
 }

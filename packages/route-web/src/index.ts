@@ -1,5 +1,5 @@
 import {Middleware, Reducer} from 'redux';
-import {CoreModuleHandlers, CoreModuleState, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise} from '@medux/core';
+import {CoreModuleHandlers, CoreModuleState, config, reducer, env, deepMerge, isPromise} from '@medux/core';
 import {uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig, setRouteConfig} from './basic';
 
 import type {LocationTransform} from './transform';

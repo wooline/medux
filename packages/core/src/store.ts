@@ -1,44 +1,14 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import {Middleware, ReducersMapObject, StoreEnhancer, applyMiddleware, compose, createStore} from 'redux';
-import {Action, ActionTypes, MetaData, ModuleStore, config, isPromise, snapshotState, mergeState, warn} from './basic';
-import {getModuleByName} from './inject';
+/* eslint-disable prefer-spread */
 import {env} from './env';
+import {isPromise} from './sprite';
+import {Action, ActionHandler, ActionHandlerList, ActionTypes, config, MetaData, IController, IStore, IModuleHandlers} from './basic';
 import {errorAction} from './actions';
-
-/**
- * 创建Store时的选项，通过renderApp或renderSSR传入
- */
-export interface StoreOptions {
-  /**
-   * 如果你需要独立的第三方reducers可以通过此注入
-   * - store根节点下reducers数据和module数据，可通过isModule来区分
-   */
-  reducers?: ReducersMapObject;
-  /**
-   * redux中间件
-   */
-  middlewares?: Middleware[];
-  /**
-   * redux增强器
-   */
-  enhancers?: StoreEnhancer[];
-  /**
-   * store的初始数据
-   */
-  initData?: {[key: string]: any};
-}
-
-/**
- * 从redux action上获取有效数据载体
- * @param action redux的action
- */
-export function getActionData(action: Action): any[] {
-  return Array.isArray(action.payload) ? action.payload : [];
-}
+import {loadModel} from './inject';
 
 export function isProcessedError(error: any): boolean {
   return error && !!error.__meduxProcessed__;
 }
+
 export function setProcessedError(error: any, meduxProcessed: boolean): {__meduxProcessed__: boolean; [key: string]: any} {
   if (typeof error !== 'object') {
     error = {message: error};
@@ -46,228 +16,154 @@ export function setProcessedError(error: any, meduxProcessed: boolean): {__medux
   Object.defineProperty(error, '__meduxProcessed__', {value: meduxProcessed, enumerable: false, writable: true});
   return error;
 }
-export function buildStore(
-  preloadedState: {[key: string]: any} = {},
-  storeReducers: ReducersMapObject<any, any> = {},
-  storeMiddlewares: Middleware[] = [],
-  storeEnhancers: StoreEnhancer[] = []
-): ModuleStore {
-  if (MetaData.clientStore) {
-    MetaData.clientStore.destroy();
+
+export function getActionData(action: Action): any[] {
+  return Array.isArray(action.payload) ? action.payload : [];
+}
+
+export function snapshotData(data: any) {
+  return data;
+}
+export type ActionDecorator = (action: Action) => Action;
+export class Controller<S extends {[key: string]: any}> implements IController<S> {
+  store!: IStore<S>;
+
+  state!: S;
+
+  prevData!: {actionName: string; prevState: S};
+
+  injectedModules: {[moduleName: string]: IModuleHandlers} = {};
+
+  constructor(protected actionDecorator?: ActionDecorator) {}
+
+  setStore(store: IStore<S>) {
+    this.store = store;
+    this.state = store.getState();
   }
-  let store: ModuleStore;
-  const combineReducers = (state: Record<string, any>, action: Action) => {
-    if (!store) {
-      return state;
-    }
-    const meta = store._medux_;
-    const currentState = meta.currentState;
-    const realtimeState = meta.realtimeState;
 
-    Object.keys(storeReducers).forEach((moduleName) => {
-      const node = storeReducers[moduleName](state[moduleName], action);
-      if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-        warn('Use rewrite instead of replace to update state in MutableData');
-      }
-      realtimeState[moduleName] = node;
-    });
-
-    const handlersCommon = meta.reducerMap[action.type] || {};
-    // 支持泛监听，形如 */loading
-    const handlersEvery = meta.reducerMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = {...handlersCommon, ...handlersEvery};
-    const handlerModules = Object.keys(handlers);
-
-    if (handlerModules.length > 0) {
+  respondHandler(action: Action, isReducer: boolean, prevData: {actionName: string; prevState: S}): void | Promise<void> {
+    const handlersMap = isReducer ? MetaData.reducersMap : MetaData.effectsMap;
+    const actionName = action.type;
+    const [actionModuleName] = actionName.split(config.NSP);
+    const commonHandlers = handlersMap[action.type];
+    const universalActionType = actionName.replace(new RegExp(`[^${config.NSP}]+`), '*');
+    const universalHandlers = handlersMap[universalActionType];
+    const handlers: ActionHandlerList = {...commonHandlers, ...universalHandlers};
+    const handlerModuleNames = Object.keys(handlers);
+    if (handlerModuleNames.length > 0) {
       const orderList: string[] = [];
-      const priority: string[] = action.priority ? [...action.priority] : [];
-      const actionData = getActionData(action);
-      handlerModules.forEach((moduleName) => {
-        const fun = handlers[moduleName];
+      handlerModuleNames.forEach((moduleName) => {
         if (moduleName === MetaData.appModuleName) {
+          orderList.unshift(moduleName);
+        } else if (moduleName === actionModuleName) {
           orderList.unshift(moduleName);
         } else {
           orderList.push(moduleName);
         }
-        if (!fun.__isHandler__) {
-          priority.unshift(moduleName);
-        }
       });
-      orderList.unshift(...priority);
-      const moduleNameMap: {[key: string]: boolean} = {};
-      orderList.forEach((moduleName) => {
-        if (!moduleNameMap[moduleName]) {
-          moduleNameMap[moduleName] = true;
-          const fun = handlers[moduleName];
-          MetaData.currentData = {actionName: action.type, prevState: currentState};
-          const node = fun(...actionData);
-          if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-            warn('Use rewrite instead of replace to update state in MutableData');
-          }
-          realtimeState[moduleName] = node;
-        }
-      });
-    }
-
-    return realtimeState;
-  };
-  const middleware: Middleware = ({dispatch}) => (next) => (originalAction) => {
-    if (originalAction.type === ActionTypes.Error) {
-      const actionData = getActionData(originalAction);
-      if (isProcessedError(actionData[0])) {
-        return originalAction;
+      if (action.priority) {
+        orderList.unshift(...action.priority);
       }
-      actionData[0] = setProcessedError(actionData[0], true);
-    }
-    if (env.isServer) {
-      if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
-        return originalAction;
-      }
-    }
-    const meta = store._medux_;
-    const rootState = store.getState();
-    meta.realtimeState = mergeState(rootState);
-    meta.currentState = snapshotState(rootState);
-    const currentState = meta.currentState;
-    const action: Action = next(originalAction);
-    const handlersCommon = meta.effectMap[action.type] || {};
-    // 支持泛监听，形如 */loading
-    const handlersEvery = meta.effectMap[action.type.replace(new RegExp(`[^${config.NSP}]+`), '*')] || {};
-    const handlers = {...handlersCommon, ...handlersEvery};
-    const handlerModules = Object.keys(handlers);
-
-    if (handlerModules.length > 0) {
+      const implemented: {[key: string]: boolean} = {};
       const actionData = getActionData(action);
-      const orderList: string[] = [];
-      const priority: string[] = action.priority ? [...action.priority] : [];
-      handlerModules.forEach((moduleName) => {
-        const fun = handlers[moduleName];
-        if (moduleName === MetaData.appModuleName) {
-          orderList.unshift(moduleName);
-        } else {
-          orderList.push(moduleName);
-        }
-        if (!fun.__isHandler__) {
-          priority.unshift(moduleName);
-        }
-      });
-      orderList.unshift(...priority);
-      const moduleNameMap: {[key: string]: boolean} = {};
-      const promiseResults: Promise<any>[] = [];
-      orderList.forEach((moduleName) => {
-        if (!moduleNameMap[moduleName]) {
-          moduleNameMap[moduleName] = true;
-          const fun = handlers[moduleName];
-          MetaData.currentData = {actionName: action.type, prevState: currentState};
-          const effectResult: Promise<any> = fun(...actionData);
-          const decorators = fun.__decorators__;
-          if (decorators) {
-            const results: any[] = [];
-            decorators.forEach((decorator, index) => {
-              results[index] = decorator[0](action, moduleName, effectResult);
-            });
-            fun.__decoratorResults__ = results;
+      if (isReducer) {
+        this.prevData = prevData;
+        const newState = {};
+        orderList.forEach((moduleName) => {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            const handler = handlers[moduleName];
+            const modelInstance = this.injectedModules[moduleName];
+            newState[moduleName] = handler.apply(modelInstance, actionData);
           }
+        });
+        this.store.update(actionName, newState as S, actionData);
+        this.state = this.store.getState();
+      } else {
+        const result: Promise<any>[] = [];
+        orderList.forEach((moduleName) => {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            const handler = handlers[moduleName];
+            const modelInstance = this.injectedModules[moduleName];
+            this.prevData = prevData;
+            result.push(this.applyEffect(moduleName, handler, modelInstance, action, actionData));
+          }
+        });
+        return result.length === 1 ? result[0] : Promise.all(result);
+      }
+    }
+    return undefined;
+  }
 
-          const errorHandler = effectResult.then(
-            (reslove: any) => {
-              if (decorators) {
-                const results = fun.__decoratorResults__ || [];
-                decorators.forEach((decorator, index) => {
-                  if (decorator[1]) {
-                    decorator[1]('Resolved', results[index], reslove);
-                  }
-                });
-                fun.__decoratorResults__ = undefined;
-              }
-              return reslove;
-            },
-            (reason: any) => {
-              if (decorators) {
-                const results = fun.__decoratorResults__ || [];
-                decorators.forEach((decorator, index) => {
-                  if (decorator[1]) {
-                    decorator[1]('Rejected', results[index], reason);
-                  }
-                });
-                fun.__decoratorResults__ = undefined;
-              }
-              if (isProcessedError(reason)) {
-                throw reason;
-              } else {
-                reason = setProcessedError(reason, false);
-                return dispatch(errorAction(reason)) as any;
-              }
+  applyEffect(moduleName: string, handler: ActionHandler, modelInstance: IModuleHandlers, action: Action, actionData: any[]) {
+    const effectResult: Promise<any> = handler.apply(modelInstance, actionData);
+    const decorators = handler.__decorators__;
+    if (decorators) {
+      const results: any[] = [];
+      decorators.forEach((decorator, index) => {
+        results[index] = decorator[0](action, moduleName, effectResult);
+      });
+      handler.__decoratorResults__ = results;
+    }
+    return effectResult.then(
+      (reslove: any) => {
+        if (decorators) {
+          const results = handler.__decoratorResults__ || [];
+          decorators.forEach((decorator, index) => {
+            if (decorator[1]) {
+              decorator[1]('Resolved', results[index], reslove);
             }
-          );
-
-          promiseResults.push(errorHandler);
-        }
-      });
-      if (promiseResults.length) {
-        return Promise.all(promiseResults);
-      }
-    }
-    return action;
-  };
-
-  // const preLoadMiddleware: Middleware = () => (next) => (action) => {
-  //   const [moduleName, actionName] = action.type.split(config.NSP);
-  //   if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-  //     const hasInjected = store._medux_.injectedModules[moduleName];
-  //     if (!hasInjected) {
-  //       if (actionName === ActionTypes.MInit) {
-  //         return loadModel(moduleName, store);
-  //       }
-  //       const initModel = loadModel(moduleName, store);
-  //       if (isPromise(initModel)) {
-  //         return initModel.then(() => next(action));
-  //       }
-  //     }
-  //   }
-  //   return next(action);
-  // };
-
-  const preLoadMiddleware: Middleware = () => (next) => (action) => {
-    const [moduleName, actionName] = action.type.split(config.NSP);
-    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      const hasInjected = store._medux_.injectedModules[moduleName];
-      if (!hasInjected) {
-        const moduleOrPromise = getModuleByName(moduleName);
-        if (isPromise(moduleOrPromise)) {
-          return moduleOrPromise.then((module) => {
-            module.default.model(store);
-            return next(action);
           });
+          handler.__decoratorResults__ = undefined;
+        }
+        return reslove;
+      },
+      (error: any) => {
+        if (decorators) {
+          const results = handler.__decoratorResults__ || [];
+          decorators.forEach((decorator, index) => {
+            if (decorator[1]) {
+              decorator[1]('Rejected', results[index], error);
+            }
+          });
+          handler.__decoratorResults__ = undefined;
+        }
+        if (isProcessedError(error)) {
+          throw error;
+        } else {
+          return this.dispatch(errorAction(setProcessedError(error, false)));
+        }
+      }
+    );
+  }
+
+  dispatch(action: Action): void | Promise<void> {
+    if (this.actionDecorator) {
+      action = this.actionDecorator(action);
+    }
+    if (action.type === ActionTypes.Error) {
+      const error = getActionData(action)[0];
+      setProcessedError(error, true);
+    }
+    const [moduleName, actionName] = action.type.split(config.NSP);
+    if (env.isServer && actionName === ActionTypes.MLoading) {
+      return undefined;
+    }
+    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+      if (!this.injectedModules[moduleName]) {
+        const result: void | Promise<void> = loadModel(moduleName, this);
+        if (isPromise(result)) {
+          return result.then(() => this.executeAction(action));
         }
       }
     }
-    return next(action);
-  };
+    return this.executeAction(action);
+  }
 
-  const middlewareEnhancer = applyMiddleware(preLoadMiddleware, ...storeMiddlewares, middleware);
-  const enhancer: StoreEnhancer = (newCreateStore) => {
-    return (...args) => {
-      const newStore = newCreateStore(...args);
-      const moduleStore: ModuleStore = newStore as any;
-      moduleStore._medux_ = {
-        realtimeState: {} as any,
-        currentState: {} as any,
-        reducerMap: {},
-        effectMap: {},
-        injectedModules: {},
-      };
-      return newStore;
-    };
-  };
-  const enhancers = [middlewareEnhancer, enhancer, ...storeEnhancers];
-  if (config.DEVTOOLS && env.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+  executeAction(action: Action): void | Promise<void> {
+    const prevData = {actionName: action.type, prevState: this.state};
+    this.respondHandler(action, true, prevData);
+    return this.respondHandler(action, false, prevData);
   }
-  store = createStore(combineReducers as any, preloadedState, compose(...enhancers));
-  store.destroy = () => undefined;
-  if (!env.isServer) {
-    MetaData.clientStore = store;
-  }
-  return store;
 }

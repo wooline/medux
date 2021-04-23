@@ -1,26 +1,23 @@
-import {Unsubscribe} from 'redux';
-import {deepMerge, LoadingState, TaskCounter} from './sprite';
 import {env} from './env';
+import {LoadingState, TaskCounter, warn} from './sprite';
 
-declare const process: any;
 /**
  * 可供设置的全局参数，参见setConfig
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  * - SSRKey 默认为 meduxInitStore 用于SSR同构时传递data
  * - MutableData 默认为 false 不使用可变数据
- * - DEVTOOLS 默认为仅开发环境，是否使用chrome reduxDevTools
  */
 export const config: {
   NSP: string;
   MSP: string;
   MutableData: boolean;
-  DEVTOOLS: boolean;
+  DepthTimeOnLoading: number;
 } = {
   NSP: '.',
   MSP: ',',
   MutableData: false,
-  DEVTOOLS: process.env.NODE_ENV === 'development',
+  DepthTimeOnLoading: 2,
 };
 /**
  * 可供设置的全局参数
@@ -28,45 +25,89 @@ export const config: {
  * - NSP 默认为. ModuleName${NSP}ActionName 用于ActionName的连接
  * - MSP 默认为, 用于一个ActionHandler同时监听多个Action的连接
  */
-export function setConfig(_config: {NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DEVTOOLS?: boolean}) {
+export function setConfig(_config: {NSP?: string; MSP?: string; SSRKey?: string; MutableData?: boolean; DepthTimeOnLoading?: number}) {
   _config.NSP !== undefined && (config.NSP = _config.NSP);
   _config.MSP !== undefined && (config.MSP = _config.MSP);
   _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
-  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
+  _config.DepthTimeOnLoading !== undefined && (config.DepthTimeOnLoading = _config.DepthTimeOnLoading);
 }
 
-export function warn(str: string) {
-  if (process.env.NODE_ENV === 'development') {
-    env.console.warn(str);
-  }
+/**
+ *
+ * 因为一个action可以触发多个模块的actionHandler，priority属性用来设置handlers的优先处理顺序，通常无需设置
+ */
+export interface Action {
+  type: string;
+  /**
+   * priority属性用来设置handlers的优先处理顺序，值为moduleName[]
+   */
+  priority?: string[];
+  payload?: any[];
 }
 
-export function deepMergeState(target: any = {}, ...args: any[]) {
-  if (config.MutableData) {
-    return deepMerge(target, ...args);
-  }
-  return deepMerge({}, target, ...args);
+export interface ActionHandler {
+  // __moduleName__: string;
+  // __actionName__: string;
+  __isReducer__?: boolean;
+  __isEffect__?: boolean;
+  // __isHandler__?: boolean;
+  __decorators__?: [
+    (action: Action, moduleName: string, effectResult: Promise<any>) => any,
+    null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
+  ][];
+  __decoratorResults__?: any[];
+  (...args: any[]): any;
+}
+export interface ActionHandlerList {
+  [moduleName: string]: ActionHandler;
+}
+export interface ActionHandlerMap {
+  [actionName: string]: ActionHandlerList;
 }
 
-export function mergeState(target: any = {}, ...args: any[]) {
-  if (config.MutableData) {
-    return Object.assign(target, ...args);
-  }
-  return Object.assign({}, target, ...args);
+export type ActionCreator = (...args: any[]) => Action;
+
+export interface ActionCreatorList {
+  [actionName: string]: ActionCreator;
 }
 
-export function snapshotState(target: any) {
-  if (config.MutableData) {
-    return JSON.parse(JSON.stringify(target));
-  }
-  return target;
+export interface ActionCreatorMap {
+  [moduleName: string]: ActionCreatorList;
 }
+
+export interface IModuleHandlers {
+  initState: any;
+  moduleName: string;
+  controller: IController;
+  actions: ActionCreatorList;
+}
+
+export interface IStore<S = any> {
+  update(actionName: string, state: S, actionData: any[]): void;
+  getState(): S;
+}
+
+export interface IController<S = any> {
+  setStore(store: IStore<S>): void;
+  dispatch(action: Action): void | Promise<void>;
+  state: S;
+  injectedModules: {[moduleName: string]: IModuleHandlers};
+  prevData: {actionName: string; prevState: S};
+}
+export interface CoreModuleState {
+  initialized?: boolean;
+  loading?: {
+    [key: string]: LoadingState;
+  };
+}
+
+export type Model = (controller: IController) => void | Promise<void>;
 
 export interface CommonModule<ModuleName extends string = string> {
   default: {
     moduleName: ModuleName;
     initState: CoreModuleState;
-    model: (store: ModuleStore) => void | Promise<void>;
+    model: Model;
     views: {
       [key: string]: any;
     };
@@ -74,6 +115,13 @@ export interface CommonModule<ModuleName extends string = string> {
       [actionName: string]: (...args: any[]) => Action;
     };
   };
+}
+
+export type ModuleGetter = {
+  [moduleName: string]: () => CommonModule | Promise<CommonModule>;
+};
+export interface FacadeMap {
+  [moduleName: string]: {name: string; actions: ActionCreatorList; actionNames: {[key: string]: string}};
 }
 
 /**
@@ -98,43 +146,64 @@ export const ActionTypes = {
   Error: `medux${config.NSP}Error`,
 };
 
-/**
- * 一个数据结构用来指示如何获取模块，允许同步或异步获取
- */
-export type ModuleGetter = {
-  [moduleName: string]: () => CommonModule | Promise<CommonModule>;
-};
-export interface FacadeMap {
-  [moduleName: string]: {name: string; actions: ActionCreatorList; actionNames: {[key: string]: string}};
-}
 export const MetaData: {
   facadeMap: FacadeMap;
-  clientStore: ModuleStore;
+  clientController: IController;
   appModuleName: string;
   appViewName: string;
   moduleGetter: ModuleGetter;
-  currentData: {
-    actionName: string;
-    prevState: any;
-  };
-} = {
-  currentData: {actionName: '', prevState: null},
-} as any;
+  injectedModules: {[moduleName: string]: boolean};
+  reducersMap: ActionHandlerMap;
+  effectsMap: ActionHandlerMap;
+} = {injectedModules: {}, reducersMap: {}, effectsMap: {}} as any;
 
-export function getAppModuleName(): string {
-  return MetaData.appModuleName;
+function transformAction(actionName: string, handler: ActionHandler, listenerModule: string, actionHandlerMap: ActionHandlerMap) {
+  if (!actionHandlerMap[actionName]) {
+    actionHandlerMap[actionName] = {};
+  }
+  if (actionHandlerMap[actionName][listenerModule]) {
+    warn(`Action duplicate or conflict : ${actionName}.`);
+  }
+  actionHandlerMap[actionName][listenerModule] = handler;
 }
+
+export function injectActions(moduleName: string, handlers: ActionHandlerList) {
+  const injectedModules = MetaData.injectedModules;
+  if (injectedModules[moduleName]) {
+    return;
+  }
+  injectedModules[moduleName] = true;
+  for (const actionNames in handlers) {
+    if (typeof handlers[actionNames] === 'function') {
+      const handler = handlers[actionNames];
+      if (handler.__isReducer__ || handler.__isEffect__) {
+        // handler.__moduleName__ = moduleName;
+        // handler = bindThis(handler, handlers);
+        // eslint-disable-next-line @typescript-eslint/no-loop-func
+        actionNames.split(config.MSP).forEach((actionName) => {
+          actionName = actionName.trim().replace(new RegExp(`^this[${config.NSP}]`), `${moduleName}${config.NSP}`);
+          const arr = actionName.split(config.NSP);
+          if (arr[1]) {
+            // handler.__isHandler__ = true;
+            transformAction(actionName, handler, moduleName, handler.__isEffect__ ? MetaData.effectsMap : MetaData.reducersMap);
+          } else {
+            // handler.__isHandler__ = false;
+            transformAction(
+              moduleName + config.NSP + actionName,
+              handler,
+              moduleName,
+              handler.__isEffect__ ? MetaData.effectsMap : MetaData.reducersMap
+            );
+            // addModuleActionCreatorList(moduleName, actionName);
+          }
+        });
+      }
+    }
+  }
+  // return MetaData.facadeMap[moduleName].actions;
+}
+
 const loadings: {[moduleName: string]: TaskCounter} = {};
-
-let depthTime = 2;
-
-/**
- * 设置深度加载的时间阀值
- * @param second 超过多少秒进入深度加载，默认为2秒
- */
-export function setLoadingDepthTime(second: number) {
-  depthTime = second;
-}
 
 /**
  * 手动设置Loading状态，同一个key名的loading状态将自动合并
@@ -149,13 +218,13 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
   }
   const key = moduleName + config.NSP + groupName;
   if (!loadings[key]) {
-    loadings[key] = new TaskCounter(depthTime);
+    loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener((loadingState) => {
-      const store = MetaData.clientStore;
-      if (store) {
+      const controller = MetaData.clientController;
+      if (controller) {
         const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({[groupName]: loadingState});
-        store.dispatch(action);
+        controller.dispatch(action);
       }
     });
   }
@@ -163,116 +232,13 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
   return item;
 }
 
-/**
- * Medux自动创建的action载体，比redux的action载体多一个priority属性
- *
- * 因为一个action可以触发多个模块的actionHandler，priority属性用来设置handlers的优先处理顺序，通常无需设置
- */
-export interface Action {
-  type: string;
-  /**
-   * priority属性用来设置handlers的优先处理顺序，值为moduleName[]
-   */
-  priority?: string[];
-  payload?: any[];
-}
-
-export type Dispatch = (action: Action) => any;
-
-interface Store {
-  dispatch(action: Action): Action | Promise<void>;
-  getState(): {[key: string]: any};
-  subscribe(listener: () => void): Unsubscribe;
-  destroy: () => void;
-}
-
-export interface ActionHandler {
-  __actionName__: string;
-  __isReducer__?: boolean;
-  __isEffect__?: boolean;
-  __isHandler__?: boolean;
-  __decorators__?: [
-    (action: Action, moduleName: string, effectResult: Promise<any>) => any,
-    null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
-  ][];
-  __decoratorResults__?: any[];
-  (payload?: any): any;
-}
-
-export interface ReducerHandler extends ActionHandler {
-  (payload: any): CoreModuleState;
-}
-export interface EffectHandler extends ActionHandler {
-  (payload: any, prevRootState: CoreRootState): Promise<any>;
-}
-
-export interface ActionHandlerList {
-  [actionName: string]: ActionHandler;
-}
-export interface ActionHandlerMap {
-  [actionName: string]: {[moduleName: string]: ActionHandler};
-}
-
-export interface ReducerMap extends ActionHandlerMap {
-  [actionName: string]: {[moduleName: string]: ReducerHandler};
-}
-export interface EffectMap extends ActionHandlerMap {
-  [actionName: string]: {[moduleName: string]: EffectHandler};
-}
-
-export interface ModuleStore extends Store {
-  _medux_: {
-    reducerMap: ReducerMap;
-    effectMap: EffectMap;
-    injectedModules: {[moduleName: string]: boolean | undefined};
-    realtimeState: CoreRootState;
-    currentState: CoreRootState;
-  };
-}
-
-/**
- * 所有ModuleState的固定属性
- */
-export interface CoreModuleState {
-  initialized?: boolean;
-  /**
-   * 该模块的各种loading状态，执行effect时会自动注入loading状态
-   */
-  loading?: {
-    [key: string]: LoadingState;
-  };
-}
-
-export type CoreRootState = {
-  [moduleName: string]: CoreModuleState;
-};
-
-/**
- * 模块Model的数据结构，该数据由ExportModule方法自动生成
- */
-export type ModuleModel = (store: ModuleStore) => void | Promise<void>;
-
-export interface ActionCreatorMap {
-  [moduleName: string]: ActionCreatorList;
-}
-
-export interface ActionCreatorList {
-  [actionName: string]: ActionCreator;
-}
-
-export type ActionCreator = (...args: any[]) => Action;
-
-/**
- * 一个类方法的装饰器，用来指示该方法为一个reducerHandler
- * - reducerHandler必须通过dispatch Action来触发
- */
 export function reducer(target: any, key: string, descriptor: PropertyDescriptor) {
   if (!key && !descriptor) {
     key = target.key;
     descriptor = target.descriptor;
   }
   const fun = descriptor.value as ActionHandler;
-  fun.__actionName__ = key;
+  // fun.__actionName__ = key;
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
@@ -300,7 +266,7 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
       descriptor = target.descriptor;
     }
     const fun = descriptor.value as ActionHandler;
-    fun.__actionName__ = key;
+    // fun.__actionName__ = key;
     fun.__isEffect__ = true;
     descriptor.enumerable = true;
     if (loadingForGroupName) {
@@ -323,7 +289,7 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
   };
 }
 /**
- * 一个类方法的装饰器，用来向reducerHandler或effectHandler中注入before和after的钩子
+ * 一个类方法的装饰器，用来向effect中注入before和after的钩子
  * - 注意不管该handler是否执行成功，前后钩子都会强制执行
  * @param before actionHandler执行前的钩子
  * @param after actionHandler执行后的钩子
@@ -344,46 +310,23 @@ export function logger(
     fun.__decorators__.push([before, after]);
   };
 }
-/**
- * 一个类方法的装饰器，将其延迟执行
- * - 可用来装饰effectHandler
- * - 也可以装饰其他类
- * @param second 延迟秒数
- */
-export function delayPromise(second: number) {
-  return (target: any, key: string, descriptor: PropertyDescriptor) => {
-    if (!key && !descriptor) {
-      key = target.key;
-      descriptor = target.descriptor;
-    }
-    const fun = descriptor.value;
-    descriptor.value = (...args: any[]) => {
-      const delay = new Promise((resolve) => {
-        env.setTimeout(() => {
-          resolve(true);
-        }, second * 1000);
-      });
-      return Promise.all([delay, fun.apply(target, args)]).then((items) => {
-        return items[1];
-      });
-    };
-  };
-}
-export function isPromise(data: any): data is Promise<any> {
-  return typeof data === 'object' && typeof data.then === 'function';
-}
-export function isServer(): boolean {
-  return env.isServer;
-}
-export function serverSide<T>(callback: () => T) {
-  if (env.isServer) {
-    return callback();
+// export function deepMergeState(target: any = {}, ...args: any[]) {
+//   if (config.MutableData) {
+//     return deepMerge(target, ...args);
+//   }
+//   return deepMerge({}, target, ...args);
+// }
+
+export function mergeState(target: any = {}, ...args: any[]) {
+  if (config.MutableData) {
+    return Object.assign(target, ...args);
   }
-  return undefined;
+  return Object.assign({}, target, ...args);
 }
-export function clientSide<T>(callback: () => T) {
-  if (!env.isServer) {
-    return callback();
-  }
-  return undefined;
-}
+
+// export function snapshotState(target: any) {
+//   if (config.MutableData) {
+//     return JSON.parse(JSON.stringify(target));
+//   }
+//   return target;
+// }

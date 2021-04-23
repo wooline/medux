@@ -5,6 +5,12 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 exports.__esModule = true;
 exports.isPlainObject = isPlainObject;
 exports.deepMerge = deepMerge;
+exports.warn = warn;
+exports.isPromise = isPromise;
+exports.isServer = isServer;
+exports.serverSide = serverSide;
+exports.clientSide = clientSide;
+exports.delayPromise = delayPromise;
 exports.TaskCounter = exports.MultipleDispatcher = exports.SingleDispatcher = exports.LoadingState = void 0;
 
 var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
@@ -234,4 +240,61 @@ function deepMerge(target) {
     }
   });
   return target;
+}
+
+function warn(str) {
+  if (process.env.NODE_ENV === 'development') {
+    _env.env.console.warn(str);
+  }
+}
+
+function isPromise(data) {
+  return typeof data === 'object' && typeof data.then === 'function';
+}
+
+function isServer() {
+  return _env.env.isServer;
+}
+
+function serverSide(callback) {
+  if (_env.env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+
+function clientSide(callback) {
+  if (!_env.env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+
+function delayPromise(second) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+
+    descriptor.value = function () {
+      var delay = new Promise(function (resolve) {
+        _env.env.setTimeout(function () {
+          resolve(true);
+        }, second * 1000);
+      });
+
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
+        return items[1];
+      });
+    };
+  };
 }

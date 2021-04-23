@@ -1,27 +1,79 @@
-import { Unsubscribe } from 'redux';
 import { LoadingState } from './sprite';
 export declare const config: {
     NSP: string;
     MSP: string;
     MutableData: boolean;
-    DEVTOOLS: boolean;
+    DepthTimeOnLoading: number;
 };
 export declare function setConfig(_config: {
     NSP?: string;
     MSP?: string;
     SSRKey?: string;
     MutableData?: boolean;
-    DEVTOOLS?: boolean;
+    DepthTimeOnLoading?: number;
 }): void;
-export declare function warn(str: string): void;
-export declare function deepMergeState(target?: any, ...args: any[]): any;
-export declare function mergeState(target?: any, ...args: any[]): any;
-export declare function snapshotState(target: any): any;
+export interface Action {
+    type: string;
+    priority?: string[];
+    payload?: any[];
+}
+export interface ActionHandler {
+    __isReducer__?: boolean;
+    __isEffect__?: boolean;
+    __decorators__?: [
+        (action: Action, moduleName: string, effectResult: Promise<any>) => any,
+        null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
+    ][];
+    __decoratorResults__?: any[];
+    (...args: any[]): any;
+}
+export interface ActionHandlerList {
+    [moduleName: string]: ActionHandler;
+}
+export interface ActionHandlerMap {
+    [actionName: string]: ActionHandlerList;
+}
+export declare type ActionCreator = (...args: any[]) => Action;
+export interface ActionCreatorList {
+    [actionName: string]: ActionCreator;
+}
+export interface ActionCreatorMap {
+    [moduleName: string]: ActionCreatorList;
+}
+export interface IModuleHandlers {
+    initState: any;
+    moduleName: string;
+    controller: IController;
+    actions: ActionCreatorList;
+}
+export interface IStore<S = any> {
+    update(actionName: string, state: S, actionData: any[]): void;
+    getState(): S;
+}
+export interface IController<S = any> {
+    setStore(store: IStore<S>): void;
+    dispatch(action: Action): void | Promise<void>;
+    state: S;
+    injectedModules: {
+        [moduleName: string]: IModuleHandlers;
+    };
+    prevData: {
+        actionName: string;
+        prevState: S;
+    };
+}
+export interface CoreModuleState {
+    initialized?: boolean;
+    loading?: {
+        [key: string]: LoadingState;
+    };
+}
+export declare type Model = (controller: IController) => void | Promise<void>;
 export interface CommonModule<ModuleName extends string = string> {
     default: {
         moduleName: ModuleName;
         initState: CoreModuleState;
-        model: (store: ModuleStore) => void | Promise<void>;
+        model: Model;
         views: {
             [key: string]: any;
         };
@@ -30,12 +82,6 @@ export interface CommonModule<ModuleName extends string = string> {
         };
     };
 }
-export declare const ActionTypes: {
-    MLoading: string;
-    MInit: string;
-    MReInit: string;
-    Error: string;
-};
 export declare type ModuleGetter = {
     [moduleName: string]: () => CommonModule | Promise<CommonModule>;
 };
@@ -48,104 +94,27 @@ export interface FacadeMap {
         };
     };
 }
+export declare const ActionTypes: {
+    MLoading: string;
+    MInit: string;
+    MReInit: string;
+    Error: string;
+};
 export declare const MetaData: {
     facadeMap: FacadeMap;
-    clientStore: ModuleStore;
+    clientController: IController;
     appModuleName: string;
     appViewName: string;
     moduleGetter: ModuleGetter;
-    currentData: {
-        actionName: string;
-        prevState: any;
+    injectedModules: {
+        [moduleName: string]: boolean;
     };
+    reducersMap: ActionHandlerMap;
+    effectsMap: ActionHandlerMap;
 };
-export declare function getAppModuleName(): string;
-export declare function setLoadingDepthTime(second: number): void;
+export declare function injectActions(moduleName: string, handlers: ActionHandlerList): void;
 export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, groupName?: string): T;
-export interface Action {
-    type: string;
-    priority?: string[];
-    payload?: any[];
-}
-export declare type Dispatch = (action: Action) => any;
-interface Store {
-    dispatch(action: Action): Action | Promise<void>;
-    getState(): {
-        [key: string]: any;
-    };
-    subscribe(listener: () => void): Unsubscribe;
-    destroy: () => void;
-}
-export interface ActionHandler {
-    __actionName__: string;
-    __isReducer__?: boolean;
-    __isEffect__?: boolean;
-    __isHandler__?: boolean;
-    __decorators__?: [
-        (action: Action, moduleName: string, effectResult: Promise<any>) => any,
-        null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)
-    ][];
-    __decoratorResults__?: any[];
-    (payload?: any): any;
-}
-export interface ReducerHandler extends ActionHandler {
-    (payload: any): CoreModuleState;
-}
-export interface EffectHandler extends ActionHandler {
-    (payload: any, prevRootState: CoreRootState): Promise<any>;
-}
-export interface ActionHandlerList {
-    [actionName: string]: ActionHandler;
-}
-export interface ActionHandlerMap {
-    [actionName: string]: {
-        [moduleName: string]: ActionHandler;
-    };
-}
-export interface ReducerMap extends ActionHandlerMap {
-    [actionName: string]: {
-        [moduleName: string]: ReducerHandler;
-    };
-}
-export interface EffectMap extends ActionHandlerMap {
-    [actionName: string]: {
-        [moduleName: string]: EffectHandler;
-    };
-}
-export interface ModuleStore extends Store {
-    _medux_: {
-        reducerMap: ReducerMap;
-        effectMap: EffectMap;
-        injectedModules: {
-            [moduleName: string]: boolean | undefined;
-        };
-        realtimeState: CoreRootState;
-        currentState: CoreRootState;
-    };
-}
-export interface CoreModuleState {
-    initialized?: boolean;
-    loading?: {
-        [key: string]: LoadingState;
-    };
-}
-export declare type CoreRootState = {
-    [moduleName: string]: CoreModuleState;
-};
-export declare type ModuleModel = (store: ModuleStore) => void | Promise<void>;
-export interface ActionCreatorMap {
-    [moduleName: string]: ActionCreatorList;
-}
-export interface ActionCreatorList {
-    [actionName: string]: ActionCreator;
-}
-export declare type ActionCreator = (...args: any[]) => Action;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;
 export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;
-export declare function delayPromise(second: number): (target: any, key: string, descriptor: PropertyDescriptor) => void;
-export declare function isPromise(data: any): data is Promise<any>;
-export declare function isServer(): boolean;
-export declare function serverSide<T>(callback: () => T): T | undefined;
-export declare function clientSide<T>(callback: () => T): T | undefined;
-export {};
+export declare function mergeState(target?: any, ...args: any[]): any;

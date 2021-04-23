@@ -38,3 +38,9 @@ export declare function isPlainObject(obj: any): boolean;
 export declare function deepMerge(target: {
     [key: string]: any;
 }, ...args: any[]): any;
+export declare function warn(str: string): void;
+export declare function isPromise(data: any): data is Promise<any>;
+export declare function isServer(): boolean;
+export declare function serverSide<T>(callback: () => T): T | undefined;
+export declare function clientSide<T>(callback: () => T): T | undefined;
+export declare function delayPromise(second: number): (target: any, key: string, descriptor: PropertyDescriptor) => void;

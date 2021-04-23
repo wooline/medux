@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.env = exports.viewHotReplacement = exports.modelHotReplacement = exports.renderSSR = exports.renderApp = exports.getRootModuleAPI = exports.MultipleDispatcher = exports.SingleDispatcher = exports.deepMerge = exports.LoadingState = exports.getView = exports.exportModule = exports.getClientStore = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.getAppModuleName = exports.isPromise = exports.clientSide = exports.serverSide = exports.isServer = exports.setLoadingDepthTime = exports.setLoading = exports.delayPromise = exports.setConfig = exports.mergeState = exports.deepMergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
+exports.env = exports.viewHotReplacement = exports.clientSide = exports.serverSide = exports.isServer = exports.isPromise = exports.MultipleDispatcher = exports.SingleDispatcher = exports.deepMerge = exports.LoadingState = exports.modelHotReplacement = exports.getRootModuleAPI = exports.getView = exports.exportModule = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.setLoading = exports.setConfig = exports.mergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -14,17 +14,9 @@ exports.reducer = _basic.reducer;
 exports.config = _basic.config;
 exports.effect = _basic.effect;
 exports.logger = _basic.logger;
-exports.deepMergeState = _basic.deepMergeState;
 exports.mergeState = _basic.mergeState;
 exports.setConfig = _basic.setConfig;
-exports.delayPromise = _basic.delayPromise;
 exports.setLoading = _basic.setLoading;
-exports.setLoadingDepthTime = _basic.setLoadingDepthTime;
-exports.isServer = _basic.isServer;
-exports.serverSide = _basic.serverSide;
-exports.clientSide = _basic.clientSide;
-exports.isPromise = _basic.isPromise;
-exports.getAppModuleName = _basic.getAppModuleName;
 
 var _store = require("./store");
 
@@ -37,9 +29,10 @@ var _inject = require("./inject");
 exports.CoreModuleHandlers = _inject.CoreModuleHandlers;
 exports.cacheModule = _inject.cacheModule;
 exports.loadModel = _inject.loadModel;
-exports.getClientStore = _inject.getClientStore;
 exports.exportModule = _inject.exportModule;
 exports.getView = _inject.getView;
+exports.getRootModuleAPI = _inject.getRootModuleAPI;
+exports.modelHotReplacement = _inject.modelHotReplacement;
 
 var _sprite = require("./sprite");
 
@@ -47,14 +40,14 @@ exports.LoadingState = _sprite.LoadingState;
 exports.deepMerge = _sprite.deepMerge;
 exports.SingleDispatcher = _sprite.SingleDispatcher;
 exports.MultipleDispatcher = _sprite.MultipleDispatcher;
+exports.isPromise = _sprite.isPromise;
+exports.isServer = _sprite.isServer;
+exports.serverSide = _sprite.serverSide;
+exports.clientSide = _sprite.clientSide;
 
-var _module = require("./module");
+var _render = require("./render");
 
-exports.getRootModuleAPI = _module.getRootModuleAPI;
-exports.renderApp = _module.renderApp;
-exports.renderSSR = _module.renderSSR;
-exports.modelHotReplacement = _module.modelHotReplacement;
-exports.viewHotReplacement = _module.viewHotReplacement;
+exports.viewHotReplacement = _render.viewHotReplacement;
 
 var _env = require("./env");
 

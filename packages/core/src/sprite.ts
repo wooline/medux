@@ -70,85 +70,6 @@ export class MultipleDispatcher<T extends {[key: string]: any} = {}> {
   }
 }
 
-// export class PEvent<N extends string, D> {
-//   public readonly target!: PDispatcher;
-
-//   public readonly currentTarget!: PDispatcher;
-
-//   public constructor(public readonly name: N, public readonly data: D, public bubbling: boolean = false) {}
-
-//   public setTarget(target: PDispatcher) {
-//     (this as any).target = target;
-//   }
-
-//   public setCurrentTarget(target: PDispatcher) {
-//     (this as any).currentTarget = target;
-//   }
-// }
-
-// export class PDispatcher<T extends {[key: string]: any} = {}> {
-//   protected readonly storeHandlers: {[N in keyof T]?: Array<(e: PEvent<Extract<N, string>, T[N]>) => void>} = {};
-
-//   public constructor(public readonly parent?: PDispatcher) {}
-
-//   public addListener<N extends keyof T>(ename: N, handler: (e: PEvent<Extract<N, string>, T[N]>) => void): this {
-//     let dictionary = this.storeHandlers[ename];
-//     if (!dictionary) {
-//       // eslint-disable-next-line no-multi-assign
-//       this.storeHandlers[ename] = dictionary = [];
-//     }
-//     dictionary.push(handler);
-//     return this;
-//   }
-
-//   public removeListener<N extends keyof T>(ename?: N, handler?: (e: PEvent<Extract<N, string>, T[N]>) => void): this {
-//     if (!ename) {
-//       Object.keys(this.storeHandlers).forEach((key) => {
-//         delete this.storeHandlers[key];
-//       });
-//     } else {
-//       const handlers = this.storeHandlers;
-//       const dictionary = handlers[ename];
-//       if (dictionary) {
-//         if (!handler) {
-//           delete handlers[ename];
-//         } else {
-//           const n = dictionary.indexOf(handler);
-//           if (n > -1) {
-//             dictionary.splice(n, 1);
-//           }
-//           if (dictionary.length === 0) {
-//             delete handlers[ename];
-//           }
-//         }
-//       }
-//     }
-//     return this;
-//   }
-
-//   public dispatch<N extends keyof T>(evt: PEvent<Extract<N, string>, T[N]>): this {
-//     if (!evt.target) {
-//       evt.setTarget(this);
-//     }
-//     evt.setCurrentTarget(this);
-//     const dictionary = this.storeHandlers[evt.name];
-//     if (dictionary) {
-//       for (let i = 0, k = dictionary.length; i < k; i++) {
-//         dictionary[i](evt as any);
-//       }
-//     }
-//     if (this.parent && evt.bubbling) {
-//       this.parent.dispatch(evt as any);
-//     }
-//     return this;
-//   }
-
-//   public setParent(parent?: PDispatcher): this {
-//     (this as any).parent = parent;
-//     return this;
-//   }
-// }
-
 export class TaskCounter extends SingleDispatcher<LoadingState> {
   public readonly list: {promise: Promise<any>; note: string}[] = [];
 
@@ -191,53 +112,6 @@ export class TaskCounter extends SingleDispatcher<LoadingState> {
     return this;
   }
 }
-
-// export class TaskCounter extends PDispatcher<{TaskCountEvent: LoadingState}> {
-//   public readonly list: {promise: Promise<any>; note: string}[] = [];
-
-//   private ctimer: number | null = null;
-
-//   public constructor(public deferSecond: number) {
-//     super();
-//   }
-
-//   public addItem(promise: Promise<any>, note = ''): Promise<any> {
-//     if (!this.list.some((item) => item.promise === promise)) {
-//       this.list.push({promise, note});
-//       promise.then(
-//         () => this.completeItem(promise),
-//         () => this.completeItem(promise)
-//       );
-
-//       if (this.list.length === 1) {
-//         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Start));
-//         this.ctimer = env.setTimeout(() => {
-//           this.ctimer = null;
-//           if (this.list.length > 0) {
-//             this.dispatch(new PEvent(TaskCountEvent, LoadingState.Depth));
-//           }
-//         }, this.deferSecond * 1000);
-//       }
-//     }
-//     return promise;
-//   }
-
-//   private completeItem(promise: Promise<any>): this {
-//     const i = this.list.findIndex((item) => item.promise === promise);
-//     if (i > -1) {
-//       this.list.splice(i, 1);
-//       if (this.list.length === 0) {
-//         if (this.ctimer) {
-//           env.clearTimeout.call(null, this.ctimer);
-//           this.ctimer = null;
-//         }
-
-//         this.dispatch(new PEvent(TaskCountEvent, LoadingState.Stop));
-//       }
-//     }
-//     return this;
-//   }
-// }
 
 export function isPlainObject(obj: any) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
@@ -293,4 +167,55 @@ export function deepMerge(target: {[key: string]: any}, ...args: any[]): any {
     }
   });
   return target;
+}
+
+declare const process: any;
+
+export function warn(str: string) {
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+export function isPromise(data: any): data is Promise<any> {
+  return typeof data === 'object' && typeof data.then === 'function';
+}
+export function isServer(): boolean {
+  return env.isServer;
+}
+export function serverSide<T>(callback: () => T) {
+  if (env.isServer) {
+    return callback();
+  }
+  return undefined;
+}
+export function clientSide<T>(callback: () => T) {
+  if (!env.isServer) {
+    return callback();
+  }
+  return undefined;
+}
+/**
+ * 一个类方法的装饰器，将其延迟执行
+ * - 可用来装饰effectHandler
+ * - 也可以装饰其他类
+ * @param second 延迟秒数
+ */
+export function delayPromise(second: number) {
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+    const fun = descriptor.value;
+    descriptor.value = (...args: any[]) => {
+      const delay = new Promise((resolve) => {
+        env.setTimeout(() => {
+          resolve(true);
+        }, second * 1000);
+      });
+      return Promise.all([delay, fun.apply(target, args)]).then((items) => {
+        return items[1];
+      });
+    };
+  };
 }

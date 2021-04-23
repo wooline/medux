@@ -4,22 +4,59 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 exports.__esModule = true;
 exports.cacheModule = cacheModule;
-exports.getClientStore = getClientStore;
-exports.injectActions = injectActions;
 exports.getModuleByName = getModuleByName;
 exports.getView = getView;
 exports.loadModel = _loadModel;
-exports.exportModule = exports.CoreModuleHandlers = void 0;
-
-var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+exports.modelHotReplacement = modelHotReplacement;
+exports.getRootModuleAPI = getRootModuleAPI;
+exports.CoreModuleHandlers = exports.exportModule = void 0;
 
 var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
 
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+
 var _env = require("./env");
+
+var _sprite = require("./sprite");
 
 var _basic = require("./basic");
 
 var _actions = require("./actions");
+
+var exportModule = function exportModule(moduleName, ModuleHandles, views) {
+  var model = function model(controller) {
+    if (!controller.injectedModules[moduleName]) {
+      var moduleHandles = new ModuleHandles();
+      controller.injectedModules[moduleName] = moduleHandles;
+      moduleHandles.moduleName = moduleName;
+      moduleHandles.controller = controller;
+      moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
+      (0, _basic.injectActions)(moduleName, moduleHandles);
+      var _initState = moduleHandles.initState;
+      var preModuleState = controller.state[moduleName] || {};
+      var moduleState = (0, _extends2.default)({}, _initState, preModuleState);
+
+      if (moduleState.initialized) {
+        return controller.dispatch((0, _actions.moduleReInitAction)(moduleName, moduleState));
+      }
+
+      moduleState.initialized = true;
+      return controller.dispatch((0, _actions.moduleInitAction)(moduleName, moduleState));
+    }
+
+    return undefined;
+  };
+
+  return {
+    moduleName: moduleName,
+    model: model,
+    views: views,
+    initState: undefined,
+    actions: undefined
+  };
+};
+
+exports.exportModule = exportModule;
 
 function cacheModule(module) {
   var moduleName = module.default.moduleName;
@@ -39,54 +76,51 @@ function cacheModule(module) {
   return fn;
 }
 
-function getClientStore() {
-  return _basic.MetaData.clientStore;
-}
+function getModuleByName(moduleName) {
+  var result = _basic.MetaData.moduleGetter[moduleName]();
 
-function bindThis(fun, thisObj) {
-  var newFun = fun.bind(thisObj);
-  Object.keys(fun).forEach(function (key) {
-    newFun[key] = fun[key];
-  });
-  return newFun;
-}
-
-function transformAction(actionName, action, listenerModule, actionHandlerMap) {
-  if (!actionHandlerMap[actionName]) {
-    actionHandlerMap[actionName] = {};
+  if ((0, _sprite.isPromise)(result)) {
+    return result.then(function (module) {
+      cacheModule(module);
+      return module;
+    });
   }
 
-  if (actionHandlerMap[actionName][listenerModule]) {
-    throw new Error("Action duplicate or conflict : " + actionName + ".");
-  }
-
-  actionHandlerMap[actionName][listenerModule] = action;
+  cacheModule(result);
+  return result;
 }
 
-function injectActions(store, moduleName, handlers) {
-  for (var actionNames in handlers) {
-    if (typeof handlers[actionNames] === 'function') {
-      (function () {
-        var handler = handlers[actionNames];
+function getView(moduleName, viewName) {
+  var callback = function callback(module) {
+    var view = module.default.views[viewName];
 
-        if (handler.__isReducer__ || handler.__isEffect__) {
-          handler = bindThis(handler, handlers);
-          actionNames.split(_basic.config.MSP).forEach(function (actionName) {
-            actionName = actionName.trim().replace(new RegExp("^this[" + _basic.config.NSP + "]"), "" + moduleName + _basic.config.NSP);
-            var arr = actionName.split(_basic.config.NSP);
-
-            if (arr[1]) {
-              handler.__isHandler__ = true;
-              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            } else {
-              handler.__isHandler__ = false;
-              transformAction(moduleName + _basic.config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            }
-          });
-        }
-      })();
+    if (_env.env.isServer) {
+      return view;
     }
+
+    module.default.model(_basic.MetaData.clientController);
+    return view;
+  };
+
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if ((0, _sprite.isPromise)(moduleOrPromise)) {
+    return moduleOrPromise.then(callback);
   }
+
+  return callback(moduleOrPromise);
+}
+
+function _loadModel(moduleName, controller) {
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if ((0, _sprite.isPromise)(moduleOrPromise)) {
+    return moduleOrPromise.then(function (module) {
+      return module.default.model(controller);
+    });
+  }
+
+  return moduleOrPromise.default.model(controller);
 }
 
 var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
@@ -104,7 +138,7 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       value: void 0
     }, {
       kind: "field",
-      key: "store",
+      key: "controller",
       value: void 0
     }, {
       kind: "field",
@@ -116,43 +150,43 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.store._medux_.realtimeState[this.moduleName];
+        return this.controller.state[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.store._medux_.realtimeState;
+        return this.controller.state;
       }
     }, {
       kind: "method",
-      key: "getCurrentActionName",
-      value: function getCurrentActionName() {
-        return _basic.MetaData.currentData.actionName;
+      key: "getActionName",
+      value: function getActionName() {
+        return this.controller.prevData.actionName;
       }
     }, {
       kind: "get",
       key: "prevRootState",
       value: function prevRootState() {
-        return _basic.MetaData.currentData.prevState;
+        return this.controller.prevData.prevState;
       }
     }, {
       kind: "get",
       key: "prevState",
       value: function prevState() {
-        return _basic.MetaData.currentData.prevState[this.moduleName];
+        return this.controller.prevData.prevState[this.moduleName];
       }
     }, {
       kind: "method",
       key: "dispatch",
       value: function dispatch(action) {
-        return this.store.dispatch(action);
+        return this.controller.dispatch(action);
       }
     }, {
       kind: "method",
       key: "loadModel",
       value: function loadModel(moduleName) {
-        return _loadModel(moduleName, this.store);
+        return _loadModel(moduleName, this.controller);
       }
     }, {
       kind: "method",
@@ -183,86 +217,104 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
 });
 exports.CoreModuleHandlers = CoreModuleHandlers;
 
-var exportModule = function exportModule(moduleName, ModuleHandles, views) {
-  var model = function model(store) {
-    var hasInjected = store._medux_.injectedModules[moduleName];
-
-    if (!hasInjected) {
-      store._medux_.injectedModules[moduleName] = true;
-      var moduleHandles = new ModuleHandles();
-      moduleHandles.moduleName = moduleName;
-      moduleHandles.store = store;
-      moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
-      var _initState = moduleHandles.initState;
-      injectActions(store, moduleName, moduleHandles);
-      var preModuleState = store.getState()[moduleName] || {};
-      var moduleState = (0, _extends2.default)({}, _initState, preModuleState);
-
-      if (moduleState.initialized) {
-        return store.dispatch((0, _actions.moduleReInitAction)(moduleName, moduleState));
-      }
-
-      moduleState.initialized = true;
-      return store.dispatch((0, _actions.moduleInitAction)(moduleName, moduleState));
+function clearHandlers(moduleName, actionHandlerMap) {
+  for (var _actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(_actionName)) {
+      var maps = actionHandlerMap[_actionName];
+      delete maps[moduleName];
     }
-
-    return undefined;
-  };
-
-  return {
-    moduleName: moduleName,
-    model: model,
-    views: views,
-    initState: undefined,
-    actions: undefined
-  };
-};
-
-exports.exportModule = exportModule;
-
-function getModuleByName(moduleName) {
-  var result = _basic.MetaData.moduleGetter[moduleName]();
-
-  if ((0, _basic.isPromise)(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
-      return module;
-    });
   }
-
-  cacheModule(result);
-  return result;
 }
 
-function getView(moduleName, viewName) {
-  var callback = function callback(module) {
-    var view = module.default.views[viewName];
+function modelHotReplacement(moduleName, ModuleHandles) {
+  var controller = _basic.MetaData.clientController;
 
-    if (_env.env.isServer) {
-      return view;
-    }
+  if (controller.injectedModules[moduleName]) {
+    clearHandlers(moduleName, _basic.MetaData.reducersMap);
+    clearHandlers(moduleName, _basic.MetaData.effectsMap);
+    var moduleHandles = new ModuleHandles();
+    controller.injectedModules[moduleName] = moduleHandles;
+    moduleHandles.moduleName = moduleName;
+    moduleHandles.controller = controller;
+    moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
+    (0, _basic.injectActions)(moduleName, moduleHandles);
 
-    module.default.model(_basic.MetaData.clientStore);
-    return view;
-  };
-
-  var moduleOrPromise = getModuleByName(moduleName);
-
-  if ((0, _basic.isPromise)(moduleOrPromise)) {
-    return moduleOrPromise.then(callback);
+    _env.env.console.log("[HMR] @medux Updated model: " + moduleName);
   }
-
-  return callback(moduleOrPromise);
 }
 
-function _loadModel(moduleName, store) {
-  var moduleOrPromise = getModuleByName(moduleName);
+function getRootModuleAPI(data) {
+  if (!_basic.MetaData.facadeMap) {
+    if (data) {
+      _basic.MetaData.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
+        var arr = data[moduleName];
+        var actions = {};
+        var actionNames = {};
+        arr.forEach(function (actionName) {
+          actions[actionName] = function () {
+            for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+              payload[_key] = arguments[_key];
+            }
 
-  if ((0, _basic.isPromise)(moduleOrPromise)) {
-    return moduleOrPromise.then(function (module) {
-      return module.default.model(store);
-    });
+            return {
+              type: moduleName + _basic.config.NSP + actionName,
+              payload: payload
+            };
+          };
+
+          actionNames[actionName] = moduleName + _basic.config.NSP + actionName;
+        });
+        var moduleFacade = {
+          name: moduleName,
+          actions: actions,
+          actionNames: actionNames
+        };
+        prev[moduleName] = moduleFacade;
+        return prev;
+      }, {});
+    } else {
+      var cacheData = {};
+      _basic.MetaData.facadeMap = new Proxy({}, {
+        set: function set(target, moduleName, val, receiver) {
+          return Reflect.set(target, moduleName, val, receiver);
+        },
+        get: function get(target, moduleName, receiver) {
+          var val = Reflect.get(target, moduleName, receiver);
+
+          if (val !== undefined) {
+            return val;
+          }
+
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = {
+              name: moduleName,
+              actionNames: new Proxy({}, {
+                get: function get(__, actionName) {
+                  return moduleName + _basic.config.NSP + actionName;
+                }
+              }),
+              actions: new Proxy({}, {
+                get: function get(__, actionName) {
+                  return function () {
+                    for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                      payload[_key2] = arguments[_key2];
+                    }
+
+                    return {
+                      type: moduleName + _basic.config.NSP + actionName,
+                      payload: payload
+                    };
+                  };
+                }
+              })
+            };
+          }
+
+          return cacheData[moduleName];
+        }
+      });
+    }
   }
 
-  return moduleOrPromise.default.model(store);
+  return _basic.MetaData.facadeMap;
 }

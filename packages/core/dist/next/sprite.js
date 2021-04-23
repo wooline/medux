@@ -182,3 +182,49 @@ export function deepMerge(target, ...args) {
   });
   return target;
 }
+export function warn(str) {
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+export function isPromise(data) {
+  return typeof data === 'object' && typeof data.then === 'function';
+}
+export function isServer() {
+  return env.isServer;
+}
+export function serverSide(callback) {
+  if (env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+export function clientSide(callback) {
+  if (!env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+export function delayPromise(second) {
+  return (target, key, descriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    const fun = descriptor.value;
+
+    descriptor.value = (...args) => {
+      const delay = new Promise(resolve => {
+        env.setTimeout(() => {
+          resolve(true);
+        }, second * 1000);
+      });
+      return Promise.all([delay, fun.apply(target, args)]).then(items => {
+        return items[1];
+      });
+    };
+  };
+}

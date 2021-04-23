@@ -1,28 +1,10 @@
 export {errorAction} from './actions';
-export {
-  ActionTypes,
-  reducer,
-  config,
-  effect,
-  logger,
-  deepMergeState,
-  mergeState,
-  setConfig,
-  delayPromise,
-  setLoading,
-  setLoadingDepthTime,
-  isServer,
-  serverSide,
-  clientSide,
-  isPromise,
-  getAppModuleName,
-} from './basic';
+export {ActionTypes, reducer, config, effect, logger, mergeState, setConfig, setLoading} from './basic';
 export {getActionData, setProcessedError, isProcessedError} from './store';
-export {CoreModuleHandlers, cacheModule, loadModel, getClientStore, exportModule, getView} from './inject';
-export {LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher} from './sprite';
-export {getRootModuleAPI, renderApp, renderSSR, modelHotReplacement, viewHotReplacement} from './module';
+export {CoreModuleHandlers, cacheModule, loadModel, exportModule, getView, getRootModuleAPI, modelHotReplacement} from './inject';
+export {LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromise, isServer, serverSide, clientSide} from './sprite';
+export {viewHotReplacement} from './render';
 export {env} from './env';
-export type {Actions, ExportModule} from './inject';
-export type {Action, CoreModuleState, CoreRootState, CommonModule, Dispatch, ModuleGetter, ModuleModel, ModuleStore} from './basic';
-export type {StoreOptions} from './store';
-export type {RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, BaseLoadView, ReturnModule} from './module';
+export type {ExportModule} from './inject';
+export type {Action, CoreModuleState, CommonModule, ModuleGetter, Model} from './basic';
+export type {RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, BaseLoadView, ReturnModule} from './inject';

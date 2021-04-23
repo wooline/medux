@@ -1,4 +1,4 @@
-export declare function errorAction(reason: Object): {
+export declare function errorAction(error: Object): {
     type: string;
     payload: Object[];
 };

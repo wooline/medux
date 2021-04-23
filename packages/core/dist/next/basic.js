@@ -1,42 +1,16 @@
-import { deepMerge, TaskCounter } from './sprite';
 import { env } from './env';
+import { TaskCounter, warn } from './sprite';
 export const config = {
   NSP: '.',
   MSP: ',',
   MutableData: false,
-  DEVTOOLS: process.env.NODE_ENV === 'development'
+  DepthTimeOnLoading: 2
 };
 export function setConfig(_config) {
   _config.NSP !== undefined && (config.NSP = _config.NSP);
   _config.MSP !== undefined && (config.MSP = _config.MSP);
   _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
-  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
-}
-export function warn(str) {
-  if (process.env.NODE_ENV === 'development') {
-    env.console.warn(str);
-  }
-}
-export function deepMergeState(target = {}, ...args) {
-  if (config.MutableData) {
-    return deepMerge(target, ...args);
-  }
-
-  return deepMerge({}, target, ...args);
-}
-export function mergeState(target = {}, ...args) {
-  if (config.MutableData) {
-    return Object.assign(target, ...args);
-  }
-
-  return Object.assign({}, target, ...args);
-}
-export function snapshotState(target) {
-  if (config.MutableData) {
-    return JSON.parse(JSON.stringify(target));
-  }
-
-  return target;
+  _config.DepthTimeOnLoading !== undefined && (config.DepthTimeOnLoading = _config.DepthTimeOnLoading);
 }
 export const ActionTypes = {
   MLoading: 'Loading',
@@ -45,19 +19,52 @@ export const ActionTypes = {
   Error: `medux${config.NSP}Error`
 };
 export const MetaData = {
-  currentData: {
-    actionName: '',
-    prevState: null
-  }
+  injectedModules: {},
+  reducersMap: {},
+  effectsMap: {}
 };
-export function getAppModuleName() {
-  return MetaData.appModuleName;
+
+function transformAction(actionName, handler, listenerModule, actionHandlerMap) {
+  if (!actionHandlerMap[actionName]) {
+    actionHandlerMap[actionName] = {};
+  }
+
+  if (actionHandlerMap[actionName][listenerModule]) {
+    warn(`Action duplicate or conflict : ${actionName}.`);
+  }
+
+  actionHandlerMap[actionName][listenerModule] = handler;
+}
+
+export function injectActions(moduleName, handlers) {
+  const injectedModules = MetaData.injectedModules;
+
+  if (injectedModules[moduleName]) {
+    return;
+  }
+
+  injectedModules[moduleName] = true;
+
+  for (const actionNames in handlers) {
+    if (typeof handlers[actionNames] === 'function') {
+      const handler = handlers[actionNames];
+
+      if (handler.__isReducer__ || handler.__isEffect__) {
+        actionNames.split(config.MSP).forEach(actionName => {
+          actionName = actionName.trim().replace(new RegExp(`^this[${config.NSP}]`), `${moduleName}${config.NSP}`);
+          const arr = actionName.split(config.NSP);
+
+          if (arr[1]) {
+            transformAction(actionName, handler, moduleName, handler.__isEffect__ ? MetaData.effectsMap : MetaData.reducersMap);
+          } else {
+            transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? MetaData.effectsMap : MetaData.reducersMap);
+          }
+        });
+      }
+    }
+  }
 }
 const loadings = {};
-let depthTime = 2;
-export function setLoadingDepthTime(second) {
-  depthTime = second;
-}
 export function setLoading(item, moduleName = MetaData.appModuleName, groupName = 'global') {
   if (env.isServer) {
     return item;
@@ -66,16 +73,16 @@ export function setLoading(item, moduleName = MetaData.appModuleName, groupName 
   const key = moduleName + config.NSP + groupName;
 
   if (!loadings[key]) {
-    loadings[key] = new TaskCounter(depthTime);
+    loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(loadingState => {
-      const store = MetaData.clientStore;
+      const controller = MetaData.clientController;
 
-      if (store) {
+      if (controller) {
         const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({
           [groupName]: loadingState
         });
-        store.dispatch(action);
+        controller.dispatch(action);
       }
     });
   }
@@ -90,7 +97,6 @@ export function reducer(target, key, descriptor) {
   }
 
   const fun = descriptor.value;
-  fun.__actionName__ = key;
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
@@ -108,7 +114,6 @@ export function effect(loadingForGroupName, loadingForModuleName) {
     }
 
     const fun = descriptor.value;
-    fun.__actionName__ = key;
     fun.__isEffect__ = true;
     descriptor.enumerable = true;
 
@@ -151,44 +156,10 @@ export function logger(before, after) {
     fun.__decorators__.push([before, after]);
   };
 }
-export function delayPromise(second) {
-  return (target, key, descriptor) => {
-    if (!key && !descriptor) {
-      key = target.key;
-      descriptor = target.descriptor;
-    }
-
-    const fun = descriptor.value;
-
-    descriptor.value = (...args) => {
-      const delay = new Promise(resolve => {
-        env.setTimeout(() => {
-          resolve(true);
-        }, second * 1000);
-      });
-      return Promise.all([delay, fun.apply(target, args)]).then(items => {
-        return items[1];
-      });
-    };
-  };
-}
-export function isPromise(data) {
-  return typeof data === 'object' && typeof data.then === 'function';
-}
-export function isServer() {
-  return env.isServer;
-}
-export function serverSide(callback) {
-  if (env.isServer) {
-    return callback();
+export function mergeState(target = {}, ...args) {
+  if (config.MutableData) {
+    return Object.assign(target, ...args);
   }
 
-  return undefined;
-}
-export function clientSide(callback) {
-  if (!env.isServer) {
-    return callback();
-  }
-
-  return undefined;
+  return Object.assign({}, target, ...args);
 }

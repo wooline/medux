@@ -1,0 +1,121 @@
+import {env} from './env';
+import {deepMerge} from './sprite';
+import {MetaData, config} from './basic';
+
+declare const process: any;
+
+export function warn(str: string) {
+  if (process.env.NODE_ENV === 'development') {
+    env.console.warn(str);
+  }
+}
+
+export function deepMergeState(target: any = {}, ...args: any[]) {
+  if (config.MutableData) {
+    return deepMerge(target, ...args);
+  }
+  return deepMerge({}, target, ...args);
+}
+
+export function mergeState(target: any = {}, ...args: any[]) {
+  if (config.MutableData) {
+    return Object.assign(target, ...args);
+  }
+  return Object.assign({}, target, ...args);
+}
+
+export function snapshotState(target: any) {
+  if (config.MutableData) {
+    return JSON.parse(JSON.stringify(target));
+  }
+  return target;
+}
+
+/**
+ * 一个数据结构用来指示如何获取模块，允许同步或异步获取
+ */
+
+export function getAppModuleName(): string {
+  return MetaData.appModuleName;
+}
+
+// export interface ReducerHandler extends ActionHandler {
+//   (payload: any): CoreModuleState;
+// }
+// export interface EffectHandler extends ActionHandler {
+//   (payload: any, prevRootState: CoreRootState): Promise<any>;
+// }
+
+// export interface ReducerMap extends ActionHandlerMap {
+//   [actionName: string]: {[moduleName: string]: ReducerHandler};
+// }
+// export interface EffectMap extends ActionHandlerMap {
+//   [actionName: string]: {[moduleName: string]: EffectHandler};
+// }
+
+// export interface ModuleStore extends Store {
+//   _medux_: {
+//     reducerMap: ReducerMap;
+//     effectMap: EffectMap;
+//     injectedModules: {[moduleName: string]: boolean | undefined};
+//     realtimeState: CoreRootState;
+//     currentState: CoreRootState;
+//   };
+// }
+
+/**
+ * 所有ModuleState的固定属性
+ */
+
+export type CoreRootState = {
+  [moduleName: string]: CoreModuleState;
+};
+
+/**
+ * 模块Model的数据结构，该数据由ExportModule方法自动生成
+ */
+// export type ModuleModel = (store: ModuleStore) => void | Promise<void>;
+
+/**
+ * 一个类方法的装饰器，将其延迟执行
+ * - 可用来装饰effectHandler
+ * - 也可以装饰其他类
+ * @param second 延迟秒数
+ */
+export function delayPromise(second: number) {
+  return (target: any, key: string, descriptor: PropertyDescriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+    const fun = descriptor.value;
+    descriptor.value = (...args: any[]) => {
+      const delay = new Promise((resolve) => {
+        env.setTimeout(() => {
+          resolve(true);
+        }, second * 1000);
+      });
+      return Promise.all([delay, fun.apply(target, args)]).then((items) => {
+        return items[1];
+      });
+    };
+  };
+}
+export function isPromise(data: any): data is Promise<any> {
+  return typeof data === 'object' && typeof data.then === 'function';
+}
+export function isServer(): boolean {
+  return env.isServer;
+}
+export function serverSide<T>(callback: () => T) {
+  if (env.isServer) {
+    return callback();
+  }
+  return undefined;
+}
+export function clientSide<T>(callback: () => T) {
+  if (!env.isServer) {
+    return callback();
+  }
+  return undefined;
+}

@@ -7,10 +7,10 @@ exports.moduleReInitAction = moduleReInitAction;
 
 var _basic = require("./basic");
 
-function errorAction(reason) {
+function errorAction(error) {
   return {
     type: _basic.ActionTypes.Error,
-    payload: [reason]
+    payload: [error]
   };
 }
 

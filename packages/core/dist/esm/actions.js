@@ -1,8 +1,8 @@
 import { ActionTypes, config } from './basic';
-export function errorAction(reason) {
+export function errorAction(error) {
   return {
     type: ActionTypes.Error,
-    payload: [reason]
+    payload: [error]
   };
 }
 export function moduleInitAction(moduleName, initState) {

@@ -3,26 +3,25 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
-exports.getActionData = getActionData;
 exports.isProcessedError = isProcessedError;
 exports.setProcessedError = setProcessedError;
-exports.buildStore = buildStore;
+exports.getActionData = getActionData;
+exports.snapshotData = snapshotData;
+exports.Controller = void 0;
 
 var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
-var _redux = require("redux");
-
-var _basic = require("./basic");
-
-var _inject = require("./inject");
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _env = require("./env");
 
+var _sprite = require("./sprite");
+
+var _basic = require("./basic");
+
 var _actions = require("./actions");
 
-function getActionData(action) {
-  return Array.isArray(action.payload) ? action.payload : [];
-}
+var _inject = require("./inject");
 
 function isProcessedError(error) {
   return error && !!error.__meduxProcessed__;
@@ -43,268 +42,187 @@ function setProcessedError(error, meduxProcessed) {
   return error;
 }
 
-function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
-  if (preloadedState === void 0) {
-    preloadedState = {};
+function getActionData(action) {
+  return Array.isArray(action.payload) ? action.payload : [];
+}
+
+function snapshotData(data) {
+  return data;
+}
+
+var Controller = function () {
+  function Controller(actionDecorator) {
+    (0, _defineProperty2.default)(this, "store", void 0);
+    (0, _defineProperty2.default)(this, "state", void 0);
+    (0, _defineProperty2.default)(this, "prevData", void 0);
+    (0, _defineProperty2.default)(this, "injectedModules", {});
+    this.actionDecorator = actionDecorator;
   }
 
-  if (storeReducers === void 0) {
-    storeReducers = {};
-  }
+  var _proto = Controller.prototype;
 
-  if (storeMiddlewares === void 0) {
-    storeMiddlewares = [];
-  }
+  _proto.setStore = function setStore(store) {
+    this.store = store;
+    this.state = store.getState();
+  };
 
-  if (storeEnhancers === void 0) {
-    storeEnhancers = [];
-  }
+  _proto.respondHandler = function respondHandler(action, isReducer, prevData) {
+    var _this = this;
 
-  if (_basic.MetaData.clientStore) {
-    _basic.MetaData.clientStore.destroy();
-  }
+    var handlersMap = isReducer ? _basic.MetaData.reducersMap : _basic.MetaData.effectsMap;
+    var actionName = action.type;
 
-  var store;
+    var _actionName$split = actionName.split(_basic.config.NSP),
+        actionModuleName = _actionName$split[0];
 
-  var combineReducers = function combineReducers(state, action) {
-    if (!store) {
-      return state;
-    }
+    var commonHandlers = handlersMap[action.type];
+    var universalActionType = actionName.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*');
+    var universalHandlers = handlersMap[universalActionType];
+    var handlers = (0, _extends2.default)({}, commonHandlers, universalHandlers);
+    var handlerModuleNames = Object.keys(handlers);
 
-    var meta = store._medux_;
-    var currentState = meta.currentState;
-    var realtimeState = meta.realtimeState;
-    Object.keys(storeReducers).forEach(function (moduleName) {
-      var node = storeReducers[moduleName](state[moduleName], action);
-
-      if (_basic.config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-        (0, _basic.warn)('Use rewrite instead of replace to update state in MutableData');
-      }
-
-      realtimeState[moduleName] = node;
-    });
-    var handlersCommon = meta.reducerMap[action.type] || {};
-    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-    var handlers = (0, _extends2.default)({}, handlersCommon, handlersEvery);
-    var handlerModules = Object.keys(handlers);
-
-    if (handlerModules.length > 0) {
+    if (handlerModuleNames.length > 0) {
       var orderList = [];
-      var priority = action.priority ? [].concat(action.priority) : [];
-      var actionData = getActionData(action);
-      handlerModules.forEach(function (moduleName) {
-        var fun = handlers[moduleName];
-
+      handlerModuleNames.forEach(function (moduleName) {
         if (moduleName === _basic.MetaData.appModuleName) {
+          orderList.unshift(moduleName);
+        } else if (moduleName === actionModuleName) {
           orderList.unshift(moduleName);
         } else {
           orderList.push(moduleName);
         }
-
-        if (!fun.__isHandler__) {
-          priority.unshift(moduleName);
-        }
       });
-      orderList.unshift.apply(orderList, priority);
-      var moduleNameMap = {};
-      orderList.forEach(function (moduleName) {
-        if (!moduleNameMap[moduleName]) {
-          moduleNameMap[moduleName] = true;
-          var fun = handlers[moduleName];
-          _basic.MetaData.currentData = {
-            actionName: action.type,
-            prevState: currentState
-          };
-          var node = fun.apply(void 0, actionData);
 
-          if (_basic.config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-            (0, _basic.warn)('Use rewrite instead of replace to update state in MutableData');
+      if (action.priority) {
+        orderList.unshift.apply(orderList, action.priority);
+      }
+
+      var implemented = {};
+      var actionData = getActionData(action);
+
+      if (isReducer) {
+        this.prevData = prevData;
+        var newState = {};
+        orderList.forEach(function (moduleName) {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            var handler = handlers[moduleName];
+            var modelInstance = _this.injectedModules[moduleName];
+            newState[moduleName] = handler.apply(modelInstance, actionData);
           }
-
-          realtimeState[moduleName] = node;
-        }
-      });
+        });
+        this.store.update(actionName, newState, actionData);
+        this.state = this.store.getState();
+      } else {
+        var result = [];
+        orderList.forEach(function (moduleName) {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            var handler = handlers[moduleName];
+            var modelInstance = _this.injectedModules[moduleName];
+            _this.prevData = prevData;
+            result.push(_this.applyEffect(moduleName, handler, modelInstance, action, actionData));
+          }
+        });
+        return result.length === 1 ? result[0] : Promise.all(result);
+      }
     }
 
-    return realtimeState;
-  };
-
-  var middleware = function middleware(_ref) {
-    var dispatch = _ref.dispatch;
-    return function (next) {
-      return function (originalAction) {
-        if (originalAction.type === _basic.ActionTypes.Error) {
-          var actionData = getActionData(originalAction);
-
-          if (isProcessedError(actionData[0])) {
-            return originalAction;
-          }
-
-          actionData[0] = setProcessedError(actionData[0], true);
-        }
-
-        if (_env.env.isServer) {
-          if (originalAction.type.split(_basic.config.NSP)[1] === _basic.ActionTypes.MLoading) {
-            return originalAction;
-          }
-        }
-
-        var meta = store._medux_;
-        var rootState = store.getState();
-        meta.realtimeState = (0, _basic.mergeState)(rootState);
-        meta.currentState = (0, _basic.snapshotState)(rootState);
-        var currentState = meta.currentState;
-        var action = next(originalAction);
-        var handlersCommon = meta.effectMap[action.type] || {};
-        var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + _basic.config.NSP + "]+"), '*')] || {};
-        var handlers = (0, _extends2.default)({}, handlersCommon, handlersEvery);
-        var handlerModules = Object.keys(handlers);
-
-        if (handlerModules.length > 0) {
-          var _actionData = getActionData(action);
-
-          var orderList = [];
-          var priority = action.priority ? [].concat(action.priority) : [];
-          handlerModules.forEach(function (moduleName) {
-            var fun = handlers[moduleName];
-
-            if (moduleName === _basic.MetaData.appModuleName) {
-              orderList.unshift(moduleName);
-            } else {
-              orderList.push(moduleName);
-            }
-
-            if (!fun.__isHandler__) {
-              priority.unshift(moduleName);
-            }
-          });
-          orderList.unshift.apply(orderList, priority);
-          var moduleNameMap = {};
-          var promiseResults = [];
-          orderList.forEach(function (moduleName) {
-            if (!moduleNameMap[moduleName]) {
-              moduleNameMap[moduleName] = true;
-              var fun = handlers[moduleName];
-              _basic.MetaData.currentData = {
-                actionName: action.type,
-                prevState: currentState
-              };
-              var effectResult = fun.apply(void 0, _actionData);
-              var decorators = fun.__decorators__;
-
-              if (decorators) {
-                var results = [];
-                decorators.forEach(function (decorator, index) {
-                  results[index] = decorator[0](action, moduleName, effectResult);
-                });
-                fun.__decoratorResults__ = results;
-              }
-
-              var errorHandler = effectResult.then(function (reslove) {
-                if (decorators) {
-                  var _results = fun.__decoratorResults__ || [];
-
-                  decorators.forEach(function (decorator, index) {
-                    if (decorator[1]) {
-                      decorator[1]('Resolved', _results[index], reslove);
-                    }
-                  });
-                  fun.__decoratorResults__ = undefined;
-                }
-
-                return reslove;
-              }, function (reason) {
-                if (decorators) {
-                  var _results2 = fun.__decoratorResults__ || [];
-
-                  decorators.forEach(function (decorator, index) {
-                    if (decorator[1]) {
-                      decorator[1]('Rejected', _results2[index], reason);
-                    }
-                  });
-                  fun.__decoratorResults__ = undefined;
-                }
-
-                if (isProcessedError(reason)) {
-                  throw reason;
-                } else {
-                  reason = setProcessedError(reason, false);
-                  return dispatch((0, _actions.errorAction)(reason));
-                }
-              });
-              promiseResults.push(errorHandler);
-            }
-          });
-
-          if (promiseResults.length) {
-            return Promise.all(promiseResults);
-          }
-        }
-
-        return action;
-      };
-    };
-  };
-
-  var preLoadMiddleware = function preLoadMiddleware() {
-    return function (next) {
-      return function (action) {
-        var _action$type$split = action.type.split(_basic.config.NSP),
-            moduleName = _action$type$split[0],
-            actionName = _action$type$split[1];
-
-        if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
-          var hasInjected = store._medux_.injectedModules[moduleName];
-
-          if (!hasInjected) {
-            var moduleOrPromise = (0, _inject.getModuleByName)(moduleName);
-
-            if ((0, _basic.isPromise)(moduleOrPromise)) {
-              return moduleOrPromise.then(function (module) {
-                module.default.model(store);
-                return next(action);
-              });
-            }
-          }
-        }
-
-        return next(action);
-      };
-    };
-  };
-
-  var middlewareEnhancer = _redux.applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
-
-  var enhancer = function enhancer(newCreateStore) {
-    return function () {
-      var newStore = newCreateStore.apply(void 0, arguments);
-      var moduleStore = newStore;
-      moduleStore._medux_ = {
-        realtimeState: {},
-        currentState: {},
-        reducerMap: {},
-        effectMap: {},
-        injectedModules: {}
-      };
-      return newStore;
-    };
-  };
-
-  var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
-
-  if (_basic.config.DEVTOOLS && _env.env.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(_env.env.__REDUX_DEVTOOLS_EXTENSION__(_env.env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
-  }
-
-  store = (0, _redux.createStore)(combineReducers, preloadedState, _redux.compose.apply(void 0, enhancers));
-
-  store.destroy = function () {
     return undefined;
   };
 
-  if (!_env.env.isServer) {
-    _basic.MetaData.clientStore = store;
-  }
+  _proto.applyEffect = function applyEffect(moduleName, handler, modelInstance, action, actionData) {
+    var _this2 = this;
 
-  return store;
-}
+    var effectResult = handler.apply(modelInstance, actionData);
+    var decorators = handler.__decorators__;
+
+    if (decorators) {
+      var results = [];
+      decorators.forEach(function (decorator, index) {
+        results[index] = decorator[0](action, moduleName, effectResult);
+      });
+      handler.__decoratorResults__ = results;
+    }
+
+    return effectResult.then(function (reslove) {
+      if (decorators) {
+        var _results = handler.__decoratorResults__ || [];
+
+        decorators.forEach(function (decorator, index) {
+          if (decorator[1]) {
+            decorator[1]('Resolved', _results[index], reslove);
+          }
+        });
+        handler.__decoratorResults__ = undefined;
+      }
+
+      return reslove;
+    }, function (error) {
+      if (decorators) {
+        var _results2 = handler.__decoratorResults__ || [];
+
+        decorators.forEach(function (decorator, index) {
+          if (decorator[1]) {
+            decorator[1]('Rejected', _results2[index], error);
+          }
+        });
+        handler.__decoratorResults__ = undefined;
+      }
+
+      if (isProcessedError(error)) {
+        throw error;
+      } else {
+        return _this2.dispatch((0, _actions.errorAction)(setProcessedError(error, false)));
+      }
+    });
+  };
+
+  _proto.dispatch = function dispatch(action) {
+    var _this3 = this;
+
+    if (this.actionDecorator) {
+      action = this.actionDecorator(action);
+    }
+
+    if (action.type === _basic.ActionTypes.Error) {
+      var error = getActionData(action)[0];
+      setProcessedError(error, true);
+    }
+
+    var _action$type$split = action.type.split(_basic.config.NSP),
+        moduleName = _action$type$split[0],
+        actionName = _action$type$split[1];
+
+    if (_env.env.isServer && actionName === _basic.ActionTypes.MLoading) {
+      return undefined;
+    }
+
+    if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
+      if (!this.injectedModules[moduleName]) {
+        var result = (0, _inject.loadModel)(moduleName, this);
+
+        if ((0, _sprite.isPromise)(result)) {
+          return result.then(function () {
+            return _this3.executeAction(action);
+          });
+        }
+      }
+    }
+
+    return this.executeAction(action);
+  };
+
+  _proto.executeAction = function executeAction(action) {
+    var prevData = {
+      actionName: action.type,
+      prevState: this.state
+    };
+    this.respondHandler(action, true, prevData);
+    return this.respondHandler(action, false, prevData);
+  };
+
+  return Controller;
+}();
+
+exports.Controller = Controller;
