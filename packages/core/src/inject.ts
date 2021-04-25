@@ -89,7 +89,7 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
       moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
       injectActions(moduleName, moduleHandles as any);
       const initState = moduleHandles.initState;
-      const preModuleState: CoreModuleState = controller.state[moduleName] || {};
+      const preModuleState: CoreModuleState = controller.getState()[moduleName] || {};
       const moduleState: CoreModuleState = {...initState, ...preModuleState};
       if (moduleState.initialized) {
         return controller.dispatch(moduleReInitAction(moduleName, moduleState));
@@ -187,14 +187,14 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * 获取本Model的state
    */
   protected get state(): S {
-    return this.controller.state[this.moduleName] as S;
+    return this.controller.getState()[this.moduleName];
   }
 
   /**
    * 获取整个store的state
    */
   protected get rootState(): R {
-    return this.controller.state as R;
+    return this.controller.getState() as R;
   }
 
   protected getActionName(): string {
@@ -303,7 +303,7 @@ type ModuleFacade<M extends CommonModule> = {
 export type RootModuleFacade<
   G extends {
     [N in Extract<keyof G, string>]: () => CommonModule<N> | Promise<CommonModule<N>>;
-  } = ModuleGetter
+  } = any
 > = {[K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>};
 
 export type RootModuleActions<A extends RootModuleFacade> = {[K in keyof A]: keyof A[K]['actions']};

@@ -1,6 +1,6 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
 
 exports.__esModule = true;
 exports.cacheModule = cacheModule;
@@ -33,7 +33,7 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
       (0, _basic.injectActions)(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
-      var preModuleState = controller.state[moduleName] || {};
+      var preModuleState = controller.getState()[moduleName] || {};
       var moduleState = (0, _extends2.default)({}, _initState, preModuleState);
 
       if (moduleState.initialized) {
@@ -150,13 +150,13 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.controller.state[this.moduleName];
+        return this.controller.getState()[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.controller.state;
+        return this.controller.getState();
       }
     }, {
       kind: "method",

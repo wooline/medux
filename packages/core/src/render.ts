@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import {MetaData, CommonModule, ModuleGetter, IController} from './basic';
 import {cacheModule, Module, getModuleByName, loadModel} from './inject';
-import {Controller, ActionDecorator} from './store';
+import {Controller, ControllerMiddleware, Dispatch, GetState} from './store';
 import {env} from './env';
 
 let reRender: (appView: any) => void = () => undefined;
@@ -30,7 +30,15 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
 
 const defFun: any = () => undefined;
 
-export type CreateApp<SO extends {actionDecorator?: ActionDecorator; initData?: any}, ST, RO, V> = (
+export interface BaseStoreOptions {
+  middlewares?: ControllerMiddleware[];
+  initData?: any;
+}
+export interface BaseStore {
+  dispatch: Dispatch;
+  getState: GetState;
+}
+export type CreateApp<SO extends BaseStoreOptions = BaseStoreOptions, ST extends BaseStore = BaseStore, RO = any, V = any> = (
   storeCreator: (controller: IController, storeOptions: SO) => ST,
   render: (store: ST, appView: V, renderOptions: RO) => (appView: V) => void,
   ssr: (store: ST, appView: V, renderOptions: RO) => {html: string; data: any},
@@ -43,7 +51,6 @@ export type CreateApp<SO extends {actionDecorator?: ActionDecorator; initData?: 
     storeOptions: SO
   ) => {
     store: ST;
-    controller: IController;
     render: (renderOptions: RO) => Promise<void>;
     ssr: (renderOptions: RO) => Promise<{html: string; data: any}>;
   };
@@ -56,7 +63,7 @@ export type CreateApp<SO extends {actionDecorator?: ActionDecorator; initData?: 
 //   appViewName: string
 // ) => ReturnType<CreateApp<{initState: any}, {}, {}>>;
 
-export const createApp: CreateApp<any, any, any, any> = function (
+export const createApp: CreateApp = function (
   storeCreator,
   render,
   ssr,
@@ -74,11 +81,10 @@ export const createApp: CreateApp<any, any, any, any> = function (
   }
   return {
     useStore(storeOptions) {
-      const controller = new Controller(storeOptions.actionDecorator);
+      const controller = new Controller(storeOptions.middlewares);
       const store = storeCreator(controller, storeOptions);
       return {
         store,
-        controller,
         async ssr(renderOptions) {
           const appModule = await getModuleByName(appModuleName);
           preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);

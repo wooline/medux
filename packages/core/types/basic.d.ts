@@ -46,14 +46,14 @@ export interface IModuleHandlers {
     controller: IController;
     actions: ActionCreatorList;
 }
-export interface IStore<S = any> {
-    update(actionName: string, state: S, actionData: any[]): void;
+export interface StoreProxy<S = any> {
+    update(actionName: string, state: Partial<S>, actionData: any[]): void;
     getState(): S;
 }
 export interface IController<S = any> {
-    setStore(store: IStore<S>): void;
+    setStore(store: StoreProxy<S>): void;
     dispatch(action: Action): void | Promise<void>;
-    state: S;
+    getState(): S;
     injectedModules: {
         [moduleName: string]: IModuleHandlers;
     };
@@ -117,4 +117,5 @@ export declare function setLoading<T extends Promise<any>>(item: T, moduleName?:
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;
 export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;
+export declare function deepMergeState(target?: any, ...args: any[]): any;
 export declare function mergeState(target?: any, ...args: any[]): any;

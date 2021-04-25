@@ -63,7 +63,7 @@ declare type ModuleFacade<M extends CommonModule> = {
 };
 export declare type RootModuleFacade<G extends {
     [N in Extract<keyof G, string>]: () => CommonModule<N> | Promise<CommonModule<N>>;
-} = ModuleGetter> = {
+} = any> = {
     [K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>;
 };
 export declare type RootModuleActions<A extends RootModuleFacade> = {

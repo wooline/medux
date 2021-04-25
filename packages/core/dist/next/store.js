@@ -24,11 +24,21 @@ export function setProcessedError(error, meduxProcessed) {
 export function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
-export function snapshotData(data) {
-  return data;
+
+function compose(...funcs) {
+  if (funcs.length === 0) {
+    return arg => arg;
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0];
+  }
+
+  return funcs.reduce((a, b) => (...args) => a(b(...args)));
 }
+
 export class Controller {
-  constructor(actionDecorator) {
+  constructor(middlewares) {
     _defineProperty(this, "store", void 0);
 
     _defineProperty(this, "state", void 0);
@@ -37,7 +47,47 @@ export class Controller {
 
     _defineProperty(this, "injectedModules", {});
 
-    this.actionDecorator = actionDecorator;
+    _defineProperty(this, "dispatch", () => {
+      throw new Error('Dispatching while constructing your middleware is not allowed.');
+    });
+
+    _defineProperty(this, "getState", () => {
+      return this.state;
+    });
+
+    _defineProperty(this, "preMiddleware", () => next => action => {
+      if (action.type === ActionTypes.Error) {
+        const error = getActionData(action)[0];
+        setProcessedError(error, true);
+      }
+
+      const [moduleName, actionName] = action.type.split(config.NSP);
+
+      if (env.isServer && actionName === ActionTypes.MLoading) {
+        return undefined;
+      }
+
+      if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+        if (!this.injectedModules[moduleName]) {
+          const result = loadModel(moduleName, this);
+
+          if (isPromise(result)) {
+            return result.then(() => next(action));
+          }
+        }
+      }
+
+      return next(action);
+    });
+
+    this.middlewares = middlewares;
+    const middlewareAPI = {
+      getState: this.getState,
+      dispatch: action => this.dispatch(action)
+    };
+    const arr = middlewares ? [this.preMiddleware, ...middlewares] : [this.preMiddleware];
+    const chain = arr.map(middleware => middleware(middlewareAPI));
+    this.dispatch = compose(...chain)(this._dispatch.bind(this));
   }
 
   setStore(store) {
@@ -150,36 +200,7 @@ export class Controller {
     });
   }
 
-  dispatch(action) {
-    if (this.actionDecorator) {
-      action = this.actionDecorator(action);
-    }
-
-    if (action.type === ActionTypes.Error) {
-      const error = getActionData(action)[0];
-      setProcessedError(error, true);
-    }
-
-    const [moduleName, actionName] = action.type.split(config.NSP);
-
-    if (env.isServer && actionName === ActionTypes.MLoading) {
-      return undefined;
-    }
-
-    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      if (!this.injectedModules[moduleName]) {
-        const result = loadModel(moduleName, this);
-
-        if (isPromise(result)) {
-          return result.then(() => this.executeAction(action));
-        }
-      }
-    }
-
-    return this.executeAction(action);
-  }
-
-  executeAction(action) {
+  _dispatch(action) {
     const prevData = {
       actionName: action.type,
       prevState: this.state

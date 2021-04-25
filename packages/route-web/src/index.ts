@@ -1,5 +1,15 @@
-import {Middleware, Reducer} from 'redux';
-import {CoreModuleHandlers, CoreModuleState, config, reducer, env, deepMerge, isPromise} from '@medux/core';
+import {
+  CoreModuleHandlers,
+  CoreModuleState,
+  ControllerMiddleware,
+  config,
+  reducer,
+  env,
+  deepMerge,
+  mergeState,
+  deepMergeState,
+  isPromise,
+} from '@medux/core';
 import {uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig, setRouteConfig} from './basic';
 
 import type {LocationTransform} from './transform';
@@ -13,12 +23,14 @@ export type {RootParams, Location, NativeLocation, RootState, RouteState, Histor
 interface Store {
   dispatch(action: {type: string}): any;
 }
+
 export type RouteModuleState<P extends {[key: string]: any} = {}> = CoreModuleState & P;
+
 export class RouteModuleHandlers<S extends CoreModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
   @reducer
   public Init(initState: S): S {
     const routeParams = this.rootState.route.params[this.moduleName];
-    return routeParams ? (deepMergeState(initState, routeParams) as any) : initState;
+    return routeParams ? (deepMerge({}, initState, routeParams) as any) : initState;
   }
 
   @reducer

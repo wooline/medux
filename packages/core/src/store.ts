@@ -1,7 +1,7 @@
 /* eslint-disable prefer-spread */
 import {env} from './env';
 import {isPromise} from './sprite';
-import {Action, ActionHandler, ActionHandlerList, ActionTypes, config, MetaData, IController, IStore, IModuleHandlers} from './basic';
+import {Action, ActionHandler, ActionHandlerList, ActionTypes, config, MetaData, IController, StoreProxy, IModuleHandlers} from './basic';
 import {errorAction} from './actions';
 import {loadModel} from './inject';
 
@@ -21,12 +21,26 @@ export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-export function snapshotData(data: any) {
-  return data;
+export type Dispatch = (action: Action) => void | Promise<void>;
+
+export type GetState = () => any;
+
+export type ControllerMiddleware = (api: {getState: GetState; dispatch: Dispatch}) => (next: Dispatch) => (action: Action) => void | Promise<void>;
+
+function compose(...funcs: Function[]) {
+  if (funcs.length === 0) {
+    return (arg: any) => arg;
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0];
+  }
+
+  return funcs.reduce((a, b) => (...args: any[]) => a(b(...args)));
 }
-export type ActionDecorator = (action: Action) => Action;
+
 export class Controller<S extends {[key: string]: any}> implements IController<S> {
-  store!: IStore<S>;
+  store!: StoreProxy<S>;
 
   state!: S;
 
@@ -34,9 +48,45 @@ export class Controller<S extends {[key: string]: any}> implements IController<S
 
   injectedModules: {[moduleName: string]: IModuleHandlers} = {};
 
-  constructor(protected actionDecorator?: ActionDecorator) {}
+  constructor(protected middlewares?: ControllerMiddleware[]) {
+    const middlewareAPI = {
+      getState: this.getState,
+      dispatch: (action: Action) => this.dispatch(action),
+    };
+    const arr = middlewares ? [this.preMiddleware, ...middlewares] : [this.preMiddleware];
+    const chain = arr.map((middleware) => middleware(middlewareAPI));
+    this.dispatch = compose(...chain)(this._dispatch.bind(this));
+  }
 
-  setStore(store: IStore<S>) {
+  dispatch: Dispatch = () => {
+    throw new Error('Dispatching while constructing your middleware is not allowed.');
+  };
+
+  getState: GetState = () => {
+    return this.state;
+  };
+
+  preMiddleware: ControllerMiddleware = () => (next) => (action) => {
+    if (action.type === ActionTypes.Error) {
+      const error = getActionData(action)[0];
+      setProcessedError(error, true);
+    }
+    const [moduleName, actionName] = action.type.split(config.NSP);
+    if (env.isServer && actionName === ActionTypes.MLoading) {
+      return undefined;
+    }
+    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+      if (!this.injectedModules[moduleName]) {
+        const result: void | Promise<void> = loadModel(moduleName, this);
+        if (isPromise(result)) {
+          return result.then(() => next(action));
+        }
+      }
+    }
+    return next(action);
+  };
+
+  setStore(store: StoreProxy<S>) {
     this.store = store;
     this.state = store.getState();
   }
@@ -138,30 +188,7 @@ export class Controller<S extends {[key: string]: any}> implements IController<S
     );
   }
 
-  dispatch(action: Action): void | Promise<void> {
-    if (this.actionDecorator) {
-      action = this.actionDecorator(action);
-    }
-    if (action.type === ActionTypes.Error) {
-      const error = getActionData(action)[0];
-      setProcessedError(error, true);
-    }
-    const [moduleName, actionName] = action.type.split(config.NSP);
-    if (env.isServer && actionName === ActionTypes.MLoading) {
-      return undefined;
-    }
-    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-      if (!this.injectedModules[moduleName]) {
-        const result: void | Promise<void> = loadModel(moduleName, this);
-        if (isPromise(result)) {
-          return result.then(() => this.executeAction(action));
-        }
-      }
-    }
-    return this.executeAction(action);
-  }
-
-  executeAction(action: Action): void | Promise<void> {
+  _dispatch(action: Action): void | Promise<void> {
     const prevData = {actionName: action.type, prevState: this.state};
     this.respondHandler(action, true, prevData);
     return this.respondHandler(action, false, prevData);

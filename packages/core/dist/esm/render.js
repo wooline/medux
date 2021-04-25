@@ -1,5 +1,5 @@
-import _regeneratorRuntime from "@babel/runtime/regenerator";
 import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
+import _regeneratorRuntime from "@babel/runtime/regenerator";
 import { MetaData } from './basic';
 import { cacheModule, getModuleByName, loadModel } from './inject';
 import { Controller } from './store';
@@ -59,11 +59,10 @@ export var createApp = function createApp(storeCreator, render, ssr, preModules,
 
   return {
     useStore: function useStore(storeOptions) {
-      var controller = new Controller(storeOptions.actionDecorator);
+      var controller = new Controller(storeOptions.middlewares);
       var store = storeCreator(controller, storeOptions);
       return {
         store: store,
-        controller: controller,
         ssr: function (_ssr) {
           function ssr(_x) {
             return _ssr.apply(this, arguments);

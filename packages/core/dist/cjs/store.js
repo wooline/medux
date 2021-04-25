@@ -1,12 +1,11 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
 
 exports.__esModule = true;
 exports.isProcessedError = isProcessedError;
 exports.setProcessedError = setProcessedError;
 exports.getActionData = getActionData;
-exports.snapshotData = snapshotData;
 exports.Controller = void 0;
 
 var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
@@ -46,17 +45,86 @@ function getActionData(action) {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-function snapshotData(data) {
-  return data;
+function compose() {
+  for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
+    funcs[_key] = arguments[_key];
+  }
+
+  if (funcs.length === 0) {
+    return function (arg) {
+      return arg;
+    };
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0];
+  }
+
+  return funcs.reduce(function (a, b) {
+    return function () {
+      return a(b.apply(void 0, arguments));
+    };
+  });
 }
 
 var Controller = function () {
-  function Controller(actionDecorator) {
+  function Controller(middlewares) {
+    var _this = this;
+
     (0, _defineProperty2.default)(this, "store", void 0);
     (0, _defineProperty2.default)(this, "state", void 0);
     (0, _defineProperty2.default)(this, "prevData", void 0);
     (0, _defineProperty2.default)(this, "injectedModules", {});
-    this.actionDecorator = actionDecorator;
+    (0, _defineProperty2.default)(this, "dispatch", function () {
+      throw new Error('Dispatching while constructing your middleware is not allowed.');
+    });
+    (0, _defineProperty2.default)(this, "getState", function () {
+      return _this.state;
+    });
+    (0, _defineProperty2.default)(this, "preMiddleware", function () {
+      return function (next) {
+        return function (action) {
+          if (action.type === _basic.ActionTypes.Error) {
+            var error = getActionData(action)[0];
+            setProcessedError(error, true);
+          }
+
+          var _action$type$split = action.type.split(_basic.config.NSP),
+              moduleName = _action$type$split[0],
+              actionName = _action$type$split[1];
+
+          if (_env.env.isServer && actionName === _basic.ActionTypes.MLoading) {
+            return undefined;
+          }
+
+          if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
+            if (!_this.injectedModules[moduleName]) {
+              var result = (0, _inject.loadModel)(moduleName, _this);
+
+              if ((0, _sprite.isPromise)(result)) {
+                return result.then(function () {
+                  return next(action);
+                });
+              }
+            }
+          }
+
+          return next(action);
+        };
+      };
+    });
+    this.middlewares = middlewares;
+    var middlewareAPI = {
+      getState: this.getState,
+      dispatch: function dispatch(action) {
+        return _this.dispatch(action);
+      }
+    };
+    var arr = middlewares ? [this.preMiddleware].concat(middlewares) : [this.preMiddleware];
+    var chain = arr.map(function (middleware) {
+      return middleware(middlewareAPI);
+    });
+    this.dispatch = compose.apply(void 0, chain)(this._dispatch.bind(this));
   }
 
   var _proto = Controller.prototype;
@@ -67,7 +135,7 @@ var Controller = function () {
   };
 
   _proto.respondHandler = function respondHandler(action, isReducer, prevData) {
-    var _this = this;
+    var _this2 = this;
 
     var handlersMap = isReducer ? _basic.MetaData.reducersMap : _basic.MetaData.effectsMap;
     var actionName = action.type;
@@ -107,7 +175,7 @@ var Controller = function () {
           if (!implemented[moduleName]) {
             implemented[moduleName] = true;
             var handler = handlers[moduleName];
-            var modelInstance = _this.injectedModules[moduleName];
+            var modelInstance = _this2.injectedModules[moduleName];
             newState[moduleName] = handler.apply(modelInstance, actionData);
           }
         });
@@ -119,9 +187,9 @@ var Controller = function () {
           if (!implemented[moduleName]) {
             implemented[moduleName] = true;
             var handler = handlers[moduleName];
-            var modelInstance = _this.injectedModules[moduleName];
-            _this.prevData = prevData;
-            result.push(_this.applyEffect(moduleName, handler, modelInstance, action, actionData));
+            var modelInstance = _this2.injectedModules[moduleName];
+            _this2.prevData = prevData;
+            result.push(_this2.applyEffect(moduleName, handler, modelInstance, action, actionData));
           }
         });
         return result.length === 1 ? result[0] : Promise.all(result);
@@ -132,7 +200,7 @@ var Controller = function () {
   };
 
   _proto.applyEffect = function applyEffect(moduleName, handler, modelInstance, action, actionData) {
-    var _this2 = this;
+    var _this3 = this;
 
     var effectResult = handler.apply(modelInstance, actionData);
     var decorators = handler.__decorators__;
@@ -173,47 +241,12 @@ var Controller = function () {
       if (isProcessedError(error)) {
         throw error;
       } else {
-        return _this2.dispatch((0, _actions.errorAction)(setProcessedError(error, false)));
+        return _this3.dispatch((0, _actions.errorAction)(setProcessedError(error, false)));
       }
     });
   };
 
-  _proto.dispatch = function dispatch(action) {
-    var _this3 = this;
-
-    if (this.actionDecorator) {
-      action = this.actionDecorator(action);
-    }
-
-    if (action.type === _basic.ActionTypes.Error) {
-      var error = getActionData(action)[0];
-      setProcessedError(error, true);
-    }
-
-    var _action$type$split = action.type.split(_basic.config.NSP),
-        moduleName = _action$type$split[0],
-        actionName = _action$type$split[1];
-
-    if (_env.env.isServer && actionName === _basic.ActionTypes.MLoading) {
-      return undefined;
-    }
-
-    if (moduleName && actionName && _basic.MetaData.moduleGetter[moduleName]) {
-      if (!this.injectedModules[moduleName]) {
-        var result = (0, _inject.loadModel)(moduleName, this);
-
-        if ((0, _sprite.isPromise)(result)) {
-          return result.then(function () {
-            return _this3.executeAction(action);
-          });
-        }
-      }
-    }
-
-    return this.executeAction(action);
-  };
-
-  _proto.executeAction = function executeAction(action) {
+  _proto._dispatch = function _dispatch(action) {
     var prevData = {
       actionName: action.type,
       prevState: this.state

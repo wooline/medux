@@ -8,9 +8,9 @@ module.exports = {
   extends: [
     'airbnb-typescript/base',
     'plugin:@typescript-eslint/recommended',
-    'prettier/@typescript-eslint', // 屏蔽eslint
+    //'prettier/@typescript-eslint', // 屏蔽eslint
     'plugin:prettier/recommended', // 转eslint
-    'prettier/babel',
+    //'prettier/babel',
   ],
   plugins: [],
   parserOptions: {

@@ -1,6 +1,6 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
 
 exports.__esModule = true;
 exports.viewHotReplacement = viewHotReplacement;
@@ -76,11 +76,10 @@ var createApp = function createApp(storeCreator, render, ssr, preModules, module
 
   return {
     useStore: function useStore(storeOptions) {
-      var controller = new _store.Controller(storeOptions.actionDecorator);
+      var controller = new _store.Controller(storeOptions.middlewares);
       var store = storeCreator(controller, storeOptions);
       return {
         store: store,
-        controller: controller,
         ssr: function (_ssr) {
           function ssr(_x) {
             return _ssr.apply(this, arguments);

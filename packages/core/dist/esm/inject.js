@@ -14,7 +14,7 @@ export var exportModule = function exportModule(moduleName, ModuleHandles, views
       moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
       injectActions(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
-      var preModuleState = controller.state[moduleName] || {};
+      var preModuleState = controller.getState()[moduleName] || {};
 
       var moduleState = _extends({}, _initState, preModuleState);
 
@@ -128,13 +128,13 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.controller.state[this.moduleName];
+        return this.controller.getState()[this.moduleName];
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.controller.state;
+        return this.controller.getState();
       }
     }, {
       kind: "method",

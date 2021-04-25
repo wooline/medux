@@ -1,5 +1,5 @@
 import {env} from './env';
-import {LoadingState, TaskCounter, warn} from './sprite';
+import {LoadingState, TaskCounter, deepMerge, warn} from './sprite';
 
 /**
  * 可供设置的全局参数，参见setConfig
@@ -82,15 +82,15 @@ export interface IModuleHandlers {
   actions: ActionCreatorList;
 }
 
-export interface IStore<S = any> {
-  update(actionName: string, state: S, actionData: any[]): void;
+export interface StoreProxy<S = any> {
+  update(actionName: string, state: Partial<S>, actionData: any[]): void;
   getState(): S;
 }
 
 export interface IController<S = any> {
-  setStore(store: IStore<S>): void;
+  setStore(store: StoreProxy<S>): void;
   dispatch(action: Action): void | Promise<void>;
-  state: S;
+  getState(): S;
   injectedModules: {[moduleName: string]: IModuleHandlers};
   prevData: {actionName: string; prevState: S};
 }
@@ -310,12 +310,12 @@ export function logger(
     fun.__decorators__.push([before, after]);
   };
 }
-// export function deepMergeState(target: any = {}, ...args: any[]) {
-//   if (config.MutableData) {
-//     return deepMerge(target, ...args);
-//   }
-//   return deepMerge({}, target, ...args);
-// }
+export function deepMergeState(target: any = {}, ...args: any[]) {
+  if (config.MutableData) {
+    return deepMerge(target, ...args);
+  }
+  return deepMerge({}, target, ...args);
+}
 
 export function mergeState(target: any = {}, ...args: any[]) {
   if (config.MutableData) {

@@ -1,4 +1,4 @@
-import { compose, createStore, applyMiddleware } from 'redux';
+import { compose, createStore } from 'redux';
 import { env } from '../env';
 import { createApp } from '../render';
 
@@ -11,14 +11,9 @@ const reducer = (state, action) => {
 const createRedux = function (controller, storeOptions) {
   const {
     initState = {},
-    middlewares,
     enhancers
   } = storeOptions;
   const enhancerList = enhancers ? [...enhancers] : [];
-
-  if (middlewares) {
-    enhancerList.push(applyMiddleware(...middlewares));
-  }
 
   if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancerList.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
@@ -29,7 +24,7 @@ const createRedux = function (controller, storeOptions) {
     dispatch,
     getState
   } = reduxStore;
-  reduxStore.dispatch = controller.dispatch.bind(controller);
+  reduxStore.dispatch = controller.dispatch;
   controller.setStore({
     getState,
 

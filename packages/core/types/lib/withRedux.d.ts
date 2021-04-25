@@ -1,16 +1,18 @@
-import { Store, StoreEnhancer, Middleware } from 'redux';
+import { Unsubscribe, StoreEnhancer } from 'redux';
 import { CommonModule, ModuleGetter } from '../basic';
-import { CreateApp } from '../render';
-import { ActionDecorator } from '../store';
-interface ReduxOptions {
-    actionDecorator?: ActionDecorator;
-    initState?: any;
+import { BaseStore, BaseStoreOptions, CreateApp } from '../render';
+import { ControllerMiddleware } from '../store';
+export interface ReduxOptions extends BaseStoreOptions {
+    middlewares?: ControllerMiddleware[];
     enhancers?: StoreEnhancer[];
-    middlewares?: Middleware[];
+    initState?: any;
 }
-declare type CreateAppWithRedux<RO, V> = (render: (store: Store, appView: V, renderOptions: RO) => (appView: V) => void, ssr: (store: Store, appView: V, renderOptions: RO) => {
+export interface ReduxStore extends BaseStore {
+    subscribe(listener: () => void): Unsubscribe;
+}
+declare type CreateAppWithRedux<RO, V> = (render: (store: ReduxStore, appView: V, renderOptions: RO) => (appView: V) => void, ssr: (store: ReduxStore, appView: V, renderOptions: RO) => {
     html: string;
     data: any;
-}, preModules: string[], moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string) => ReturnType<CreateApp<ReduxOptions, Store, RO, V>>;
+}, preModules: string[], moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string) => ReturnType<CreateApp<ReduxOptions, ReduxStore, RO, V>>;
 export declare const createAppWithRedux: CreateAppWithRedux<any, any>;
 export {};

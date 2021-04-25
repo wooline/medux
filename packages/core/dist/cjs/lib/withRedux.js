@@ -1,6 +1,6 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
 
 exports.__esModule = true;
 exports.createAppWithRedux = void 0;
@@ -20,13 +20,8 @@ var reducer = function reducer(state, action) {
 var createRedux = function createRedux(controller, storeOptions) {
   var _storeOptions$initSta = storeOptions.initState,
       initState = _storeOptions$initSta === void 0 ? {} : _storeOptions$initSta,
-      middlewares = storeOptions.middlewares,
       enhancers = storeOptions.enhancers;
   var enhancerList = enhancers ? [].concat(enhancers) : [];
-
-  if (middlewares) {
-    enhancerList.push(_redux.applyMiddleware.apply(void 0, middlewares));
-  }
 
   if (process.env.NODE_ENV === 'development' && _env.env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancerList.push(_env.env.__REDUX_DEVTOOLS_EXTENSION__(_env.env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
@@ -35,7 +30,7 @@ var createRedux = function createRedux(controller, storeOptions) {
   var reduxStore = (0, _redux.createStore)(reducer, initState, enhancerList.length > 1 ? _redux.compose.apply(void 0, enhancerList) : enhancerList[0]);
   var dispatch = reduxStore.dispatch,
       getState = reduxStore.getState;
-  reduxStore.dispatch = controller.dispatch.bind(controller);
+  reduxStore.dispatch = controller.dispatch;
   controller.setStore({
     getState: getState,
     update: function update(actionName, state, actionData) {

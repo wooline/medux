@@ -41,11 +41,10 @@ export const createApp = function (storeCreator, render, ssr, preModules = [], m
 
   return {
     useStore(storeOptions) {
-      const controller = new Controller(storeOptions.actionDecorator);
+      const controller = new Controller(storeOptions.middlewares);
       const store = storeCreator(controller, storeOptions);
       return {
         store,
-        controller,
 
         async ssr(renderOptions) {
           const appModule = await getModuleByName(appModuleName);

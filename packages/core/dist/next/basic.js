@@ -1,5 +1,5 @@
 import { env } from './env';
-import { TaskCounter, warn } from './sprite';
+import { TaskCounter, deepMerge, warn } from './sprite';
 export const config = {
   NSP: '.',
   MSP: ',',
@@ -155,6 +155,13 @@ export function logger(before, after) {
 
     fun.__decorators__.push([before, after]);
   };
+}
+export function deepMergeState(target = {}, ...args) {
+  if (config.MutableData) {
+    return deepMerge(target, ...args);
+  }
+
+  return deepMerge({}, target, ...args);
 }
 export function mergeState(target = {}, ...args) {
   if (config.MutableData) {
