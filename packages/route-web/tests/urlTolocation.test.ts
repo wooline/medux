@@ -13,7 +13,17 @@ describe('init', () => {
     });
     expect(router.getRouteState()).toEqual({
       pagename: '/admin/member',
-      params: {admin: {}, member: {listSearchPre: {pageSize: 10, pageCurrent: 1, term: null}, listView: '', _listVerPre: 0, itemIdPre: '', itemView: '', _itemVerPre: 0}},
+      params: {
+        admin: {},
+        member: {
+          listSearchPre: {pageSize: 10, pageCurrent: 1, term: null},
+          listView: '',
+          _listVerPre: 0,
+          itemIdPre: '',
+          itemView: '',
+          _itemVerPre: 0,
+        },
+      },
       key: '1',
       action: 'RELAUNCH',
     });
@@ -71,7 +81,11 @@ describe('/admin/member', () => {
         },
       },
     });
-    expect(router.urlToLocation('/admin/member2?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D')).toEqual({
+    expect(
+      router.urlToLocation(
+        '/admin/member2?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D'
+      )
+    ).toEqual({
       pagename: '/admin/member',
       params: {
         admin: {},
@@ -89,26 +103,28 @@ describe('/admin/member', () => {
         },
       },
     });
-    expect(router.urlToLocation('/admin/member2/list/2/aaa//?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D')).toEqual(
-      {
-        pagename: '/admin/member/list',
-        params: {
-          admin: {},
-          member: {
-            listSearchPre: {
-              pageSize: 11,
-              pageCurrent: 2,
-              term: 'aaa',
-            },
-            listView: 'list',
-            _listVerPre: 0,
-            itemIdPre: '',
-            itemView: '',
-            _itemVerPre: 1,
+    expect(
+      router.urlToLocation(
+        '/admin/member2/list/2/aaa//?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D'
+      )
+    ).toEqual({
+      pagename: '/admin/member/list',
+      params: {
+        admin: {},
+        member: {
+          listSearchPre: {
+            pageSize: 11,
+            pageCurrent: 2,
+            term: 'aaa',
           },
+          listView: 'list',
+          _listVerPre: 0,
+          itemIdPre: '',
+          itemView: '',
+          _itemVerPre: 1,
         },
-      }
-    );
+      },
+    });
   });
   test('urlToLocation', () => {
     expect(router.urlToLocation('/admin/member?{}')).toEqual({

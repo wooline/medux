@@ -21,7 +21,9 @@ describe('/admin/member', () => {
           },
         },
       })
-    ).toBe('/admin/member?{"admin":{},"member":{"listSearchPre":{"pageSize":10,"pageCurrent":1},"listView":"","_listVerPre":0,"itemIdPre":"","itemView":"","_itemVerPre":0}}');
+    ).toBe(
+      '/admin/member?{"admin":{},"member":{"listSearchPre":{"pageSize":10,"pageCurrent":1},"listView":"","_listVerPre":0,"itemIdPre":"","itemView":"","_itemVerPre":0}}'
+    );
     expect(
       router.locationToMeduxUrl({
         pagename: '/admin/member',
@@ -95,7 +97,9 @@ describe('/admin/member', () => {
           },
         },
       })
-    ).toBe('/admin/member2?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D');
+    ).toBe(
+      '/admin/member2?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D'
+    );
     expect(
       router.locationToNativeUrl({
         pagename: '/admin/member333',
@@ -108,6 +112,8 @@ describe('/admin/member', () => {
           },
         },
       })
-    ).toBe('/admin/member2333?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D');
+    ).toBe(
+      '/admin/member2333?_=%7B%22member%22%3A%7B%22listSearchPre%22%3A%7B%22pageSize%22%3A11%7D%7D%7D#_=%7B%22member%22%3A%7B%22_itemVerPre%22%3A1%7D%7D'
+    );
   });
 });

@@ -2,112 +2,12 @@ import _regeneratorRuntime from "@babel/runtime/regenerator";
 import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import _assertThisInitialized from "@babel/runtime/helpers/esm/assertThisInitialized";
-import _inheritsLoose from "@babel/runtime/helpers/esm/inheritsLoose";
-import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { CoreModuleHandlers, config, reducer, deepMergeState, mergeState, env, deepMerge, isPromise } from '@medux/core';
+import { env, deepMerge, isPromise } from '@medux/core';
 import { uriToLocation, nativeUrlToNativeLocation as _nativeUrlToNativeLocation, nativeLocationToNativeUrl as _nativeLocationToNativeUrl, History, routeConfig, setRouteConfig } from './basic';
+import { testRouteChangeAction, routeChangeAction } from './module';
 export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
-export var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
-  var RouteModuleHandlers = function (_CoreModuleHandlers2) {
-    _inheritsLoose(RouteModuleHandlers, _CoreModuleHandlers2);
-
-    function RouteModuleHandlers() {
-      var _this;
-
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      _this = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
-
-      _initialize(_assertThisInitialized(_this));
-
-      return _this;
-    }
-
-    return RouteModuleHandlers;
-  }(_CoreModuleHandlers);
-
-  return {
-    F: RouteModuleHandlers,
-    d: [{
-      kind: "method",
-      decorators: [reducer],
-      key: "Init",
-      value: function Init(initState) {
-        var routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? deepMergeState(initState, routeParams) : initState;
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "RouteParams",
-      value: function RouteParams(payload) {
-        return deepMergeState(this.state, payload);
-      }
-    }]
-  };
-}, CoreModuleHandlers);
-export var RouteActionTypes = {
-  MRouteParams: 'RouteParams',
-  RouteChange: "medux" + config.NSP + "RouteChange",
-  TestRouteChange: "medux" + config.NSP + "TestRouteChange"
-};
-export function testRouteChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.TestRouteChange,
-    payload: [routeState]
-  };
-}
-export function routeParamsAction(moduleName, params, action) {
-  return {
-    type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
-    payload: [params, action]
-  };
-}
-export function routeChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
-export var routeMiddleware = function routeMiddleware(_ref) {
-  var dispatch = _ref.dispatch,
-      getState = _ref.getState;
-  return function (next) {
-    return function (action) {
-      if (action.type === RouteActionTypes.RouteChange) {
-        var result = next(action);
-        var routeState = action.payload[0];
-        var rootRouteParams = routeState.params;
-        var rootState = getState();
-        Object.keys(rootRouteParams).forEach(function (moduleName) {
-          var routeParams = rootRouteParams[moduleName];
-
-          if (routeParams) {
-            var _rootState$moduleName;
-
-            if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
-              dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-            }
-          }
-        });
-        return result;
-      }
-
-      return next(action);
-    };
-  };
-};
-export var routeReducer = function routeReducer(state, action) {
-  if (action.type === RouteActionTypes.RouteChange) {
-    return mergeState(state, action.payload[0]);
-  }
-
-  return state;
-};
+export { routeMiddleware, RouteModuleHandlers, RouteHandlers, RouteActionTypes } from './module';
 
 function dataIsNativeLocation(data) {
   return data['pathname'];
@@ -139,10 +39,10 @@ export var BaseNativeRouter = function () {
   };
 
   _proto.execute = function execute(method, getNativeData) {
-    var _this2 = this;
+    var _this = this;
 
-    for (var _len2 = arguments.length, args = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-      args[_key2 - 2] = arguments[_key2];
+    for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+      args[_key - 2] = arguments[_key];
     }
 
     return new Promise(function (resolve, reject) {
@@ -151,9 +51,9 @@ export var BaseNativeRouter = function () {
         reject: reject,
         nativeData: undefined
       };
-      _this2.curTask = task;
+      _this.curTask = task;
 
-      var result = _this2[method].apply(_this2, [function () {
+      var result = _this[method].apply(_this, [function () {
         var nativeData = getNativeData();
         task.nativeData = nativeData;
         return nativeData;
@@ -161,11 +61,11 @@ export var BaseNativeRouter = function () {
 
       if (!result) {
         resolve(undefined);
-        _this2.curTask = undefined;
+        _this.curTask = undefined;
       } else if (isPromise(result)) {
         result.catch(function (e) {
           reject(e);
-          _this2.curTask = undefined;
+          _this.curTask = undefined;
         });
       }
     });
@@ -400,7 +300,7 @@ export var BaseRouter = function () {
 
   _proto2._relaunch = function () {
     var _relaunch2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(data, internal, disableNative) {
-      var _this3 = this;
+      var _this2 = this;
 
       var location, key, routeState, nativeData;
       return _regeneratorRuntime.wrap(function _callee$(_context) {
@@ -453,9 +353,9 @@ export var BaseRouter = function () {
 
               _context.next = 17;
               return this.nativeRouter.execute('relaunch', function () {
-                var nativeLocation = _this3.locationTransform.out(routeState);
+                var nativeLocation = _this2.locationTransform.out(routeState);
 
-                var nativeUrl = _this3.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this2.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -507,7 +407,7 @@ export var BaseRouter = function () {
 
   _proto2._push = function () {
     var _push2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee2(data, internal, disableNative) {
-      var _this4 = this;
+      var _this3 = this;
 
       var location, key, routeState, nativeData;
       return _regeneratorRuntime.wrap(function _callee2$(_context2) {
@@ -560,9 +460,9 @@ export var BaseRouter = function () {
 
               _context2.next = 17;
               return this.nativeRouter.execute('push', function () {
-                var nativeLocation = _this4.locationTransform.out(routeState);
+                var nativeLocation = _this3.locationTransform.out(routeState);
 
-                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this3.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -615,7 +515,7 @@ export var BaseRouter = function () {
 
   _proto2._replace = function () {
     var _replace2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee3(data, internal, disableNative) {
-      var _this5 = this;
+      var _this4 = this;
 
       var location, key, routeState, nativeData;
       return _regeneratorRuntime.wrap(function _callee3$(_context3) {
@@ -668,9 +568,9 @@ export var BaseRouter = function () {
 
               _context3.next = 17;
               return this.nativeRouter.execute('replace', function () {
-                var nativeLocation = _this5.locationTransform.out(routeState);
+                var nativeLocation = _this4.locationTransform.out(routeState);
 
-                var nativeUrl = _this5.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -731,7 +631,7 @@ export var BaseRouter = function () {
 
   _proto2._back = function () {
     var _back2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(n, indexUrl, internal, disableNative) {
-      var _this6 = this;
+      var _this5 = this;
 
       var stack, uri, _uriToLocation, key, location, routeState, nativeData;
 
@@ -785,9 +685,9 @@ export var BaseRouter = function () {
 
               _context4.next = 16;
               return this.nativeRouter.execute('back', function () {
-                var nativeLocation = _this6.locationTransform.out(routeState);
+                var nativeLocation = _this5.locationTransform.out(routeState);
 
-                var nativeUrl = _this6.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this5.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,

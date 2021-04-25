@@ -136,7 +136,7 @@ export class NativeRouter extends BaseNativeRouter {
     return nativeData;
   }
 
-  toOutside(url: string) {}
+  toOutside() {}
 
   destroy() {}
 }

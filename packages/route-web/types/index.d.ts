@@ -1,47 +1,16 @@
-import { Middleware, Reducer } from 'redux';
-import { CoreModuleHandlers, CoreModuleState } from '@medux/core';
 import { History } from './basic';
 import type { LocationTransform } from './transform';
-import type { RootParams, Location, NativeLocation, RouteState, HistoryAction, PayloadLocation, PartialLocation } from './basic';
+import type { RootParams, Location, NativeLocation, RouteState, PayloadLocation, PartialLocation } from './basic';
 export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
+export { routeMiddleware, RouteModuleHandlers, RouteHandlers, RouteActionTypes } from './module';
 export type { LocationTransform } from './transform';
-export type { RootParams, Location, NativeLocation, RootState, RouteState, HistoryAction, RouteRootState, DeepPartial, PayloadLocation } from './basic';
+export type { RootParams, Location, NativeLocation, RouteState, HistoryAction, DeepPartial, PayloadLocation } from './basic';
 interface Store {
     dispatch(action: {
         type: string;
     }): any;
 }
-export declare type RouteModuleState<P extends {
-    [key: string]: any;
-} = {}> = CoreModuleState & P;
-export declare class RouteModuleHandlers<S extends CoreModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
-    Init(initState: S): S;
-    RouteParams(payload: Partial<S>): S;
-}
-export declare const RouteActionTypes: {
-    MRouteParams: string;
-    RouteChange: string;
-    TestRouteChange: string;
-};
-export declare function testRouteChangeAction<P extends {
-    [key: string]: any;
-}>(routeState: RouteState<P>): {
-    type: string;
-    payload: RouteState<P>[];
-};
-export declare function routeParamsAction(moduleName: string, params: any, action: HistoryAction): {
-    type: string;
-    payload: any[];
-};
-export declare function routeChangeAction<P extends {
-    [key: string]: any;
-}>(routeState: RouteState<P>): {
-    type: string;
-    payload: RouteState<P>[];
-};
-export declare const routeMiddleware: Middleware;
-export declare const routeReducer: Reducer;
 export declare type NativeData = {
     nativeLocation: NativeLocation;
     nativeUrl: string;

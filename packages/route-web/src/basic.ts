@@ -1,5 +1,3 @@
-import {CoreRootState, RootModuleFacade} from '@medux/core';
-
 export const routeConfig = {
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
@@ -52,14 +50,6 @@ export type RouteState<P extends RootParams = {}> = Location<P> & {
   action: HistoryAction;
   key: string;
 };
-
-export type RouteRootState<P extends {[key: string]: any}> = CoreRootState & {
-  route: RouteState<P>;
-};
-
-export type RootState<A extends RootModuleFacade, P extends {[key: string]: any}> = {
-  route: RouteState<P>;
-} & {[M in keyof A]?: A[M]['state']};
 
 export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
