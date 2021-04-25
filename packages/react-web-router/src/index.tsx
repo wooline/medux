@@ -11,13 +11,12 @@ import {appExports} from './sington';
 import type {ComponentType} from 'react';
 import type {ModuleGetter, StoreOptions, ExportModule} from '@medux/core';
 import type {LocationTransform} from '@medux/route-web';
+import type {CreateAppWithRedux} from '@medux/core/lib/with-redux';
 import type {ServerRequest, ServerResponse} from './sington';
 
-export type {RootModuleFacade, Dispatch} from '@medux/core';
+export type {RootModuleFacade, Dispatch, CoreModuleState} from '@medux/core';
 export type {Store} from 'redux';
 export type {
-  RouteModuleState as BaseModuleState,
-  RootState,
   RouteState,
   PayloadLocation,
   LocationTransform,
@@ -63,7 +62,6 @@ declare const require: any;
 let SSRKey = 'meduxInitStore';
 
 export function setConfig(conf: {
-  RSP?: string;
   actionMaxHistory?: number;
   pagesMaxHistory?: number;
   pagenames?: {[key: string]: string};
@@ -71,7 +69,6 @@ export function setConfig(conf: {
   MSP?: string;
   SSRKey?: string;
   MutableData?: boolean;
-  DEVTOOLS?: boolean;
   LoadViewOnError?: ComponentType<{message: string}>;
   LoadViewOnLoading?: ComponentType<{}>;
   disableNativeRoute?: boolean;

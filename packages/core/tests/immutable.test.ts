@@ -1,5 +1,5 @@
 import {getView} from 'src/index';
-import {createAppWithRedux, ReduxStore} from 'src/lib/withRedux';
+import {createAppWithRedux, ReduxStore} from 'src/lib/with-redux';
 import {ControllerMiddleware} from 'src/store';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
@@ -21,7 +21,7 @@ describe('init', () => {
       () => {
         return {html: '', data: {}};
       },
-      [],
+      ['moduleA'],
       moduleGetter,
       'moduleA',
       'Main'

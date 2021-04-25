@@ -26,6 +26,7 @@
   "files": [
     "env/",
     "types/",
+    "lib/",
     "dist/"
   ],
   "scripts": {

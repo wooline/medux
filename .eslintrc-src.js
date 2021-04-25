@@ -6,5 +6,6 @@ module.exports = {
     node: false,
   },
   rules: {
+    "@typescript-eslint/no-unused-vars": ["error", {"args": "none"}]
   },
 };

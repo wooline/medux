@@ -10,9 +10,8 @@ export interface ReduxOptions extends BaseStoreOptions {
 export interface ReduxStore extends BaseStore {
     subscribe(listener: () => void): Unsubscribe;
 }
-declare type CreateAppWithRedux<RO, V> = (render: (store: ReduxStore, appView: V, renderOptions: RO) => (appView: V) => void, ssr: (store: ReduxStore, appView: V, renderOptions: RO) => {
+export declare type CreateAppWithRedux<RO, V> = (render: (store: ReduxStore, appView: V, renderOptions: RO) => (appView: V) => void, ssr: (store: ReduxStore, appView: V, renderOptions: RO) => {
     html: string;
     data: any;
 }, preModules: string[], moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string) => ReturnType<CreateApp<ReduxOptions, ReduxStore, RO, V>>;
 export declare const createAppWithRedux: CreateAppWithRedux<any, any>;
-export {};

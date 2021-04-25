@@ -5,7 +5,8 @@ export {CoreModuleHandlers, cacheModule, loadModel, exportModule, getView, getRo
 export {LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromise, isServer, serverSide, clientSide} from './sprite';
 export {viewHotReplacement} from './render';
 export {env} from './env';
+export type {BaseStore, BaseStoreOptions} from './render';
 export type {ExportModule} from './inject';
 export type {ControllerMiddleware, Dispatch} from './store';
-export type {Action, CoreModuleState, CommonModule, ModuleGetter, Model} from './basic';
+export type {Action, ActionHandlerMap, CoreModuleState, CommonModule, ModuleGetter, Model, IModuleHandlers, IController} from './basic';
 export type {RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, BaseLoadView, ReturnModule} from './inject';

@@ -48,8 +48,6 @@ export const createApp = function (storeCreator, render, ssr, preModules = [], m
 
         async ssr(renderOptions) {
           const appModule = await getModuleByName(appModuleName);
-          preModules = preModules.filter(item => moduleGetter[item] && item !== appModuleName);
-          preModules.unshift(appModuleName);
           await Promise.all(preModules.map(moduleName => loadModel(moduleName, controller)));
           controller.dispatch = defFun;
           return ssr(store, appModule.default.views[appViewName], renderOptions);
@@ -63,13 +61,7 @@ export const createApp = function (storeCreator, render, ssr, preModules = [], m
 
           MetaData.clientController = controller;
           const appModule = await getModuleByName(appModuleName);
-          appModule.default.model(controller);
-          preModules = preModules.filter(item => moduleGetter[item] && item !== appModuleName);
-
-          if (preModules.length) {
-            await Promise.all(preModules.map(moduleName => getModuleByName(moduleName)));
-          }
-
+          await Promise.all(preModules.map(moduleName => loadModel(moduleName, controller)));
           reRender = render(store, appModule.default.views[appViewName], renderOptions);
         }
 

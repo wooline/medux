@@ -1,6 +1,6 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
 exports.viewHotReplacement = viewHotReplacement;
@@ -102,20 +102,16 @@ var createApp = function createApp(storeCreator, render, ssr, preModules, module
 
                   case 2:
                     appModule = _context.sent;
-                    preModules = preModules.filter(function (item) {
-                      return moduleGetter[item] && item !== appModuleName;
-                    });
-                    preModules.unshift(appModuleName);
-                    _context.next = 7;
+                    _context.next = 5;
                     return Promise.all(preModules.map(function (moduleName) {
                       return (0, _inject.loadModel)(moduleName, controller);
                     }));
 
-                  case 7:
+                  case 5:
                     controller.dispatch = defFun;
                     return _context.abrupt("return", ssr(store, appModule.default.views[appViewName], renderOptions));
 
-                  case 9:
+                  case 7:
                   case "end":
                     return _context.stop();
                 }
@@ -152,25 +148,15 @@ var createApp = function createApp(storeCreator, render, ssr, preModules, module
 
                   case 4:
                     appModule = _context2.sent;
-                    appModule.default.model(controller);
-                    preModules = preModules.filter(function (item) {
-                      return moduleGetter[item] && item !== appModuleName;
-                    });
-
-                    if (!preModules.length) {
-                      _context2.next = 10;
-                      break;
-                    }
-
-                    _context2.next = 10;
+                    _context2.next = 7;
                     return Promise.all(preModules.map(function (moduleName) {
-                      return (0, _inject.getModuleByName)(moduleName);
+                      return (0, _inject.loadModel)(moduleName, controller);
                     }));
 
-                  case 10:
+                  case 7:
                     reRender = render(store, appModule.default.views[appViewName], renderOptions);
 
-                  case 11:
+                  case 8:
                   case "end":
                     return _context2.stop();
                 }

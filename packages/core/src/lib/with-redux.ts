@@ -13,7 +13,7 @@ export interface ReduxOptions extends BaseStoreOptions {
 export interface ReduxStore extends BaseStore {
   subscribe(listener: () => void): Unsubscribe;
 }
-type CreateAppWithRedux<RO, V> = (
+export type CreateAppWithRedux<RO, V> = (
   render: (store: ReduxStore, appView: V, renderOptions: RO) => (appView: V) => void,
   ssr: (store: ReduxStore, appView: V, renderOptions: RO) => {html: string; data: any},
   preModules: string[],

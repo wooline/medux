@@ -8,9 +8,9 @@ module.exports = {
   extends: [
     'airbnb-typescript/base',
     'plugin:@typescript-eslint/recommended',
-    //'prettier/@typescript-eslint', // 屏蔽eslint
+    // 'prettier/@typescript-eslint', // 屏蔽eslint
     'plugin:prettier/recommended', // 转eslint
-    //'prettier/babel',
+    // 'prettier/babel',
   ],
   plugins: [],
   parserOptions: {
@@ -58,7 +58,7 @@ module.exports = {
         format: ['PascalCase'],
       },
     ],
-    '@typescript-eslint/no-unused-vars': process.env.NODE_ENV === 'development' ? 'off' : 'warn',
+    '@typescript-eslint/no-unused-vars': process.env.NODE_ENV === 'development' ? 'off' : ['warn', {args: 'none'}],
     'no-debugger': process.env.NODE_ENV === 'development' ? 'off' : 'warn',
     'no-console': process.env.NODE_ENV === 'development' ? 'off' : 'warn',
   },
