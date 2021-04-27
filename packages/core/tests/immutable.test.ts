@@ -1,8 +1,46 @@
-import {getView} from 'src/index';
-import {createAppWithRedux, ReduxStore} from 'src/lib/with-redux';
+import {getView, ModuleGetter, BuildAppOptions, buildApp} from 'src/index';
+import {ReduxStore, ReduxOptions, createRedux} from 'src/lib/with-redux';
 import {ControllerMiddleware} from 'src/store';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
+
+// eslint-disable-next-line @typescript-eslint/no-shadow
+export function createAppWithRedux(moduleGetter: ModuleGetter, appModuleName?: string, appViewName?: string) {
+  const options: BuildAppOptions<ReduxOptions> = {
+    moduleGetter,
+    appModuleName,
+    appViewName,
+  } as any;
+  return {
+    useStore(storeOptions: ReduxOptions) {
+      options.storeOptions = storeOptions;
+      return {
+        render(renderOptions: {}) {
+          options.renderOptions = renderOptions;
+          const {store, render} = buildApp(
+            createRedux,
+            () => () => undefined,
+            () => '',
+            [],
+            options
+          );
+          return {store, run: render};
+        },
+        ssr(ssrOptions: {}) {
+          options.ssrOptions = ssrOptions;
+          const {store, ssr} = buildApp(
+            createRedux,
+            () => () => undefined,
+            () => '',
+            [],
+            options
+          );
+          return {store, run: ssr};
+        },
+      };
+    },
+  };
+}
 
 describe('init', () => {
   let mockStore: ReduxStore;
@@ -14,20 +52,15 @@ describe('init', () => {
   };
 
   beforeAll(() => {
-    const {store, render} = createAppWithRedux(
-      () => {
-        return () => {};
-      },
-      () => {
-        return {html: '', data: {}};
-      },
-      ['moduleA'],
-      moduleGetter,
-      'moduleA',
-      'Main'
-    ).useStore({middlewares: [storeMiddlewares], initState: {thirdParty: 123}});
+    const {store, run} = createAppWithRedux(moduleGetter, 'moduleA', 'Main')
+      .useStore({
+        enhancers: [],
+        middlewares: [storeMiddlewares],
+        initState: {thirdParty: 123},
+      })
+      .render({});
     mockStore = store;
-    return render({});
+    return run();
   });
   beforeEach(() => {
     actionLogs.length = 0;
@@ -36,7 +69,7 @@ describe('init', () => {
   test('初始状态', () => {
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      moduleA: {initialized: true, count: 0},
+      moduleA: {count: 0},
     });
   });
   test('加载moduleB.Main,moduleC.Main', async () => {
@@ -45,9 +78,9 @@ describe('init', () => {
     expect(actionLogs).toEqual(['moduleB.Init', 'moduleC.Init']);
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      moduleA: {initialized: true, count: 0},
-      moduleB: {initialized: true, count: 0},
-      moduleC: {initialized: true, count: 0},
+      moduleA: {count: 0},
+      moduleB: {count: 0},
+      moduleC: {count: 0},
     });
     expect(viewB()).toBe('moduleB_views_Main');
     expect(viewC()).toBe('moduleC_views_Main');
@@ -56,26 +89,23 @@ describe('init', () => {
     mockStore.dispatch(App.moduleA.actions.add());
     expect(actionLogs).toEqual(['moduleA.add', 'moduleB.add', 'moduleA.Loading', 'moduleC.add']);
     expect(messages).toEqual([
-      [
-        'moduleA/add',
-        '{"thirdParty":123,"moduleA":{"count":0,"initialized":true},"moduleB":{"count":0,"initialized":true},"moduleC":{"count":0,"initialized":true}}',
-      ],
+      ['moduleA/add', '{"thirdParty":123,"moduleA":{"count":0},"moduleB":{"count":0},"moduleC":{"count":0}}'],
       [
         'moduleB/moduleA.add',
-        '{"thirdParty":123,"moduleA":{"count":1,"initialized":true},"moduleB":{"count":1,"initialized":true},"moduleC":{"count":0,"initialized":true}}',
-        '{"thirdParty":123,"moduleA":{"count":0,"initialized":true},"moduleB":{"count":0,"initialized":true},"moduleC":{"count":0,"initialized":true}}',
+        '{"thirdParty":123,"moduleA":{"count":1},"moduleB":{"count":1},"moduleC":{"count":0}}',
+        '{"thirdParty":123,"moduleA":{"count":0},"moduleB":{"count":0},"moduleC":{"count":0}}',
       ],
       [
         'moduleC/moduleA.add',
-        '{"thirdParty":123,"moduleA":{"count":1,"initialized":true,"loading":{"global":"Start"}},"moduleB":{"count":1,"initialized":true},"moduleC":{"count":1,"initialized":true}}',
-        '{"thirdParty":123,"moduleA":{"count":0,"initialized":true},"moduleB":{"count":0,"initialized":true},"moduleC":{"count":0,"initialized":true}}',
+        '{"thirdParty":123,"moduleA":{"count":1,"loading":{"global":"Start"}},"moduleB":{"count":1},"moduleC":{"count":1}}',
+        '{"thirdParty":123,"moduleA":{"count":0},"moduleB":{"count":0},"moduleC":{"count":0}}',
       ],
     ]);
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      moduleA: {count: 1, initialized: true, loading: {global: 'Start'}},
-      moduleB: {count: 1, initialized: true},
-      moduleC: {count: 1, initialized: true},
+      moduleA: {count: 1, loading: {global: 'Start'}},
+      moduleB: {count: 1},
+      moduleC: {count: 1},
     });
   });
   test('await handler', async () => {
@@ -83,9 +113,9 @@ describe('init', () => {
     expect(actionLogs).toEqual(['moduleA.add', 'moduleB.add', 'moduleA.Loading', 'moduleC.add', 'moduleA.Loading']);
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
-      moduleA: {count: 2, initialized: true, loading: {global: 'Stop'}},
-      moduleB: {count: 2, initialized: true},
-      moduleC: {count: 2, initialized: true},
+      moduleA: {count: 2, loading: {global: 'Stop'}},
+      moduleB: {count: 2},
+      moduleC: {count: 2},
     });
   });
   test('reducerError', () => {

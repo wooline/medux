@@ -1,26 +1,15 @@
 import {Reducer, compose, createStore, Unsubscribe, StoreEnhancer} from 'redux';
 import {env} from '../env';
-import {CommonModule, IController, ModuleGetter} from '../basic';
-import {BaseStore, BaseStoreOptions, CreateApp, createApp} from '../render';
-import {ControllerMiddleware} from '../store';
+import {State} from '../basic';
+import {BaseStore, BaseStoreOptions} from '../render';
 
 export interface ReduxOptions extends BaseStoreOptions {
-  middlewares?: ControllerMiddleware[];
-  enhancers?: StoreEnhancer[];
-  initState?: any;
+  enhancers: StoreEnhancer[];
 }
 
-export interface ReduxStore extends BaseStore {
+export interface ReduxStore<S extends State = {}> extends BaseStore<S> {
   subscribe(listener: () => void): Unsubscribe;
 }
-export type CreateAppWithRedux<RO, V> = (
-  render: (store: ReduxStore, appView: V, renderOptions: RO) => (appView: V) => void,
-  ssr: (store: ReduxStore, appView: V, renderOptions: RO) => {html: string; data: any},
-  preModules: string[],
-  moduleGetter: ModuleGetter,
-  appModuleOrName: string | CommonModule,
-  appViewName: string
-) => ReturnType<CreateApp<ReduxOptions, ReduxStore, RO, V>>;
 
 const reducer: Reducer = (state, action) => {
   return {...state, ...action.state};
@@ -28,22 +17,23 @@ const reducer: Reducer = (state, action) => {
 
 declare const process: any;
 
-const createRedux = function (controller: IController, storeOptions: ReduxOptions): ReduxStore {
-  const {initState = {}, enhancers} = storeOptions;
-  const enhancerList = enhancers ? [...enhancers] : [];
+export function createRedux<S extends State = {}>(storeOptions: ReduxOptions): ReduxStore<S> {
+  const {initState, enhancers} = storeOptions;
   if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancerList.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+    enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
-  const reduxStore = createStore(reducer, initState, enhancerList.length > 1 ? compose(...enhancerList) : enhancerList[0]);
-  const {dispatch, getState} = reduxStore;
-  reduxStore.dispatch = controller.dispatch as any;
-  controller.setStore({
-    getState,
-    update(actionName: string, state: any, actionData: any[]) {
+  const store = createStore(reducer, initState, enhancers.length > 1 ? compose(...enhancers) : enhancers[0]);
+  const {dispatch, getState, subscribe} = store;
+  const reduxStore: ReduxStore<S> = {
+    subscribe,
+    dispatch: dispatch as any,
+    getState(moduleName?: string) {
+      const state = getState();
+      return moduleName ? state[moduleName] : state;
+    },
+    update(actionName: string, state: Partial<S>, actionData: any[]) {
       dispatch({type: actionName, state, payload: actionData});
     },
-  });
-  return reduxStore as ReduxStore;
-};
-
-export const createAppWithRedux: CreateAppWithRedux<any, any> = createApp.bind(null, createRedux) as any;
+  };
+  return reduxStore;
+}

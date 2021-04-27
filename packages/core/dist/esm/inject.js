@@ -1,5 +1,4 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import _extends from "@babel/runtime/helpers/esm/extends";
 import { env } from './env';
 import { isPromise } from './sprite';
 import { injectActions, MetaData, config, reducer, mergeState } from './basic';
@@ -14,16 +13,13 @@ export var exportModule = function exportModule(moduleName, ModuleHandles, views
       moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
       injectActions(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
-      var preModuleState = controller.getState()[moduleName] || {};
+      var preModuleState = controller.getState(moduleName);
 
-      var moduleState = _extends({}, _initState, preModuleState);
-
-      if (moduleState.initialized) {
-        return controller.dispatch(moduleReInitAction(moduleName, moduleState));
+      if (preModuleState) {
+        return controller.dispatch(moduleReInitAction(moduleName, _initState));
       }
 
-      moduleState.initialized = true;
-      return controller.dispatch(moduleInitAction(moduleName, moduleState));
+      return controller.dispatch(moduleInitAction(moduleName, _initState));
     }
 
     return undefined;

@@ -1,17 +1,10 @@
 import { Unsubscribe, StoreEnhancer } from 'redux';
-import { CommonModule, ModuleGetter } from '../basic';
-import { BaseStore, BaseStoreOptions, CreateApp } from '../render';
-import { ControllerMiddleware } from '../store';
+import { State } from '../basic';
+import { BaseStore, BaseStoreOptions } from '../render';
 export interface ReduxOptions extends BaseStoreOptions {
-    middlewares?: ControllerMiddleware[];
-    enhancers?: StoreEnhancer[];
-    initState?: any;
+    enhancers: StoreEnhancer[];
 }
-export interface ReduxStore extends BaseStore {
+export interface ReduxStore<S extends State = {}> extends BaseStore<S> {
     subscribe(listener: () => void): Unsubscribe;
 }
-export declare type CreateAppWithRedux<RO, V> = (render: (store: ReduxStore, appView: V, renderOptions: RO) => (appView: V) => void, ssr: (store: ReduxStore, appView: V, renderOptions: RO) => {
-    html: string;
-    data: any;
-}, preModules: string[], moduleGetter: ModuleGetter, appModuleOrName: string | CommonModule, appViewName: string) => ReturnType<CreateApp<ReduxOptions, ReduxStore, RO, V>>;
-export declare const createAppWithRedux: CreateAppWithRedux<any, any>;
+export declare function createRedux<S extends State = {}>(storeOptions: ReduxOptions): ReduxStore<S>;

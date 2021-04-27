@@ -41,8 +41,6 @@ export class Controller {
   constructor(middlewares) {
     _defineProperty(this, "store", void 0);
 
-    _defineProperty(this, "state", void 0);
-
     _defineProperty(this, "prevData", void 0);
 
     _defineProperty(this, "injectedModules", {});
@@ -51,8 +49,8 @@ export class Controller {
       throw new Error('Dispatching while constructing your middleware is not allowed.');
     });
 
-    _defineProperty(this, "getState", () => {
-      return this.state;
+    _defineProperty(this, "getState", moduleName => {
+      return this.store.getState(moduleName);
     });
 
     _defineProperty(this, "preMiddleware", () => next => action => {
@@ -92,7 +90,6 @@ export class Controller {
 
   setStore(store) {
     this.store = store;
-    this.state = store.getState();
   }
 
   respondHandler(action, isReducer, prevData) {
@@ -138,7 +135,6 @@ export class Controller {
           }
         });
         this.store.update(actionName, newState, actionData);
-        this.state = this.store.getState();
       } else {
         const result = [];
         orderList.forEach(moduleName => {
@@ -203,7 +199,7 @@ export class Controller {
   _dispatch(action) {
     const prevData = {
       actionName: action.type,
-      prevState: this.state
+      prevState: this.getState()
     };
     this.respondHandler(action, true, prevData);
     return this.respondHandler(action, false, prevData);

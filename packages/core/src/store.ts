@@ -1,7 +1,20 @@
 /* eslint-disable prefer-spread */
 import {env} from './env';
 import {isPromise} from './sprite';
-import {Action, ActionHandler, ActionHandlerList, ActionTypes, config, MetaData, IController, StoreProxy, IModuleHandlers} from './basic';
+import {
+  Action,
+  ActionHandler,
+  ActionHandlerList,
+  ActionTypes,
+  config,
+  MetaData,
+  IController,
+  StoreProxy,
+  IModuleHandlers,
+  Dispatch,
+  GetState,
+  State,
+} from './basic';
 import {errorAction} from './actions';
 import {loadModel} from './inject';
 
@@ -21,10 +34,6 @@ export function getActionData(action: Action): any[] {
   return Array.isArray(action.payload) ? action.payload : [];
 }
 
-export type Dispatch = (action: Action) => void | Promise<void>;
-
-export type GetState = () => any;
-
 export type ControllerMiddleware = (api: {getState: GetState; dispatch: Dispatch}) => (next: Dispatch) => (action: Action) => void | Promise<void>;
 
 function compose(...funcs: Function[]) {
@@ -39,10 +48,8 @@ function compose(...funcs: Function[]) {
   return funcs.reduce((a, b) => (...args: any[]) => a(b(...args)));
 }
 
-export class Controller<S extends {[key: string]: any}> implements IController<S> {
+export class Controller<S extends State> implements IController<S> {
   store!: StoreProxy<S>;
-
-  state!: S;
 
   prevData!: {actionName: string; prevState: S};
 
@@ -62,8 +69,9 @@ export class Controller<S extends {[key: string]: any}> implements IController<S
     throw new Error('Dispatching while constructing your middleware is not allowed.');
   };
 
-  getState: GetState = () => {
-    return this.state;
+  getState: GetState<S> = (moduleName?: string) => {
+    // @ts-ignore
+    return this.store.getState(moduleName);
   };
 
   preMiddleware: ControllerMiddleware = () => (next) => (action) => {
@@ -88,7 +96,6 @@ export class Controller<S extends {[key: string]: any}> implements IController<S
 
   setStore(store: StoreProxy<S>) {
     this.store = store;
-    this.state = store.getState();
   }
 
   respondHandler(action: Action, isReducer: boolean, prevData: {actionName: string; prevState: S}): void | Promise<void> {
@@ -128,7 +135,6 @@ export class Controller<S extends {[key: string]: any}> implements IController<S
           }
         });
         this.store.update(actionName, newState as S, actionData);
-        this.state = this.store.getState();
       } else {
         const result: Promise<any>[] = [];
         orderList.forEach((moduleName) => {
@@ -189,7 +195,7 @@ export class Controller<S extends {[key: string]: any}> implements IController<S
   }
 
   _dispatch(action: Action): void | Promise<void> {
-    const prevData = {actionName: action.type, prevState: this.state};
+    const prevData = {actionName: action.type, prevState: this.getState()};
     this.respondHandler(action, true, prevData);
     return this.respondHandler(action, false, prevData);
   }

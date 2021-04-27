@@ -82,20 +82,28 @@ export interface IModuleHandlers {
   actions: ActionCreatorList;
 }
 
-export interface StoreProxy<S = any> {
-  update(actionName: string, state: Partial<S>, actionData: any[]): void;
-  getState(): S;
+export type Dispatch = (action: Action) => void | Promise<void>;
+
+export type State = {[moduleName: string]: {[key: string]: any}};
+
+export interface GetState<S extends State = {}> {
+  (): S;
+  (moduleName: string): {[key: string]: any} | undefined;
 }
 
-export interface IController<S = any> {
+export interface StoreProxy<S extends State = {}> {
+  update(actionName: string, state: Partial<S>, actionData: any[]): void;
+  getState: GetState<S>;
+}
+
+export interface IController<S extends State = {}> {
   setStore(store: StoreProxy<S>): void;
-  dispatch(action: Action): void | Promise<void>;
-  getState(): S;
+  dispatch: Dispatch;
+  getState: GetState<S>;
   injectedModules: {[moduleName: string]: IModuleHandlers};
   prevData: {actionName: string; prevState: S};
 }
 export interface CoreModuleState {
-  initialized?: boolean;
   loading?: {
     [key: string]: LoadingState;
   };

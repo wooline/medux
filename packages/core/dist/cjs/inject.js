@@ -13,8 +13,6 @@ exports.CoreModuleHandlers = exports.exportModule = void 0;
 
 var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
 
-var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
-
 var _env = require("./env");
 
 var _sprite = require("./sprite");
@@ -33,15 +31,13 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
       moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
       (0, _basic.injectActions)(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
-      var preModuleState = controller.getState()[moduleName] || {};
-      var moduleState = (0, _extends2.default)({}, _initState, preModuleState);
+      var preModuleState = controller.getState(moduleName);
 
-      if (moduleState.initialized) {
-        return controller.dispatch((0, _actions.moduleReInitAction)(moduleName, moduleState));
+      if (preModuleState) {
+        return controller.dispatch((0, _actions.moduleReInitAction)(moduleName, _initState));
       }
 
-      moduleState.initialized = true;
-      return controller.dispatch((0, _actions.moduleInitAction)(moduleName, moduleState));
+      return controller.dispatch((0, _actions.moduleInitAction)(moduleName, _initState));
     }
 
     return undefined;

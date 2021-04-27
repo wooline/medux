@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
-import {MetaData, CommonModule, ModuleGetter, IController} from './basic';
-import {cacheModule, Module, getModuleByName, loadModel} from './inject';
-import {Controller, ControllerMiddleware, Dispatch, GetState} from './store';
+import {MetaData, ModuleGetter, IController, State, Dispatch, GetState} from './basic';
+import {Module, getModuleByName, loadModel} from './inject';
+import {ControllerMiddleware, Controller} from './store';
 import {env} from './env';
 
 let reRender: (appView: any) => void = () => undefined;
@@ -30,85 +30,186 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
 
 const defFun: any = () => undefined;
 
-export interface BaseStoreOptions {
-  middlewares?: ControllerMiddleware[];
-  initData?: any;
-}
-export interface BaseStore {
+export interface BaseStore<S extends State = {}> {
   dispatch: Dispatch;
-  getState: GetState;
+  getState: GetState<S>;
+  update: (actionName: string, state: Partial<S>, actionData: any[]) => void;
 }
-export type CreateApp<SO extends BaseStoreOptions = BaseStoreOptions, ST extends BaseStore = BaseStore, RO = any, V = any> = (
-  storeCreator: (controller: IController, storeOptions: SO) => ST,
+export interface BaseStoreOptions {
+  middlewares: ControllerMiddleware[];
+  initState: any;
+}
+
+export interface BuildAppOptions<SO extends BaseStoreOptions = BaseStoreOptions, RO = {}, SSO = {}> {
+  moduleGetter: ModuleGetter;
+  appModuleName: string;
+  appViewName: string;
+  storeOptions: SO;
+  renderOptions: RO;
+  ssrOptions: SSO;
+}
+export function buildApp<SO extends BaseStoreOptions = BaseStoreOptions, ST extends BaseStore = BaseStore, RO = {}, SSO = {}, V = any>(
+  storeCreator: (storeOptions: SO) => ST,
   render: (store: ST, appView: V, renderOptions: RO) => (appView: V) => void,
-  ssr: (store: ST, appView: V, renderOptions: RO) => {html: string; data: any},
-  preModules: string[],
-  moduleGetter: ModuleGetter,
-  appModuleOrName?: string | CommonModule,
-  appViewName?: string
-) => {
-  useStore: (
-    storeOptions: SO
-  ) => {
-    store: ST;
-    render: (renderOptions: RO) => Promise<void>;
-    ssr: (renderOptions: RO) => Promise<{html: string; data: any}>;
-  };
-};
-
-// type CreateAppWithReduxReact = (
-//   preModules: string[],
-//   moduleGetter: ModuleGetter,
-//   appModuleOrName: string | CommonModule,
-//   appViewName: string
-// ) => ReturnType<CreateApp<{initState: any}, {}, {}>>;
-
-export const createApp: CreateApp = function (
-  storeCreator,
-  render,
-  ssr,
-  preModules = [],
-  moduleGetter,
-  appModuleOrName = 'app',
-  appViewName = 'Main'
+  ssr: (store: ST, appView: V, ssrOptions: SSO) => string,
+  preLoadModules: string[],
+  {
+    moduleGetter,
+    appModuleName = 'app',
+    appViewName = 'main',
+    storeOptions = {} as any,
+    renderOptions = {} as any,
+    ssrOptions = {} as any,
+  }: BuildAppOptions<SO, RO, SSO>
 ) {
-  const appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   MetaData.moduleGetter = moduleGetter;
-  if (typeof appModuleOrName !== 'string') {
-    cacheModule(appModuleOrName);
-  }
+  const controller: IController = new Controller(storeOptions.middlewares);
+  const store = storeCreator(storeOptions);
+  store.dispatch = controller.dispatch;
+  controller.setStore(store);
+  preLoadModules = preLoadModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+  preLoadModules.unshift(appModuleName);
   return {
-    useStore(storeOptions) {
-      const controller = new Controller(storeOptions.middlewares);
-      const store = storeCreator(controller, storeOptions);
-      return {
-        store,
-        async ssr(renderOptions) {
-          const appModule = await getModuleByName(appModuleName);
-          // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
-          // preModules.unshift(appModuleName);
-          await Promise.all(preModules.map((moduleName) => loadModel(moduleName, controller)));
-          controller.dispatch = defFun;
-          return ssr(store, appModule.default.views[appViewName], renderOptions);
-        },
-        async render(renderOptions) {
-          if (reRenderTimer) {
-            env.clearTimeout(reRenderTimer);
-            reRenderTimer = 0;
-          }
-          MetaData.clientController = controller;
-          const appModule = await getModuleByName(appModuleName);
-          // appModule.default.model(controller);
-          // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
-          await Promise.all(preModules.map((moduleName) => loadModel(moduleName, controller)));
-          reRender = render(store, appModule.default.views[appViewName], renderOptions);
-        },
-      };
+    store,
+    async render() {
+      if (reRenderTimer) {
+        env.clearTimeout(reRenderTimer);
+        reRenderTimer = 0;
+      }
+      MetaData.clientController = controller;
+      const appModule = await getModuleByName(appModuleName);
+      // appModule.default.model(controller);
+      // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+      await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, controller)));
+      reRender = render(store, appModule.default.views[appViewName], renderOptions);
+    },
+    async ssr() {
+      const appModule = await getModuleByName(appModuleName);
+      // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+      // preModules.unshift(appModuleName);
+      await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, controller)));
+      controller.dispatch = defFun;
+      return ssr(store, appModule.default.views[appViewName], ssrOptions);
     },
   };
-};
+}
+
+// export function createApp<SO extends BaseStoreOptions = BaseStoreOptions, ST extends BaseStore = BaseStore, RO = any, V = any>(
+//   reduceOptions: <T>(options: T) => T,
+//   storeCreator: (storeOptions: SO) => ST,
+//   render: (store: ST, appView: V, renderOptions: RO) => (appView: V) => void,
+//   ssr: (store: ST, appView: V, renderOptions: RO) => {html: string; data: any},
+//   preModules: string[],
+//   moduleGetter: ModuleGetter,
+//   appModuleName: string = 'app',
+//   appViewName: string = 'main'
+// ) {
+//   let options: CreateOptions<SO, RO> = {
+//     moduleGetter,
+//     appModuleName,
+//     appViewName,
+//   } as any;
+//   return {
+//     useStore(storeOptions: SO) {
+//       options.storeOptions = storeOptions;
+//       return {
+//         render(renderOptions: RO) {
+//           options.renderOptions = renderOptions;
+//           options = reduceOptions(options);
+//           MetaData.appModuleName = appModuleName;
+//           MetaData.appViewName = appViewName;
+//           MetaData.moduleGetter = moduleGetter;
+//           const controller: IController = new Controller(storeOptions.middlewares);
+//           const store = storeCreator(storeOptions);
+//           store.dispatch = controller.dispatch;
+//           controller.setStore(store);
+//           return {
+//             store,
+//             async run() {
+//               if (reRenderTimer) {
+//                 env.clearTimeout(reRenderTimer);
+//                 reRenderTimer = 0;
+//               }
+//               MetaData.clientController = controller;
+//               const appModule = await getModuleByName(appModuleName);
+//               // appModule.default.model(controller);
+//               // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+//               await Promise.all(preModules.map((moduleName) => loadModel(moduleName, controller)));
+//               reRender = render(store, appModule.default.views[appViewName], renderOptions);
+//             },
+//           };
+//         },
+//         ssr(renderOptions: RO) {
+//           options.renderOptions = renderOptions;
+//           options.isSSR = true;
+//           options = reduceOptions(options);
+//           MetaData.appModuleName = appModuleName;
+//           MetaData.appViewName = appViewName;
+//           MetaData.moduleGetter = moduleGetter;
+//           const controller: IController = new Controller(storeOptions.middlewares);
+//           const store = storeCreator(storeOptions);
+//           store.dispatch = controller.dispatch;
+//           controller.setStore(store);
+//           return {
+//             store,
+//             async run() {
+//               const appModule = await getModuleByName(appModuleName);
+//               // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+//               // preModules.unshift(appModuleName);
+//               await Promise.all(preModules.map((moduleName) => loadModel(moduleName, controller)));
+//               controller.dispatch = defFun;
+//               return ssr(store, appModule.default.views[appViewName], renderOptions);
+//             },
+//           };
+//         },
+//       };
+//     },
+//   };
+// }
+
+// export function createApp<SO extends BaseStoreOptions = BaseStoreOptions, ST extends BaseStore = BaseStore, RO = any, V = any>(
+//   storeCreator: (storeOptions: SO) => {store: ST; controller: IController},
+//   render: (store: ST, appView: V, renderOptions: RO) => (appView: V) => void,
+//   ssr: (store: ST, appView: V, renderOptions: RO) => {html: string; data: any},
+//   preModules: string[],
+//   moduleGetter: ModuleGetter,
+//   appModuleName: string = 'app',
+//   appViewName: string = 'main'
+// ): CreateApp<SO, ST, RO> {
+//   MetaData.appModuleName = appModuleName;
+//   MetaData.appViewName = appViewName;
+//   MetaData.moduleGetter = moduleGetter;
+//   return {
+//     useStore(storeOptions: SO) {
+//       const {store, controller} = storeCreator(storeOptions);
+//       return {
+//         store,
+//         async ssr(renderOptions: RO) {
+//           const appModule = await getModuleByName(appModuleName);
+//           // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+//           // preModules.unshift(appModuleName);
+//           await Promise.all(preModules.map((moduleName) => loadModel(moduleName, controller)));
+//           controller.dispatch = defFun;
+//           return ssr(store, appModule.default.views[appViewName], renderOptions);
+//         },
+//         async render(renderOptions: RO) {
+//           if (reRenderTimer) {
+//             env.clearTimeout(reRenderTimer);
+//             reRenderTimer = 0;
+//           }
+//           MetaData.clientController = controller;
+//           const appModule = await getModuleByName(appModuleName);
+//           // appModule.default.model(controller);
+//           // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+//           await Promise.all(preModules.map((moduleName) => loadModel(moduleName, controller)));
+//           reRender = render(store, appModule.default.views[appViewName], renderOptions);
+//         },
+//       };
+//     },
+//   };
+// }
 
 // /**
 //  * 该方法用来创建并启动Client应用

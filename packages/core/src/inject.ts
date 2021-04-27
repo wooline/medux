@@ -89,13 +89,11 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
       moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
       injectActions(moduleName, moduleHandles as any);
       const initState = moduleHandles.initState;
-      const preModuleState: CoreModuleState = controller.getState()[moduleName] || {};
-      const moduleState: CoreModuleState = {...initState, ...preModuleState};
-      if (moduleState.initialized) {
-        return controller.dispatch(moduleReInitAction(moduleName, moduleState));
+      const preModuleState = controller.getState(moduleName);
+      if (preModuleState) {
+        return controller.dispatch(moduleReInitAction(moduleName, initState));
       }
-      moduleState.initialized = true;
-      return controller.dispatch(moduleInitAction(moduleName, moduleState));
+      return controller.dispatch(moduleInitAction(moduleName, initState));
     }
     return undefined;
   };

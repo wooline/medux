@@ -72,14 +72,13 @@ var Controller = function () {
     var _this = this;
 
     (0, _defineProperty2.default)(this, "store", void 0);
-    (0, _defineProperty2.default)(this, "state", void 0);
     (0, _defineProperty2.default)(this, "prevData", void 0);
     (0, _defineProperty2.default)(this, "injectedModules", {});
     (0, _defineProperty2.default)(this, "dispatch", function () {
       throw new Error('Dispatching while constructing your middleware is not allowed.');
     });
-    (0, _defineProperty2.default)(this, "getState", function () {
-      return _this.state;
+    (0, _defineProperty2.default)(this, "getState", function (moduleName) {
+      return _this.store.getState(moduleName);
     });
     (0, _defineProperty2.default)(this, "preMiddleware", function () {
       return function (next) {
@@ -131,7 +130,6 @@ var Controller = function () {
 
   _proto.setStore = function setStore(store) {
     this.store = store;
-    this.state = store.getState();
   };
 
   _proto.respondHandler = function respondHandler(action, isReducer, prevData) {
@@ -180,7 +178,6 @@ var Controller = function () {
           }
         });
         this.store.update(actionName, newState, actionData);
-        this.state = this.store.getState();
       } else {
         var result = [];
         orderList.forEach(function (moduleName) {
@@ -249,7 +246,7 @@ var Controller = function () {
   _proto._dispatch = function _dispatch(action) {
     var prevData = {
       actionName: action.type,
-      prevState: this.state
+      prevState: this.getState()
     };
     this.respondHandler(action, true, prevData);
     return this.respondHandler(action, false, prevData);
