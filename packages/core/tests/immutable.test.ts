@@ -1,41 +1,24 @@
-import {getView, ModuleGetter, BuildAppOptions, buildApp} from 'src/index';
-import {ReduxStore, ReduxOptions, createRedux} from 'src/lib/with-redux';
-import {ControllerMiddleware} from 'src/store';
+import {getView, ModuleGetter, renderApp} from 'src/index';
+import {ReduxStore, createRedux} from 'src/lib/with-redux';
+import {ControllerMiddleware, StoreBuilder} from 'src/store';
+import {IStore, IStoreOptions} from 'src/basic';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
 
-// eslint-disable-next-line @typescript-eslint/no-shadow
-export function createAppWithRedux(moduleGetter: ModuleGetter, appModuleName?: string, appViewName?: string) {
-  const options: BuildAppOptions<ReduxOptions> = {
-    moduleGetter,
-    appModuleName,
-    appViewName,
-  } as any;
+export function createAppWithRedux(
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  moduleGetter: ModuleGetter,
+  middlewares?: ControllerMiddleware[],
+  appModuleName?: string,
+  appViewName?: string
+) {
   return {
-    useStore(storeOptions: ReduxOptions) {
-      options.storeOptions = storeOptions;
+    useStore<O extends IStoreOptions = IStoreOptions, T extends IStore = IStore>({storeOptions, storeCreator}: StoreBuilder<O, T>) {
       return {
-        render(renderOptions: {}) {
-          options.renderOptions = renderOptions;
-          const {store, render} = buildApp(
-            createRedux,
-            () => () => undefined,
-            () => '',
-            [],
-            options
-          );
-          return {store, run: render};
-        },
-        ssr(ssrOptions: {}) {
-          options.ssrOptions = ssrOptions;
-          const {store, ssr} = buildApp(
-            createRedux,
-            () => () => undefined,
-            () => '',
-            [],
-            options
-          );
-          return {store, run: ssr};
+        render() {
+          const store = storeCreator(storeOptions);
+          const run = renderApp(store, [], moduleGetter, middlewares, appModuleName, appViewName);
+          return {store, run};
         },
       };
     },
@@ -52,13 +35,14 @@ describe('init', () => {
   };
 
   beforeAll(() => {
-    const {store, run} = createAppWithRedux(moduleGetter, 'moduleA', 'Main')
-      .useStore({
-        enhancers: [],
-        middlewares: [storeMiddlewares],
-        initState: {thirdParty: 123},
-      })
-      .render({});
+    const {store, run} = createAppWithRedux(moduleGetter, [storeMiddlewares], 'moduleA', 'Main')
+      .useStore(
+        createRedux({
+          enhancers: [],
+          initState: {thirdParty: 123},
+        })
+      )
+      .render();
     mockStore = store;
     return run();
   });

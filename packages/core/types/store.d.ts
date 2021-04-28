@@ -1,4 +1,4 @@
-import { Action, ActionHandler, IController, StoreProxy, IModuleHandlers, Dispatch, GetState, State } from './basic';
+import { Action, ActionHandler, IController, IStore, IStoreOptions, IModuleHandlers, Dispatch, GetState, State } from './basic';
 export declare function isProcessedError(error: any): boolean;
 export declare function setProcessedError(error: any, meduxProcessed: boolean): {
     __meduxProcessed__: boolean;
@@ -11,7 +11,7 @@ export declare type ControllerMiddleware = (api: {
 }) => (next: Dispatch) => (action: Action) => void | Promise<void>;
 export declare class Controller<S extends State> implements IController<S> {
     protected middlewares?: ControllerMiddleware[] | undefined;
-    store: StoreProxy<S>;
+    store: IStore<S>;
     prevData: {
         actionName: string;
         prevState: S;
@@ -23,11 +23,15 @@ export declare class Controller<S extends State> implements IController<S> {
     dispatch: Dispatch;
     getState: GetState<S>;
     preMiddleware: ControllerMiddleware;
-    setStore(store: StoreProxy<S>): void;
+    setStore(store: IStore<S>): void;
     respondHandler(action: Action, isReducer: boolean, prevData: {
         actionName: string;
         prevState: S;
     }): void | Promise<void>;
     applyEffect(moduleName: string, handler: ActionHandler, modelInstance: IModuleHandlers, action: Action, actionData: any[]): Promise<any>;
     _dispatch(action: Action): void | Promise<void>;
+}
+export interface StoreBuilder<O extends IStoreOptions = IStoreOptions, T extends IStore = IStore> {
+    storeOptions: O;
+    storeCreator: (options: O) => T;
 }

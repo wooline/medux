@@ -137,13 +137,13 @@ export function getModuleByName(moduleName: string): Promise<CommonModule> | Com
  * - LoadView内部会调用getView之后会渲染View
  * - getView会自动加载并初始化该view对应的model
  */
-export function getView<T>(moduleName: string, viewName: string): T | Promise<T> {
+export function getView<T>(moduleName: string, viewName: string, controller: IController): T | Promise<T> {
   const callback = (module: CommonModule) => {
     const view: T = module.default.views[viewName];
     if (env.isServer) {
       return view;
     }
-    module.default.model(MetaData.clientController);
+    module.default.model(controller);
     return view;
   };
   const moduleOrPromise = getModuleByName(moduleName);

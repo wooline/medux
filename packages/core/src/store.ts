@@ -9,7 +9,8 @@ import {
   config,
   MetaData,
   IController,
-  StoreProxy,
+  IStore,
+  IStoreOptions,
   IModuleHandlers,
   Dispatch,
   GetState,
@@ -49,7 +50,7 @@ function compose(...funcs: Function[]) {
 }
 
 export class Controller<S extends State> implements IController<S> {
-  store!: StoreProxy<S>;
+  store!: IStore<S>;
 
   prevData!: {actionName: string; prevState: S};
 
@@ -94,7 +95,7 @@ export class Controller<S extends State> implements IController<S> {
     return next(action);
   };
 
-  setStore(store: StoreProxy<S>) {
+  setStore(store: IStore<S>) {
     this.store = store;
   }
 
@@ -199,4 +200,9 @@ export class Controller<S extends State> implements IController<S> {
     this.respondHandler(action, true, prevData);
     return this.respondHandler(action, false, prevData);
   }
+}
+
+export interface StoreBuilder<O extends IStoreOptions = IStoreOptions, T extends IStore = IStore> {
+  storeOptions: O;
+  storeCreator: (options: O) => T;
 }

@@ -3,17 +3,17 @@ import './env';
 import React from 'react';
 import {unmountComponentAtNode, hydrate, render} from 'react-dom';
 import {routeMiddleware, setRouteConfig} from '@medux/route-web';
-import {env, buildApp, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
+import {env, renderApp, ssrApp, setConfig as setCoreConfig, exportModule as baseExportModule} from '@medux/core';
 import {createRouter} from '@medux/route-browser';
-import {createRedux} from '@medux/core/lib/with-redux';
+
 import {setLoadViewOptions} from './loadView';
-import {appExports} from './sington';
+// import {appExports} from './sington';
 
 import type {ComponentType} from 'react';
-import type {ModuleGetter, ExportModule} from '@medux/core';
+import type {ModuleGetter, ExportModule, ControllerMiddleware, StoreBuilder, IStoreOptions, IStore} from '@medux/core';
 import type {LocationTransform} from '@medux/route-web';
-import type {ReduxOptions, ReduxStore} from '@medux/core/lib/with-redux';
-import type {ServerRequest, ServerResponse} from './sington';
+
+// import type {ServerRequest, ServerResponse} from './sington';
 
 export type {RootModuleFacade, Dispatch, CoreModuleState} from '@medux/core';
 export type {Store} from 'redux';
@@ -84,129 +84,149 @@ export function setConfig(conf: {
 export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
 
 export interface RenderOptions {
-  id: string;
-  ssrKey: string;
+  id?: string;
+  ssrKey?: string;
 }
 export interface SSROptions {
-  id: string;
-  ssrKey: string;
-  request: ServerRequest;
-  response: ServerResponse;
+  id?: string;
+  ssrKey?: string;
+  url: string;
 }
 
 interface RouteOptions {
   locationTransform: LocationTransform<any>;
 }
 
-const renderView = (store: ReduxStore, AppView: ComponentType<any>, renderOptions: RenderOptions) => {
-  const {id, ssrKey} = renderOptions;
-  const reRender = (View: ComponentType<any>) => {
-    const panel = env.document.getElementById(id);
-    unmountComponentAtNode(panel!);
-    const renderFun = env[ssrKey] ? hydrate : render;
-    renderFun(<View store={store} />, panel);
-  };
-  reRender(AppView);
-  return reRender;
-};
-
-const ssrView = (store: ReduxStore, AppView: ComponentType<any>, ssrOptions: SSROptions) => {
-  const {id, ssrKey} = ssrOptions;
-  const data = store.getState();
-  let html = require('react-dom/server').renderToString(<AppView store={store} />);
-
-  const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
-  if (match) {
-    const pageHead = html.split(/<head>|<\/head>/, 3);
-    html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-    return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(
-      match[0],
-      match[0] + html
-    );
-  }
-  return html;
-};
-
-export function createApp(moduleGetter: ModuleGetter, appModuleName: string = 'app', appViewName: string = 'main') {
-  // const options: {storeOptions?: Partial<ReduxOptions>; routeOptions?: RouteOptions; renderOptions?: Partial<ReduxOptions>} = {};
+export function createApp(
+  moduleGetter: ModuleGetter,
+  middlewares: ControllerMiddleware[] = [],
+  appModuleName: string = 'app',
+  appViewName: string = 'main'
+) {
+  const controllerMiddleware = [routeMiddleware, ...middlewares];
   return {
-    useStore({initState = {}, middlewares = [], enhancers = []}: Partial<ReduxOptions> = {}) {
+    useRoute({locationTransform}: RouteOptions) {
       return {
-        useRoute({locationTransform}: RouteOptions) {
+        useStore<O extends IStoreOptions = IStoreOptions, T extends IStore = IStore>({storeOptions, storeCreator}: StoreBuilder<O, T>) {
           return {
-            render({id = 'root', ssrKey = 'meduxInitStore'}: Partial<RenderOptions> = {}) {
+            render({id = 'root', ssrKey = 'meduxInitStore'}: RenderOptions = {}) {
               const router = createRouter('Browser', locationTransform);
-              appExports.router = router;
+              const routeState = router.getRouteState();
               const ssrData = env[ssrKey];
-              const storeOptions: ReduxOptions = {
-                middlewares: [routeMiddleware, ...middlewares],
-                enhancers,
-                initState: {...initState, ...ssrData, route: router.getRouteState()},
-              };
-              const renderOptions: RenderOptions = {
-                id,
-                ssrKey,
-              };
-
-              const {store, render: run} = buildApp(createRedux, renderView, ssrView, Object.keys(storeOptions.initState), {
-                moduleGetter,
-                appModuleName,
-                appViewName,
-                storeOptions,
-                renderOptions,
-                ssrOptions: {} as any,
-              });
-              appExports.store = store;
+              const renderFun = ssrData ? hydrate : render;
+              const panel = env.document.getElementById(id);
+              const initState = {...storeOptions.initState, route: routeState, ...ssrData};
+              const store = storeCreator({...storeOptions, initState});
               router.setStore(store);
-              Object.defineProperty(appExports, 'state', {
-                get: () => {
-                  return store.getState();
+              const runApp = renderApp(store, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName);
+              return {
+                store,
+                run() {
+                  return runApp().then(({appView, setReRender}) => {
+                    const reRender = (View: ComponentType<any>) => {
+                      unmountComponentAtNode(panel!);
+                      renderFun(<View store={store} />, panel);
+                    };
+                    reRender(appView);
+                    setReRender(reRender);
+                  });
                 },
-              });
-              return {store, run};
+              };
             },
-            ssr({id = 'root', ssrKey = 'meduxInitStore', request, response}: SSROptions) {
+            ssr({id = 'root', ssrKey = 'meduxInitStore', url}: SSROptions) {
               if (!SSRTPL) {
                 SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
               }
-              appExports.request = request;
-              appExports.response = response;
-              const router = createRouter(request.url, locationTransform);
-              appExports.router = router;
+              const router = createRouter(url, locationTransform);
               const routeState = router.getRouteState();
-              const storeOptions: ReduxOptions = {
-                middlewares,
-                enhancers,
-                initState: {...initState, route: routeState},
-              };
-              const ssrOptions: SSROptions = {
-                id,
-                ssrKey,
-                request,
-                response,
-              };
-              const {store, ssr: run} = buildApp(createRedux, renderView, ssrView, Object.keys(routeState.params), {
-                moduleGetter,
-                appModuleName,
-                appViewName,
-                storeOptions,
-                renderOptions: {} as any,
-                ssrOptions,
-              });
-              appExports.store = store;
-              router.setStore(store);
-              Object.defineProperty(appExports, 'state', {
-                get: () => {
-                  return store.getState();
-                },
-              });
-              return {store, run};
             },
           };
         },
       };
     },
   };
+  // return {
+  //   useStore({initState = {}, enhancers = []}: Partial<ReduxOptions> = {}) {
+  //     return {
+  //       useRoute({locationTransform}: RouteOptions) {
+  //         return {
+  //           render({id = 'root', ssrKey = 'meduxInitStore'}: Partial<RenderOptions> = {}) {
+  //             const router = createRouter('Browser', locationTransform);
+  //             appExports.router = router;
+  //             const ssrData = env[ssrKey];
+  //             const storeOptions: ReduxOptions = {
+  //               enhancers,
+  //               initState: {...initState, ...ssrData, route: router.getRouteState()},
+  //             };
+  //             const store = createRedux(storeOptions);
+  //             const renderView = (AppView: ComponentType<any>) => {
+  //               const reRender = (View: ComponentType<any>) => {
+  //                 const panel = env.document.getElementById(id);
+  //                 unmountComponentAtNode(panel!);
+  //                 const renderFun = env[ssrKey] ? hydrate : render;
+  //                 renderFun(<View store={store} />, panel);
+  //               };
+  //               reRender(AppView);
+  //               return reRender;
+  //             };
+  //             const run = renderApp(
+  //               renderView,
+  //               store,
+  //               Object.keys(storeOptions.initState),
+  //               moduleGetter,
+  //               controllerMiddleware,
+  //               appModuleName,
+  //               appViewName
+  //             );
+  //             appExports.store = store;
+  //             router.setStore(store);
+  //             Object.defineProperty(appExports, 'state', {
+  //               get: () => {
+  //                 return store.getState();
+  //               },
+  //             });
+  //             return {store, run};
+  //           },
+  //           ssr({id = 'root', ssrKey = 'meduxInitStore', request, response}: SSROptions) {
+  //             if (!SSRTPL) {
+  //               SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
+  //             }
+
+  //             const storeOptions: ReduxOptions = {
+  //               enhancers,
+  //               initState: {...initState, route: routeState},
+  //             };
+  //             const store = createRedux(storeOptions);
+  //             const ssrView = (AppView: ComponentType<any>) => {
+  //               const data = store.getState();
+  //               let html = require('react-dom/server').renderToString(<AppView store={store} />);
+
+  //               const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
+  //               if (match) {
+  //                 const pageHead = html.split(/<head>|<\/head>/, 3);
+  //                 html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+  //                 return SSRTPL.replace(
+  //                   '</head>',
+  //                   `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`
+  //                 ).replace(match[0], match[0] + html);
+  //               }
+  //               return html;
+  //             };
+  //             const run = ssrApp(ssrView, store, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName);
+  //             appExports.store = store;
+  //             router.setStore(store);
+  //             Object.defineProperty(appExports, 'state', {
+  //               get: () => {
+  //                 return store.getState();
+  //               },
+  //             });
+  //             return {store, run};
+  //           },
+  //         };
+  //       },
+  //     };
+  //   },
+  // };
 }
 
 // export function buildApp(

@@ -29,44 +29,49 @@ export function viewHotReplacement(moduleName, views) {
 
 const defFun = () => undefined;
 
-export function buildApp(storeCreator, render, ssr, preLoadModules, {
-  moduleGetter,
-  appModuleName = 'app',
-  appViewName = 'main',
-  storeOptions = {},
-  renderOptions = {},
-  ssrOptions = {}
-}) {
+export function renderApp(store, preLoadModules, moduleGetter, middlewares, appModuleName = 'app', appViewName = 'main') {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
   MetaData.moduleGetter = moduleGetter;
-  const controller = new Controller(storeOptions.middlewares);
-  const store = storeCreator(storeOptions);
+  const controller = new Controller(middlewares);
   store.dispatch = controller.dispatch;
   controller.setStore(store);
   preLoadModules = preLoadModules.filter(item => moduleGetter[item] && item !== appModuleName);
-  preLoadModules.unshift(appModuleName);
-  return {
-    store,
-
-    async render() {
-      if (reRenderTimer) {
-        env.clearTimeout(reRenderTimer);
-        reRenderTimer = 0;
-      }
-
-      MetaData.clientController = controller;
-      const appModule = await getModuleByName(appModuleName);
-      await Promise.all(preLoadModules.map(moduleName => loadModel(moduleName, controller)));
-      reRender = render(store, appModule.default.views[appViewName], renderOptions);
-    },
-
-    async ssr() {
-      const appModule = await getModuleByName(appModuleName);
-      await Promise.all(preLoadModules.map(moduleName => loadModel(moduleName, controller)));
-      controller.dispatch = defFun;
-      return ssr(store, appModule.default.views[appViewName], ssrOptions);
+  return async () => {
+    if (reRenderTimer) {
+      env.clearTimeout(reRenderTimer);
+      reRenderTimer = 0;
     }
 
+    MetaData.clientController = controller;
+    await loadModel(appModuleName, controller);
+    await Promise.all(preLoadModules.map(moduleName => loadModel(moduleName, controller)));
+    const appModule = getModuleByName(appModuleName);
+    return {
+      appView: appModule.default.views[appViewName],
+
+      setReRender(hotRender) {
+        reRender = hotRender;
+      }
+
+    };
+  };
+}
+export function ssrApp(ssr, store, preLoadModules, moduleGetter, middlewares, appModuleName = 'app', appViewName = 'main') {
+  MetaData.appModuleName = appModuleName;
+  MetaData.appViewName = appViewName;
+  MetaData.moduleGetter = moduleGetter;
+  const controller = new Controller(middlewares);
+  store.dispatch = controller.dispatch;
+  controller.setStore(store);
+  preLoadModules = preLoadModules.filter(item => moduleGetter[item] && item !== appModuleName);
+  return async () => {
+    await loadModel(appModuleName, controller);
+    await Promise.all(preLoadModules.map(moduleName => loadModel(moduleName, controller)));
+    const appModule = getModuleByName(appModuleName);
+    controller.dispatch = defFun;
+    return {
+      appView: appModule.default.views[appViewName]
+    };
   };
 }

@@ -1,10 +1,12 @@
 import { Unsubscribe, StoreEnhancer } from 'redux';
-import { State } from '../basic';
-import { BaseStore, BaseStoreOptions } from '../render';
-export interface ReduxOptions extends BaseStoreOptions {
+import { State, IStore } from '../basic';
+import { StoreBuilder } from '../store';
+export interface ReduxOptions {
+    initState: any;
     enhancers: StoreEnhancer[];
 }
-export interface ReduxStore<S extends State = {}> extends BaseStore<S> {
+export interface ReduxStore<S extends State = any> extends IStore<S> {
     subscribe(listener: () => void): Unsubscribe;
 }
-export declare function createRedux<S extends State = {}>(storeOptions: ReduxOptions): ReduxStore<S>;
+export declare function storeCreator(storeOptions: ReduxOptions): ReduxStore;
+export declare function createRedux(storeOptions: ReduxOptions): StoreBuilder<ReduxOptions, ReduxStore>;

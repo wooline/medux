@@ -90,14 +90,16 @@ export interface GetState<S extends State = {}> {
   (): S;
   (moduleName: string): {[key: string]: any} | undefined;
 }
-
-export interface StoreProxy<S extends State = {}> {
-  update(actionName: string, state: Partial<S>, actionData: any[]): void;
-  getState: GetState<S>;
+export interface IStoreOptions {
+  initState?: {[key: string]: any};
 }
-
+export interface IStore<S extends State = {}> {
+  dispatch: Dispatch;
+  getState: GetState<S>;
+  update: (actionName: string, state: Partial<S>, actionData: any[]) => void;
+}
 export interface IController<S extends State = {}> {
-  setStore(store: StoreProxy<S>): void;
+  setStore(store: IStore<S>): void;
   dispatch: Dispatch;
   getState: GetState<S>;
   injectedModules: {[moduleName: string]: IModuleHandlers};

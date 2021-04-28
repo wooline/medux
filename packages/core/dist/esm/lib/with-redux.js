@@ -6,7 +6,7 @@ var reducer = function reducer(state, action) {
   return _extends({}, state, action.state);
 };
 
-export function createRedux(storeOptions) {
+export function storeCreator(storeOptions) {
   var initState = storeOptions.initState,
       enhancers = storeOptions.enhancers;
 
@@ -35,4 +35,10 @@ export function createRedux(storeOptions) {
     }
   };
   return reduxStore;
+}
+export function createRedux(storeOptions) {
+  return {
+    storeOptions: storeOptions,
+    storeCreator: storeCreator
+  };
 }

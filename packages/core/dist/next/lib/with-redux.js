@@ -7,7 +7,7 @@ const reducer = (state, action) => {
   };
 };
 
-export function createRedux(storeOptions) {
+export function storeCreator(storeOptions) {
   const {
     initState,
     enhancers
@@ -42,4 +42,10 @@ export function createRedux(storeOptions) {
 
   };
   return reduxStore;
+}
+export function createRedux(storeOptions) {
+  return {
+    storeOptions,
+    storeCreator
+  };
 }

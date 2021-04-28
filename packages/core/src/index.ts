@@ -3,10 +3,22 @@ export {ActionTypes, reducer, config, effect, logger, mergeState, deepMergeState
 export {getActionData, setProcessedError, isProcessedError} from './store';
 export {CoreModuleHandlers, cacheModule, loadModel, exportModule, getView, getRootModuleAPI, modelHotReplacement} from './inject';
 export {LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromise, isServer, serverSide, clientSide} from './sprite';
-export {buildApp, viewHotReplacement} from './render';
+export {renderApp, ssrApp, viewHotReplacement} from './render';
 export {env} from './env';
 export type {ExportModule} from './inject';
-export type {ControllerMiddleware} from './store';
-export type {BuildAppOptions} from './render';
-export type {Action, CoreModuleState, CommonModule, ModuleGetter, Model, IModuleHandlers, Dispatch, GetState, State} from './basic';
+export type {ControllerMiddleware, StoreBuilder} from './store';
+export type {
+  Action,
+  CoreModuleState,
+  CommonModule,
+  ModuleGetter,
+  Model,
+  IStore,
+  IStoreOptions,
+  IController,
+  IModuleHandlers,
+  Dispatch,
+  GetState,
+  State,
+} from './basic';
 export type {RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, BaseLoadView, ReturnModule} from './inject';

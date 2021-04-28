@@ -3,6 +3,7 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
+exports.storeCreator = storeCreator;
 exports.createRedux = createRedux;
 
 var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
@@ -15,7 +16,7 @@ var reducer = function reducer(state, action) {
   return (0, _extends2.default)({}, state, action.state);
 };
 
-function createRedux(storeOptions) {
+function storeCreator(storeOptions) {
   var initState = storeOptions.initState,
       enhancers = storeOptions.enhancers;
 
@@ -44,4 +45,11 @@ function createRedux(storeOptions) {
     }
   };
   return reduxStore;
+}
+
+function createRedux(storeOptions) {
+  return {
+    storeOptions: storeOptions,
+    storeCreator: storeCreator
+  };
 }
