@@ -75,14 +75,14 @@ export function setLoading(item, moduleName = MetaData.appModuleName, groupName 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(loadingState => {
-      const controller = MetaData.clientController;
+      const store = MetaData.clientStore;
 
-      if (controller) {
+      if (store) {
         const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({
           [groupName]: loadingState
         });
-        controller.dispatch(action);
+        store.dispatch(action);
       }
     });
   }

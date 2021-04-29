@@ -7,7 +7,7 @@ import {
   deepMerge,
   mergeState,
   deepMergeState,
-  IController,
+  IStore,
   IModuleHandlers,
 } from '@medux/core';
 import type {RouteState, HistoryAction} from './basic';
@@ -72,12 +72,12 @@ export class RouteHandlers<P extends {[key: string]: any} = {}> implements IModu
 
   moduleName!: string;
 
-  controller!: IController;
+  store!: IStore<any>;
 
   actions!: {};
 
   protected get state(): RouteState<P> {
-    return this.controller.getState()[this.moduleName];
+    return this.store.getState(this.moduleName) as RouteState<P>;
   }
 
   RouteChange(routeState: RouteState<P>) {

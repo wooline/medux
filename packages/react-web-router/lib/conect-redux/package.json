@@ -1,9 +1,0 @@
-{
-  "name": "conect-redux",
-  "version": "1.0.0",
-  "description": "",
-  "main": "../../dist/cjs/lib/conect-redux",
-  "module": "../../dist/esm/lib/conect-redux",
-  "jsnext:main": "../../dist/next/lib/conect-redux",
-  "types": "../../types/lib/conect-redux"
-}

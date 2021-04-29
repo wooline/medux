@@ -43,7 +43,7 @@ export interface ActionCreatorMap {
 export interface IModuleHandlers {
     initState: any;
     moduleName: string;
-    controller: IController;
+    store: IStore;
     actions: ActionCreatorList;
 }
 export declare type Dispatch = (action: Action) => void | Promise<void>;
@@ -58,34 +58,31 @@ export interface GetState<S extends State = {}> {
         [key: string]: any;
     } | undefined;
 }
-export interface IStoreOptions {
+export interface BStoreOptions {
     initState?: {
         [key: string]: any;
     };
+}
+export interface BStore {
+    getState(): any;
+    update: (actionName: string, state: any, actionData: any[]) => void;
 }
 export interface IStore<S extends State = {}> {
     dispatch: Dispatch;
     getState: GetState<S>;
     update: (actionName: string, state: Partial<S>, actionData: any[]) => void;
-}
-export interface IController<S extends State = {}> {
-    setStore(store: IStore<S>): void;
-    dispatch: Dispatch;
-    getState: GetState<S>;
     injectedModules: {
         [moduleName: string]: IModuleHandlers;
     };
-    prevData: {
-        actionName: string;
-        prevState: S;
-    };
+    getCurrentActionName: () => string;
+    getCurrentState: GetState<S>;
 }
 export interface CoreModuleState {
     loading?: {
         [key: string]: LoadingState;
     };
 }
-export declare type Model = (controller: IController) => void | Promise<void>;
+export declare type Model = (controller: IStore) => void | Promise<void>;
 export interface CommonModule<ModuleName extends string = string> {
     default: {
         moduleName: ModuleName;
@@ -119,7 +116,7 @@ export declare const ActionTypes: {
 };
 export declare const MetaData: {
     facadeMap: FacadeMap;
-    clientController: IController;
+    clientStore: IStore;
     appModuleName: string;
     appViewName: string;
     moduleGetter: ModuleGetter;

@@ -107,16 +107,16 @@ function setLoading(item, moduleName, groupName) {
   if (!loadings[key]) {
     loadings[key] = new _sprite.TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(function (loadingState) {
-      var controller = MetaData.clientController;
+      var store = MetaData.clientStore;
 
-      if (controller) {
+      if (store) {
         var _actions;
 
         var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
 
         var _action = actions((_actions = {}, _actions[groupName] = loadingState, _actions));
 
-        controller.dispatch(_action);
+        store.dispatch(_action);
       }
     });
   }

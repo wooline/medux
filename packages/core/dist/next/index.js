@@ -5,3 +5,4 @@ export { CoreModuleHandlers, cacheModule, loadModel, exportModule, getView, getR
 export { LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromise, isServer, serverSide, clientSide } from './sprite';
 export { renderApp, ssrApp, viewHotReplacement } from './render';
 export { env } from './env';
+export { createRedux } from './withRedux';

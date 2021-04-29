@@ -53,7 +53,7 @@ var defFun = function defFun() {
   return undefined;
 };
 
-function renderApp(store, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
+function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
   if (appModuleName === void 0) {
     appModuleName = 'app';
   }
@@ -64,54 +64,61 @@ function renderApp(store, preLoadModules, moduleGetter, middlewares, appModuleNa
 
   _basic.MetaData.appModuleName = appModuleName;
   _basic.MetaData.appViewName = appViewName;
-  _basic.MetaData.moduleGetter = moduleGetter;
-  var controller = new _store.Controller(middlewares);
-  store.dispatch = controller.dispatch;
-  controller.setStore(store);
+
+  if (!_basic.MetaData.moduleGetter) {
+    _basic.MetaData.moduleGetter = moduleGetter;
+  }
+
+  var store = (0, _store.enhanceStore)(baseStore, middlewares);
   preLoadModules = preLoadModules.filter(function (item) {
     return moduleGetter[item] && item !== appModuleName;
   });
-  return (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee() {
-    var appModule;
-    return _regenerator.default.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            if (reRenderTimer) {
-              _env.env.clearTimeout(reRenderTimer);
+  return {
+    store: store,
+    beforeRender: function beforeRender() {
+      return (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee() {
+        var appModule;
+        return _regenerator.default.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                if (reRenderTimer) {
+                  _env.env.clearTimeout(reRenderTimer);
 
-              reRenderTimer = 0;
+                  reRenderTimer = 0;
+                }
+
+                _basic.MetaData.clientStore = store;
+                _context.next = 4;
+                return (0, _inject.loadModel)(appModuleName, store);
+
+              case 4:
+                _context.next = 6;
+                return Promise.all(preLoadModules.map(function (moduleName) {
+                  return (0, _inject.loadModel)(moduleName, store);
+                }));
+
+              case 6:
+                appModule = (0, _inject.getModuleByName)(appModuleName);
+                return _context.abrupt("return", {
+                  appView: appModule.default.views[appViewName],
+                  setReRender: function setReRender(hotRender) {
+                    reRender = hotRender;
+                  }
+                });
+
+              case 8:
+              case "end":
+                return _context.stop();
             }
-
-            _basic.MetaData.clientController = controller;
-            _context.next = 4;
-            return (0, _inject.loadModel)(appModuleName, controller);
-
-          case 4:
-            _context.next = 6;
-            return Promise.all(preLoadModules.map(function (moduleName) {
-              return (0, _inject.loadModel)(moduleName, controller);
-            }));
-
-          case 6:
-            appModule = (0, _inject.getModuleByName)(appModuleName);
-            return _context.abrupt("return", {
-              appView: appModule.default.views[appViewName],
-              setReRender: function setReRender(hotRender) {
-                reRender = hotRender;
-              }
-            });
-
-          case 8:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, _callee);
-  }));
+          }
+        }, _callee);
+      }))();
+    }
+  };
 }
 
-function ssrApp(ssr, store, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
+function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
   if (appModuleName === void 0) {
     appModuleName = 'app';
   }
@@ -122,40 +129,47 @@ function ssrApp(ssr, store, preLoadModules, moduleGetter, middlewares, appModule
 
   _basic.MetaData.appModuleName = appModuleName;
   _basic.MetaData.appViewName = appViewName;
-  _basic.MetaData.moduleGetter = moduleGetter;
-  var controller = new _store.Controller(middlewares);
-  store.dispatch = controller.dispatch;
-  controller.setStore(store);
+
+  if (!_basic.MetaData.moduleGetter) {
+    _basic.MetaData.moduleGetter = moduleGetter;
+  }
+
+  var store = (0, _store.enhanceStore)(baseStore, middlewares);
   preLoadModules = preLoadModules.filter(function (item) {
     return moduleGetter[item] && item !== appModuleName;
   });
-  return (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2() {
-    var appModule;
-    return _regenerator.default.wrap(function _callee2$(_context2) {
-      while (1) {
-        switch (_context2.prev = _context2.next) {
-          case 0:
-            _context2.next = 2;
-            return (0, _inject.loadModel)(appModuleName, controller);
+  return {
+    store: store,
+    beforeRender: function beforeRender() {
+      return (0, _asyncToGenerator2.default)(_regenerator.default.mark(function _callee2() {
+        var appModule;
+        return _regenerator.default.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _context2.next = 2;
+                return (0, _inject.loadModel)(appModuleName, store);
 
-          case 2:
-            _context2.next = 4;
-            return Promise.all(preLoadModules.map(function (moduleName) {
-              return (0, _inject.loadModel)(moduleName, controller);
-            }));
+              case 2:
+                _context2.next = 4;
+                return Promise.all(preLoadModules.map(function (moduleName) {
+                  return (0, _inject.loadModel)(moduleName, store);
+                }));
 
-          case 4:
-            appModule = (0, _inject.getModuleByName)(appModuleName);
-            controller.dispatch = defFun;
-            return _context2.abrupt("return", {
-              appView: appModule.default.views[appViewName]
-            });
+              case 4:
+                appModule = (0, _inject.getModuleByName)(appModuleName);
+                store.dispatch = defFun;
+                return _context2.abrupt("return", {
+                  appView: appModule.default.views[appViewName]
+                });
 
-          case 7:
-          case "end":
-            return _context2.stop();
-        }
-      }
-    }, _callee2);
-  }));
+              case 7:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2);
+      }))();
+    }
+  };
 }

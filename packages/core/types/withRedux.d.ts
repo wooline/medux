@@ -1,6 +1,6 @@
 import { Unsubscribe, StoreEnhancer } from 'redux';
-import type { BStore } from '../basic';
-import type { StoreBuilder } from '../store';
+import { BStore } from './basic';
+import { StoreBuilder } from './store';
 export interface ReduxOptions {
     initState: any;
     enhancers: StoreEnhancer[];

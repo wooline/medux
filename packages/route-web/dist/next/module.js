@@ -85,13 +85,13 @@ export class RouteHandlers {
 
     _defineProperty(this, "moduleName", void 0);
 
-    _defineProperty(this, "controller", void 0);
+    _defineProperty(this, "store", void 0);
 
     _defineProperty(this, "actions", void 0);
   }
 
   get state() {
-    return this.controller.getState()[this.moduleName];
+    return this.store.getState(this.moduleName);
   }
 
   RouteChange(routeState) {

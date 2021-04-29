@@ -102,7 +102,7 @@ export var RouteHandlers = function () {
 
     _defineProperty(this, "moduleName", void 0);
 
-    _defineProperty(this, "controller", void 0);
+    _defineProperty(this, "store", void 0);
 
     _defineProperty(this, "actions", void 0);
   }
@@ -116,7 +116,7 @@ export var RouteHandlers = function () {
   _createClass(RouteHandlers, [{
     key: "state",
     get: function get() {
-      return this.controller.getState()[this.moduleName];
+      return this.store.getState(this.moduleName);
     }
   }]);
 

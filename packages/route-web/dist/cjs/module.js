@@ -125,7 +125,7 @@ var RouteHandlers = function () {
   function RouteHandlers() {
     (0, _defineProperty2.default)(this, "initState", void 0);
     (0, _defineProperty2.default)(this, "moduleName", void 0);
-    (0, _defineProperty2.default)(this, "controller", void 0);
+    (0, _defineProperty2.default)(this, "store", void 0);
     (0, _defineProperty2.default)(this, "actions", void 0);
   }
 
@@ -138,7 +138,7 @@ var RouteHandlers = function () {
   (0, _createClass2.default)(RouteHandlers, [{
     key: "state",
     get: function get() {
-      return this.controller.getState()[this.moduleName];
+      return this.store.getState(this.moduleName);
     }
   }]);
   return RouteHandlers;

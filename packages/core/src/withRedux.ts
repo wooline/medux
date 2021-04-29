@@ -1,7 +1,7 @@
 import {Reducer, compose, createStore, Unsubscribe, StoreEnhancer} from 'redux';
-import {env} from '../env';
-import type {BStore} from '../basic';
-import type {StoreBuilder} from '../store';
+import {env} from './env';
+import {BStore} from './basic';
+import {StoreBuilder} from './store';
 
 export interface ReduxOptions {
   initState: any;

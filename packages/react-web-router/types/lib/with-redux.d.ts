@@ -2,6 +2,8 @@ import type { Options } from 'react-redux';
 import type { ComponentType, FunctionComponent, ComponentClass } from 'react';
 import type { Dispatch } from '@medux/core';
 export { Provider } from 'react-redux';
+export { createRedux } from '@medux/core/lib/with-redux';
+export type { ReduxStore, ReduxOptions } from '@medux/core/lib/with-redux';
 export declare type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
 export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
 export interface ConnectRedux {

@@ -5,6 +5,7 @@ export {CoreModuleHandlers, cacheModule, loadModel, exportModule, getView, getRo
 export {LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromise, isServer, serverSide, clientSide} from './sprite';
 export {renderApp, ssrApp, viewHotReplacement} from './render';
 export {env} from './env';
+export {createRedux} from './withRedux';
 export type {ExportModule} from './inject';
 export type {ControllerMiddleware, StoreBuilder} from './store';
 export type {
@@ -14,11 +15,12 @@ export type {
   ModuleGetter,
   Model,
   IStore,
-  IStoreOptions,
-  IController,
+  BStore,
+  BStoreOptions,
   IModuleHandlers,
   Dispatch,
   GetState,
   State,
 } from './basic';
 export type {RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, BaseLoadView, ReturnModule} from './inject';
+export type {ReduxStore, ReduxOptions} from './withRedux';

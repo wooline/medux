@@ -1,4 +1,3 @@
-import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import { env } from './env';
 import { isPromise } from './sprite';
 import { ActionTypes, config, MetaData } from './basic';
@@ -37,123 +36,67 @@ function compose(...funcs) {
   return funcs.reduce((a, b) => (...args) => a(b(...args)));
 }
 
-export class Controller {
-  constructor(middlewares) {
-    _defineProperty(this, "store", void 0);
+export function enhanceStore(baseStore, middlewares) {
+  const store = baseStore;
+  const _getState = baseStore.getState;
 
-    _defineProperty(this, "prevData", void 0);
+  const getState = moduleName => {
+    const state = _getState();
 
-    _defineProperty(this, "injectedModules", {});
+    return moduleName ? state[moduleName] : state;
+  };
 
-    _defineProperty(this, "dispatch", () => {
-      throw new Error('Dispatching while constructing your middleware is not allowed.');
-    });
+  store.getState = getState;
+  const injectedModules = {};
+  store.injectedModules = injectedModules;
+  const currentData = {
+    actionName: '',
+    prevState: {}
+  };
+  const update = baseStore.update;
 
-    _defineProperty(this, "getState", moduleName => {
-      return this.store.getState(moduleName);
-    });
+  store.getCurrentActionName = () => currentData.actionName;
 
-    _defineProperty(this, "preMiddleware", () => next => action => {
-      if (action.type === ActionTypes.Error) {
-        const error = getActionData(action)[0];
-        setProcessedError(error, true);
-      }
+  store.getCurrentState = moduleName => {
+    const state = currentData.prevState;
+    return moduleName ? state[moduleName] : state;
+  };
 
-      const [moduleName, actionName] = action.type.split(config.NSP);
+  let dispatch = action => {
+    throw new Error('Dispatching while constructing your middleware is not allowed. ');
+  };
 
-      if (env.isServer && actionName === ActionTypes.MLoading) {
-        return undefined;
-      }
+  const middlewareAPI = {
+    getState,
+    dispatch: action => dispatch(action)
+  };
 
-      if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-        if (!this.injectedModules[moduleName]) {
-          const result = loadModel(moduleName, this);
+  const preMiddleware = () => next => action => {
+    if (action.type === ActionTypes.Error) {
+      const error = getActionData(action)[0];
+      setProcessedError(error, true);
+    }
 
-          if (isPromise(result)) {
-            return result.then(() => next(action));
-          }
+    const [moduleName, actionName] = action.type.split(config.NSP);
+
+    if (env.isServer && actionName === ActionTypes.MLoading) {
+      return undefined;
+    }
+
+    if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
+      if (!injectedModules[moduleName]) {
+        const result = loadModel(moduleName, store);
+
+        if (isPromise(result)) {
+          return result.then(() => next(action));
         }
-      }
-
-      return next(action);
-    });
-
-    this.middlewares = middlewares;
-    const middlewareAPI = {
-      getState: this.getState,
-      dispatch: action => this.dispatch(action)
-    };
-    const arr = middlewares ? [this.preMiddleware, ...middlewares] : [this.preMiddleware];
-    const chain = arr.map(middleware => middleware(middlewareAPI));
-    this.dispatch = compose(...chain)(this._dispatch.bind(this));
-  }
-
-  setStore(store) {
-    this.store = store;
-  }
-
-  respondHandler(action, isReducer, prevData) {
-    const handlersMap = isReducer ? MetaData.reducersMap : MetaData.effectsMap;
-    const actionName = action.type;
-    const [actionModuleName] = actionName.split(config.NSP);
-    const commonHandlers = handlersMap[action.type];
-    const universalActionType = actionName.replace(new RegExp(`[^${config.NSP}]+`), '*');
-    const universalHandlers = handlersMap[universalActionType];
-    const handlers = { ...commonHandlers,
-      ...universalHandlers
-    };
-    const handlerModuleNames = Object.keys(handlers);
-
-    if (handlerModuleNames.length > 0) {
-      const orderList = [];
-      handlerModuleNames.forEach(moduleName => {
-        if (moduleName === MetaData.appModuleName) {
-          orderList.unshift(moduleName);
-        } else if (moduleName === actionModuleName) {
-          orderList.unshift(moduleName);
-        } else {
-          orderList.push(moduleName);
-        }
-      });
-
-      if (action.priority) {
-        orderList.unshift(...action.priority);
-      }
-
-      const implemented = {};
-      const actionData = getActionData(action);
-
-      if (isReducer) {
-        this.prevData = prevData;
-        const newState = {};
-        orderList.forEach(moduleName => {
-          if (!implemented[moduleName]) {
-            implemented[moduleName] = true;
-            const handler = handlers[moduleName];
-            const modelInstance = this.injectedModules[moduleName];
-            newState[moduleName] = handler.apply(modelInstance, actionData);
-          }
-        });
-        this.store.update(actionName, newState, actionData);
-      } else {
-        const result = [];
-        orderList.forEach(moduleName => {
-          if (!implemented[moduleName]) {
-            implemented[moduleName] = true;
-            const handler = handlers[moduleName];
-            const modelInstance = this.injectedModules[moduleName];
-            this.prevData = prevData;
-            result.push(this.applyEffect(moduleName, handler, modelInstance, action, actionData));
-          }
-        });
-        return result.length === 1 ? result[0] : Promise.all(result);
       }
     }
 
-    return undefined;
-  }
+    return next(action);
+  };
 
-  applyEffect(moduleName, handler, modelInstance, action, actionData) {
+  function applyEffect(moduleName, handler, modelInstance, action, actionData) {
     const effectResult = handler.apply(modelInstance, actionData);
     const decorators = handler.__decorators__;
 
@@ -191,18 +134,84 @@ export class Controller {
       if (isProcessedError(error)) {
         throw error;
       } else {
-        return this.dispatch(errorAction(setProcessedError(error, false)));
+        return dispatch(errorAction(setProcessedError(error, false)));
       }
     });
   }
 
-  _dispatch(action) {
-    const prevData = {
-      actionName: action.type,
-      prevState: this.getState()
+  function respondHandler(action, isReducer, prevData) {
+    const handlersMap = isReducer ? MetaData.reducersMap : MetaData.effectsMap;
+    const actionName = action.type;
+    const [actionModuleName] = actionName.split(config.NSP);
+    const commonHandlers = handlersMap[action.type];
+    const universalActionType = actionName.replace(new RegExp(`[^${config.NSP}]+`), '*');
+    const universalHandlers = handlersMap[universalActionType];
+    const handlers = { ...commonHandlers,
+      ...universalHandlers
     };
-    this.respondHandler(action, true, prevData);
-    return this.respondHandler(action, false, prevData);
+    const handlerModuleNames = Object.keys(handlers);
+
+    if (handlerModuleNames.length > 0) {
+      const orderList = [];
+      handlerModuleNames.forEach(moduleName => {
+        if (moduleName === MetaData.appModuleName) {
+          orderList.unshift(moduleName);
+        } else if (moduleName === actionModuleName) {
+          orderList.unshift(moduleName);
+        } else {
+          orderList.push(moduleName);
+        }
+      });
+
+      if (action.priority) {
+        orderList.unshift(...action.priority);
+      }
+
+      const implemented = {};
+      const actionData = getActionData(action);
+
+      if (isReducer) {
+        Object.assign(currentData, prevData);
+        const newState = {};
+        orderList.forEach(moduleName => {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            const handler = handlers[moduleName];
+            const modelInstance = injectedModules[moduleName];
+            newState[moduleName] = handler.apply(modelInstance, actionData);
+          }
+        });
+        update(actionName, newState, actionData);
+      } else {
+        const result = [];
+        orderList.forEach(moduleName => {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            const handler = handlers[moduleName];
+            const modelInstance = injectedModules[moduleName];
+            Object.assign(currentData, prevData);
+            result.push(applyEffect(moduleName, handler, modelInstance, action, actionData));
+          }
+        });
+        return result.length === 1 ? result[0] : Promise.all(result);
+      }
+    }
+
+    return undefined;
   }
 
+  function _dispatch(action) {
+    const prevData = {
+      actionName: action.type,
+      prevState: getState()
+    };
+    respondHandler(action, true, prevData);
+    return respondHandler(action, false, prevData);
+  }
+
+  const arr = middlewares ? [preMiddleware, ...middlewares] : [preMiddleware];
+  const chain = arr.map(middleware => middleware(middlewareAPI));
+  dispatch = compose(...chain)(_dispatch);
+  store.dispatch = dispatch;
+  return store;
 }

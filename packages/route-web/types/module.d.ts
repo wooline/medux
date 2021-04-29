@@ -1,4 +1,4 @@
-import { CoreModuleHandlers, CoreModuleState, ControllerMiddleware, IController, IModuleHandlers } from '@medux/core';
+import { CoreModuleHandlers, CoreModuleState, ControllerMiddleware, IStore, IModuleHandlers } from '@medux/core';
 import type { RouteState, HistoryAction } from './basic';
 export declare class RouteModuleHandlers<S extends CoreModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
     Init(initState: S): S;
@@ -31,7 +31,7 @@ export declare class RouteHandlers<P extends {
 } = {}> implements IModuleHandlers {
     initState: RouteState<P>;
     moduleName: string;
-    controller: IController;
+    store: IStore<any>;
     actions: {};
     protected get state(): RouteState<P>;
     RouteChange(routeState: RouteState<P>): any;

@@ -1,5 +1,5 @@
 import { compose, createStore } from 'redux';
-import { env } from '../env';
+import { env } from './env';
 
 const reduxReducer = (state, action) => {
   return { ...state,

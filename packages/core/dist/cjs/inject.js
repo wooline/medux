@@ -22,22 +22,22 @@ var _basic = require("./basic");
 var _actions = require("./actions");
 
 var exportModule = function exportModule(moduleName, ModuleHandles, views) {
-  var model = function model(controller) {
-    if (!controller.injectedModules[moduleName]) {
+  var model = function model(store) {
+    if (!store.injectedModules[moduleName]) {
       var moduleHandles = new ModuleHandles();
-      controller.injectedModules[moduleName] = moduleHandles;
+      store.injectedModules[moduleName] = moduleHandles;
       moduleHandles.moduleName = moduleName;
-      moduleHandles.controller = controller;
+      moduleHandles.store = store;
       moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
       (0, _basic.injectActions)(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
-      var preModuleState = controller.getState(moduleName);
+      var preModuleState = store.getState(moduleName);
 
       if (preModuleState) {
-        return controller.dispatch((0, _actions.moduleReInitAction)(moduleName, _initState));
+        return store.dispatch((0, _actions.moduleReInitAction)(moduleName, _initState));
       }
 
-      return controller.dispatch((0, _actions.moduleInitAction)(moduleName, _initState));
+      return store.dispatch((0, _actions.moduleInitAction)(moduleName, _initState));
     }
 
     return undefined;
@@ -94,7 +94,7 @@ function getView(moduleName, viewName) {
       return view;
     }
 
-    module.default.model(_basic.MetaData.clientController);
+    module.default.model(_basic.MetaData.clientStore);
     return view;
   };
 
@@ -134,7 +134,7 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       value: void 0
     }, {
       kind: "field",
-      key: "controller",
+      key: "store",
       value: void 0
     }, {
       kind: "field",
@@ -146,43 +146,43 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.controller.getState()[this.moduleName];
+        return this.store.getState(this.moduleName);
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.controller.getState();
+        return this.store.getState();
       }
     }, {
       kind: "method",
-      key: "getActionName",
-      value: function getActionName() {
-        return this.controller.prevData.actionName;
+      key: "getCurrentActionName",
+      value: function getCurrentActionName() {
+        return this.store.getCurrentActionName();
       }
     }, {
       kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return this.controller.prevData.prevState;
+      key: "currentRootState",
+      value: function currentRootState() {
+        return this.store.getCurrentState();
       }
     }, {
       kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return this.controller.prevData.prevState[this.moduleName];
+      key: "currentState",
+      value: function currentState() {
+        return this.store.getCurrentState(this.moduleName);
       }
     }, {
       kind: "method",
       key: "dispatch",
       value: function dispatch(action) {
-        return this.controller.dispatch(action);
+        return this.store.dispatch(action);
       }
     }, {
       kind: "method",
       key: "loadModel",
       value: function loadModel(moduleName) {
-        return _loadModel(moduleName, this.controller);
+        return _loadModel(moduleName, this.store);
       }
     }, {
       kind: "method",
@@ -223,15 +223,15 @@ function clearHandlers(moduleName, actionHandlerMap) {
 }
 
 function modelHotReplacement(moduleName, ModuleHandles) {
-  var controller = _basic.MetaData.clientController;
+  var store = _basic.MetaData.clientStore;
 
-  if (controller.injectedModules[moduleName]) {
+  if (store.injectedModules[moduleName]) {
     clearHandlers(moduleName, _basic.MetaData.reducersMap);
     clearHandlers(moduleName, _basic.MetaData.effectsMap);
     var moduleHandles = new ModuleHandles();
-    controller.injectedModules[moduleName] = moduleHandles;
+    store.injectedModules[moduleName] = moduleHandles;
     moduleHandles.moduleName = moduleName;
-    moduleHandles.controller = controller;
+    moduleHandles.store = store;
     moduleHandles.actions = _basic.MetaData.facadeMap[moduleName].actions;
     (0, _basic.injectActions)(moduleName, moduleHandles);
 

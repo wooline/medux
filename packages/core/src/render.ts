@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
-import {MetaData, ModuleGetter, CommonModule, IController, IStore} from './basic';
+import {MetaData, ModuleGetter, CommonModule, BStore, IStore} from './basic';
 import {Module, getModuleByName, loadModel} from './inject';
-import {ControllerMiddleware, Controller} from './store';
+import {ControllerMiddleware, enhanceStore} from './store';
 import {env} from './env';
 
 let reRender: (appView: any) => void = () => undefined;
@@ -30,8 +30,8 @@ export function viewHotReplacement(moduleName: string, views: {[key: string]: an
 
 const defFun: any = () => undefined;
 
-export function renderApp<ST extends IStore = IStore>(
-  store: ST,
+export function renderApp<ST extends BStore = BStore>(
+  baseStore: ST,
   preLoadModules: string[],
   moduleGetter: ModuleGetter,
   middlewares?: ControllerMiddleware[],
@@ -40,35 +40,37 @@ export function renderApp<ST extends IStore = IStore>(
 ) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
-  MetaData.moduleGetter = moduleGetter;
-  const controller: IController = new Controller(middlewares);
-  store.dispatch = controller.dispatch;
-  controller.setStore(store);
+  if (!MetaData.moduleGetter) {
+    MetaData.moduleGetter = moduleGetter;
+  }
+  const store = enhanceStore(baseStore, middlewares) as IStore<any> & ST;
   preLoadModules = preLoadModules.filter((item) => moduleGetter[item] && item !== appModuleName);
-  return async () => {
-    if (reRenderTimer) {
-      env.clearTimeout(reRenderTimer);
-      reRenderTimer = 0;
-    }
-    MetaData.clientController = controller;
-    await loadModel(appModuleName, controller);
-    // const appModule = await getModuleByName(appModuleName);
-    // appModule.default.model(controller);
-    // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
-    await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, controller)));
-    const appModule = getModuleByName(appModuleName) as CommonModule;
-    return {
-      appView: appModule.default.views[appViewName],
-      setReRender(hotRender: (appView: any) => void) {
-        reRender = hotRender;
-      },
-    };
+  return {
+    store,
+    async beforeRender() {
+      if (reRenderTimer) {
+        env.clearTimeout(reRenderTimer);
+        reRenderTimer = 0;
+      }
+      MetaData.clientStore = store;
+      await loadModel(appModuleName, store);
+      // const appModule = await getModuleByName(appModuleName);
+      // appModule.default.model(controller);
+      // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+      await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, store)));
+      const appModule = getModuleByName(appModuleName) as CommonModule;
+      return {
+        appView: appModule.default.views[appViewName],
+        setReRender(hotRender: (appView: any) => void) {
+          reRender = hotRender;
+        },
+      };
+    },
   };
 }
 
-export function ssrApp<ST extends IStore = IStore, V = any>(
-  ssr: (appView: V) => string,
-  store: ST,
+export function ssrApp<ST extends BStore = BStore>(
+  baseStore: ST,
   preLoadModules: string[],
   moduleGetter: ModuleGetter,
   middlewares?: ControllerMiddleware[],
@@ -77,19 +79,22 @@ export function ssrApp<ST extends IStore = IStore, V = any>(
 ) {
   MetaData.appModuleName = appModuleName;
   MetaData.appViewName = appViewName;
-  MetaData.moduleGetter = moduleGetter;
-  const controller: IController = new Controller(middlewares);
-  store.dispatch = controller.dispatch;
-  controller.setStore(store);
+  if (!MetaData.moduleGetter) {
+    MetaData.moduleGetter = moduleGetter;
+  }
+  const store = enhanceStore(baseStore, middlewares) as IStore<any> & ST;
   preLoadModules = preLoadModules.filter((item) => moduleGetter[item] && item !== appModuleName);
-  return async () => {
-    await loadModel(appModuleName, controller);
-    // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
-    // preModules.unshift(appModuleName);
-    await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, controller)));
-    const appModule = getModuleByName(appModuleName) as CommonModule;
-    controller.dispatch = defFun;
-    return {appView: appModule.default.views[appViewName]};
+  return {
+    store,
+    async beforeRender() {
+      await loadModel(appModuleName, store);
+      // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
+      // preModules.unshift(appModuleName);
+      await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, store)));
+      const appModule = getModuleByName(appModuleName) as CommonModule;
+      store.dispatch = defFun;
+      return {appView: appModule.default.views[appViewName]};
+    },
   };
 }
 // export function createApp<SO extends BaseStoreOptions = BaseStoreOptions, ST extends BaseStore = BaseStore, RO = any, V = any>(

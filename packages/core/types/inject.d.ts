@@ -1,4 +1,4 @@
-import { Action, IModuleHandlers, CoreModuleState, CommonModule, Model, ModuleGetter, IController } from './basic';
+import { Action, IModuleHandlers, CoreModuleState, CommonModule, Model, ModuleGetter, IStore } from './basic';
 declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => {
     type: string;
 } : never;
@@ -27,18 +27,18 @@ export declare const exportModule: ExportModule<any>;
 export declare function cacheModule<T extends CommonModule>(module: T): () => T;
 export declare function getModuleByName(moduleName: string): Promise<CommonModule> | CommonModule;
 export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
-export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, controller: IController): void | Promise<void>;
+export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, controller: IStore): void | Promise<void>;
 export declare abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> implements IModuleHandlers {
     readonly initState: S;
     actions: Actions<this>;
-    controller: IController<R>;
+    store: IStore<R>;
     moduleName: string;
     constructor(initState: S);
     protected get state(): S;
     protected get rootState(): R;
-    protected getActionName(): string;
-    protected get prevRootState(): R;
-    protected get prevState(): S;
+    protected getCurrentActionName(): string;
+    protected get currentRootState(): R;
+    protected get currentState(): S;
     protected dispatch(action: Action): void | Promise<void>;
     protected loadModel(moduleName: string): void | Promise<void>;
     Init(initState: S): S;

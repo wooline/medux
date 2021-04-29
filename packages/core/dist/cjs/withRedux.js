@@ -10,7 +10,7 @@ var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends")
 
 var _redux = require("redux");
 
-var _env = require("../env");
+var _env = require("./env");
 
 var reduxReducer = function reduxReducer(state, action) {
   return (0, _extends2.default)({}, state, action.state);

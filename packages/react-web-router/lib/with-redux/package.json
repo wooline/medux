@@ -1,0 +1,9 @@
+{
+  "name": "with-redux",
+  "version": "1.0.0",
+  "description": "",
+  "main": "../../dist/cjs/lib/with-redux",
+  "module": "../../dist/esm/lib/with-redux",
+  "jsnext:main": "../../dist/next/lib/with-redux",
+  "types": "../../types/lib/with-redux"
+}

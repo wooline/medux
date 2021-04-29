@@ -1,7 +1,4 @@
-import {getView, ModuleGetter, renderApp} from 'src/index';
-import {ReduxStore, createRedux} from 'src/lib/with-redux';
-import {ControllerMiddleware, StoreBuilder} from 'src/store';
-import {IStore, IStoreOptions} from 'src/basic';
+import {getView, ModuleGetter, renderApp, createRedux, BStore, BStoreOptions, IStore, ControllerMiddleware, StoreBuilder} from 'src/index';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
 
@@ -13,12 +10,11 @@ export function createAppWithRedux(
   appViewName?: string
 ) {
   return {
-    useStore<O extends IStoreOptions = IStoreOptions, T extends IStore = IStore>({storeOptions, storeCreator}: StoreBuilder<O, T>) {
+    useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({storeOptions, storeCreator}: StoreBuilder<O, B>) {
       return {
         render() {
-          const store = storeCreator(storeOptions);
-          const run = renderApp(store, [], moduleGetter, middlewares, appModuleName, appViewName);
-          return {store, run};
+          const baseStore = storeCreator(storeOptions);
+          return renderApp(baseStore, [], moduleGetter, middlewares, appModuleName, appViewName);
         },
       };
     },
@@ -26,7 +22,7 @@ export function createAppWithRedux(
 }
 
 describe('init', () => {
-  let mockStore: ReduxStore;
+  let mockStore: IStore;
   const actionLogs: string[] = [];
 
   const storeMiddlewares: ControllerMiddleware = () => (next) => (action) => {
@@ -35,7 +31,7 @@ describe('init', () => {
   };
 
   beforeAll(() => {
-    const {store, run} = createAppWithRedux(moduleGetter, [storeMiddlewares], 'moduleA', 'Main')
+    const {store, beforeRender} = createAppWithRedux(moduleGetter, [storeMiddlewares], 'moduleA', 'Main')
       .useStore(
         createRedux({
           enhancers: [],
@@ -44,7 +40,7 @@ describe('init', () => {
       )
       .render();
     mockStore = store;
-    return run();
+    return beforeRender();
   });
   beforeEach(() => {
     actionLogs.length = 0;

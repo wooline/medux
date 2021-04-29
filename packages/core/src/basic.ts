@@ -78,7 +78,7 @@ export interface ActionCreatorMap {
 export interface IModuleHandlers {
   initState: any;
   moduleName: string;
-  controller: IController;
+  store: IStore;
   actions: ActionCreatorList;
 }
 
@@ -90,28 +90,31 @@ export interface GetState<S extends State = {}> {
   (): S;
   (moduleName: string): {[key: string]: any} | undefined;
 }
-export interface IStoreOptions {
+export interface BStoreOptions {
   initState?: {[key: string]: any};
 }
+
+export interface BStore {
+  getState(): any;
+  update: (actionName: string, state: any, actionData: any[]) => void;
+}
+
 export interface IStore<S extends State = {}> {
   dispatch: Dispatch;
   getState: GetState<S>;
   update: (actionName: string, state: Partial<S>, actionData: any[]) => void;
-}
-export interface IController<S extends State = {}> {
-  setStore(store: IStore<S>): void;
-  dispatch: Dispatch;
-  getState: GetState<S>;
   injectedModules: {[moduleName: string]: IModuleHandlers};
-  prevData: {actionName: string; prevState: S};
+  getCurrentActionName: () => string;
+  getCurrentState: GetState<S>;
 }
+
 export interface CoreModuleState {
   loading?: {
     [key: string]: LoadingState;
   };
 }
 
-export type Model = (controller: IController) => void | Promise<void>;
+export type Model = (controller: IStore) => void | Promise<void>;
 
 export interface CommonModule<ModuleName extends string = string> {
   default: {
@@ -158,7 +161,7 @@ export const ActionTypes = {
 
 export const MetaData: {
   facadeMap: FacadeMap;
-  clientController: IController;
+  clientStore: IStore;
   appModuleName: string;
   appViewName: string;
   moduleGetter: ModuleGetter;
@@ -230,11 +233,11 @@ export function setLoading<T extends Promise<any>>(item: T, moduleName: string =
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener((loadingState) => {
-      const controller = MetaData.clientController;
-      if (controller) {
+      const store = MetaData.clientStore;
+      if (store) {
         const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
         const action = actions({[groupName]: loadingState});
-        controller.dispatch(action);
+        store.dispatch(action);
       }
     });
   }

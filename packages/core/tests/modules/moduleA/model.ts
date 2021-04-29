@@ -19,7 +19,7 @@ export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
 
   @reducer
   public add2(): State {
-    const prevState = this.prevRootState;
+    const prevState = this.currentRootState;
     messages.push(['moduleA/add2', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
     this.state.count += 1;
     return this.state;

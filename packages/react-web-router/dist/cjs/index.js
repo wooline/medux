@@ -27,6 +27,23 @@ function _extends() {
   return _extends.apply(this, arguments);
 }
 
+var root;
+
+if (typeof self !== 'undefined') {
+  root = self;
+} else if (typeof window !== 'undefined') {
+  root = window;
+} else if (typeof global !== 'undefined') {
+  root = global;
+} else if (typeof module !== 'undefined') {
+  root = module;
+} else {
+  root = Function('return this')();
+}
+
+var env = root;
+env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
+
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -35,10 +52,19 @@ function _assertThisInitialized(self) {
   return self;
 }
 
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
 function _inheritsLoose(subClass, superClass) {
   subClass.prototype = Object.create(superClass.prototype);
   subClass.prototype.constructor = subClass;
-  subClass.__proto__ = superClass;
+  _setPrototypeOf(subClass, superClass);
 }
 
 function _defineProperty(obj, key, value) {
@@ -56,22 +82,7 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var root;
-
-if (typeof self !== 'undefined') {
-  root = self;
-} else if (typeof window !== 'undefined') {
-  root = window;
-} else if (typeof global !== 'undefined') {
-  root = global;
-} else if (typeof module !== 'undefined') {
-  root = module;
-} else {
-  root = Function('return this')();
-}
-
-var env = root;
-env.isServer = typeof window === 'undefined' && typeof global === 'object' && global.global === global;
+exports.LoadingState = void 0;
 
 (function (LoadingState) {
   LoadingState["Start"] = "Start";
@@ -181,7 +192,7 @@ var TaskCounter = function (_SingleDispatcher) {
 
   return TaskCounter;
 }(SingleDispatcher);
-function isPlainObject(obj) {
+function isPlainObject$1(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
@@ -190,8 +201,8 @@ function __deepMerge(optimize, target, inject) {
     var src = target[key];
     var val = inject[key];
 
-    if (isPlainObject(val)) {
-      if (isPlainObject(src)) {
+    if (isPlainObject$1(val)) {
+      if (isPlainObject$1(src)) {
         target[key] = __deepMerge(optimize, src, val);
       } else {
         target[key] = optimize ? val : __deepMerge(optimize, {}, val);
@@ -208,12 +219,12 @@ function deepMerge(target) {
     args[_key - 1] = arguments[_key];
   }
 
-  if (!isPlainObject(target)) {
+  if (!isPlainObject$1(target)) {
     target = {};
   }
 
   args = args.filter(function (item) {
-    return isPlainObject(item) && Object.keys(item).length;
+    return isPlainObject$1(item) && Object.keys(item).length;
   });
 
   if (args.length < 1) {
@@ -221,7 +232,7 @@ function deepMerge(target) {
   }
 
   args.forEach(function (inject, index) {
-    if (isPlainObject(inject)) {
+    if (isPlainObject$1(inject)) {
       var lastArg = false;
       var last2Arg = null;
 
@@ -235,8 +246,8 @@ function deepMerge(target) {
         var src = target[key];
         var val = inject[key];
 
-        if (isPlainObject(val)) {
-          if (isPlainObject(src)) {
+        if (isPlainObject$1(val)) {
+          if (isPlainObject$1(src)) {
             target[key] = __deepMerge(lastArg, src, val);
           } else {
             target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepMerge(lastArg, {}, val);
@@ -249,60 +260,43 @@ function deepMerge(target) {
   });
   return target;
 }
-
-var config = {
-  NSP: '.',
-  MSP: ',',
-  MutableData: false,
-  DEVTOOLS: process.env.NODE_ENV === 'development'
-};
-function setConfig(_config) {
-  _config.NSP !== undefined && (config.NSP = _config.NSP);
-  _config.MSP !== undefined && (config.MSP = _config.MSP);
-  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
-  _config.DEVTOOLS !== undefined && (config.DEVTOOLS = _config.DEVTOOLS);
-}
 function warn(str) {
   if (process.env.NODE_ENV === 'development') {
     env.console.warn(str);
   }
 }
-function deepMergeState(target) {
-  if (target === void 0) {
-    target = {};
-  }
-
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
-  }
-
-  if (config.MutableData) {
-    return deepMerge.apply(void 0, [target].concat(args));
-  }
-
-  return deepMerge.apply(void 0, [{}, target].concat(args));
+function isPromise(data) {
+  return typeof data === 'object' && typeof data.then === 'function';
 }
-function mergeState(target) {
-  if (target === void 0) {
-    target = {};
-  }
-
-  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-    args[_key2 - 1] = arguments[_key2];
-  }
-
-  if (config.MutableData) {
-    return Object.assign.apply(Object, [target].concat(args));
-  }
-
-  return Object.assign.apply(Object, [{}, target].concat(args));
+function isServer() {
+  return env.isServer;
 }
-function snapshotState(target) {
-  if (config.MutableData) {
-    return JSON.parse(JSON.stringify(target));
+function serverSide(callback) {
+  if (env.isServer) {
+    return callback();
   }
 
-  return target;
+  return undefined;
+}
+function clientSide(callback) {
+  if (!env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+
+var config = {
+  NSP: '.',
+  MSP: ',',
+  MutableData: false,
+  DepthTimeOnLoading: 2
+};
+function setConfig$1(_config) {
+  _config.NSP !== undefined && (config.NSP = _config.NSP);
+  _config.MSP !== undefined && (config.MSP = _config.MSP);
+  _config.MutableData !== undefined && (config.MutableData = _config.MutableData);
+  _config.DepthTimeOnLoading !== undefined && (config.DepthTimeOnLoading = _config.DepthTimeOnLoading);
 }
 var ActionTypes = {
   MLoading: 'Loading',
@@ -310,20 +304,58 @@ var ActionTypes = {
   MReInit: 'ReInit',
   Error: "medux" + config.NSP + "Error"
 };
-var MetaData = {
-  currentData: {
-    actionName: '',
-    prevState: null
-  }
+var MetaData$1 = {
+  injectedModules: {},
+  reducersMap: {},
+  effectsMap: {}
 };
-var loadings = {};
-var depthTime = 2;
-function setLoadingDepthTime(second) {
-  depthTime = second;
+
+function transformAction(actionName, handler, listenerModule, actionHandlerMap) {
+  if (!actionHandlerMap[actionName]) {
+    actionHandlerMap[actionName] = {};
+  }
+
+  if (actionHandlerMap[actionName][listenerModule]) {
+    warn("Action duplicate or conflict : " + actionName + ".");
+  }
+
+  actionHandlerMap[actionName][listenerModule] = handler;
 }
+
+function injectActions(moduleName, handlers) {
+  var injectedModules = MetaData$1.injectedModules;
+
+  if (injectedModules[moduleName]) {
+    return;
+  }
+
+  injectedModules[moduleName] = true;
+
+  for (var actionNames in handlers) {
+    if (typeof handlers[actionNames] === 'function') {
+      (function () {
+        var handler = handlers[actionNames];
+
+        if (handler.__isReducer__ || handler.__isEffect__) {
+          actionNames.split(config.MSP).forEach(function (actionName) {
+            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
+            var arr = actionName.split(config.NSP);
+
+            if (arr[1]) {
+              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? MetaData$1.effectsMap : MetaData$1.reducersMap);
+            } else {
+              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? MetaData$1.effectsMap : MetaData$1.reducersMap);
+            }
+          });
+        }
+      })();
+    }
+  }
+}
+var loadings = {};
 function setLoading(item, moduleName, groupName) {
   if (moduleName === void 0) {
-    moduleName = MetaData.appModuleName;
+    moduleName = MetaData$1.appModuleName;
   }
 
   if (groupName === void 0) {
@@ -337,14 +369,14 @@ function setLoading(item, moduleName, groupName) {
   var key = moduleName + config.NSP + groupName;
 
   if (!loadings[key]) {
-    loadings[key] = new TaskCounter(depthTime);
+    loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(function (loadingState) {
-      var store = MetaData.clientStore;
+      var store = MetaData$1.clientStore;
 
       if (store) {
         var _actions;
 
-        var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
+        var actions = MetaData$1.facadeMap[moduleName].actions[ActionTypes.MLoading];
 
         var _action = actions((_actions = {}, _actions[groupName] = loadingState, _actions));
 
@@ -363,7 +395,6 @@ function reducer(target, key, descriptor) {
   }
 
   var fun = descriptor.value;
-  fun.__actionName__ = key;
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
@@ -371,7 +402,7 @@ function reducer(target, key, descriptor) {
 function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName || '';
+    loadingForModuleName = MetaData$1.appModuleName || '';
   }
 
   return function (target, key, descriptor) {
@@ -381,7 +412,6 @@ function effect(loadingForGroupName, loadingForModuleName) {
     }
 
     var fun = descriptor.value;
-    fun.__actionName__ = key;
     fun.__isEffect__ = true;
     descriptor.enumerable = true;
 
@@ -389,7 +419,7 @@ function effect(loadingForGroupName, loadingForModuleName) {
       var before = function before(curAction, moduleName, promiseResult) {
         if (!env.isServer) {
           if (loadingForModuleName === '') {
-            loadingForModuleName = MetaData.appModuleName;
+            loadingForModuleName = MetaData$1.appModuleName;
           } else if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
@@ -424,57 +454,41 @@ function logger(before, after) {
     fun.__decorators__.push([before, after]);
   };
 }
-function delayPromise(second) {
-  return function (target, key, descriptor) {
-    if (!key && !descriptor) {
-      key = target.key;
-      descriptor = target.descriptor;
-    }
-
-    var fun = descriptor.value;
-
-    descriptor.value = function () {
-      var delay = new Promise(function (resolve) {
-        env.setTimeout(function () {
-          resolve(true);
-        }, second * 1000);
-      });
-
-      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
-      }
-
-      return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
-        return items[1];
-      });
-    };
-  };
-}
-function isPromise(data) {
-  return typeof data === 'object' && typeof data.then === 'function';
-}
-function isServer() {
-  return env.isServer;
-}
-function serverSide(callback) {
-  if (env.isServer) {
-    return callback();
+function deepMergeState(target) {
+  if (target === void 0) {
+    target = {};
   }
 
-  return undefined;
-}
-function clientSide(callback) {
-  if (!env.isServer) {
-    return callback();
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
   }
 
-  return undefined;
+  if (config.MutableData) {
+    return deepMerge.apply(void 0, [target].concat(args));
+  }
+
+  return deepMerge.apply(void 0, [{}, target].concat(args));
+}
+function mergeState(target) {
+  if (target === void 0) {
+    target = {};
+  }
+
+  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    args[_key2 - 1] = arguments[_key2];
+  }
+
+  if (config.MutableData) {
+    return Object.assign.apply(Object, [target].concat(args));
+  }
+
+  return Object.assign.apply(Object, [{}, target].concat(args));
 }
 
-function errorAction(reason) {
+function errorAction(error) {
   return {
     type: ActionTypes.Error,
-    payload: [reason]
+    payload: [error]
   };
 }
 function moduleInitAction(moduleName, initState) {
@@ -490,518 +504,12 @@ function moduleReInitAction(moduleName, initState) {
   };
 }
 
-function symbolObservablePonyfill(root) {
-  var result;
-  var Symbol = root.Symbol;
-
-  if (typeof Symbol === 'function') {
-    if (Symbol.observable) {
-      result = Symbol.observable;
-    } else {
-      result = Symbol('observable');
-      Symbol.observable = result;
-    }
-  } else {
-    result = '@@observable';
-  }
-
-  return result;
-}
-
-/* global window */
-var root$1;
-
-if (typeof self !== 'undefined') {
-  root$1 = self;
-} else if (typeof window !== 'undefined') {
-  root$1 = window;
-} else if (typeof global !== 'undefined') {
-  root$1 = global;
-} else if (typeof module !== 'undefined') {
-  root$1 = module;
-} else {
-  root$1 = Function('return this')();
-}
-
-var result = symbolObservablePonyfill(root$1);
-
-/**
- * These are private action types reserved by Redux.
- * For any unknown actions, you must return the current state.
- * If the current state is undefined, you must return the initial state.
- * Do not reference these action types directly in your code.
- */
-
-var randomString = function randomString() {
-  return Math.random().toString(36).substring(7).split('').join('.');
-};
-
-var ActionTypes$1 = {
-  INIT: "@@redux/INIT" + randomString(),
-  REPLACE: "@@redux/REPLACE" + randomString(),
-  PROBE_UNKNOWN_ACTION: function PROBE_UNKNOWN_ACTION() {
-    return "@@redux/PROBE_UNKNOWN_ACTION" + randomString();
-  }
-};
-/**
- * @param {any} obj The object to inspect.
- * @returns {boolean} True if the argument appears to be a plain object.
- */
-
-function isPlainObject$1(obj) {
-  if (typeof obj !== 'object' || obj === null) return false;
-  var proto = obj;
-
-  while (Object.getPrototypeOf(proto) !== null) {
-    proto = Object.getPrototypeOf(proto);
-  }
-
-  return Object.getPrototypeOf(obj) === proto;
-}
-/**
- * Creates a Redux store that holds the state tree.
- * The only way to change the data in the store is to call `dispatch()` on it.
- *
- * There should only be a single store in your app. To specify how different
- * parts of the state tree respond to actions, you may combine several reducers
- * into a single reducer function by using `combineReducers`.
- *
- * @param {Function} reducer A function that returns the next state tree, given
- * the current state tree and the action to handle.
- *
- * @param {any} [preloadedState] The initial state. You may optionally specify it
- * to hydrate the state from the server in universal apps, or to restore a
- * previously serialized user session.
- * If you use `combineReducers` to produce the root reducer function, this must be
- * an object with the same shape as `combineReducers` keys.
- *
- * @param {Function} [enhancer] The store enhancer. You may optionally specify it
- * to enhance the store with third-party capabilities such as middleware,
- * time travel, persistence, etc. The only store enhancer that ships with Redux
- * is `applyMiddleware()`.
- *
- * @returns {Store} A Redux store that lets you read the state, dispatch actions
- * and subscribe to changes.
- */
-
-
-function createStore(reducer, preloadedState, enhancer) {
-  var _ref2;
-
-  if (typeof preloadedState === 'function' && typeof enhancer === 'function' || typeof enhancer === 'function' && typeof arguments[3] === 'function') {
-    throw new Error('It looks like you are passing several store enhancers to ' + 'createStore(). This is not supported. Instead, compose them ' + 'together to a single function.');
-  }
-
-  if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
-    enhancer = preloadedState;
-    preloadedState = undefined;
-  }
-
-  if (typeof enhancer !== 'undefined') {
-    if (typeof enhancer !== 'function') {
-      throw new Error('Expected the enhancer to be a function.');
-    }
-
-    return enhancer(createStore)(reducer, preloadedState);
-  }
-
-  if (typeof reducer !== 'function') {
-    throw new Error('Expected the reducer to be a function.');
-  }
-
-  var currentReducer = reducer;
-  var currentState = preloadedState;
-  var currentListeners = [];
-  var nextListeners = currentListeners;
-  var isDispatching = false;
-  /**
-   * This makes a shallow copy of currentListeners so we can use
-   * nextListeners as a temporary list while dispatching.
-   *
-   * This prevents any bugs around consumers calling
-   * subscribe/unsubscribe in the middle of a dispatch.
-   */
-
-  function ensureCanMutateNextListeners() {
-    if (nextListeners === currentListeners) {
-      nextListeners = currentListeners.slice();
-    }
-  }
-  /**
-   * Reads the state tree managed by the store.
-   *
-   * @returns {any} The current state tree of your application.
-   */
-
-
-  function getState() {
-    if (isDispatching) {
-      throw new Error('You may not call store.getState() while the reducer is executing. ' + 'The reducer has already received the state as an argument. ' + 'Pass it down from the top reducer instead of reading it from the store.');
-    }
-
-    return currentState;
-  }
-  /**
-   * Adds a change listener. It will be called any time an action is dispatched,
-   * and some part of the state tree may potentially have changed. You may then
-   * call `getState()` to read the current state tree inside the callback.
-   *
-   * You may call `dispatch()` from a change listener, with the following
-   * caveats:
-   *
-   * 1. The subscriptions are snapshotted just before every `dispatch()` call.
-   * If you subscribe or unsubscribe while the listeners are being invoked, this
-   * will not have any effect on the `dispatch()` that is currently in progress.
-   * However, the next `dispatch()` call, whether nested or not, will use a more
-   * recent snapshot of the subscription list.
-   *
-   * 2. The listener should not expect to see all state changes, as the state
-   * might have been updated multiple times during a nested `dispatch()` before
-   * the listener is called. It is, however, guaranteed that all subscribers
-   * registered before the `dispatch()` started will be called with the latest
-   * state by the time it exits.
-   *
-   * @param {Function} listener A callback to be invoked on every dispatch.
-   * @returns {Function} A function to remove this change listener.
-   */
-
-
-  function subscribe(listener) {
-    if (typeof listener !== 'function') {
-      throw new Error('Expected the listener to be a function.');
-    }
-
-    if (isDispatching) {
-      throw new Error('You may not call store.subscribe() while the reducer is executing. ' + 'If you would like to be notified after the store has been updated, subscribe from a ' + 'component and invoke store.getState() in the callback to access the latest state. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
-    }
-
-    var isSubscribed = true;
-    ensureCanMutateNextListeners();
-    nextListeners.push(listener);
-    return function unsubscribe() {
-      if (!isSubscribed) {
-        return;
-      }
-
-      if (isDispatching) {
-        throw new Error('You may not unsubscribe from a store listener while the reducer is executing. ' + 'See https://redux.js.org/api-reference/store#subscribelistener for more details.');
-      }
-
-      isSubscribed = false;
-      ensureCanMutateNextListeners();
-      var index = nextListeners.indexOf(listener);
-      nextListeners.splice(index, 1);
-      currentListeners = null;
-    };
-  }
-  /**
-   * Dispatches an action. It is the only way to trigger a state change.
-   *
-   * The `reducer` function, used to create the store, will be called with the
-   * current state tree and the given `action`. Its return value will
-   * be considered the **next** state of the tree, and the change listeners
-   * will be notified.
-   *
-   * The base implementation only supports plain object actions. If you want to
-   * dispatch a Promise, an Observable, a thunk, or something else, you need to
-   * wrap your store creating function into the corresponding middleware. For
-   * example, see the documentation for the `redux-thunk` package. Even the
-   * middleware will eventually dispatch plain object actions using this method.
-   *
-   * @param {Object} action A plain object representing “what changed”. It is
-   * a good idea to keep actions serializable so you can record and replay user
-   * sessions, or use the time travelling `redux-devtools`. An action must have
-   * a `type` property which may not be `undefined`. It is a good idea to use
-   * string constants for action types.
-   *
-   * @returns {Object} For convenience, the same action object you dispatched.
-   *
-   * Note that, if you use a custom middleware, it may wrap `dispatch()` to
-   * return something else (for example, a Promise you can await).
-   */
-
-
-  function dispatch(action) {
-    if (!isPlainObject$1(action)) {
-      throw new Error('Actions must be plain objects. ' + 'Use custom middleware for async actions.');
-    }
-
-    if (typeof action.type === 'undefined') {
-      throw new Error('Actions may not have an undefined "type" property. ' + 'Have you misspelled a constant?');
-    }
-
-    if (isDispatching) {
-      throw new Error('Reducers may not dispatch actions.');
-    }
-
-    try {
-      isDispatching = true;
-      currentState = currentReducer(currentState, action);
-    } finally {
-      isDispatching = false;
-    }
-
-    var listeners = currentListeners = nextListeners;
-
-    for (var i = 0; i < listeners.length; i++) {
-      var listener = listeners[i];
-      listener();
-    }
-
-    return action;
-  }
-  /**
-   * Replaces the reducer currently used by the store to calculate the state.
-   *
-   * You might need this if your app implements code splitting and you want to
-   * load some of the reducers dynamically. You might also need this if you
-   * implement a hot reloading mechanism for Redux.
-   *
-   * @param {Function} nextReducer The reducer for the store to use instead.
-   * @returns {void}
-   */
-
-
-  function replaceReducer(nextReducer) {
-    if (typeof nextReducer !== 'function') {
-      throw new Error('Expected the nextReducer to be a function.');
-    }
-
-    currentReducer = nextReducer; // This action has a similiar effect to ActionTypes.INIT.
-    // Any reducers that existed in both the new and old rootReducer
-    // will receive the previous state. This effectively populates
-    // the new state tree with any relevant data from the old one.
-
-    dispatch({
-      type: ActionTypes$1.REPLACE
-    });
-  }
-  /**
-   * Interoperability point for observable/reactive libraries.
-   * @returns {observable} A minimal observable of state changes.
-   * For more information, see the observable proposal:
-   * https://github.com/tc39/proposal-observable
-   */
-
-
-  function observable() {
-    var _ref;
-
-    var outerSubscribe = subscribe;
-    return _ref = {
-      /**
-       * The minimal observable subscription method.
-       * @param {Object} observer Any object that can be used as an observer.
-       * The observer object should have a `next` method.
-       * @returns {subscription} An object with an `unsubscribe` method that can
-       * be used to unsubscribe the observable from the store, and prevent further
-       * emission of values from the observable.
-       */
-      subscribe: function subscribe(observer) {
-        if (typeof observer !== 'object' || observer === null) {
-          throw new TypeError('Expected the observer to be an object.');
-        }
-
-        function observeState() {
-          if (observer.next) {
-            observer.next(getState());
-          }
-        }
-
-        observeState();
-        var unsubscribe = outerSubscribe(observeState);
-        return {
-          unsubscribe: unsubscribe
-        };
-      }
-    }, _ref[result] = function () {
-      return this;
-    }, _ref;
-  } // When a store is created, an "INIT" action is dispatched so that every
-  // reducer returns their initial state. This effectively populates
-  // the initial state tree.
-
-
-  dispatch({
-    type: ActionTypes$1.INIT
-  });
-  return _ref2 = {
-    dispatch: dispatch,
-    subscribe: subscribe,
-    getState: getState,
-    replaceReducer: replaceReducer
-  }, _ref2[result] = observable, _ref2;
-}
-/**
- * Prints a warning in the console if it exists.
- *
- * @param {String} message The warning message.
- * @returns {void}
- */
-
-
-function warning(message) {
-  /* eslint-disable no-console */
-  if (typeof console !== 'undefined' && typeof console.error === 'function') {
-    console.error(message);
-  }
-  /* eslint-enable no-console */
-
-
-  try {
-    // This error was thrown as a convenience so that if you enable
-    // "break on all exceptions" in your console,
-    // it would pause the execution at this line.
-    throw new Error(message);
-  } catch (e) {} // eslint-disable-line no-empty
-
-}
-
-function _defineProperty$1(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
-
-  if (Object.getOwnPropertySymbols) {
-    keys.push.apply(keys, Object.getOwnPropertySymbols(object));
-  }
-
-  if (enumerableOnly) keys = keys.filter(function (sym) {
-    return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-  });
-  return keys;
-}
-
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-
-    if (i % 2) {
-      ownKeys(source, true).forEach(function (key) {
-        _defineProperty$1(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(source).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
-    }
-  }
-
-  return target;
-}
-/**
- * Composes single-argument functions from right to left. The rightmost
- * function can take multiple arguments as it provides the signature for
- * the resulting composite function.
- *
- * @param {...Function} funcs The functions to compose.
- * @returns {Function} A function obtained by composing the argument functions
- * from right to left. For example, compose(f, g, h) is identical to doing
- * (...args) => f(g(h(...args))).
- */
-
-
-function compose() {
-  for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
-    funcs[_key] = arguments[_key];
-  }
-
-  if (funcs.length === 0) {
-    return function (arg) {
-      return arg;
-    };
-  }
-
-  if (funcs.length === 1) {
-    return funcs[0];
-  }
-
-  return funcs.reduce(function (a, b) {
-    return function () {
-      return a(b.apply(void 0, arguments));
-    };
-  });
-}
-/**
- * Creates a store enhancer that applies middleware to the dispatch method
- * of the Redux store. This is handy for a variety of tasks, such as expressing
- * asynchronous actions in a concise manner, or logging every action payload.
- *
- * See `redux-thunk` package as an example of the Redux middleware.
- *
- * Because middleware is potentially asynchronous, this should be the first
- * store enhancer in the composition chain.
- *
- * Note that each middleware will be given the `dispatch` and `getState` functions
- * as named arguments.
- *
- * @param {...Function} middlewares The middleware chain to be applied.
- * @returns {Function} A store enhancer applying the middleware.
- */
-
-
-function applyMiddleware() {
-  for (var _len = arguments.length, middlewares = new Array(_len), _key = 0; _key < _len; _key++) {
-    middlewares[_key] = arguments[_key];
-  }
-
-  return function (createStore) {
-    return function () {
-      var store = createStore.apply(void 0, arguments);
-
-      var _dispatch = function dispatch() {
-        throw new Error('Dispatching while constructing your middleware is not allowed. ' + 'Other middleware would not be applied to this dispatch.');
-      };
-
-      var middlewareAPI = {
-        getState: store.getState,
-        dispatch: function dispatch() {
-          return _dispatch.apply(void 0, arguments);
-        }
-      };
-      var chain = middlewares.map(function (middleware) {
-        return middleware(middlewareAPI);
-      });
-      _dispatch = compose.apply(void 0, chain)(store.dispatch);
-      return _objectSpread2({}, store, {
-        dispatch: _dispatch
-      });
-    };
-  };
-}
-/*
- * This is a dummy function to check if the function name has been altered by minification.
- * If the function has been minified and NODE_ENV !== 'production', warn the user.
- */
-
-
-function isCrushed() {}
-
-if (process.env.NODE_ENV !== 'production' && typeof isCrushed.name === 'string' && isCrushed.name !== 'isCrushed') {
-  warning('You are currently using minified code outside of NODE_ENV === "production". ' + 'This means that you are running a slower development build of Redux. ' + 'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' + 'or setting mode to production in webpack (https://webpack.js.org/concepts/mode/) ' + 'to ensure you have the correct code for your production build.');
-}
-
 function _arrayWithHoles(arr) {
   if (Array.isArray(arr)) return arr;
 }
 
 function _iterableToArray(iter) {
-  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
 }
 
 function _arrayLikeToArray(arr, len) {
@@ -1460,9 +968,39 @@ function _optionalCallableProperty(obj, name) {
   return value;
 }
 
+var exportModule$1 = function exportModule(moduleName, ModuleHandles, views) {
+  var model = function model(store) {
+    if (!store.injectedModules[moduleName]) {
+      var moduleHandles = new ModuleHandles();
+      store.injectedModules[moduleName] = moduleHandles;
+      moduleHandles.moduleName = moduleName;
+      moduleHandles.store = store;
+      moduleHandles.actions = MetaData$1.facadeMap[moduleName].actions;
+      injectActions(moduleName, moduleHandles);
+      var _initState = moduleHandles.initState;
+      var preModuleState = store.getState(moduleName);
+
+      if (preModuleState) {
+        return store.dispatch(moduleReInitAction(moduleName, _initState));
+      }
+
+      return store.dispatch(moduleInitAction(moduleName, _initState));
+    }
+
+    return undefined;
+  };
+
+  return {
+    moduleName: moduleName,
+    model: model,
+    views: views,
+    initState: undefined,
+    actions: undefined
+  };
+};
 function cacheModule(module) {
   var moduleName = module.default.moduleName;
-  var moduleGetter = MetaData.moduleGetter;
+  var moduleGetter = MetaData$1.moduleGetter;
   var fn = moduleGetter[moduleName];
 
   if (fn.__module__ === module) {
@@ -1477,51 +1015,50 @@ function cacheModule(module) {
   moduleGetter[moduleName] = fn;
   return fn;
 }
+function getModuleByName(moduleName) {
+  var result = MetaData$1.moduleGetter[moduleName]();
 
-function bindThis(fun, thisObj) {
-  var newFun = fun.bind(thisObj);
-  Object.keys(fun).forEach(function (key) {
-    newFun[key] = fun[key];
-  });
-  return newFun;
-}
-
-function transformAction(actionName, action, listenerModule, actionHandlerMap) {
-  if (!actionHandlerMap[actionName]) {
-    actionHandlerMap[actionName] = {};
+  if (isPromise(result)) {
+    return result.then(function (module) {
+      cacheModule(module);
+      return module;
+    });
   }
 
-  if (actionHandlerMap[actionName][listenerModule]) {
-    throw new Error("Action duplicate or conflict : " + actionName + ".");
-  }
-
-  actionHandlerMap[actionName][listenerModule] = action;
+  cacheModule(result);
+  return result;
 }
+function getView(moduleName, viewName) {
+  var callback = function callback(module) {
+    var view = module.default.views[viewName];
 
-function injectActions(store, moduleName, handlers) {
-  for (var actionNames in handlers) {
-    if (typeof handlers[actionNames] === 'function') {
-      (function () {
-        var handler = handlers[actionNames];
-
-        if (handler.__isReducer__ || handler.__isEffect__) {
-          handler = bindThis(handler, handlers);
-          actionNames.split(config.MSP).forEach(function (actionName) {
-            actionName = actionName.trim().replace(new RegExp("^this[" + config.NSP + "]"), "" + moduleName + config.NSP);
-            var arr = actionName.split(config.NSP);
-
-            if (arr[1]) {
-              handler.__isHandler__ = true;
-              transformAction(actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            } else {
-              handler.__isHandler__ = false;
-              transformAction(moduleName + config.NSP + actionName, handler, moduleName, handler.__isEffect__ ? store._medux_.effectMap : store._medux_.reducerMap);
-            }
-          });
-        }
-      })();
+    if (env.isServer) {
+      return view;
     }
+
+    module.default.model(MetaData$1.clientStore);
+    return view;
+  };
+
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(callback);
   }
+
+  return callback(moduleOrPromise);
+}
+
+function _loadModel(moduleName, controller) {
+  var moduleOrPromise = getModuleByName(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(function (module) {
+      return module.default.model(controller);
+    });
+  }
+
+  return moduleOrPromise.default.model(controller);
 }
 var CoreModuleHandlers = _decorate(null, function (_initialize) {
   var CoreModuleHandlers = function CoreModuleHandlers(initState) {
@@ -1550,31 +1087,31 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "get",
       key: "state",
       value: function state() {
-        return this.store._medux_.realtimeState[this.moduleName];
+        return this.store.getState(this.moduleName);
       }
     }, {
       kind: "get",
       key: "rootState",
       value: function rootState() {
-        return this.store._medux_.realtimeState;
+        return this.store.getState();
       }
     }, {
       kind: "method",
       key: "getCurrentActionName",
       value: function getCurrentActionName() {
-        return MetaData.currentData.actionName;
+        return this.store.getCurrentActionName();
       }
     }, {
       kind: "get",
-      key: "prevRootState",
-      value: function prevRootState() {
-        return MetaData.currentData.prevState;
+      key: "currentRootState",
+      value: function currentRootState() {
+        return this.store.getCurrentState();
       }
     }, {
       kind: "get",
-      key: "prevState",
-      value: function prevState() {
-        return MetaData.currentData.prevState[this.moduleName];
+      key: "currentState",
+      value: function currentState() {
+        return this.store.getCurrentState(this.moduleName);
       }
     }, {
       kind: "method",
@@ -1615,90 +1152,107 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-var exportModule = function exportModule(moduleName, ModuleHandles, views) {
-  var model = function model(store) {
-    var hasInjected = store._medux_.injectedModules[moduleName];
 
-    if (!hasInjected) {
-      store._medux_.injectedModules[moduleName] = true;
-      var moduleHandles = new ModuleHandles();
-      moduleHandles.moduleName = moduleName;
-      moduleHandles.store = store;
-      moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
-      var _initState = moduleHandles.initState;
-      injectActions(store, moduleName, moduleHandles);
-      var preModuleState = store.getState()[moduleName] || {};
-
-      var moduleState = _extends({}, _initState, preModuleState);
-
-      if (moduleState.initialized) {
-        return store.dispatch(moduleReInitAction(moduleName, moduleState));
-      }
-
-      moduleState.initialized = true;
-      return store.dispatch(moduleInitAction(moduleName, moduleState));
+function clearHandlers(moduleName, actionHandlerMap) {
+  for (var _actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(_actionName)) {
+      var maps = actionHandlerMap[_actionName];
+      delete maps[moduleName];
     }
-
-    return undefined;
-  };
-
-  return {
-    moduleName: moduleName,
-    model: model,
-    views: views,
-    initState: undefined,
-    actions: undefined
-  };
-};
-function getModuleByName(moduleName) {
-  var result = MetaData.moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
-      return module;
-    });
   }
-
-  cacheModule(result);
-  return result;
 }
-function getView(moduleName, viewName) {
-  var callback = function callback(module) {
-    var view = module.default.views[viewName];
 
-    if (env.isServer) {
-      return view;
+function modelHotReplacement(moduleName, ModuleHandles) {
+  var store = MetaData$1.clientStore;
+
+  if (store.injectedModules[moduleName]) {
+    clearHandlers(moduleName, MetaData$1.reducersMap);
+    clearHandlers(moduleName, MetaData$1.effectsMap);
+    var moduleHandles = new ModuleHandles();
+    store.injectedModules[moduleName] = moduleHandles;
+    moduleHandles.moduleName = moduleName;
+    moduleHandles.store = store;
+    moduleHandles.actions = MetaData$1.facadeMap[moduleName].actions;
+    injectActions(moduleName, moduleHandles);
+    env.console.log("[HMR] @medux Updated model: " + moduleName);
+  }
+}
+function getRootModuleAPI(data) {
+  if (!MetaData$1.facadeMap) {
+    if (data) {
+      MetaData$1.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
+        var arr = data[moduleName];
+        var actions = {};
+        var actionNames = {};
+        arr.forEach(function (actionName) {
+          actions[actionName] = function () {
+            for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
+              payload[_key] = arguments[_key];
+            }
+
+            return {
+              type: moduleName + config.NSP + actionName,
+              payload: payload
+            };
+          };
+
+          actionNames[actionName] = moduleName + config.NSP + actionName;
+        });
+        var moduleFacade = {
+          name: moduleName,
+          actions: actions,
+          actionNames: actionNames
+        };
+        prev[moduleName] = moduleFacade;
+        return prev;
+      }, {});
+    } else {
+      var cacheData = {};
+      MetaData$1.facadeMap = new Proxy({}, {
+        set: function set(target, moduleName, val, receiver) {
+          return Reflect.set(target, moduleName, val, receiver);
+        },
+        get: function get(target, moduleName, receiver) {
+          var val = Reflect.get(target, moduleName, receiver);
+
+          if (val !== undefined) {
+            return val;
+          }
+
+          if (!cacheData[moduleName]) {
+            cacheData[moduleName] = {
+              name: moduleName,
+              actionNames: new Proxy({}, {
+                get: function get(__, actionName) {
+                  return moduleName + config.NSP + actionName;
+                }
+              }),
+              actions: new Proxy({}, {
+                get: function get(__, actionName) {
+                  return function () {
+                    for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                      payload[_key2] = arguments[_key2];
+                    }
+
+                    return {
+                      type: moduleName + config.NSP + actionName,
+                      payload: payload
+                    };
+                  };
+                }
+              })
+            };
+          }
+
+          return cacheData[moduleName];
+        }
+      });
     }
-
-    module.default.model(MetaData.clientStore);
-    return view;
-  };
-
-  var moduleOrPromise = getModuleByName(moduleName);
-
-  if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then(callback);
   }
 
-  return callback(moduleOrPromise);
+  return MetaData$1.facadeMap;
 }
 
-function _loadModel(moduleName, store) {
-  var moduleOrPromise = getModuleByName(moduleName);
-
-  if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then(function (module) {
-      return module.default.model(store);
-    });
-  }
-
-  return moduleOrPromise.default.model(store);
-}
-
-function getActionData(action) {
-  return Array.isArray(action.payload) ? action.payload : [];
-}
 function isProcessedError(error) {
   return error && !!error.__meduxProcessed__;
 }
@@ -1716,229 +1270,93 @@ function setProcessedError(error, meduxProcessed) {
   });
   return error;
 }
-function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhancers) {
-  if (preloadedState === void 0) {
-    preloadedState = {};
+function getActionData(action) {
+  return Array.isArray(action.payload) ? action.payload : [];
+}
+
+function compose() {
+  for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
+    funcs[_key] = arguments[_key];
   }
 
-  if (storeReducers === void 0) {
-    storeReducers = {};
-  }
-
-  if (storeMiddlewares === void 0) {
-    storeMiddlewares = [];
-  }
-
-  if (storeEnhancers === void 0) {
-    storeEnhancers = [];
-  }
-
-  if (MetaData.clientStore) {
-    MetaData.clientStore.destroy();
-  }
-
-  var store;
-
-  var combineReducers = function combineReducers(state, action) {
-    if (!store) {
-      return state;
-    }
-
-    var meta = store._medux_;
-    var currentState = meta.currentState;
-    var realtimeState = meta.realtimeState;
-    Object.keys(storeReducers).forEach(function (moduleName) {
-      var node = storeReducers[moduleName](state[moduleName], action);
-
-      if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-        warn('Use rewrite instead of replace to update state in MutableData');
-      }
-
-      realtimeState[moduleName] = node;
-    });
-    var handlersCommon = meta.reducerMap[action.type] || {};
-    var handlersEvery = meta.reducerMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-
-    var handlers = _extends({}, handlersCommon, handlersEvery);
-
-    var handlerModules = Object.keys(handlers);
-
-    if (handlerModules.length > 0) {
-      var orderList = [];
-      var priority = action.priority ? [].concat(action.priority) : [];
-      var actionData = getActionData(action);
-      handlerModules.forEach(function (moduleName) {
-        var fun = handlers[moduleName];
-
-        if (moduleName === MetaData.appModuleName) {
-          orderList.unshift(moduleName);
-        } else {
-          orderList.push(moduleName);
-        }
-
-        if (!fun.__isHandler__) {
-          priority.unshift(moduleName);
-        }
-      });
-      orderList.unshift.apply(orderList, priority);
-      var moduleNameMap = {};
-      orderList.forEach(function (moduleName) {
-        if (!moduleNameMap[moduleName]) {
-          moduleNameMap[moduleName] = true;
-          var fun = handlers[moduleName];
-          MetaData.currentData = {
-            actionName: action.type,
-            prevState: currentState
-          };
-          var node = fun.apply(void 0, actionData);
-
-          if (config.MutableData && realtimeState[moduleName] && realtimeState[moduleName] !== node) {
-            warn('Use rewrite instead of replace to update state in MutableData');
-          }
-
-          realtimeState[moduleName] = node;
-        }
-      });
-    }
-
-    return realtimeState;
-  };
-
-  var middleware = function middleware(_ref) {
-    var dispatch = _ref.dispatch;
-    return function (next) {
-      return function (originalAction) {
-        if (originalAction.type === ActionTypes.Error) {
-          var actionData = getActionData(originalAction);
-
-          if (isProcessedError(actionData[0])) {
-            return originalAction;
-          }
-
-          actionData[0] = setProcessedError(actionData[0], true);
-        }
-
-        if (env.isServer) {
-          if (originalAction.type.split(config.NSP)[1] === ActionTypes.MLoading) {
-            return originalAction;
-          }
-        }
-
-        var meta = store._medux_;
-        var rootState = store.getState();
-        meta.realtimeState = mergeState(rootState);
-        meta.currentState = snapshotState(rootState);
-        var currentState = meta.currentState;
-        var action = next(originalAction);
-        var handlersCommon = meta.effectMap[action.type] || {};
-        var handlersEvery = meta.effectMap[action.type.replace(new RegExp("[^" + config.NSP + "]+"), '*')] || {};
-
-        var handlers = _extends({}, handlersCommon, handlersEvery);
-
-        var handlerModules = Object.keys(handlers);
-
-        if (handlerModules.length > 0) {
-          var _actionData = getActionData(action);
-
-          var orderList = [];
-          var priority = action.priority ? [].concat(action.priority) : [];
-          handlerModules.forEach(function (moduleName) {
-            var fun = handlers[moduleName];
-
-            if (moduleName === MetaData.appModuleName) {
-              orderList.unshift(moduleName);
-            } else {
-              orderList.push(moduleName);
-            }
-
-            if (!fun.__isHandler__) {
-              priority.unshift(moduleName);
-            }
-          });
-          orderList.unshift.apply(orderList, priority);
-          var moduleNameMap = {};
-          var promiseResults = [];
-          orderList.forEach(function (moduleName) {
-            if (!moduleNameMap[moduleName]) {
-              moduleNameMap[moduleName] = true;
-              var fun = handlers[moduleName];
-              MetaData.currentData = {
-                actionName: action.type,
-                prevState: currentState
-              };
-              var effectResult = fun.apply(void 0, _actionData);
-              var decorators = fun.__decorators__;
-
-              if (decorators) {
-                var results = [];
-                decorators.forEach(function (decorator, index) {
-                  results[index] = decorator[0](action, moduleName, effectResult);
-                });
-                fun.__decoratorResults__ = results;
-              }
-
-              var errorHandler = effectResult.then(function (reslove) {
-                if (decorators) {
-                  var _results = fun.__decoratorResults__ || [];
-
-                  decorators.forEach(function (decorator, index) {
-                    if (decorator[1]) {
-                      decorator[1]('Resolved', _results[index], reslove);
-                    }
-                  });
-                  fun.__decoratorResults__ = undefined;
-                }
-
-                return reslove;
-              }, function (reason) {
-                if (decorators) {
-                  var _results2 = fun.__decoratorResults__ || [];
-
-                  decorators.forEach(function (decorator, index) {
-                    if (decorator[1]) {
-                      decorator[1]('Rejected', _results2[index], reason);
-                    }
-                  });
-                  fun.__decoratorResults__ = undefined;
-                }
-
-                if (isProcessedError(reason)) {
-                  throw reason;
-                } else {
-                  reason = setProcessedError(reason, false);
-                  return dispatch(errorAction(reason));
-                }
-              });
-              promiseResults.push(errorHandler);
-            }
-          });
-
-          if (promiseResults.length) {
-            return Promise.all(promiseResults);
-          }
-        }
-
-        return action;
-      };
+  if (funcs.length === 0) {
+    return function (arg) {
+      return arg;
     };
+  }
+
+  if (funcs.length === 1) {
+    return funcs[0];
+  }
+
+  return funcs.reduce(function (a, b) {
+    return function () {
+      return a(b.apply(void 0, arguments));
+    };
+  });
+}
+
+function enhanceStore(baseStore, middlewares) {
+  var store = baseStore;
+  var _getState = baseStore.getState;
+
+  var getState = function getState(moduleName) {
+    var state = _getState();
+
+    return moduleName ? state[moduleName] : state;
   };
 
-  var preLoadMiddleware = function preLoadMiddleware() {
+  store.getState = getState;
+  var injectedModules = {};
+  store.injectedModules = injectedModules;
+  var currentData = {
+    actionName: '',
+    prevState: {}
+  };
+  var update = baseStore.update;
+
+  store.getCurrentActionName = function () {
+    return currentData.actionName;
+  };
+
+  store.getCurrentState = function (moduleName) {
+    var state = currentData.prevState;
+    return moduleName ? state[moduleName] : state;
+  };
+
+  var _dispatch2 = function dispatch(action) {
+    throw new Error('Dispatching while constructing your middleware is not allowed. ');
+  };
+
+  var middlewareAPI = {
+    getState: getState,
+    dispatch: function dispatch(action) {
+      return _dispatch2(action);
+    }
+  };
+
+  var preMiddleware = function preMiddleware() {
     return function (next) {
       return function (action) {
+        if (action.type === ActionTypes.Error) {
+          var error = getActionData(action)[0];
+          setProcessedError(error, true);
+        }
+
         var _action$type$split = action.type.split(config.NSP),
             moduleName = _action$type$split[0],
             actionName = _action$type$split[1];
 
-        if (moduleName && actionName && MetaData.moduleGetter[moduleName]) {
-          var hasInjected = store._medux_.injectedModules[moduleName];
+        if (env.isServer && actionName === ActionTypes.MLoading) {
+          return undefined;
+        }
 
-          if (!hasInjected) {
-            var moduleOrPromise = getModuleByName(moduleName);
+        if (moduleName && actionName && MetaData$1.moduleGetter[moduleName]) {
+          if (!injectedModules[moduleName]) {
+            var result = _loadModel(moduleName, store);
 
-            if (isPromise(moduleOrPromise)) {
-              return moduleOrPromise.then(function (module) {
-                module.default.model(store);
+            if (isPromise(result)) {
+              return result.then(function () {
                 return next(action);
               });
             }
@@ -1950,63 +1368,146 @@ function buildStore(preloadedState, storeReducers, storeMiddlewares, storeEnhanc
     };
   };
 
-  var middlewareEnhancer = applyMiddleware.apply(void 0, [preLoadMiddleware].concat(storeMiddlewares, [middleware]));
+  function applyEffect(moduleName, handler, modelInstance, action, actionData) {
+    var effectResult = handler.apply(modelInstance, actionData);
+    var decorators = handler.__decorators__;
 
-  var enhancer = function enhancer(newCreateStore) {
-    return function () {
-      var newStore = newCreateStore.apply(void 0, arguments);
-      var moduleStore = newStore;
-      moduleStore._medux_ = {
-        realtimeState: {},
-        currentState: {},
-        reducerMap: {},
-        effectMap: {},
-        injectedModules: {}
-      };
-      return newStore;
-    };
-  };
+    if (decorators) {
+      var results = [];
+      decorators.forEach(function (decorator, index) {
+        results[index] = decorator[0](action, moduleName, effectResult);
+      });
+      handler.__decoratorResults__ = results;
+    }
 
-  var enhancers = [middlewareEnhancer, enhancer].concat(storeEnhancers);
+    return effectResult.then(function (reslove) {
+      if (decorators) {
+        var _results = handler.__decoratorResults__ || [];
 
-  if (config.DEVTOOLS && env.__REDUX_DEVTOOLS_EXTENSION__) {
-    enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
+        decorators.forEach(function (decorator, index) {
+          if (decorator[1]) {
+            decorator[1]('Resolved', _results[index], reslove);
+          }
+        });
+        handler.__decoratorResults__ = undefined;
+      }
+
+      return reslove;
+    }, function (error) {
+      if (decorators) {
+        var _results2 = handler.__decoratorResults__ || [];
+
+        decorators.forEach(function (decorator, index) {
+          if (decorator[1]) {
+            decorator[1]('Rejected', _results2[index], error);
+          }
+        });
+        handler.__decoratorResults__ = undefined;
+      }
+
+      if (isProcessedError(error)) {
+        throw error;
+      } else {
+        return _dispatch2(errorAction(setProcessedError(error, false)));
+      }
+    });
   }
 
-  store = createStore(combineReducers, preloadedState, compose.apply(void 0, enhancers));
+  function respondHandler(action, isReducer, prevData) {
+    var handlersMap = isReducer ? MetaData$1.reducersMap : MetaData$1.effectsMap;
+    var actionName = action.type;
 
-  store.destroy = function () {
+    var _actionName$split = actionName.split(config.NSP),
+        actionModuleName = _actionName$split[0];
+
+    var commonHandlers = handlersMap[action.type];
+    var universalActionType = actionName.replace(new RegExp("[^" + config.NSP + "]+"), '*');
+    var universalHandlers = handlersMap[universalActionType];
+
+    var handlers = _extends({}, commonHandlers, universalHandlers);
+
+    var handlerModuleNames = Object.keys(handlers);
+
+    if (handlerModuleNames.length > 0) {
+      var orderList = [];
+      handlerModuleNames.forEach(function (moduleName) {
+        if (moduleName === MetaData$1.appModuleName) {
+          orderList.unshift(moduleName);
+        } else if (moduleName === actionModuleName) {
+          orderList.unshift(moduleName);
+        } else {
+          orderList.push(moduleName);
+        }
+      });
+
+      if (action.priority) {
+        orderList.unshift.apply(orderList, action.priority);
+      }
+
+      var implemented = {};
+      var actionData = getActionData(action);
+
+      if (isReducer) {
+        Object.assign(currentData, prevData);
+        var newState = {};
+        orderList.forEach(function (moduleName) {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            var handler = handlers[moduleName];
+            var modelInstance = injectedModules[moduleName];
+            newState[moduleName] = handler.apply(modelInstance, actionData);
+          }
+        });
+        update(actionName, newState, actionData);
+      } else {
+        var result = [];
+        orderList.forEach(function (moduleName) {
+          if (!implemented[moduleName]) {
+            implemented[moduleName] = true;
+            var handler = handlers[moduleName];
+            var modelInstance = injectedModules[moduleName];
+            Object.assign(currentData, prevData);
+            result.push(applyEffect(moduleName, handler, modelInstance, action, actionData));
+          }
+        });
+        return result.length === 1 ? result[0] : Promise.all(result);
+      }
+    }
+
     return undefined;
-  };
-
-  if (!env.isServer) {
-    MetaData.clientStore = store;
   }
 
+  function _dispatch(action) {
+    var prevData = {
+      actionName: action.type,
+      prevState: getState()
+    };
+    respondHandler(action, true, prevData);
+    return respondHandler(action, false, prevData);
+  }
+
+  var arr = middlewares ? [preMiddleware].concat(middlewares) : [preMiddleware];
+  var chain = arr.map(function (middleware) {
+    return middleware(middlewareAPI);
+  });
+  _dispatch2 = compose.apply(void 0, chain)(_dispatch);
+  store.dispatch = _dispatch2;
   return store;
 }
 
-function createCommonjsModule(fn, basedir, module) {
-	return module = {
-		path: basedir,
-		exports: {},
-		require: function (path, base) {
-			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
-		}
-	}, fn(module, module.exports), module.exports;
+function createCommonjsModule(fn) {
+  var module = { exports: {} };
+	return fn(module, module.exports), module.exports;
 }
 
-function commonjsRequire () {
-	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
-}
-
-var runtime_1 = createCommonjsModule(function (module) {
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+var runtime_1 = createCommonjsModule(function (module) {
 var runtime = function (exports) {
 
   var Op = Object.prototype;
@@ -2706,7 +2207,7 @@ var runtime = function (exports) {
 // as the regeneratorRuntime namespace. Otherwise create a new empty
 // object. Either way, the resulting object will be used to initialize
 // the regeneratorRuntime variable at the top of this file.
- module.exports );
+module.exports );
 
 try {
   regeneratorRuntime = runtime;
@@ -2762,107 +2263,6 @@ function _asyncToGenerator(fn) {
   };
 }
 
-function getRootModuleAPI(data) {
-  if (!MetaData.facadeMap) {
-    if (data) {
-      MetaData.facadeMap = Object.keys(data).reduce(function (prev, moduleName) {
-        var arr = data[moduleName];
-        var actions = {};
-        var actionNames = {};
-        arr.forEach(function (actionName) {
-          actions[actionName] = function () {
-            for (var _len = arguments.length, payload = new Array(_len), _key = 0; _key < _len; _key++) {
-              payload[_key] = arguments[_key];
-            }
-
-            return {
-              type: moduleName + config.NSP + actionName,
-              payload: payload
-            };
-          };
-
-          actionNames[actionName] = moduleName + config.NSP + actionName;
-        });
-        var moduleFacade = {
-          name: moduleName,
-          actions: actions,
-          actionNames: actionNames
-        };
-        prev[moduleName] = moduleFacade;
-        return prev;
-      }, {});
-    } else {
-      var cacheData = {};
-      MetaData.facadeMap = new Proxy({}, {
-        set: function set(target, moduleName, val, receiver) {
-          return Reflect.set(target, moduleName, val, receiver);
-        },
-        get: function get(target, moduleName, receiver) {
-          var val = Reflect.get(target, moduleName, receiver);
-
-          if (val !== undefined) {
-            return val;
-          }
-
-          if (!cacheData[moduleName]) {
-            cacheData[moduleName] = {
-              name: moduleName,
-              actionNames: new Proxy({}, {
-                get: function get(__, actionName) {
-                  return moduleName + config.NSP + actionName;
-                }
-              }),
-              actions: new Proxy({}, {
-                get: function get(__, actionName) {
-                  return function () {
-                    for (var _len2 = arguments.length, payload = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                      payload[_key2] = arguments[_key2];
-                    }
-
-                    return {
-                      type: moduleName + config.NSP + actionName,
-                      payload: payload
-                    };
-                  };
-                }
-              })
-            };
-          }
-
-          return cacheData[moduleName];
-        }
-      });
-    }
-  }
-
-  return MetaData.facadeMap;
-}
-
-function clearHandlers(key, actionHandlerMap) {
-  for (var _actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(_actionName)) {
-      var maps = actionHandlerMap[_actionName];
-      delete maps[key];
-    }
-  }
-}
-
-function modelHotReplacement(moduleName, ActionHandles) {
-  var store = MetaData.clientStore;
-  var prevInitState = store._medux_.injectedModules[moduleName];
-
-  if (prevInitState) {
-    clearHandlers(moduleName, store._medux_.reducerMap);
-    clearHandlers(moduleName, store._medux_.effectMap);
-    var handlers = new ActionHandles();
-    handlers.moduleName = moduleName;
-    handlers.store = store;
-    handlers.actions = MetaData.facadeMap[moduleName].actions;
-    injectActions(store, moduleName, handlers);
-    env.console.log("[HMR] @medux Updated model: " + moduleName);
-  }
-}
-
 var reRender = function reRender() {
   return undefined;
 };
@@ -2870,12 +2270,12 @@ var reRender = function reRender() {
 var reRenderTimer = 0;
 var appView = null;
 function viewHotReplacement(moduleName, views) {
-  var module = MetaData.moduleGetter[moduleName]();
+  var module = MetaData$1.moduleGetter[moduleName]();
 
   if (module) {
     module.default.views = views;
     env.console.warn("[HMR] @medux Updated views: " + moduleName);
-    appView = MetaData.moduleGetter[MetaData.appModuleName]().default.views[MetaData.appViewName];
+    appView = MetaData$1.moduleGetter[MetaData$1.appModuleName]().default.views[MetaData$1.appViewName];
 
     if (!reRenderTimer) {
       reRenderTimer = env.setTimeout(function () {
@@ -2888,127 +2288,128 @@ function viewHotReplacement(moduleName, views) {
     throw 'views cannot apply update for HMR.';
   }
 }
-function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
-  return _renderApp.apply(this, arguments);
-}
-
-function _renderApp() {
-  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup, preModules) {
-    var appModuleName, store, appModule;
-    return regenerator.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            if (storeOptions === void 0) {
-              storeOptions = {};
-            }
-
-            if (reRenderTimer) {
-              env.clearTimeout.call(null, reRenderTimer);
-              reRenderTimer = 0;
-            }
-
-            appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
-            MetaData.appModuleName = appModuleName;
-            MetaData.appViewName = appViewName;
-            MetaData.moduleGetter = moduleGetter;
-
-            if (typeof appModuleOrName !== 'string') {
-              cacheModule(appModuleOrName);
-            }
-
-            store = buildStore(storeOptions.initData || {}, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            startup(store);
-            _context.next = 11;
-            return getModuleByName(appModuleName);
-
-          case 11:
-            appModule = _context.sent;
-            appModule.default.model(store);
-            preModules = preModules.filter(function (item) {
-              return moduleGetter[item] && item !== appModuleName;
-            });
-
-            if (!preModules.length) {
-              _context.next = 17;
-              break;
-            }
-
-            _context.next = 17;
-            return Promise.all(preModules.map(function (moduleName) {
-              return getModuleByName(moduleName);
-            }));
-
-          case 17:
-            reRender = render(store, appModule.default.views[appViewName]);
-            return _context.abrupt("return", store);
-
-          case 19:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, _callee);
-  }));
-  return _renderApp.apply(this, arguments);
-}
 
 var defFun = function defFun() {
   return undefined;
 };
 
-function renderSSR(_x8, _x9, _x10, _x11, _x12, _x13, _x14) {
-  return _renderSSR.apply(this, arguments);
+function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
+  if (appModuleName === void 0) {
+    appModuleName = 'app';
+  }
+
+  if (appViewName === void 0) {
+    appViewName = 'main';
+  }
+
+  MetaData$1.appModuleName = appModuleName;
+  MetaData$1.appViewName = appViewName;
+
+  if (!MetaData$1.moduleGetter) {
+    MetaData$1.moduleGetter = moduleGetter;
+  }
+
+  var store = enhanceStore(baseStore, middlewares);
+  preLoadModules = preLoadModules.filter(function (item) {
+    return moduleGetter[item] && item !== appModuleName;
+  });
+  return {
+    store: store,
+    beforeRender: function beforeRender() {
+      return _asyncToGenerator(regenerator.mark(function _callee() {
+        var appModule;
+        return regenerator.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                if (reRenderTimer) {
+                  env.clearTimeout(reRenderTimer);
+                  reRenderTimer = 0;
+                }
+
+                MetaData$1.clientStore = store;
+                _context.next = 4;
+                return _loadModel(appModuleName, store);
+
+              case 4:
+                _context.next = 6;
+                return Promise.all(preLoadModules.map(function (moduleName) {
+                  return _loadModel(moduleName, store);
+                }));
+
+              case 6:
+                appModule = getModuleByName(appModuleName);
+                return _context.abrupt("return", {
+                  appView: appModule.default.views[appViewName],
+                  setReRender: function setReRender(hotRender) {
+                    reRender = hotRender;
+                  }
+                });
+
+              case 8:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }))();
+    }
+  };
 }
+function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
+  if (appModuleName === void 0) {
+    appModuleName = 'app';
+  }
 
-function _renderSSR() {
-  _renderSSR = _asyncToGenerator(regenerator.mark(function _callee2(render, moduleGetter, appModuleOrName, appViewName, storeOptions, startup, preModules) {
-    var appModuleName, store, appModule;
-    return regenerator.wrap(function _callee2$(_context2) {
-      while (1) {
-        switch (_context2.prev = _context2.next) {
-          case 0:
-            if (storeOptions === void 0) {
-              storeOptions = {};
+  if (appViewName === void 0) {
+    appViewName = 'main';
+  }
+
+  MetaData$1.appModuleName = appModuleName;
+  MetaData$1.appViewName = appViewName;
+
+  if (!MetaData$1.moduleGetter) {
+    MetaData$1.moduleGetter = moduleGetter;
+  }
+
+  var store = enhanceStore(baseStore, middlewares);
+  preLoadModules = preLoadModules.filter(function (item) {
+    return moduleGetter[item] && item !== appModuleName;
+  });
+  return {
+    store: store,
+    beforeRender: function beforeRender() {
+      return _asyncToGenerator(regenerator.mark(function _callee2() {
+        var appModule;
+        return regenerator.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _context2.next = 2;
+                return _loadModel(appModuleName, store);
+
+              case 2:
+                _context2.next = 4;
+                return Promise.all(preLoadModules.map(function (moduleName) {
+                  return _loadModel(moduleName, store);
+                }));
+
+              case 4:
+                appModule = getModuleByName(appModuleName);
+                store.dispatch = defFun;
+                return _context2.abrupt("return", {
+                  appView: appModule.default.views[appViewName]
+                });
+
+              case 7:
+              case "end":
+                return _context2.stop();
             }
-
-            appModuleName = typeof appModuleOrName === 'string' ? appModuleOrName : appModuleOrName.default.moduleName;
-            MetaData.appModuleName = appModuleName;
-            MetaData.appViewName = appViewName;
-            MetaData.moduleGetter = moduleGetter;
-
-            if (typeof appModuleOrName !== 'string') {
-              cacheModule(appModuleOrName);
-            }
-
-            store = buildStore(storeOptions.initData, storeOptions.reducers, storeOptions.middlewares, storeOptions.enhancers);
-            startup(store);
-            _context2.next = 10;
-            return getModuleByName(appModuleName);
-
-          case 10:
-            appModule = _context2.sent;
-            preModules = preModules.filter(function (item) {
-              return moduleGetter[item] && item !== appModuleName;
-            });
-            preModules.unshift(appModuleName);
-            _context2.next = 15;
-            return Promise.all(preModules.map(function (moduleName) {
-              return _loadModel(moduleName, store);
-            }));
-
-          case 15:
-            store.dispatch = defFun;
-            return _context2.abrupt("return", render(store, appModule.default.views[appViewName]));
-
-          case 17:
-          case "end":
-            return _context2.stop();
-        }
-      }
-    }, _callee2);
-  }));
-  return _renderSSR.apply(this, arguments);
+          }
+        }, _callee2);
+      }))();
+    }
+  };
 }
 
 env.encodeBas64 = function (str) {
@@ -3397,7 +2798,142 @@ var History = function () {
   return History;
 }();
 
-function isPlainObject$2(obj) {
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  return Constructor;
+}
+
+var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
+  var RouteModuleHandlers = function (_CoreModuleHandlers2) {
+    _inheritsLoose(RouteModuleHandlers, _CoreModuleHandlers2);
+
+    function RouteModuleHandlers() {
+      var _this;
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
+
+      _initialize(_assertThisInitialized(_this));
+
+      return _this;
+    }
+
+    return RouteModuleHandlers;
+  }(_CoreModuleHandlers);
+
+  return {
+    F: RouteModuleHandlers,
+    d: [{
+      kind: "method",
+      decorators: [reducer],
+      key: "Init",
+      value: function Init(initState) {
+        var routeParams = this.rootState.route.params[this.moduleName];
+        return routeParams ? deepMerge({}, initState, routeParams) : initState;
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
+      key: "RouteParams",
+      value: function RouteParams(payload) {
+        return deepMergeState(this.state, payload);
+      }
+    }]
+  };
+}, CoreModuleHandlers);
+var RouteActionTypes = {
+  MRouteParams: 'RouteParams',
+  RouteChange: "route" + config.NSP + "RouteChange",
+  TestRouteChange: "route" + config.NSP + "TestRouteChange"
+};
+function testRouteChangeAction(routeState) {
+  return {
+    type: RouteActionTypes.TestRouteChange,
+    payload: [routeState]
+  };
+}
+function routeParamsAction(moduleName, params, action) {
+  return {
+    type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
+    payload: [params, action]
+  };
+}
+function routeChangeAction(routeState) {
+  return {
+    type: RouteActionTypes.RouteChange,
+    payload: [routeState]
+  };
+}
+var routeMiddleware = function routeMiddleware(_ref) {
+  var dispatch = _ref.dispatch,
+      getState = _ref.getState;
+  return function (next) {
+    return function (action) {
+      if (action.type === RouteActionTypes.RouteChange) {
+        var result = next(action);
+        var routeState = action.payload[0];
+        var rootRouteParams = routeState.params;
+        var rootState = getState();
+        Object.keys(rootRouteParams).forEach(function (moduleName) {
+          var routeParams = rootRouteParams[moduleName];
+
+          if (routeParams) {
+            var _rootState$moduleName;
+
+            if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
+              dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
+            }
+          }
+        });
+        return result;
+      }
+
+      return next(action);
+    };
+  };
+};
+(function () {
+  function RouteHandlers() {
+    _defineProperty(this, "initState", void 0);
+
+    _defineProperty(this, "moduleName", void 0);
+
+    _defineProperty(this, "store", void 0);
+
+    _defineProperty(this, "actions", void 0);
+  }
+
+  var _proto = RouteHandlers.prototype;
+
+  _proto.RouteChange = function RouteChange(routeState) {
+    return mergeState(this.state, routeState);
+  };
+
+  _createClass(RouteHandlers, [{
+    key: "state",
+    get: function get() {
+      return this.store.getState(this.moduleName);
+    }
+  }]);
+
+  return RouteHandlers;
+})();
+
+function isPlainObject(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
@@ -3410,7 +2946,7 @@ function __extendDefault(target, def) {
       var tval = target[key];
       var dval = def[key];
 
-      if (isPlainObject$2(tval) && isPlainObject$2(dval) && tval !== dval) {
+      if (isPlainObject(tval) && isPlainObject(dval) && tval !== dval) {
         clone[key] = __extendDefault(tval, dval);
       } else {
         clone[key] = tval;
@@ -3421,11 +2957,11 @@ function __extendDefault(target, def) {
 }
 
 function extendDefault(target, def) {
-  if (!isPlainObject$2(target)) {
+  if (!isPlainObject(target)) {
     target = {};
   }
 
-  if (!isPlainObject$2(def)) {
+  if (!isPlainObject(def)) {
     def = {};
   }
 
@@ -3440,7 +2976,7 @@ function __excludeDefault(data, def) {
     var defaultValue = def[key];
 
     if (value !== defaultValue) {
-      if (typeof value === typeof defaultValue && isPlainObject$2(value)) {
+      if (typeof value === typeof defaultValue && isPlainObject(value)) {
         value = __excludeDefault(value, defaultValue);
       }
 
@@ -3459,11 +2995,11 @@ function __excludeDefault(data, def) {
 }
 
 function excludeDefault(data, def, keepTopLevel) {
-  if (!isPlainObject$2(data)) {
+  if (!isPlainObject(data)) {
     return {};
   }
 
-  if (!isPlainObject$2(def)) {
+  if (!isPlainObject(def)) {
     return data;
   }
 
@@ -3498,7 +3034,7 @@ function __splitPrivate(data) {
       }
 
       privateData[key] = value;
-    } else if (isPlainObject$2(value)) {
+    } else if (isPlainObject(value)) {
       var _splitPrivate = __splitPrivate(value),
           subPublicData = _splitPrivate[0],
           subPrivateData = _splitPrivate[1];
@@ -3530,7 +3066,7 @@ function __splitPrivate(data) {
 }
 
 function splitPrivate(data, deleteTopLevel) {
-  if (!isPlainObject$2(data)) {
+  if (!isPlainObject(data)) {
     return [undefined, undefined];
   }
 
@@ -3569,7 +3105,7 @@ function assignDefaultData(data) {
   }, {});
 }
 
-function dataIsNativeLocation(data) {
+function dataIsNativeLocation$1(data) {
   return data['pathname'];
 }
 
@@ -3611,7 +3147,7 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
     in: function _in(data) {
       var path;
 
-      if (dataIsNativeLocation(data)) {
+      if (dataIsNativeLocation$1(data)) {
         data = nativeLocationMap.in(data);
         path = data.pathname;
       } else {
@@ -3625,7 +3161,7 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
       var params;
 
       if (pagename) {
-        if (dataIsNativeLocation(data)) {
+        if (dataIsNativeLocation$1(data)) {
           var searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
           var hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
 
@@ -3682,107 +3218,7 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
   };
 }
 
-var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
-  var RouteModuleHandlers = function (_CoreModuleHandlers2) {
-    _inheritsLoose(RouteModuleHandlers, _CoreModuleHandlers2);
-
-    function RouteModuleHandlers() {
-      var _this;
-
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      _this = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
-
-      _initialize(_assertThisInitialized(_this));
-
-      return _this;
-    }
-
-    return RouteModuleHandlers;
-  }(_CoreModuleHandlers);
-
-  return {
-    F: RouteModuleHandlers,
-    d: [{
-      kind: "method",
-      decorators: [reducer],
-      key: "Init",
-      value: function Init(initState) {
-        var routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? deepMergeState(initState, routeParams) : initState;
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "RouteParams",
-      value: function RouteParams(payload) {
-        return deepMergeState(this.state, payload);
-      }
-    }]
-  };
-}, CoreModuleHandlers);
-var RouteActionTypes = {
-  MRouteParams: 'RouteParams',
-  RouteChange: "medux" + config.NSP + "RouteChange",
-  TestRouteChange: "medux" + config.NSP + "TestRouteChange"
-};
-function testRouteChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.TestRouteChange,
-    payload: [routeState]
-  };
-}
-function routeParamsAction(moduleName, params, action) {
-  return {
-    type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
-    payload: [params, action]
-  };
-}
-function routeChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
-var routeMiddleware = function routeMiddleware(_ref) {
-  var dispatch = _ref.dispatch,
-      getState = _ref.getState;
-  return function (next) {
-    return function (action) {
-      if (action.type === RouteActionTypes.RouteChange) {
-        var result = next(action);
-        var routeState = action.payload[0];
-        var rootRouteParams = routeState.params;
-        var rootState = getState();
-        Object.keys(rootRouteParams).forEach(function (moduleName) {
-          var routeParams = rootRouteParams[moduleName];
-
-          if (routeParams) {
-            var _rootState$moduleName;
-
-            if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
-              dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-            }
-          }
-        });
-        return result;
-      }
-
-      return next(action);
-    };
-  };
-};
-var routeReducer = function routeReducer(state, action) {
-  if (action.type === RouteActionTypes.RouteChange) {
-    return mergeState(state, action.payload[0]);
-  }
-
-  return state;
-};
-
-function dataIsNativeLocation$1(data) {
+function dataIsNativeLocation(data) {
   return data['pathname'];
 }
 
@@ -3812,10 +3248,10 @@ var BaseNativeRouter = function () {
   };
 
   _proto.execute = function execute(method, getNativeData) {
-    var _this2 = this;
+    var _this = this;
 
-    for (var _len2 = arguments.length, args = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-      args[_key2 - 2] = arguments[_key2];
+    for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+      args[_key - 2] = arguments[_key];
     }
 
     return new Promise(function (resolve, reject) {
@@ -3824,9 +3260,9 @@ var BaseNativeRouter = function () {
         reject: reject,
         nativeData: undefined
       };
-      _this2.curTask = task;
+      _this.curTask = task;
 
-      var result = _this2[method].apply(_this2, [function () {
+      var result = _this[method].apply(_this, [function () {
         var nativeData = getNativeData();
         task.nativeData = nativeData;
         return nativeData;
@@ -3834,11 +3270,11 @@ var BaseNativeRouter = function () {
 
       if (!result) {
         resolve(undefined);
-        _this2.curTask = undefined;
+        _this.curTask = undefined;
       } else if (isPromise(result)) {
         result.catch(function (e) {
           reject(e);
-          _this2.curTask = undefined;
+          _this.curTask = undefined;
         });
       }
     });
@@ -4073,7 +3509,7 @@ var BaseRouter = function () {
 
   _proto2._relaunch = function () {
     var _relaunch2 = _asyncToGenerator(regenerator.mark(function _callee(data, internal, disableNative) {
-      var _this3 = this;
+      var _this2 = this;
 
       var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee$(_context) {
@@ -4099,7 +3535,7 @@ var BaseRouter = function () {
               break;
 
             case 7:
-              if (dataIsNativeLocation$1(data)) {
+              if (dataIsNativeLocation(data)) {
                 location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
@@ -4126,9 +3562,9 @@ var BaseRouter = function () {
 
               _context.next = 17;
               return this.nativeRouter.execute('relaunch', function () {
-                var nativeLocation = _this3.locationTransform.out(routeState);
+                var nativeLocation = _this2.locationTransform.out(routeState);
 
-                var nativeUrl = _this3.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this2.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4180,7 +3616,7 @@ var BaseRouter = function () {
 
   _proto2._push = function () {
     var _push2 = _asyncToGenerator(regenerator.mark(function _callee2(data, internal, disableNative) {
-      var _this4 = this;
+      var _this3 = this;
 
       var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee2$(_context2) {
@@ -4206,7 +3642,7 @@ var BaseRouter = function () {
               break;
 
             case 7:
-              if (dataIsNativeLocation$1(data)) {
+              if (dataIsNativeLocation(data)) {
                 location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
@@ -4233,9 +3669,9 @@ var BaseRouter = function () {
 
               _context2.next = 17;
               return this.nativeRouter.execute('push', function () {
-                var nativeLocation = _this4.locationTransform.out(routeState);
+                var nativeLocation = _this3.locationTransform.out(routeState);
 
-                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this3.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4288,7 +3724,7 @@ var BaseRouter = function () {
 
   _proto2._replace = function () {
     var _replace2 = _asyncToGenerator(regenerator.mark(function _callee3(data, internal, disableNative) {
-      var _this5 = this;
+      var _this4 = this;
 
       var location, key, routeState, nativeData;
       return regenerator.wrap(function _callee3$(_context3) {
@@ -4314,7 +3750,7 @@ var BaseRouter = function () {
               break;
 
             case 7:
-              if (dataIsNativeLocation$1(data)) {
+              if (dataIsNativeLocation(data)) {
                 location = this.nativeLocationToLocation(data);
               } else {
                 location = this.locationTransform.in(this.payloadToPartial(data));
@@ -4341,9 +3777,9 @@ var BaseRouter = function () {
 
               _context3.next = 17;
               return this.nativeRouter.execute('replace', function () {
-                var nativeLocation = _this5.locationTransform.out(routeState);
+                var nativeLocation = _this4.locationTransform.out(routeState);
 
-                var nativeUrl = _this5.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4404,7 +3840,7 @@ var BaseRouter = function () {
 
   _proto2._back = function () {
     var _back2 = _asyncToGenerator(regenerator.mark(function _callee4(n, indexUrl, internal, disableNative) {
-      var _this6 = this;
+      var _this5 = this;
 
       var stack, uri, _uriToLocation, key, location, routeState, nativeData;
 
@@ -4458,9 +3894,9 @@ var BaseRouter = function () {
 
               _context4.next = 16;
               return this.nativeRouter.execute('back', function () {
-                var nativeLocation = _this6.locationTransform.out(routeState);
+                var nativeLocation = _this5.locationTransform.out(routeState);
 
-                var nativeUrl = _this6.nativeLocationToNativeUrl(nativeLocation);
+                var nativeUrl = _this5.nativeLocationToNativeUrl(nativeLocation);
 
                 return {
                   nativeLocation: nativeLocation,
@@ -4594,10 +4030,10 @@ function resolvePathname(to, from) {
   return result;
 }
 
-var isProduction = process.env.NODE_ENV === 'production';
+var isProduction$1 = process.env.NODE_ENV === 'production';
 
-function warning$1(condition, message) {
-  if (!isProduction) {
+function warning(condition, message) {
+  if (!isProduction$1) {
     if (condition) {
       return;
     }
@@ -4614,7 +4050,7 @@ function warning$1(condition, message) {
   }
 }
 
-var isProduction$1 = process.env.NODE_ENV === 'production';
+var isProduction = process.env.NODE_ENV === 'production';
 var prefix = 'Invariant failed';
 
 function invariant(condition, message) {
@@ -4622,7 +4058,7 @@ function invariant(condition, message) {
     return;
   }
 
-  if (isProduction$1) {
+  if (isProduction) {
     throw new Error(prefix);
   }
 
@@ -4744,7 +4180,7 @@ function createTransitionManager() {
   var prompt = null;
 
   function setPrompt(nextPrompt) {
-    process.env.NODE_ENV !== "production" ? warning$1(prompt == null, 'A history supports only one prompt at a time') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(prompt == null, 'A history supports only one prompt at a time') : void 0;
     prompt = nextPrompt;
     return function () {
       if (prompt === nextPrompt) prompt = null;
@@ -4762,7 +4198,7 @@ function createTransitionManager() {
         if (typeof getUserConfirmation === 'function') {
           getUserConfirmation(result, callback);
         } else {
-          process.env.NODE_ENV !== "production" ? warning$1(false, 'A history needs a getUserConfirmation function in order to use a prompt message') : void 0;
+          process.env.NODE_ENV !== "production" ? warning(false, 'A history needs a getUserConfirmation function in order to use a prompt message') : void 0;
           callback(true);
         }
       } else {
@@ -4903,7 +4339,7 @@ function createBrowserHistory(props) {
         search = _window$location.search,
         hash = _window$location.hash;
     var path = pathname + search + hash;
-    process.env.NODE_ENV !== "production" ? warning$1(!basename || hasBasename(path, basename), 'You are attempting to use a basename on a page whose URL path does not begin ' + 'with the basename. Expected path "' + path + '" to begin with "' + basename + '".') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(!basename || hasBasename(path, basename), 'You are attempting to use a basename on a page whose URL path does not begin ' + 'with the basename. Expected path "' + path + '" to begin with "' + basename + '".') : void 0;
     if (basename) path = stripBasename(path, basename);
     return createLocation(path, state, key);
   }
@@ -4977,7 +4413,7 @@ function createBrowserHistory(props) {
   }
 
   function push(path, state) {
-    process.env.NODE_ENV !== "production" ? warning$1(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to push when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to push when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
     var action = 'PUSH';
     var location = createLocation(path, state, createKey(), history.location);
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
@@ -5005,14 +4441,14 @@ function createBrowserHistory(props) {
           });
         }
       } else {
-        process.env.NODE_ENV !== "production" ? warning$1(state === undefined, 'Browser history cannot push state in browsers that do not support HTML5 history') : void 0;
+        process.env.NODE_ENV !== "production" ? warning(state === undefined, 'Browser history cannot push state in browsers that do not support HTML5 history') : void 0;
         window.location.href = href;
       }
     });
   }
 
   function replace(path, state) {
-    process.env.NODE_ENV !== "production" ? warning$1(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to replace when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to replace when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
     var action = 'REPLACE';
     var location = createLocation(path, state, createKey(), history.location);
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
@@ -5038,7 +4474,7 @@ function createBrowserHistory(props) {
           });
         }
       } else {
-        process.env.NODE_ENV !== "production" ? warning$1(state === undefined, 'Browser history cannot replace state in browsers that do not support HTML5 history') : void 0;
+        process.env.NODE_ENV !== "production" ? warning(state === undefined, 'Browser history cannot replace state in browsers that do not support HTML5 history') : void 0;
         window.location.replace(href);
       }
     });
@@ -5180,7 +4616,7 @@ function createHashHistory(props) {
 
   function getDOMLocation() {
     var path = decodePath(getHashPath());
-    process.env.NODE_ENV !== "production" ? warning$1(!basename || hasBasename(path, basename), 'You are attempting to use a basename on a page whose URL path does not begin ' + 'with the basename. Expected path "' + path + '" to begin with "' + basename + '".') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(!basename || hasBasename(path, basename), 'You are attempting to use a basename on a page whose URL path does not begin ' + 'with the basename. Expected path "' + path + '" to begin with "' + basename + '".') : void 0;
     if (basename) path = stripBasename(path, basename);
     return createLocation(path);
   }
@@ -5275,7 +4711,7 @@ function createHashHistory(props) {
   }
 
   function push(path, state) {
-    process.env.NODE_ENV !== "production" ? warning$1(state === undefined, 'Hash history cannot push state; it is ignored') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(state === undefined, 'Hash history cannot push state; it is ignored') : void 0;
     var action = 'PUSH';
     var location = createLocation(path, undefined, undefined, history.location);
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
@@ -5299,14 +4735,14 @@ function createHashHistory(props) {
           location: location
         });
       } else {
-        process.env.NODE_ENV !== "production" ? warning$1(false, 'Hash history cannot PUSH the same path; a new entry will not be added to the history stack') : void 0;
+        process.env.NODE_ENV !== "production" ? warning(false, 'Hash history cannot PUSH the same path; a new entry will not be added to the history stack') : void 0;
         setState();
       }
     });
   }
 
   function replace(path, state) {
-    process.env.NODE_ENV !== "production" ? warning$1(state === undefined, 'Hash history cannot replace state; it is ignored') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(state === undefined, 'Hash history cannot replace state; it is ignored') : void 0;
     var action = 'REPLACE';
     var location = createLocation(path, undefined, undefined, history.location);
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
@@ -5333,7 +4769,7 @@ function createHashHistory(props) {
   }
 
   function go(n) {
-    process.env.NODE_ENV !== "production" ? warning$1(canGoWithoutReload, 'Hash history go(n) causes a full page reload in this browser') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(canGoWithoutReload, 'Hash history go(n) causes a full page reload in this browser') : void 0;
     globalHistory.go(n);
   }
 
@@ -5448,7 +4884,7 @@ function createMemoryHistory(props) {
   var createHref = createPath;
 
   function push(path, state) {
-    process.env.NODE_ENV !== "production" ? warning$1(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to push when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to push when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
     var action = 'PUSH';
     var location = createLocation(path, state, createKey(), history.location);
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
@@ -5473,7 +4909,7 @@ function createMemoryHistory(props) {
   }
 
   function replace(path, state) {
-    process.env.NODE_ENV !== "production" ? warning$1(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to replace when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
+    process.env.NODE_ENV !== "production" ? warning(!(typeof path === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to replace when the 1st ' + 'argument is a location-like object that already has state; it is ignored') : void 0;
     var action = 'REPLACE';
     var location = createLocation(path, state, createKey(), history.location);
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
@@ -5894,43 +5330,11 @@ var loadView = function loadView(moduleName, viewName, options) {
   });
 };
 
-var appExports = {
-  loadView: loadView,
-  getActions: undefined,
-  state: undefined,
-  store: undefined,
-  router: undefined,
-  request: undefined,
-  response: undefined
+var MetaData = {
+  router: undefined
 };
-function patchActions(typeName, json) {
-  if (json) {
-    getRootModuleAPI(JSON.parse(json));
-  }
-}
-function exportApp() {
-  var modules = getRootModuleAPI();
 
-  appExports.getActions = function () {
-    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-
-    return args.reduce(function (prev, moduleName) {
-      prev[moduleName] = modules[moduleName].actions;
-      return prev;
-    }, {});
-  };
-
-  return {
-    App: appExports,
-    Modules: modules,
-    Actions: {},
-    Pagenames: routeConfig.pagenames
-  };
-}
-
-var Component = function Component(_ref) {
+var Component$2 = function Component(_ref) {
   var children = _ref.children;
   var title = '';
   React__default['default'].Children.forEach(children, function (child) {
@@ -5951,7 +5355,7 @@ var Component = function Component(_ref) {
   return React__default['default'].createElement("head", null, children);
 };
 
-var DocumentHead = React__default['default'].memo(Component);
+var DocumentHead = React__default['default'].memo(Component$2);
 
 var Component$1 = function Component(_ref) {
   var children = _ref.children,
@@ -5970,7 +5374,7 @@ var Component$1 = function Component(_ref) {
 
 var Else = React__default['default'].memo(Component$1);
 
-var Component$2 = function Component(_ref) {
+var Component = function Component(_ref) {
   var children = _ref.children,
       elseView = _ref.elseView;
   var arr = [];
@@ -5985,7 +5389,7 @@ var Component$2 = function Component(_ref) {
   return React__default['default'].createElement(React__default['default'].Fragment, null, elseView);
 };
 
-var Switch = React__default['default'].memo(Component$2);
+var Switch = React__default['default'].memo(Component);
 
 function isModifiedEvent(event) {
   return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
@@ -6009,7 +5413,7 @@ var Link = React__default['default'].forwardRef(function (_ref, ref) {
 
       if (!event.defaultPrevented && event.button === 0 && (!target || target === '_self') && !isModifiedEvent(event)) {
           event.preventDefault();
-          replace ? appExports.router.replace(rest.href) : appExports.router.push(rest.href);
+          replace ? MetaData.router.replace(rest.href) : MetaData.router.push(rest.href);
         }
     }
   });
@@ -6019,124 +5423,168 @@ var Link = React__default['default'].forwardRef(function (_ref, ref) {
   }));
 });
 
-var SSRKey = 'meduxInitStore';
-function setConfig$1(conf) {
-  setConfig(conf);
-  setRouteConfig(conf);
-  setLoadViewOptions(conf);
-  conf.SSRKey && (SSRKey = conf.SSRKey);
-}
-var exportModule$1 = exportModule;
-function buildApp(moduleGetter, _ref) {
-  var _ref$appModuleName = _ref.appModuleName,
-      appModuleName = _ref$appModuleName === void 0 ? 'app' : _ref$appModuleName,
-      _ref$appViewName = _ref.appViewName,
-      appViewName = _ref$appViewName === void 0 ? 'main' : _ref$appViewName,
-      _ref$historyType = _ref.historyType,
-      historyType = _ref$historyType === void 0 ? 'Browser' : _ref$historyType,
-      locationTransform = _ref.locationTransform,
-      _ref$storeOptions = _ref.storeOptions,
-      storeOptions = _ref$storeOptions === void 0 ? {} : _ref$storeOptions,
-      _ref$container = _ref.container,
-      container = _ref$container === void 0 ? 'root' : _ref$container;
-  var router = createRouter(historyType, locationTransform);
-  appExports.router = router;
-  var _storeOptions$middlew = storeOptions.middlewares,
-      middlewares = _storeOptions$middlew === void 0 ? [] : _storeOptions$middlew,
-      _storeOptions$reducer = storeOptions.reducers,
-      reducers = _storeOptions$reducer === void 0 ? {} : _storeOptions$reducer,
-      _storeOptions$initDat = storeOptions.initData,
-      initData = _storeOptions$initDat === void 0 ? {} : _storeOptions$initDat;
-  middlewares.unshift(routeMiddleware);
-  reducers.route = routeReducer;
-  var ssrData = env[SSRKey];
-  initData.route = router.getRouteState();
-  return renderApp(function (store, AppView) {
-    var reRender = function reRender(View) {
-      var panel = typeof container === 'string' ? env.document.getElementById(container) : container;
-      reactDom.unmountComponentAtNode(panel);
-      var renderFun = ssrData ? reactDom.hydrate : reactDom.render;
-      renderFun(React__default['default'].createElement(View, {
-        store: store
-      }), panel);
-    };
-
-    reRender(AppView);
-    return reRender;
-  }, moduleGetter, appModuleName, appViewName, _extends({}, storeOptions, {
-    middlewares: middlewares,
-    reducers: reducers,
-    initData: mergeState(initData, ssrData)
-  }), function (store) {
-    router.setStore(store);
-    appExports.store = store;
-    Object.defineProperty(appExports, 'state', {
-      get: function get() {
-        return store.getState();
-      }
-    });
-  }, ssrData ? Object.keys(initData.route.params) : []);
-}
 var SSRTPL;
 function setSsrHtmlTpl(tpl) {
   SSRTPL = tpl;
 }
-function buildSSR(moduleGetter, _ref2) {
-  var request = _ref2.request,
-      response = _ref2.response,
-      _ref2$appModuleName = _ref2.appModuleName,
-      appModuleName = _ref2$appModuleName === void 0 ? 'app' : _ref2$appModuleName,
-      _ref2$appViewName = _ref2.appViewName,
-      appViewName = _ref2$appViewName === void 0 ? 'main' : _ref2$appViewName,
-      locationTransform = _ref2.locationTransform,
-      _ref2$storeOptions = _ref2.storeOptions,
-      storeOptions = _ref2$storeOptions === void 0 ? {} : _ref2$storeOptions,
-      _ref2$container = _ref2.container,
-      container = _ref2$container === void 0 ? 'root' : _ref2$container;
-
-  if (!SSRTPL) {
-    SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
+function setConfig(conf) {
+  setConfig$1(conf);
+  setRouteConfig(conf);
+  setLoadViewOptions(conf);
+}
+var exportModule = exportModule$1;
+function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
+  if (middlewares === void 0) {
+    middlewares = [];
   }
 
-  appExports.request = request;
-  appExports.response = response;
-  var router = createRouter(request.url, locationTransform);
-  appExports.router = router;
-  var _storeOptions$initDat2 = storeOptions.initData,
-      initData = _storeOptions$initDat2 === void 0 ? {} : _storeOptions$initDat2;
-  initData.route = router.getRouteState();
-  return renderSSR(function (store, AppView) {
-    var data = store.getState();
-    return {
-      store: store,
-      data: data,
-      html: require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
-        store: store
-      }))
-    };
-  }, moduleGetter, appModuleName, appViewName, _extends({}, storeOptions, {
-    initData: initData
-  }), function (store) {
-    router.setStore(store);
-    appExports.store = store;
-    Object.defineProperty(appExports, 'state', {
-      get: function get() {
-        return store.getState();
-      }
-    });
-  }, Object.keys(initData.route.params)).then(function (_ref3) {
-    var html = _ref3.html,
-        data = _ref3.data;
-    var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + container + "['\"][^<>]*>", 'm'));
+  if (appModuleName === void 0) {
+    appModuleName = 'app';
+  }
 
-    if (match) {
-      var pageHead = html.split(/<head>|<\/head>/, 3);
-      html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-      return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + SSRKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+  if (appViewName === void 0) {
+    appViewName = 'main';
+  }
+
+  var controllerMiddleware = [routeMiddleware].concat(middlewares);
+  return {
+    useRoute: function useRoute(_ref) {
+      var locationTransform = _ref.locationTransform;
+      return {
+        useStore: function useStore(_ref2) {
+          var storeOptions = _ref2.storeOptions,
+              storeCreator = _ref2.storeCreator;
+          return {
+            render: function render(_temp) {
+              var _ref3 = _temp === void 0 ? {} : _temp,
+                  _ref3$id = _ref3.id,
+                  id = _ref3$id === void 0 ? 'root' : _ref3$id,
+                  _ref3$ssrKey = _ref3.ssrKey,
+                  ssrKey = _ref3$ssrKey === void 0 ? 'meduxInitStore' : _ref3$ssrKey;
+
+              var router = createRouter('Browser', locationTransform);
+              var routeState = router.getRouteState();
+              var ssrData = env[ssrKey];
+              var renderFun = ssrData ? reactDom.hydrate : reactDom.render;
+              var panel = env.document.getElementById(id);
+
+              var initState = _extends({}, storeOptions.initState, {
+                route: routeState
+              }, ssrData);
+
+              var baseStore = storeCreator(_extends({}, storeOptions, {
+                initState: initState
+              }));
+
+              var _renderApp = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName),
+                  store = _renderApp.store,
+                  beforeRender = _renderApp.beforeRender;
+
+              router.setStore(store);
+              MetaData.router = router;
+              return {
+                store: store,
+                run: function run() {
+                  return beforeRender().then(function (_ref4) {
+                    var appView = _ref4.appView,
+                        setReRender = _ref4.setReRender;
+
+                    var reRender = function reRender(View) {
+                      reactDom.unmountComponentAtNode(panel);
+                      renderFun(React__default['default'].createElement(View, {
+                        store: store
+                      }), panel);
+                    };
+
+                    reRender(appView);
+                    setReRender(reRender);
+                  });
+                }
+              };
+            },
+            ssr: function ssr(_ref5) {
+              var _ref5$id = _ref5.id,
+                  id = _ref5$id === void 0 ? 'root' : _ref5$id,
+                  _ref5$ssrKey = _ref5.ssrKey,
+                  ssrKey = _ref5$ssrKey === void 0 ? 'meduxInitStore' : _ref5$ssrKey,
+                  url = _ref5.url;
+
+              if (!SSRTPL) {
+                SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
+              }
+
+              var router = createRouter(url, locationTransform);
+              var routeState = router.getRouteState();
+
+              var initState = _extends({}, storeOptions.initState, {
+                route: routeState
+              });
+
+              var baseStore = storeCreator(_extends({}, storeOptions, {
+                initState: initState
+              }));
+
+              var _ssrApp = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName),
+                  store = _ssrApp.store,
+                  beforeRender = _ssrApp.beforeRender;
+
+              router.setStore(store);
+              MetaData.router = router;
+              return {
+                store: store,
+                run: function run() {
+                  return beforeRender().then(function (_ref6) {
+                    var AppView = _ref6.appView;
+                    var data = store.getState();
+
+                    var html = require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
+                      store: store
+                    }));
+
+                    var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + id + "['\"][^<>]*>", 'm'));
+
+                    if (match) {
+                      var pageHead = html.split(/<head>|<\/head>/, 3);
+                      html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+                      return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+                    }
+
+                    return html;
+                  });
+                }
+              };
+            }
+          };
+        }
+      };
     }
+  };
+}
+function patchActions(typeName, json) {
+  if (json) {
+    getRootModuleAPI(JSON.parse(json));
+  }
+}
+function getApp() {
+  var modules = getRootModuleAPI();
+  return {
+    GetActions: function GetActions() {
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
 
-    return html;
-  });
+      return args.reduce(function (prev, moduleName) {
+        prev[moduleName] = modules[moduleName].actions;
+        return prev;
+      }, {});
+    },
+    GetRouter: function GetRouter() {
+      return MetaData.router;
+    },
+    LoadView: loadView,
+    Modules: modules,
+    Pagenames: routeConfig.pagenames
+  };
 }
 
 exports.ActionTypes = ActionTypes;
@@ -6146,18 +5594,16 @@ exports.Else = Else;
 exports.Link = Link;
 exports.RouteActionTypes = RouteActionTypes;
 exports.Switch = Switch;
-exports.buildApp = buildApp;
-exports.buildSSR = buildSSR;
 exports.clientSide = clientSide;
+exports.createApp = createApp;
 exports.createLocationTransform = createLocationTransform;
 exports.deepMerge = deepMerge;
 exports.deepMergeState = deepMergeState;
-exports.delayPromise = delayPromise;
 exports.effect = effect;
 exports.env = env;
 exports.errorAction = errorAction;
-exports.exportApp = exportApp;
-exports.exportModule = exportModule$1;
+exports.exportModule = exportModule;
+exports.getApp = getApp;
 exports.isProcessedError = isProcessedError;
 exports.isServer = isServer;
 exports.logger = logger;
@@ -6165,9 +5611,8 @@ exports.modelHotReplacement = modelHotReplacement;
 exports.patchActions = patchActions;
 exports.reducer = reducer;
 exports.serverSide = serverSide;
-exports.setConfig = setConfig$1;
+exports.setConfig = setConfig;
 exports.setLoading = setLoading;
-exports.setLoadingDepthTime = setLoadingDepthTime;
 exports.setProcessedError = setProcessedError;
 exports.setSsrHtmlTpl = setSsrHtmlTpl;
 exports.viewHotReplacement = viewHotReplacement;

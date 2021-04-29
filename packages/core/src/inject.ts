@@ -10,7 +10,7 @@ import {
   MetaData,
   Model,
   ModuleGetter,
-  IController,
+  IStore,
   FacadeMap,
   config,
   reducer,
@@ -80,20 +80,20 @@ export type ExportModule<Component> = <
  * @returns medux定义的module标准数据结构
  */
 export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views) => {
-  const model: Model = (controller) => {
-    if (!controller.injectedModules[moduleName]) {
+  const model: Model = (store) => {
+    if (!store.injectedModules[moduleName]) {
       const moduleHandles = new ModuleHandles();
-      controller.injectedModules[moduleName] = moduleHandles;
+      store.injectedModules[moduleName] = moduleHandles;
       moduleHandles.moduleName = moduleName;
-      moduleHandles.controller = controller;
+      moduleHandles.store = store;
       moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
       injectActions(moduleName, moduleHandles as any);
       const initState = moduleHandles.initState;
-      const preModuleState = controller.getState(moduleName);
+      const preModuleState = store.getState(moduleName);
       if (preModuleState) {
-        return controller.dispatch(moduleReInitAction(moduleName, initState));
+        return store.dispatch(moduleReInitAction(moduleName, initState));
       }
-      return controller.dispatch(moduleInitAction(moduleName, initState));
+      return store.dispatch(moduleInitAction(moduleName, initState));
     }
     return undefined;
   };
@@ -137,13 +137,13 @@ export function getModuleByName(moduleName: string): Promise<CommonModule> | Com
  * - LoadView内部会调用getView之后会渲染View
  * - getView会自动加载并初始化该view对应的model
  */
-export function getView<T>(moduleName: string, viewName: string, controller: IController): T | Promise<T> {
+export function getView<T>(moduleName: string, viewName: string): T | Promise<T> {
   const callback = (module: CommonModule) => {
     const view: T = module.default.views[viewName];
     if (env.isServer) {
       return view;
     }
-    module.default.model(controller);
+    module.default.model(MetaData.clientStore);
     return view;
   };
   const moduleOrPromise = getModuleByName(moduleName);
@@ -156,7 +156,7 @@ export function getView<T>(moduleName: string, viewName: string, controller: ICo
 /**
  * 动态加载并初始化其他模块的model
  */
-export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, controller: IController): void | Promise<void> {
+export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, controller: IStore): void | Promise<void> {
   const moduleOrPromise = getModuleByName(moduleName);
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then((module) => module.default.model(controller));
@@ -175,7 +175,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    */
   actions!: Actions<this>;
 
-  controller!: IController<R>;
+  store!: IStore<R>;
 
   moduleName: string = '';
 
@@ -185,38 +185,37 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * 获取本Model的state
    */
   protected get state(): S {
-    return this.controller.getState()[this.moduleName];
+    return this.store.getState(this.moduleName) as S;
   }
 
   /**
    * 获取整个store的state
    */
   protected get rootState(): R {
-    return this.controller.getState() as R;
+    return this.store.getState() as R;
   }
 
-  protected getActionName(): string {
-    return this.controller.prevData.actionName;
+  protected getCurrentActionName(): string {
+    return this.store.getCurrentActionName();
   }
 
-  protected get prevRootState(): R {
-    return this.controller.prevData.prevState;
+  protected get currentRootState(): R {
+    return this.store.getCurrentState();
   }
 
-  protected get prevState(): S {
-    return this.controller.prevData.prevState[this.moduleName] as S;
+  protected get currentState(): S {
+    return this.store.getCurrentState(this.moduleName) as S;
   }
 
   protected dispatch(action: Action) {
-    return this.controller.dispatch(action);
+    return this.store.dispatch(action);
   }
 
   /**
    * 动态加载并初始化其他模块的model
    */
   protected loadModel(moduleName: string) {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    return loadModel(moduleName, this.controller);
+    return loadModel(moduleName, this.store);
   }
 
   /**
@@ -232,7 +231,6 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * 通用的reducerHandler，通常用来更新moduleState
    */
   @reducer
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public Update(payload: Partial<S>, key: string): S {
     return mergeState(this.state, payload);
   }
@@ -273,14 +271,14 @@ export function modelHotReplacement(
     new (): IModuleHandlers;
   }
 ) {
-  const controller = MetaData.clientController;
-  if (controller.injectedModules[moduleName]) {
+  const store = MetaData.clientStore;
+  if (store.injectedModules[moduleName]) {
     clearHandlers(moduleName, MetaData.reducersMap);
     clearHandlers(moduleName, MetaData.effectsMap);
     const moduleHandles = new ModuleHandles();
-    controller.injectedModules[moduleName] = moduleHandles;
+    store.injectedModules[moduleName] = moduleHandles;
     moduleHandles.moduleName = moduleName;
-    moduleHandles.controller = controller;
+    moduleHandles.store = store;
     moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
     injectActions(moduleName, moduleHandles as any);
     env.console.log(`[HMR] @medux Updated model: ${moduleName}`);

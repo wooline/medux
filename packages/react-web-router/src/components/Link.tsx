@@ -1,5 +1,5 @@
 import React from 'react';
-import {appExports} from '../sington';
+import {MetaData} from '../sington';
 
 export interface Props extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   replace?: boolean;
@@ -28,7 +28,7 @@ export const Link = React.forwardRef<HTMLAnchorElement, Props>(({onClick, replac
         !isModifiedEvent(event) // ignore clicks with modifier keys
       ) {
         event.preventDefault();
-        replace ? appExports.router.replace(rest.href!) : appExports.router.push(rest.href!);
+        replace ? MetaData.router.replace(rest.href!) : MetaData.router.push(rest.href!);
       }
     },
   };

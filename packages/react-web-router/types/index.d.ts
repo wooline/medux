@@ -1,22 +1,20 @@
 import './env';
 import type { ComponentType } from 'react';
-import type { ModuleGetter, StoreOptions, ExportModule } from '@medux/core';
+import type { ModuleGetter, ExportModule, ControllerMiddleware, StoreBuilder, BStoreOptions, BStore, RootModuleFacade, RootModuleAPI, RootModuleActions } from '@medux/core';
 import type { LocationTransform } from '@medux/route-web';
-import type { ServerRequest, ServerResponse } from './sington';
-export type { RootModuleFacade, Dispatch } from '@medux/core';
-export type { Store } from 'redux';
-export type { RouteModuleState as BaseModuleState, RootState, RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial, } from '@medux/route-web';
+import type { Router } from '@medux/route-browser';
+import type { LoadView } from './loadView';
+export type { RootModuleFacade, Dispatch, CoreModuleState } from '@medux/core';
+export type { RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial, } from '@medux/route-web';
 export type { LoadView } from './loadView';
-export type { FacadeExports, ServerRequest, ServerResponse } from './sington';
-export { ActionTypes, delayPromise, LoadingState, modelHotReplacement, env, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, setLoadingDepthTime, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
+export { ActionTypes, LoadingState, modelHotReplacement, env, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
 export { RouteModuleHandlers as BaseModuleHandlers, createLocationTransform, RouteActionTypes } from '@medux/route-web';
-export { exportApp, patchActions } from './sington';
 export { DocumentHead } from './components/DocumentHead';
 export { Else } from './components/Else';
 export { Switch } from './components/Switch';
 export { Link } from './components/Link';
+export declare function setSsrHtmlTpl(tpl: string): void;
 export declare function setConfig(conf: {
-    RSP?: string;
     actionMaxHistory?: number;
     pagesMaxHistory?: number;
     pagenames?: {
@@ -24,9 +22,8 @@ export declare function setConfig(conf: {
     };
     NSP?: string;
     MSP?: string;
-    SSRKey?: string;
     MutableData?: boolean;
-    DEVTOOLS?: boolean;
+    DepthTimeOnLoading?: number;
     LoadViewOnError?: ComponentType<{
         message: string;
     }>;
@@ -34,21 +31,54 @@ export declare function setConfig(conf: {
     disableNativeRoute?: boolean;
 }): void;
 export declare const exportModule: ExportModule<ComponentType<any>>;
-export declare function buildApp(moduleGetter: ModuleGetter, { appModuleName, appViewName, historyType, locationTransform, storeOptions, container, }: {
-    appModuleName?: string;
-    appViewName?: string;
-    historyType?: 'Browser' | 'Hash' | 'Memory';
+export interface RenderOptions {
+    id?: string;
+    ssrKey?: string;
+}
+export interface SSROptions {
+    id?: string;
+    ssrKey?: string;
+    url: string;
+}
+interface RouteOptions {
     locationTransform: LocationTransform<any>;
-    storeOptions?: StoreOptions;
-    container?: string | Element;
-}): Promise<import("@medux/core/types").ModuleStore>;
-export declare function setSsrHtmlTpl(tpl: string): void;
-export declare function buildSSR(moduleGetter: ModuleGetter, { request, response, appModuleName, appViewName, locationTransform, storeOptions, container, }: {
-    appModuleName?: string;
-    appViewName?: string;
-    request: ServerRequest;
-    response: ServerResponse;
-    locationTransform: LocationTransform<any>;
-    storeOptions?: StoreOptions;
-    container?: string;
-}): Promise<string>;
+}
+export declare function createApp(moduleGetter: ModuleGetter, middlewares?: ControllerMiddleware[], appModuleName?: string, appViewName?: string): {
+    useRoute({ locationTransform }: RouteOptions): {
+        useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({ storeOptions, storeCreator }: StoreBuilder<O, B>): {
+            render({ id, ssrKey }?: RenderOptions): {
+                store: import("@medux/core").IStore<any> & B;
+                run(): Promise<void>;
+            };
+            ssr({ id, ssrKey, url }: SSROptions): {
+                store: import("@medux/core").IStore<any> & B;
+                run(): Promise<string>;
+            };
+        };
+    };
+};
+export declare function patchActions(typeName: string, json?: string): void;
+export declare type GetAPP<A extends RootModuleFacade, RouteParams extends {
+    [K in keyof A]: any;
+}, Pagename extends string> = {
+    State: {
+        [M in keyof A]?: A[M]['state'];
+    };
+    GetRouter: () => Router<RouteParams, Pagename>;
+    GetActions<N extends keyof A>(...args: N[]): {
+        [K in N]: A[K]['actions'];
+    };
+    LoadView: LoadView<A>;
+    Modules: RootModuleAPI<A>;
+    Actions: RootModuleActions<A>;
+    Pagenames: {
+        [K in Pagename]: K;
+    };
+};
+export declare function getApp<T extends {
+    GetActions: any;
+    GetRouter: any;
+    LoadView: any;
+    Modules: any;
+    Pagenames: any;
+}>(): Pick<T, 'GetActions' | 'GetRouter' | 'LoadView' | 'Modules' | 'Pagenames'>;

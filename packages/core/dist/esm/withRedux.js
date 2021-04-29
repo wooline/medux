@@ -1,6 +1,6 @@
 import _extends from "@babel/runtime/helpers/esm/extends";
 import { compose, createStore } from 'redux';
-import { env } from '../env';
+import { env } from './env';
 
 var reduxReducer = function reduxReducer(state, action) {
   return _extends({}, state, action.state);
