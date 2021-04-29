@@ -8,11 +8,15 @@ import {
   mergeState,
   deepMergeState,
   IStore,
+  CommonModule,
   IModuleHandlers,
+  exportModule,
 } from '@medux/core';
-import type {RouteState, HistoryAction} from './basic';
+import {createLocationTransform, LocationTransform} from './transform';
+import type {RootParams, RouteState, HistoryAction} from './basic';
+import type {PagenameMap, NativeLocationMap} from './transform';
 
-export class RouteModuleHandlers<S extends CoreModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
+export class ModuleWithRouteHandlers<S extends CoreModuleState, R extends Record<string, any>> extends CoreModuleHandlers<S, R> {
   @reducer
   public Init(initState: S): S {
     const routeParams = this.rootState.route.params[this.moduleName];
@@ -29,7 +33,7 @@ export const RouteActionTypes = {
   RouteChange: `route${config.NSP}RouteChange`,
   TestRouteChange: `route${config.NSP}TestRouteChange`,
 };
-export function testRouteChangeAction<P extends {[key: string]: any}>(routeState: RouteState<P>) {
+export function testRouteChangeAction<P extends RootParams>(routeState: RouteState<P>) {
   return {
     type: RouteActionTypes.TestRouteChange,
     payload: [routeState],
@@ -41,7 +45,7 @@ export function routeParamsAction(moduleName: string, params: any, action: Histo
     payload: [params, action],
   };
 }
-export function routeChangeAction<P extends {[key: string]: any}>(routeState: RouteState<P>) {
+export function routeChangeAction<P extends RootParams>(routeState: RouteState<P>) {
   return {
     type: RouteActionTypes.RouteChange,
     payload: [routeState],
@@ -67,8 +71,12 @@ export const routeMiddleware: ControllerMiddleware = ({dispatch, getState}) => (
 };
 // export type RouteModuleState<P extends {[key: string]: any} = {}> = CoreModuleState & P;
 
-export class RouteHandlers<P extends {[key: string]: any} = {}> implements IModuleHandlers {
-  initState!: RouteState<P>;
+interface IRouteModuleHandlers<P extends RootParams = {}> extends IModuleHandlers {
+  initState: RouteState<P>;
+}
+
+class RouteModuleHandlers implements IRouteModuleHandlers {
+  initState!: RouteState;
 
   moduleName!: string;
 
@@ -76,11 +84,29 @@ export class RouteHandlers<P extends {[key: string]: any} = {}> implements IModu
 
   actions!: {};
 
-  protected get state(): RouteState<P> {
-    return this.store.getState(this.moduleName) as RouteState<P>;
+  protected get state(): RouteState {
+    return this.store.getState(this.moduleName) as RouteState;
   }
 
-  RouteChange(routeState: RouteState<P>) {
+  RouteChange(routeState: RouteState) {
     return mergeState(this.state, routeState);
   }
+}
+
+export type RouteModule = CommonModule & {locationTransform: LocationTransform<any>};
+
+export function createRouteModule<P extends RootParams, G extends PagenameMap<P>>(
+  defaultParams: P,
+  pagenameMap: G,
+  nativeLocationMap: NativeLocationMap,
+  notfoundPagename: string = '/404',
+  paramsKey: string = '_'
+) {
+  const handlers: {new (): IRouteModuleHandlers<P>} = RouteModuleHandlers as any;
+  const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  const result = exportModule('route', handlers, {});
+  return {
+    default: result,
+    locationTransform,
+  };
 }

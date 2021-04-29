@@ -1,8 +1,9 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { CoreModuleHandlers, config, reducer, deepMerge, mergeState, deepMergeState } from '@medux/core';
-export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
-  class RouteModuleHandlers extends _CoreModuleHandlers {
+import { CoreModuleHandlers, config, reducer, deepMerge, mergeState, deepMergeState, exportModule } from '@medux/core';
+import { createLocationTransform } from './transform';
+export let ModuleWithRouteHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
+  class ModuleWithRouteHandlers extends _CoreModuleHandlers {
     constructor(...args) {
       super(...args);
 
@@ -12,7 +13,7 @@ export let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreMod
   }
 
   return {
-    F: RouteModuleHandlers,
+    F: ModuleWithRouteHandlers,
     d: [{
       kind: "method",
       decorators: [reducer],
@@ -79,7 +80,8 @@ export const routeMiddleware = ({
 
   return next(action);
 };
-export class RouteHandlers {
+
+class RouteModuleHandlers {
   constructor() {
     _defineProperty(this, "initState", void 0);
 
@@ -98,4 +100,14 @@ export class RouteHandlers {
     return mergeState(this.state, routeState);
   }
 
+}
+
+export function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
+  const handlers = RouteModuleHandlers;
+  const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  const result = exportModule('route', handlers, {});
+  return {
+    default: result,
+    locationTransform
+  };
 }

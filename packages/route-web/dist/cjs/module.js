@@ -6,7 +6,8 @@ exports.__esModule = true;
 exports.testRouteChangeAction = testRouteChangeAction;
 exports.routeParamsAction = routeParamsAction;
 exports.routeChangeAction = routeChangeAction;
-exports.RouteHandlers = exports.routeMiddleware = exports.RouteActionTypes = exports.RouteModuleHandlers = void 0;
+exports.createRouteModule = createRouteModule;
+exports.routeMiddleware = exports.RouteActionTypes = exports.ModuleWithRouteHandlers = void 0;
 
 var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
@@ -20,11 +21,13 @@ var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate
 
 var _core = require("@medux/core");
 
-var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _CoreModuleHandlers) {
-  var RouteModuleHandlers = function (_CoreModuleHandlers2) {
-    (0, _inheritsLoose2.default)(RouteModuleHandlers, _CoreModuleHandlers2);
+var _transform = require("./transform");
 
-    function RouteModuleHandlers() {
+var ModuleWithRouteHandlers = (0, _decorate2.default)(null, function (_initialize, _CoreModuleHandlers) {
+  var ModuleWithRouteHandlers = function (_CoreModuleHandlers2) {
+    (0, _inheritsLoose2.default)(ModuleWithRouteHandlers, _CoreModuleHandlers2);
+
+    function ModuleWithRouteHandlers() {
       var _this;
 
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -38,11 +41,11 @@ var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _
       return _this;
     }
 
-    return RouteModuleHandlers;
+    return ModuleWithRouteHandlers;
   }(_CoreModuleHandlers);
 
   return {
-    F: RouteModuleHandlers,
+    F: ModuleWithRouteHandlers,
     d: [{
       kind: "method",
       decorators: [_core.reducer],
@@ -61,7 +64,7 @@ var RouteModuleHandlers = (0, _decorate2.default)(null, function (_initialize, _
     }]
   };
 }, _core.CoreModuleHandlers);
-exports.RouteModuleHandlers = RouteModuleHandlers;
+exports.ModuleWithRouteHandlers = ModuleWithRouteHandlers;
 var RouteActionTypes = {
   MRouteParams: 'RouteParams',
   RouteChange: "route" + _core.config.NSP + "RouteChange",
@@ -121,27 +124,43 @@ var routeMiddleware = function routeMiddleware(_ref) {
 
 exports.routeMiddleware = routeMiddleware;
 
-var RouteHandlers = function () {
-  function RouteHandlers() {
+var RouteModuleHandlers = function () {
+  function RouteModuleHandlers() {
     (0, _defineProperty2.default)(this, "initState", void 0);
     (0, _defineProperty2.default)(this, "moduleName", void 0);
     (0, _defineProperty2.default)(this, "store", void 0);
     (0, _defineProperty2.default)(this, "actions", void 0);
   }
 
-  var _proto = RouteHandlers.prototype;
+  var _proto = RouteModuleHandlers.prototype;
 
   _proto.RouteChange = function RouteChange(routeState) {
     return (0, _core.mergeState)(this.state, routeState);
   };
 
-  (0, _createClass2.default)(RouteHandlers, [{
+  (0, _createClass2.default)(RouteModuleHandlers, [{
     key: "state",
     get: function get() {
       return this.store.getState(this.moduleName);
     }
   }]);
-  return RouteHandlers;
+  return RouteModuleHandlers;
 }();
 
-exports.RouteHandlers = RouteHandlers;
+function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+  if (notfoundPagename === void 0) {
+    notfoundPagename = '/404';
+  }
+
+  if (paramsKey === void 0) {
+    paramsKey = '_';
+  }
+
+  var handlers = RouteModuleHandlers;
+  var locationTransform = (0, _transform.createLocationTransform)(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  var result = (0, _core.exportModule)('route', handlers, {});
+  return {
+    default: result,
+    locationTransform: locationTransform
+  };
+}

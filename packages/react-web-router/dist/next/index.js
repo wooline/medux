@@ -1801,85 +1801,6 @@ class History {
 
 }
 
-let RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
-  class RouteModuleHandlers extends _CoreModuleHandlers {
-    constructor(...args) {
-      super(...args);
-
-      _initialize(this);
-    }
-
-  }
-
-  return {
-    F: RouteModuleHandlers,
-    d: [{
-      kind: "method",
-      decorators: [reducer],
-      key: "Init",
-      value: function Init(initState) {
-        const routeParams = this.rootState.route.params[this.moduleName];
-        return routeParams ? deepMerge({}, initState, routeParams) : initState;
-      }
-    }, {
-      kind: "method",
-      decorators: [reducer],
-      key: "RouteParams",
-      value: function RouteParams(payload) {
-        return deepMergeState(this.state, payload);
-      }
-    }]
-  };
-}, CoreModuleHandlers);
-const RouteActionTypes = {
-  MRouteParams: 'RouteParams',
-  RouteChange: `route${config.NSP}RouteChange`,
-  TestRouteChange: `route${config.NSP}TestRouteChange`
-};
-function testRouteChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.TestRouteChange,
-    payload: [routeState]
-  };
-}
-function routeParamsAction(moduleName, params, action) {
-  return {
-    type: `${moduleName}${config.NSP}${RouteActionTypes.MRouteParams}`,
-    payload: [params, action]
-  };
-}
-function routeChangeAction(routeState) {
-  return {
-    type: RouteActionTypes.RouteChange,
-    payload: [routeState]
-  };
-}
-const routeMiddleware = ({
-  dispatch,
-  getState
-}) => next => action => {
-  if (action.type === RouteActionTypes.RouteChange) {
-    const result = next(action);
-    const routeState = action.payload[0];
-    const rootRouteParams = routeState.params;
-    const rootState = getState();
-    Object.keys(rootRouteParams).forEach(moduleName => {
-      const routeParams = rootRouteParams[moduleName];
-
-      if (routeParams) {
-        var _rootState$moduleName;
-
-        if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
-          dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-        }
-      }
-    });
-    return result;
-  }
-
-  return next(action);
-};
-
 function isPlainObject(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
@@ -2144,6 +2065,116 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
       return nativeLocationMap.out(nativeLocation);
     }
 
+  };
+}
+
+let ModuleWithRouteHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
+  class ModuleWithRouteHandlers extends _CoreModuleHandlers {
+    constructor(...args) {
+      super(...args);
+
+      _initialize(this);
+    }
+
+  }
+
+  return {
+    F: ModuleWithRouteHandlers,
+    d: [{
+      kind: "method",
+      decorators: [reducer],
+      key: "Init",
+      value: function Init(initState) {
+        const routeParams = this.rootState.route.params[this.moduleName];
+        return routeParams ? deepMerge({}, initState, routeParams) : initState;
+      }
+    }, {
+      kind: "method",
+      decorators: [reducer],
+      key: "RouteParams",
+      value: function RouteParams(payload) {
+        return deepMergeState(this.state, payload);
+      }
+    }]
+  };
+}, CoreModuleHandlers);
+const RouteActionTypes = {
+  MRouteParams: 'RouteParams',
+  RouteChange: `route${config.NSP}RouteChange`,
+  TestRouteChange: `route${config.NSP}TestRouteChange`
+};
+function testRouteChangeAction(routeState) {
+  return {
+    type: RouteActionTypes.TestRouteChange,
+    payload: [routeState]
+  };
+}
+function routeParamsAction(moduleName, params, action) {
+  return {
+    type: `${moduleName}${config.NSP}${RouteActionTypes.MRouteParams}`,
+    payload: [params, action]
+  };
+}
+function routeChangeAction(routeState) {
+  return {
+    type: RouteActionTypes.RouteChange,
+    payload: [routeState]
+  };
+}
+const routeMiddleware = ({
+  dispatch,
+  getState
+}) => next => action => {
+  if (action.type === RouteActionTypes.RouteChange) {
+    const result = next(action);
+    const routeState = action.payload[0];
+    const rootRouteParams = routeState.params;
+    const rootState = getState();
+    Object.keys(rootRouteParams).forEach(moduleName => {
+      const routeParams = rootRouteParams[moduleName];
+
+      if (routeParams) {
+        var _rootState$moduleName;
+
+        if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
+          dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
+        }
+      }
+    });
+    return result;
+  }
+
+  return next(action);
+};
+
+class RouteModuleHandlers {
+  constructor() {
+    _defineProperty(this, "initState", void 0);
+
+    _defineProperty(this, "moduleName", void 0);
+
+    _defineProperty(this, "store", void 0);
+
+    _defineProperty(this, "actions", void 0);
+  }
+
+  get state() {
+    return this.store.getState(this.moduleName);
+  }
+
+  RouteChange(routeState) {
+    return mergeState(this.state, routeState);
+  }
+
+}
+
+function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
+  const handlers = RouteModuleHandlers;
+  const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  const result = exportModule$1('route', handlers, {});
+  return {
+    default: result,
+    locationTransform
   };
 }
 
@@ -4090,110 +4121,106 @@ function setConfig(conf) {
 const exportModule = exportModule$1;
 function createApp(moduleGetter, middlewares = [], appModuleName = 'app', appViewName = 'main') {
   const controllerMiddleware = [routeMiddleware, ...middlewares];
+  const {
+    locationTransform
+  } = moduleGetter['route']();
   return {
-    useRoute({
-      locationTransform
+    useStore({
+      storeOptions,
+      storeCreator
     }) {
       return {
-        useStore({
-          storeOptions,
-          storeCreator
-        }) {
+        render({
+          id = 'root',
+          ssrKey = 'meduxInitStore'
+        } = {}) {
+          const router = createRouter('Browser', locationTransform);
+          const routeState = router.getRouteState();
+          const ssrData = env[ssrKey];
+          const renderFun = ssrData ? hydrate : render;
+          const panel = env.document.getElementById(id);
+          const initState = { ...storeOptions.initState,
+            route: routeState,
+            ...ssrData
+          };
+          const baseStore = storeCreator({ ...storeOptions,
+            initState
+          });
+          const {
+            store,
+            beforeRender
+          } = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName);
+          router.setStore(store);
+          MetaData.router = router;
           return {
-            render({
-              id = 'root',
-              ssrKey = 'meduxInitStore'
-            } = {}) {
-              const router = createRouter('Browser', locationTransform);
-              const routeState = router.getRouteState();
-              const ssrData = env[ssrKey];
-              const renderFun = ssrData ? hydrate : render;
-              const panel = env.document.getElementById(id);
-              const initState = { ...storeOptions.initState,
-                route: routeState,
-                ...ssrData
-              };
-              const baseStore = storeCreator({ ...storeOptions,
-                initState
+            store,
+
+            run() {
+              return beforeRender().then(({
+                appView,
+                setReRender
+              }) => {
+                const reRender = View => {
+                  unmountComponentAtNode(panel);
+                  renderFun(React.createElement(View, {
+                    store: store
+                  }), panel);
+                };
+
+                reRender(appView);
+                setReRender(reRender);
               });
-              const {
-                store,
-                beforeRender
-              } = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName);
-              router.setStore(store);
-              MetaData.router = router;
-              return {
-                store,
+            }
 
-                run() {
-                  return beforeRender().then(({
-                    appView,
-                    setReRender
-                  }) => {
-                    const reRender = View => {
-                      unmountComponentAtNode(panel);
-                      renderFun(React.createElement(View, {
-                        store: store
-                      }), panel);
-                    };
+          };
+        },
 
-                    reRender(appView);
-                    setReRender(reRender);
-                  });
+        ssr({
+          id = 'root',
+          ssrKey = 'meduxInitStore',
+          url
+        }) {
+          if (!SSRTPL) {
+            SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
+          }
+
+          const router = createRouter(url, locationTransform);
+          const routeState = router.getRouteState();
+          const initState = { ...storeOptions.initState,
+            route: routeState
+          };
+          const baseStore = storeCreator({ ...storeOptions,
+            initState
+          });
+          const {
+            store,
+            beforeRender
+          } = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName);
+          router.setStore(store);
+          MetaData.router = router;
+          return {
+            store,
+
+            run() {
+              return beforeRender().then(({
+                appView: AppView
+              }) => {
+                const data = store.getState();
+
+                let html = require('react-dom/server').renderToString(React.createElement(AppView, {
+                  store: store
+                }));
+
+                const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
+
+                if (match) {
+                  const pageHead = html.split(/<head>|<\/head>/, 3);
+                  html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+                  return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
                 }
 
-              };
-            },
-
-            ssr({
-              id = 'root',
-              ssrKey = 'meduxInitStore',
-              url
-            }) {
-              if (!SSRTPL) {
-                SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
-              }
-
-              const router = createRouter(url, locationTransform);
-              const routeState = router.getRouteState();
-              const initState = { ...storeOptions.initState,
-                route: routeState
-              };
-              const baseStore = storeCreator({ ...storeOptions,
-                initState
+                return html;
               });
-              const {
-                store,
-                beforeRender
-              } = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName);
-              router.setStore(store);
-              MetaData.router = router;
-              return {
-                store,
-
-                run() {
-                  return beforeRender().then(({
-                    appView: AppView
-                  }) => {
-                    const data = store.getState();
-
-                    let html = require('react-dom/server').renderToString(React.createElement(AppView, {
-                      store: store
-                    }));
-
-                    const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
-
-                    if (match) {
-                      const pageHead = html.split(/<head>|<\/head>/, 3);
-                      html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-                      return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
-                    }
-
-                    return html;
-                  });
-                }
-
-              };
             }
 
           };
@@ -4225,4 +4252,4 @@ function getApp() {
   };
 }
 
-export { ActionTypes, RouteModuleHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, createApp, createLocationTransform, deepMerge, deepMergeState, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, createApp, createRouteModule, deepMerge, deepMergeState, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl, viewHotReplacement };

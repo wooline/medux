@@ -1,14 +1,13 @@
 import './env';
 import type { ComponentType } from 'react';
 import type { ModuleGetter, ExportModule, ControllerMiddleware, StoreBuilder, BStoreOptions, BStore, RootModuleFacade, RootModuleAPI, RootModuleActions } from '@medux/core';
-import type { LocationTransform } from '@medux/route-web';
 import type { Router } from '@medux/route-browser';
 import type { LoadView } from './loadView';
 export type { RootModuleFacade, Dispatch, CoreModuleState } from '@medux/core';
 export type { RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial, } from '@medux/route-web';
 export type { LoadView } from './loadView';
 export { ActionTypes, LoadingState, modelHotReplacement, env, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
-export { RouteModuleHandlers as BaseModuleHandlers, createLocationTransform, RouteActionTypes } from '@medux/route-web';
+export { ModuleWithRouteHandlers as BaseModuleHandlers, RouteActionTypes, createRouteModule } from '@medux/route-web';
 export { DocumentHead } from './components/DocumentHead';
 export { Else } from './components/Else';
 export { Switch } from './components/Switch';
@@ -40,20 +39,15 @@ export interface SSROptions {
     ssrKey?: string;
     url: string;
 }
-interface RouteOptions {
-    locationTransform: LocationTransform<any>;
-}
 export declare function createApp(moduleGetter: ModuleGetter, middlewares?: ControllerMiddleware[], appModuleName?: string, appViewName?: string): {
-    useRoute({ locationTransform }: RouteOptions): {
-        useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({ storeOptions, storeCreator }: StoreBuilder<O, B>): {
-            render({ id, ssrKey }?: RenderOptions): {
-                store: import("@medux/core").IStore<any> & B;
-                run(): Promise<void>;
-            };
-            ssr({ id, ssrKey, url }: SSROptions): {
-                store: import("@medux/core").IStore<any> & B;
-                run(): Promise<string>;
-            };
+    useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({ storeOptions, storeCreator }: StoreBuilder<O, B>): {
+        render({ id, ssrKey }?: RenderOptions): {
+            store: import("@medux/core").IStore<any> & B;
+            run(): Promise<void>;
+        };
+        ssr({ id, ssrKey, url }: SSROptions): {
+            store: import("@medux/core").IStore<any> & B;
+            run(): Promise<string>;
         };
     };
 };
@@ -74,6 +68,7 @@ export declare type GetAPP<A extends RootModuleFacade, RouteParams extends {
     Pagenames: {
         [K in Pagename]: K;
     };
+    CCC: A['route']['state']['params'];
 };
 export declare function getApp<T extends {
     GetActions: any;

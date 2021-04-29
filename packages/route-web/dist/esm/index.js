@@ -7,7 +7,7 @@ import { uriToLocation, nativeUrlToNativeLocation as _nativeUrlToNativeLocation,
 import { testRouteChangeAction, routeChangeAction } from './module';
 export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
 export { PagenameMap, createLocationTransform } from './transform';
-export { routeMiddleware, RouteModuleHandlers, RouteHandlers, RouteActionTypes } from './module';
+export { routeMiddleware, createRouteModule, RouteActionTypes, ModuleWithRouteHandlers } from './module';
 
 function dataIsNativeLocation(data) {
   return data['pathname'];

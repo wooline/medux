@@ -7,7 +7,8 @@ import type {RootParams, Location, NativeLocation, RouteState, PayloadLocation, 
 
 export {setRouteConfig, routeConfig, nativeUrlToNativeLocation} from './basic';
 export {PagenameMap, createLocationTransform} from './transform';
-export {routeMiddleware, RouteModuleHandlers, RouteHandlers, RouteActionTypes} from './module';
+export {routeMiddleware, createRouteModule, RouteActionTypes, ModuleWithRouteHandlers} from './module';
+export type {RouteModule} from './module';
 export type {LocationTransform} from './transform';
 export type {RootParams, Location, NativeLocation, RouteState, HistoryAction, DeepPartial, PayloadLocation} from './basic';
 

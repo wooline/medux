@@ -2813,125 +2813,6 @@
     return Constructor;
   }
 
-  var RouteModuleHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
-    var RouteModuleHandlers = function (_CoreModuleHandlers2) {
-      _inheritsLoose(RouteModuleHandlers, _CoreModuleHandlers2);
-
-      function RouteModuleHandlers() {
-        var _this;
-
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        _this = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
-
-        _initialize(_assertThisInitialized(_this));
-
-        return _this;
-      }
-
-      return RouteModuleHandlers;
-    }(_CoreModuleHandlers);
-
-    return {
-      F: RouteModuleHandlers,
-      d: [{
-        kind: "method",
-        decorators: [reducer],
-        key: "Init",
-        value: function Init(initState) {
-          var routeParams = this.rootState.route.params[this.moduleName];
-          return routeParams ? deepMerge({}, initState, routeParams) : initState;
-        }
-      }, {
-        kind: "method",
-        decorators: [reducer],
-        key: "RouteParams",
-        value: function RouteParams(payload) {
-          return deepMergeState(this.state, payload);
-        }
-      }]
-    };
-  }, CoreModuleHandlers);
-  var RouteActionTypes = {
-    MRouteParams: 'RouteParams',
-    RouteChange: "route" + config.NSP + "RouteChange",
-    TestRouteChange: "route" + config.NSP + "TestRouteChange"
-  };
-  function testRouteChangeAction(routeState) {
-    return {
-      type: RouteActionTypes.TestRouteChange,
-      payload: [routeState]
-    };
-  }
-  function routeParamsAction(moduleName, params, action) {
-    return {
-      type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
-      payload: [params, action]
-    };
-  }
-  function routeChangeAction(routeState) {
-    return {
-      type: RouteActionTypes.RouteChange,
-      payload: [routeState]
-    };
-  }
-  var routeMiddleware = function routeMiddleware(_ref) {
-    var dispatch = _ref.dispatch,
-        getState = _ref.getState;
-    return function (next) {
-      return function (action) {
-        if (action.type === RouteActionTypes.RouteChange) {
-          var result = next(action);
-          var routeState = action.payload[0];
-          var rootRouteParams = routeState.params;
-          var rootState = getState();
-          Object.keys(rootRouteParams).forEach(function (moduleName) {
-            var routeParams = rootRouteParams[moduleName];
-
-            if (routeParams) {
-              var _rootState$moduleName;
-
-              if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
-                dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
-              }
-            }
-          });
-          return result;
-        }
-
-        return next(action);
-      };
-    };
-  };
-  (function () {
-    function RouteHandlers() {
-      _defineProperty(this, "initState", void 0);
-
-      _defineProperty(this, "moduleName", void 0);
-
-      _defineProperty(this, "store", void 0);
-
-      _defineProperty(this, "actions", void 0);
-    }
-
-    var _proto = RouteHandlers.prototype;
-
-    _proto.RouteChange = function RouteChange(routeState) {
-      return mergeState(this.state, routeState);
-    };
-
-    _createClass(RouteHandlers, [{
-      key: "state",
-      get: function get() {
-        return this.store.getState(this.moduleName);
-      }
-    }]);
-
-    return RouteHandlers;
-  })();
-
   function isPlainObject(obj) {
     return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
   }
@@ -3214,6 +3095,144 @@
         };
         return nativeLocationMap.out(nativeLocation);
       }
+    };
+  }
+
+  var ModuleWithRouteHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
+    var ModuleWithRouteHandlers = function (_CoreModuleHandlers2) {
+      _inheritsLoose(ModuleWithRouteHandlers, _CoreModuleHandlers2);
+
+      function ModuleWithRouteHandlers() {
+        var _this;
+
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        _this = _CoreModuleHandlers2.call.apply(_CoreModuleHandlers2, [this].concat(args)) || this;
+
+        _initialize(_assertThisInitialized(_this));
+
+        return _this;
+      }
+
+      return ModuleWithRouteHandlers;
+    }(_CoreModuleHandlers);
+
+    return {
+      F: ModuleWithRouteHandlers,
+      d: [{
+        kind: "method",
+        decorators: [reducer],
+        key: "Init",
+        value: function Init(initState) {
+          var routeParams = this.rootState.route.params[this.moduleName];
+          return routeParams ? deepMerge({}, initState, routeParams) : initState;
+        }
+      }, {
+        kind: "method",
+        decorators: [reducer],
+        key: "RouteParams",
+        value: function RouteParams(payload) {
+          return deepMergeState(this.state, payload);
+        }
+      }]
+    };
+  }, CoreModuleHandlers);
+  var RouteActionTypes = {
+    MRouteParams: 'RouteParams',
+    RouteChange: "route" + config.NSP + "RouteChange",
+    TestRouteChange: "route" + config.NSP + "TestRouteChange"
+  };
+  function testRouteChangeAction(routeState) {
+    return {
+      type: RouteActionTypes.TestRouteChange,
+      payload: [routeState]
+    };
+  }
+  function routeParamsAction(moduleName, params, action) {
+    return {
+      type: "" + moduleName + config.NSP + RouteActionTypes.MRouteParams,
+      payload: [params, action]
+    };
+  }
+  function routeChangeAction(routeState) {
+    return {
+      type: RouteActionTypes.RouteChange,
+      payload: [routeState]
+    };
+  }
+  var routeMiddleware = function routeMiddleware(_ref) {
+    var dispatch = _ref.dispatch,
+        getState = _ref.getState;
+    return function (next) {
+      return function (action) {
+        if (action.type === RouteActionTypes.RouteChange) {
+          var result = next(action);
+          var routeState = action.payload[0];
+          var rootRouteParams = routeState.params;
+          var rootState = getState();
+          Object.keys(rootRouteParams).forEach(function (moduleName) {
+            var routeParams = rootRouteParams[moduleName];
+
+            if (routeParams) {
+              var _rootState$moduleName;
+
+              if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
+                dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
+              }
+            }
+          });
+          return result;
+        }
+
+        return next(action);
+      };
+    };
+  };
+
+  var RouteModuleHandlers = function () {
+    function RouteModuleHandlers() {
+      _defineProperty(this, "initState", void 0);
+
+      _defineProperty(this, "moduleName", void 0);
+
+      _defineProperty(this, "store", void 0);
+
+      _defineProperty(this, "actions", void 0);
+    }
+
+    var _proto = RouteModuleHandlers.prototype;
+
+    _proto.RouteChange = function RouteChange(routeState) {
+      return mergeState(this.state, routeState);
+    };
+
+    _createClass(RouteModuleHandlers, [{
+      key: "state",
+      get: function get() {
+        return this.store.getState(this.moduleName);
+      }
+    }]);
+
+    return RouteModuleHandlers;
+  }();
+
+  function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+    if (notfoundPagename === void 0) {
+      notfoundPagename = '/404';
+    }
+
+    if (paramsKey === void 0) {
+      paramsKey = '_';
+    }
+
+    var handlers = RouteModuleHandlers;
+    var locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+    var result = exportModule$1('route', handlers, {});
+    return {
+      default: result,
+      locationTransform: locationTransform
     };
   }
 
@@ -5446,112 +5465,111 @@
     }
 
     var controllerMiddleware = [routeMiddleware].concat(middlewares);
+
+    var _ref = moduleGetter['route'](),
+        locationTransform = _ref.locationTransform;
+
     return {
-      useRoute: function useRoute(_ref) {
-        var locationTransform = _ref.locationTransform;
+      useStore: function useStore(_ref2) {
+        var storeOptions = _ref2.storeOptions,
+            storeCreator = _ref2.storeCreator;
         return {
-          useStore: function useStore(_ref2) {
-            var storeOptions = _ref2.storeOptions,
-                storeCreator = _ref2.storeCreator;
+          render: function render(_temp) {
+            var _ref3 = _temp === void 0 ? {} : _temp,
+                _ref3$id = _ref3.id,
+                id = _ref3$id === void 0 ? 'root' : _ref3$id,
+                _ref3$ssrKey = _ref3.ssrKey,
+                ssrKey = _ref3$ssrKey === void 0 ? 'meduxInitStore' : _ref3$ssrKey;
+
+            var router = createRouter('Browser', locationTransform);
+            var routeState = router.getRouteState();
+            var ssrData = env[ssrKey];
+            var renderFun = ssrData ? reactDom.hydrate : reactDom.render;
+            var panel = env.document.getElementById(id);
+
+            var initState = _extends({}, storeOptions.initState, {
+              route: routeState
+            }, ssrData);
+
+            var baseStore = storeCreator(_extends({}, storeOptions, {
+              initState: initState
+            }));
+
+            var _renderApp = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName),
+                store = _renderApp.store,
+                beforeRender = _renderApp.beforeRender;
+
+            router.setStore(store);
+            MetaData.router = router;
             return {
-              render: function render(_temp) {
-                var _ref3 = _temp === void 0 ? {} : _temp,
-                    _ref3$id = _ref3.id,
-                    id = _ref3$id === void 0 ? 'root' : _ref3$id,
-                    _ref3$ssrKey = _ref3.ssrKey,
-                    ssrKey = _ref3$ssrKey === void 0 ? 'meduxInitStore' : _ref3$ssrKey;
+              store: store,
+              run: function run() {
+                return beforeRender().then(function (_ref4) {
+                  var appView = _ref4.appView,
+                      setReRender = _ref4.setReRender;
 
-                var router = createRouter('Browser', locationTransform);
-                var routeState = router.getRouteState();
-                var ssrData = env[ssrKey];
-                var renderFun = ssrData ? reactDom.hydrate : reactDom.render;
-                var panel = env.document.getElementById(id);
+                  var reRender = function reRender(View) {
+                    reactDom.unmountComponentAtNode(panel);
+                    renderFun(React__default['default'].createElement(View, {
+                      store: store
+                    }), panel);
+                  };
 
-                var initState = _extends({}, storeOptions.initState, {
-                  route: routeState
-                }, ssrData);
-
-                var baseStore = storeCreator(_extends({}, storeOptions, {
-                  initState: initState
-                }));
-
-                var _renderApp = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName),
-                    store = _renderApp.store,
-                    beforeRender = _renderApp.beforeRender;
-
-                router.setStore(store);
-                MetaData.router = router;
-                return {
-                  store: store,
-                  run: function run() {
-                    return beforeRender().then(function (_ref4) {
-                      var appView = _ref4.appView,
-                          setReRender = _ref4.setReRender;
-
-                      var reRender = function reRender(View) {
-                        reactDom.unmountComponentAtNode(panel);
-                        renderFun(React__default['default'].createElement(View, {
-                          store: store
-                        }), panel);
-                      };
-
-                      reRender(appView);
-                      setReRender(reRender);
-                    });
-                  }
-                };
-              },
-              ssr: function ssr(_ref5) {
-                var _ref5$id = _ref5.id,
-                    id = _ref5$id === void 0 ? 'root' : _ref5$id,
-                    _ref5$ssrKey = _ref5.ssrKey,
-                    ssrKey = _ref5$ssrKey === void 0 ? 'meduxInitStore' : _ref5$ssrKey,
-                    url = _ref5.url;
-
-                if (!SSRTPL) {
-                  SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
-                }
-
-                var router = createRouter(url, locationTransform);
-                var routeState = router.getRouteState();
-
-                var initState = _extends({}, storeOptions.initState, {
-                  route: routeState
+                  reRender(appView);
+                  setReRender(reRender);
                 });
+              }
+            };
+          },
+          ssr: function ssr(_ref5) {
+            var _ref5$id = _ref5.id,
+                id = _ref5$id === void 0 ? 'root' : _ref5$id,
+                _ref5$ssrKey = _ref5.ssrKey,
+                ssrKey = _ref5$ssrKey === void 0 ? 'meduxInitStore' : _ref5$ssrKey,
+                url = _ref5.url;
 
-                var baseStore = storeCreator(_extends({}, storeOptions, {
-                  initState: initState
-                }));
+            if (!SSRTPL) {
+              SSRTPL = env.decodeBas64('process.env.MEDUX_ENV_SSRTPL');
+            }
 
-                var _ssrApp = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName),
-                    store = _ssrApp.store,
-                    beforeRender = _ssrApp.beforeRender;
+            var router = createRouter(url, locationTransform);
+            var routeState = router.getRouteState();
 
-                router.setStore(store);
-                MetaData.router = router;
-                return {
-                  store: store,
-                  run: function run() {
-                    return beforeRender().then(function (_ref6) {
-                      var AppView = _ref6.appView;
-                      var data = store.getState();
+            var initState = _extends({}, storeOptions.initState, {
+              route: routeState
+            });
 
-                      var html = require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
-                        store: store
-                      }));
+            var baseStore = storeCreator(_extends({}, storeOptions, {
+              initState: initState
+            }));
 
-                      var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + id + "['\"][^<>]*>", 'm'));
+            var _ssrApp = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName),
+                store = _ssrApp.store,
+                beforeRender = _ssrApp.beforeRender;
 
-                      if (match) {
-                        var pageHead = html.split(/<head>|<\/head>/, 3);
-                        html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-                        return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
-                      }
+            router.setStore(store);
+            MetaData.router = router;
+            return {
+              store: store,
+              run: function run() {
+                return beforeRender().then(function (_ref6) {
+                  var AppView = _ref6.appView;
+                  var data = store.getState();
 
-                      return html;
-                    });
+                  var html = require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
+                    store: store
+                  }));
+
+                  var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + id + "['\"][^<>]*>", 'm'));
+
+                  if (match) {
+                    var pageHead = html.split(/<head>|<\/head>/, 3);
+                    html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+                    return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
                   }
-                };
+
+                  return html;
+                });
               }
             };
           }
@@ -5587,7 +5605,7 @@
   }
 
   exports.ActionTypes = ActionTypes;
-  exports.BaseModuleHandlers = RouteModuleHandlers;
+  exports.BaseModuleHandlers = ModuleWithRouteHandlers;
   exports.DocumentHead = DocumentHead;
   exports.Else = Else;
   exports.Link = Link;
@@ -5595,7 +5613,7 @@
   exports.Switch = Switch;
   exports.clientSide = clientSide;
   exports.createApp = createApp;
-  exports.createLocationTransform = createLocationTransform;
+  exports.createRouteModule = createRouteModule;
   exports.deepMerge = deepMerge;
   exports.deepMergeState = deepMergeState;
   exports.effect = effect;

@@ -6,10 +6,10 @@ module.exports = {
     'airbnb-typescript',
     'airbnb/hooks',
     'plugin:@typescript-eslint/recommended',
-    'prettier/@typescript-eslint', // 屏蔽eslint
+    // 'prettier/@typescript-eslint', // 屏蔽eslint
     'plugin:prettier/recommended', // 转eslint
-    'prettier/babel',
-    'prettier/react',
+    // 'prettier/babel',
+    // 'prettier/react',
   ],
   rules: {
     ...common.rules,
