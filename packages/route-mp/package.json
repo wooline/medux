@@ -1,6 +1,6 @@
 {
   "name": "@medux/route-mp",
-  "version": "2.0.0-beta.3.28",
+  "version": "2.0.0-beta.3.29",
   "description": "Using @medux/route-web in mini-program",
   "repository": "https://github.com/wooline/medux/tree/master/packages/route-mp",
   "author": "wooline <wooline@qq.com>",
@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.13.17",
-    "@medux/core": "^2.0.0-beta.3.28",
-    "@medux/route-web": "^2.0.0-beta.3.28"
+    "@medux/core": "^2.0.0-beta.3.29",
+    "@medux/route-web": "^2.0.0-beta.3.29"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }
