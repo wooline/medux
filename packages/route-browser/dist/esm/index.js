@@ -79,7 +79,7 @@ export var BrowserNativeRouter = function (_BaseNativeRouter) {
         var callback;
 
         if (action === 'POP') {
-          index = _this.router.findHistoryIndex(key);
+          index = _this.router.findHistoryIndexByKey(key);
         }
 
         if (index > -1) {

@@ -1,4 +1,4 @@
-import { BaseRouter, BaseNativeRouter, NativeData, RootParams, LocationTransform } from '@medux/route-web';
+import { BaseRouter, BaseNativeRouter, NativeData, RootParams, LocationTransform, IBaseRouter } from '@medux/route-web';
 import { History } from 'history';
 export declare class BrowserNativeRouter extends BaseNativeRouter {
     private _unlistenHistory;
@@ -17,8 +17,11 @@ export declare class BrowserNativeRouter extends BaseNativeRouter {
     toOutside(url: string): void;
     destroy(): void;
 }
-export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
+export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
     nativeRouter: BrowserNativeRouter;
     constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>);
 }
 export declare function createRouter<P extends RootParams, N extends string>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>): Router<P, N>;
+export interface IRouter<P extends RootParams, N extends string> extends IBaseRouter<P, N> {
+    nativeRouter: BrowserNativeRouter;
+}

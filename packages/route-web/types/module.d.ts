@@ -32,7 +32,7 @@ export declare function createRouteModule<P extends RootParams, G extends Pagena
         moduleName: "route";
         model: import("@medux/core").Model;
         initState: RouteState<P>;
-        views: {};
+        views: { [k in keyof G]: any; };
         actions: {
             initState: never;
             moduleName: never;

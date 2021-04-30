@@ -161,11 +161,13 @@ export var BaseRouter = function () {
 
   _proto2.getNativeLocation = function getNativeLocation() {
     if (!this._nativeData) {
-      var nativeLocation = this.locationTransform.out(this.routeState);
-      var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      var _nativeLocation = this.locationTransform.out(this.routeState);
+
+      var _nativeUrl = this.nativeLocationToNativeUrl(_nativeLocation);
+
       this._nativeData = {
-        nativeLocation: nativeLocation,
-        nativeUrl: nativeUrl
+        nativeLocation: _nativeLocation,
+        nativeUrl: _nativeUrl
       };
     }
 
@@ -174,11 +176,13 @@ export var BaseRouter = function () {
 
   _proto2.getNativeUrl = function getNativeUrl() {
     if (!this._nativeData) {
-      var nativeLocation = this.locationTransform.out(this.routeState);
-      var nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      var _nativeLocation2 = this.locationTransform.out(this.routeState);
+
+      var _nativeUrl2 = this.nativeLocationToNativeUrl(_nativeLocation2);
+
       this._nativeData = {
-        nativeLocation: nativeLocation,
-        nativeUrl: nativeUrl
+        nativeLocation: _nativeLocation2,
+        nativeUrl: _nativeUrl2
       };
     }
 
@@ -193,7 +197,7 @@ export var BaseRouter = function () {
     return this.routeState.key;
   };
 
-  _proto2.findHistoryIndex = function findHistoryIndex(key) {
+  _proto2.findHistoryIndexByKey = function findHistoryIndexByKey(key) {
     return this.history.findIndex(key);
   };
 
@@ -243,8 +247,9 @@ export var BaseRouter = function () {
           params: _data
         });
       } else {
-        var nativeLocation = this.nativeUrlToNativeLocation(url);
-        location = this.locationTransform.in(nativeLocation);
+        var _nativeLocation3 = this.nativeUrlToNativeLocation(url);
+
+        location = this.locationTransform.in(_nativeLocation3);
       }
     } catch (error) {
       env.console.warn(error);

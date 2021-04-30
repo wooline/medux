@@ -20,10 +20,10 @@ import type {
   RootModuleActions,
 } from '@medux/core';
 import type {RouteModule} from '@medux/route-web';
-import type {Router} from '@medux/route-browser';
+import type {IRouter} from '@medux/route-browser';
 import type {LoadView} from './loadView';
 
-export type {RootModuleFacade, Dispatch, CoreModuleState} from '@medux/core';
+export type {RootModuleFacade as Facade, Dispatch, CoreModuleState} from '@medux/core';
 
 export type {
   RouteState,
@@ -186,15 +186,14 @@ export function patchActions(typeName: string, json?: string): void {
   }
 }
 
-export type GetAPP<A extends RootModuleFacade, RouteParams extends {[K in keyof A]: any}, Pagename extends string> = {
+export type GetAPP<A extends RootModuleFacade> = {
   State: {[M in keyof A]?: A[M]['state']};
-  GetRouter: () => Router<RouteParams, Pagename>;
+  GetRouter: () => IRouter<A['route']['state']['params'], A['route']['viewName']>;
   GetActions<N extends keyof A>(...args: N[]): {[K in N]: A[K]['actions']};
   LoadView: LoadView<A>;
   Modules: RootModuleAPI<A>;
   Actions: RootModuleActions<A>;
-  Pagenames: {[K in Pagename]: K};
-  CCC: A['route']['state']['params'];
+  Pagenames: {[K in A['route']['viewName']]: K};
 };
 
 export function getApp<T extends {GetActions: any; GetRouter: any; LoadView: any; Modules: any; Pagenames: any}>(): Pick<

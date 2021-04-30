@@ -42,7 +42,7 @@ var MPNativeRouter = function (_BaseNativeRouter) {
         var index = -1;
 
         if (action === 'POP') {
-          index = _this.router.findHistoryIndex(key);
+          index = _this.router.findHistoryIndexByKey(key);
         }
 
         if (index > -1) {

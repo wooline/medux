@@ -25,7 +25,7 @@ export class MPNativeRouter extends BaseNativeRouter {
         let index = -1;
 
         if (action === 'POP') {
-          index = this.router.findHistoryIndex(key);
+          index = this.router.findHistoryIndexByKey(key);
         }
 
         if (index > -1) {

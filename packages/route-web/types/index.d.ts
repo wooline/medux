@@ -38,7 +38,7 @@ export declare abstract class BaseNativeRouter {
     setRouter(router: BaseRouter<any, string>): void;
     execute(method: 'relaunch' | 'push' | 'replace' | 'back', getNativeData: () => NativeData, ...args: any[]): Promise<NativeData | undefined>;
 }
-export declare abstract class BaseRouter<P extends RootParams, N extends string> {
+export declare abstract class BaseRouter<P extends RootParams, N extends string> implements IBaseRouter<P, N> {
     nativeRouter: BaseNativeRouter;
     protected locationTransform: LocationTransform<P>;
     private _tid;
@@ -64,7 +64,7 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     getNativeUrl(): string;
     setStore(_store: Store): void;
     getCurKey(): string;
-    findHistoryIndex(key: string): number;
+    findHistoryIndexByKey(key: string): number;
     private _createKey;
     nativeUrlToNativeLocation(url: string): NativeLocation;
     nativeLocationToLocation(nativeLocation: NativeLocation): Location<P>;
@@ -85,5 +85,32 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     private taskComplete;
     private executeTask;
     private addTask;
+    destroy(): void;
+}
+export interface IBaseRouter<P extends RootParams, N extends string> {
+    history: History;
+    nativeRouter: BaseNativeRouter;
+    addListener(callback: (data: RouteState<P>) => void | Promise<void>): void;
+    getRouteState(): RouteState<P>;
+    getPagename(): string;
+    getParams(): Partial<P>;
+    getMeduxUrl(): string;
+    getNativeLocation(): NativeLocation;
+    getNativeUrl(): string;
+    setStore(_store: Store): void;
+    getCurKey(): string;
+    findHistoryIndexByKey(key: string): number;
+    nativeUrlToNativeLocation(url: string): NativeLocation;
+    nativeLocationToLocation(nativeLocation: NativeLocation): Location<P>;
+    nativeUrlToLocation(nativeUrl: string): Location<P>;
+    nativeLocationToNativeUrl(nativeLocation: NativeLocation): string;
+    urlToLocation(url: string): Location<P>;
+    locationToNativeUrl(location: PartialLocation<P>): string;
+    locationToMeduxUrl(location: PartialLocation<P>): string;
+    payloadToPartial(payload: PayloadLocation<P, N>): PartialLocation<P>;
+    relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
+    push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
+    replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
+    back(n?: number, indexUrl?: string, internal?: boolean, disableNative?: boolean): void;
     destroy(): void;
 }

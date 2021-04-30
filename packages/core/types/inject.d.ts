@@ -54,7 +54,7 @@ export declare type ReturnModule<T> = T extends Promise<infer R> ? R : T;
 declare type ModuleFacade<M extends CommonModule> = {
     name: string;
     views: M['default']['views'];
-    viewName: keyof M['default']['views'];
+    viewName: Extract<keyof M['default']['views'], string>;
     state: M['default']['initState'];
     actions: M['default']['actions'];
     actionNames: {

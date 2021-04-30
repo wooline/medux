@@ -1,4 +1,4 @@
-import {BaseRouter, BaseNativeRouter, NativeData, RootParams, LocationTransform} from '@medux/route-web';
+import {BaseRouter, BaseNativeRouter, NativeData, RootParams, LocationTransform, IBaseRouter} from '@medux/route-web';
 import {History, createBrowserHistory, createHashHistory, createMemoryHistory, Location as HistoryLocation} from 'history';
 import {env} from '@medux/core';
 
@@ -57,7 +57,7 @@ export class BrowserNativeRouter extends BaseNativeRouter {
         let index: number = -1;
         let callback: () => void;
         if (action === 'POP') {
-          index = this.router.findHistoryIndex(key);
+          index = this.router.findHistoryIndexByKey(key);
         }
         if (index > -1) {
           callback = () => this.router.back(index + 1, '', false, false);
@@ -139,7 +139,7 @@ export class BrowserNativeRouter extends BaseNativeRouter {
   }
 }
 
-export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
+export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
   public declare nativeRouter: BrowserNativeRouter;
 
   constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>) {
@@ -154,4 +154,8 @@ export function createRouter<P extends RootParams, N extends string>(
   const browserNativeRouter = new BrowserNativeRouter(createHistory);
   const router = new Router<P, N>(browserNativeRouter, locationTransform);
   return router;
+}
+
+export interface IRouter<P extends RootParams, N extends string> extends IBaseRouter<P, N> {
+  nativeRouter: BrowserNativeRouter;
 }

@@ -1,4 +1,4 @@
-import {BaseRouter, BaseNativeRouter, NativeLocation, NativeData, RootParams, LocationTransform} from '@medux/route-web';
+import {BaseRouter, BaseNativeRouter, NativeLocation, NativeData, RootParams, LocationTransform, IBaseRouter} from '@medux/route-web';
 
 type UnregisterCallback = () => void;
 interface RouteOption {
@@ -37,7 +37,7 @@ export class MPNativeRouter extends BaseNativeRouter {
       if (changed) {
         let index: number = -1;
         if (action === 'POP') {
-          index = this.router.findHistoryIndex(key);
+          index = this.router.findHistoryIndexByKey(key);
         }
         if (index > -1) {
           this.router.back(index + 1, '', false, true);
@@ -100,7 +100,7 @@ export class MPNativeRouter extends BaseNativeRouter {
   }
 }
 
-export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
+export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
   public declare nativeRouter: MPNativeRouter;
 
   constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>) {
@@ -116,4 +116,8 @@ export function createRouter<P extends RootParams, N extends string>(
   const mpNativeRouter = new MPNativeRouter(routeENV, tabPages);
   const router = new Router<P, N>(mpNativeRouter, locationTransform);
   return router;
+}
+
+export interface IRouter<P extends RootParams, N extends string> extends IBaseRouter<P, N> {
+  nativeRouter: MPNativeRouter;
 }

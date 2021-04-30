@@ -2347,7 +2347,7 @@ class BaseRouter {
     return this.routeState.key;
   }
 
-  findHistoryIndex(key) {
+  findHistoryIndexByKey(key) {
     return this.history.findIndex(key);
   }
 
@@ -3787,7 +3787,7 @@ class BrowserNativeRouter extends BaseNativeRouter {
         let callback;
 
         if (action === 'POP') {
-          index = this.router.findHistoryIndex(key);
+          index = this.router.findHistoryIndexByKey(key);
         }
 
         if (index > -1) {

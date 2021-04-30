@@ -175,7 +175,7 @@ export class BaseRouter {
     return this.routeState.key;
   }
 
-  findHistoryIndex(key) {
+  findHistoryIndexByKey(key) {
     return this.history.findIndex(key);
   }
 

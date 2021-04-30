@@ -119,7 +119,7 @@ export type Model = (controller: IStore) => void | Promise<void>;
 export interface CommonModule<ModuleName extends string = string> {
   default: {
     moduleName: ModuleName;
-    initState: CoreModuleState;
+    initState: {[key: string]: any};
     model: Model;
     views: {
       [key: string]: any;

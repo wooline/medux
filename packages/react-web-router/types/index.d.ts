@@ -1,9 +1,9 @@
 import './env';
 import type { ComponentType } from 'react';
 import type { ModuleGetter, ExportModule, ControllerMiddleware, StoreBuilder, BStoreOptions, BStore, RootModuleFacade, RootModuleAPI, RootModuleActions } from '@medux/core';
-import type { Router } from '@medux/route-browser';
+import type { IRouter } from '@medux/route-browser';
 import type { LoadView } from './loadView';
-export type { RootModuleFacade, Dispatch, CoreModuleState } from '@medux/core';
+export type { RootModuleFacade as Facade, Dispatch, CoreModuleState } from '@medux/core';
 export type { RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial, } from '@medux/route-web';
 export type { LoadView } from './loadView';
 export { ActionTypes, LoadingState, modelHotReplacement, env, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@medux/core';
@@ -52,13 +52,11 @@ export declare function createApp(moduleGetter: ModuleGetter, middlewares?: Cont
     };
 };
 export declare function patchActions(typeName: string, json?: string): void;
-export declare type GetAPP<A extends RootModuleFacade, RouteParams extends {
-    [K in keyof A]: any;
-}, Pagename extends string> = {
+export declare type GetAPP<A extends RootModuleFacade> = {
     State: {
         [M in keyof A]?: A[M]['state'];
     };
-    GetRouter: () => Router<RouteParams, Pagename>;
+    GetRouter: () => IRouter<A['route']['state']['params'], A['route']['viewName']>;
     GetActions<N extends keyof A>(...args: N[]): {
         [K in N]: A[K]['actions'];
     };
@@ -66,9 +64,8 @@ export declare type GetAPP<A extends RootModuleFacade, RouteParams extends {
     Modules: RootModuleAPI<A>;
     Actions: RootModuleActions<A>;
     Pagenames: {
-        [K in Pagename]: K;
+        [K in A['route']['viewName']]: K;
     };
-    CCC: A['route']['state']['params'];
 };
 export declare function getApp<T extends {
     GetActions: any;

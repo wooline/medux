@@ -1,4 +1,4 @@
-import { BaseRouter, BaseNativeRouter, NativeLocation, NativeData, RootParams, LocationTransform } from '@medux/route-web';
+import { BaseRouter, BaseNativeRouter, NativeLocation, NativeData, RootParams, LocationTransform, IBaseRouter } from '@medux/route-web';
 interface RouteOption {
     url: string;
 }
@@ -40,11 +40,14 @@ export declare class MPNativeRouter extends BaseNativeRouter {
     toOutside(url: string): void;
     destroy(): void;
 }
-export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> {
+export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
     nativeRouter: MPNativeRouter;
     constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>);
 }
 export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, routeENV: RouteENV, tabPages: {
     [path: string]: boolean;
 }): Router<P, N>;
+export interface IRouter<P extends RootParams, N extends string> extends IBaseRouter<P, N> {
+    nativeRouter: MPNativeRouter;
+}
 export {};
